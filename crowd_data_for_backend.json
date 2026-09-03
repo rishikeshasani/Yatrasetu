@@ -1,0 +1,740 @@
+[
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:15",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:16",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:17",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:18",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 12,
+    "timestamp": "2026-08-31T19:16:19",
+    "zones": [],
+    "occupancy_pct": 6.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:20",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:21",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:22",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:23",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:24",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:25",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:26",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:27",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 13,
+    "timestamp": "2026-08-31T19:16:28",
+    "zones": [],
+    "occupancy_pct": 6.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:29",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:30",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:31",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:32",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:33",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:34",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:16:35",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:36",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:16:37",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:38",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:39",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 12,
+    "timestamp": "2026-08-31T19:16:40",
+    "zones": [],
+    "occupancy_pct": 6.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:41",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:42",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:43",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:44",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:16:45",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:16:46",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:47",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:48",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:49",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:50",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:16:51",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:52",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:53",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:16:54",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:16:55",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:56",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:57",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:16:58",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:16:59",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:00",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:01",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:02",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:17:03",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:04",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:05",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:17:06",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:07",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:08",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:09",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:10",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:11",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:12",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:13",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:14",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:15",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:16",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:17",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:18",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 12,
+    "timestamp": "2026-08-31T19:17:19",
+    "zones": [],
+    "occupancy_pct": 6.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:20",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 11,
+    "timestamp": "2026-08-31T19:17:21",
+    "zones": [],
+    "occupancy_pct": 5.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:22",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:23",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:17:24",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 10,
+    "timestamp": "2026-08-31T19:17:25",
+    "zones": [],
+    "occupancy_pct": 5.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:26",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 6,
+    "timestamp": "2026-08-31T19:17:27",
+    "zones": [],
+    "occupancy_pct": 3.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:28",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 0,
+    "timestamp": "2026-08-31T19:17:29",
+    "zones": [],
+    "occupancy_pct": 0.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 3,
+    "timestamp": "2026-08-31T19:17:30",
+    "zones": [],
+    "occupancy_pct": 1.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:17:31",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 7,
+    "timestamp": "2026-08-31T19:17:32",
+    "zones": [],
+    "occupancy_pct": 3.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:33",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 8,
+    "timestamp": "2026-08-31T19:17:34",
+    "zones": [],
+    "occupancy_pct": 4.0,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:35",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  },
+  {
+    "site_id": "SITE001",
+    "person_count": 9,
+    "timestamp": "2026-08-31T19:17:36",
+    "zones": [],
+    "occupancy_pct": 4.5,
+    "status": "NORMAL",
+    "capacity": 200
+  }
+]

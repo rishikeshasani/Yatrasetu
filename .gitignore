@@ -1,0 +1,138 @@
+﻿# =============================================================================
+# YatraSetu Root .gitignore
+# Rules for FastAPI, React/Vite, Python ML, Windows, & IDEs
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 1. Environment & Secrets (NEVER COMMIT CREDENTIALS)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+frontend/.env.*
+!.env.example
+!*.env.example
+*.pem
+*.key
+*.cert
+*.id_rsa
+
+# -----------------------------------------------------------------------------
+# 2. Python Virtual Environments
+# -----------------------------------------------------------------------------
+venv/
+venv_new/
+backend/venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# -----------------------------------------------------------------------------
+# 3. Python Bytecode, Caches & Logs
+# -----------------------------------------------------------------------------
+__pycache__/
+*/__pycache__/
+**/*.py[cod]
+*.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# -----------------------------------------------------------------------------
+# 4. Node.js & React / Vite Frontend
+# -----------------------------------------------------------------------------
+node_modules/
+*/node_modules/
+frontend/node_modules/
+dist/
+dist-ssr/
+frontend/dist/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.eslintcache
+
+# -----------------------------------------------------------------------------
+# 5. Media & Large Video Files (Prevent GitHub size limits & repo bloat)
+# -----------------------------------------------------------------------------
+# GitHub hard limit is 100 MB; warning at 50 MB
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.flv
+test1.mp4
+annotated_output.mp4
+
+# -----------------------------------------------------------------------------
+# 6. Machine Learning Weights & Large Model Files
+# -----------------------------------------------------------------------------
+# Model weights should be stored via releases, model registries, or external storage
+*.pt
+*.pth
+*.onnx
+*.weights
+*.bin
+*.h5
+*.tflite
+yolo26n.pt
+
+# -----------------------------------------------------------------------------
+# 7. IDE & Editor Configs
+# -----------------------------------------------------------------------------
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+.gemini/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.code-workspace
+
+# -----------------------------------------------------------------------------
+# 8. Operating System Specific Files
+# -----------------------------------------------------------------------------
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
