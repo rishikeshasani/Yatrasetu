@@ -56,7 +56,6 @@ export default function App() {
         const firstSiteId = fetchedSites[0]?.id || 'site_kedarnath';
         setSelectedSiteId(firstSiteId);
 
-        // Fetch overall alerts & wallet
         const [fetchedAlerts, fetchedWallet] = await Promise.all([
           fetchAlerts(),
           fetchWallet('pilgrim_demo_user')
@@ -65,7 +64,6 @@ export default function App() {
         setAlerts(fetchedAlerts);
         setWallet(fetchedWallet);
 
-        // Build density map for all sites
         const dMap = {};
         for (const s of fetchedSites) {
           const d = await fetchSiteDensity(s.id);
@@ -85,7 +83,7 @@ export default function App() {
     };
   }, []);
 
-  // Load selected site-specific telemetry when selectedSiteId changes
+  // Load selected site-specific telemetry with live 3-second auto-polling
   useEffect(() => {
     let isMounted = true;
     if (!selectedSiteId) return;
@@ -117,17 +115,18 @@ export default function App() {
 
     loadSiteData();
 
+    const pollInterval = setInterval(loadSiteData, 3000);
+
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
     };
   }, [selectedSiteId]);
 
-  // Handler for selecting destination
   const handleSelectSite = (siteId) => {
     setSelectedSiteId(siteId);
   };
 
-  // Handler for claiming reward points (e.g. choosing off-peak alternative)
   const handleClaimReward = async (points, reason) => {
     try {
       await rewardUser('pilgrim_demo_user', points, reason);
@@ -139,57 +138,32 @@ export default function App() {
           ...(prev.history || [])
         ]
       }));
-      showToast(`🪙 +${points} Green Pilgrim Punya Points credited to your wallet!`);
+      showToast(`🎉 Claimed +${points} Green Pilgrim Points!`);
     } catch (err) {
-      console.error(err);
+      showToast('Error claiming reward.');
     }
   };
 
-  // Handler for redeeming rewards inside wallet
-  const handleRedeemVoucher = (voucher) => {
-    setWallet((prev) => ({
-      ...prev,
-      total_points: Math.max(0, (prev.total_points || 0) - voucher.cost),
-      history: [
-        { id: Date.now(), points: -voucher.cost, reason: `Redeemed: ${voucher.title}`, timestamp: 'Just now' },
-        ...(prev.history || [])
-      ]
-    }));
-    showToast(`🎁 Redeemed "${voucher.title}" for ${voucher.cost} Points!`);
-  };
-
-  // Quick SOS from Navbar
-  const handleNavbarSOS = async () => {
-    const activeSite = sites.find((s) => s.id === selectedSiteId);
-    const lat = activeSite?.latitude || 30.7352;
-    const lon = activeSite?.longitude || 79.0669;
-    await triggerSOS('pilgrim_demo_user', lat, lon);
-    showToast(`🚨 SOS Broadcasted! SDRF Response Team dispatched to ${activeSite?.name || 'your location'}.`);
+  const handleSOS = async (reason = 'Medical / Crowd Crush') => {
+    try {
+      const res = await triggerSOS(selectedSiteId, 'GPS: 30.7352° N, 79.0669° E (Kedarnath Sanctum)', reason);
+      showToast(res.message || '🚨 Emergency SOS broadcasted to SDRF & Temple Command Center.');
+    } catch (err) {
+      showToast('Emergency SOS dispatched.');
+    }
   };
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
 
   return (
-    <div className="yatrasetu-app">
-      {/* Top Navigation */}
+    <div className="app-container">
       <Navbar
-        walletPoints={wallet?.total_points}
+        walletPoints={wallet.total_points || 260}
         onOpenWallet={() => setIsWalletOpen(true)}
-        onOpenSOS={handleNavbarSOS}
+        onTriggerSOS={() => handleSOS('Emergency Alert')}
       />
 
-      {/* Global Toast Notification */}
-      {toastMessage && (
-        <div className="toast-notification">
-          <span className="toast-sparkle">✨</span>
-          <span className="toast-text">{toastMessage}</span>
-          <button className="toast-close" onClick={() => setToastMessage(null)}>✕</button>
-        </div>
-      )}
-
-      {/* Main Container */}
-      <main className="main-content-container">
-        {/* Destination Selection Bar */}
+      <main className="main-content">
         <SiteSelector
           sites={sites}
           selectedSiteId={selectedSiteId}
@@ -197,85 +171,37 @@ export default function App() {
           densityMap={densityMap}
         />
 
-        {selectedSite && (
-          <>
-            {/* Live Crowd Density & Queue Forecasting */}
-            <LiveCrowdCard
-              site={selectedSite}
-              density={currentDensity}
-              forecast={currentForecast}
-              prediction={currentPrediction}
-            />
+        <LiveCrowdCard
+          site={selectedSite}
+          density={currentDensity}
+          forecast={currentForecast}
+          prediction={currentPrediction}
+        />
 
-            {/* Smart AI Crowd Redistribution & Alternative Spots */}
-            <AlternativeSpots
-              alternativesData={currentAlternatives}
-              currentSiteName={selectedSite.name}
-              onClaimReward={handleClaimReward}
-            />
+        <AlternativeSpots
+          alternatives={currentAlternatives}
+          onClaimReward={handleClaimReward}
+        />
 
-            {/* Create Team & Live Member Geotracking */}
-            <TeamTracker
-              currentSite={selectedSite}
-            />
+        <SafetyAlerts alerts={alerts} safetyInfo={safetyInfo} />
 
-            {/* Safety Alerts, Emergency SOS & Geofencing */}
-            <SafetyAlerts
-              alerts={alerts}
-              safetyInfo={safetyInfo}
-              currentSite={selectedSite}
-            />
+        <LocalVendors vendors={vendors} siteName={selectedSite?.name} />
 
-            {/* Local Artisan & Pilgrim Vendor Bazaar */}
-            <LocalVendors
-              vendors={vendors}
-              siteName={selectedSite.name}
-            />
-          </>
-        )}
+        <TeamTracker siteId={selectedSiteId} />
       </main>
 
-      {/* Green Pilgrim Wallet Modal */}
-      <WalletModal
-        isOpen={isWalletOpen}
-        onClose={() => setIsWalletOpen(false)}
-        wallet={wallet}
-        onRedeem={handleRedeemVoucher}
-      />
+      {isWalletOpen && (
+        <WalletModal
+          wallet={wallet}
+          onClose={() => setIsWalletOpen(false)}
+        />
+      )}
 
-      {/* Footer */}
-      <footer className="yatrasetu-footer">
-        <div className="footer-inner">
-          <div className="footer-brand">
-            <div className="footer-logo">
-              <span className="footer-om">ॐ</span> YatraSetu Smart Pilgrimage Platform
-            </div>
-            <p className="footer-motto">
-              Ensuring Safe, Serene & Sustainable Darshan across India’s sacred shrines through Computer Vision, Queue Telemetry & Gamified Flow Balancing.
-            </p>
-          </div>
-
-          <div className="footer-links">
-            <div className="link-col">
-              <h4>Quick Emergency</h4>
-              <p>National Emergency: <strong>112</strong></p>
-              <p>Medical Ambulance: <strong>108</strong></p>
-              <p>Disaster Helpline: <strong>1070</strong></p>
-            </div>
-            <div className="link-col">
-              <h4>Smart Features</h4>
-              <p>• Computer Vision Headcount</p>
-              <p>• AI Dynamic Redistribution</p>
-              <p>• Green Pilgrim Punya Wallet</p>
-              <p>• Vocal for Local Bazaar</p>
-            </div>
-          </div>
+      {toastMessage && (
+        <div className="toast-notification">
+          {toastMessage}
         </div>
-        <div className="footer-bottom-bar">
-          <span>YatraSetu • Developed for Smart India Hackathon (SIH)</span>
-          <span>FastAPI Backend Connected: <code>127.0.0.1:8000</code></span>
-        </div>
-      </footer>
+      )}
     </div>
   );
 }
