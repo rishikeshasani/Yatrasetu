@@ -24,7 +24,7 @@ import './App.css';
 
 export default function App() {
   const [sites, setSites] = useState([]);
-  const [selectedSiteId, setSelectedSiteId] = useState('site_kedarnath');
+  const [selectedSiteId, setSelectedSiteId] = useState('');
   const [densityMap, setDensityMap] = useState({});
   const [currentDensity, setCurrentDensity] = useState(null);
   const [currentForecast, setCurrentForecast] = useState(null);
@@ -53,7 +53,10 @@ export default function App() {
         const fetchedSites = await fetchSites();
         if (!isMounted) return;
         setSites(fetchedSites);
-        const firstSiteId = fetchedSites[0]?.id || 'site_kedarnath';
+
+        // Select initial site from real backend sites (prefer TS001 Kedarnath if present, else first returned site)
+        const defaultSite = fetchedSites.find(s => s.id === 'TS001') || fetchedSites[0];
+        const firstSiteId = defaultSite?.id || '';
         setSelectedSiteId(firstSiteId);
 
         // Fetch overall alerts & wallet
@@ -65,14 +68,12 @@ export default function App() {
         setAlerts(fetchedAlerts);
         setWallet(fetchedWallet);
 
-        // Build density map for all sites
-        const dMap = {};
-        for (const s of fetchedSites) {
-          const d = await fetchSiteDensity(s.id);
-          dMap[s.id] = d;
-        }
+        // Build density map for all sites in parallel
+        const dEntries = await Promise.all(
+          fetchedSites.map(async (s) => [s.id, await fetchSiteDensity(s.id)])
+        );
         if (!isMounted) return;
-        setDensityMap(dMap);
+        setDensityMap(Object.fromEntries(dEntries));
       } catch (err) {
         console.error("Error loading initial YatraSetu data:", err);
       }

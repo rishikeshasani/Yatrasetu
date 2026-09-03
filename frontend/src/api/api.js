@@ -1161,7 +1161,53 @@ export const MOCK_WALLET = {
 };
 
 // ==========================================
-// API CLIENT IMPLEMENTATIONS WITH FALLBACKS
+// SITE METADATA & COMPATIBILITY HELPERS
+// ==========================================
+export const SITE_METADATA = {
+  TS001: { city: "Rudraprayag, Uttarakhand", state: "Uttarakhand", altitude: "3,584 m", darshan_timings: "5:00 AM - 9:00 PM", description: "Himalayan High-Altitude Pilgrimage / Jyotirlinga" },
+  TS002: { city: "Chamoli, Uttarakhand", state: "Uttarakhand", altitude: "3,300 m", darshan_timings: "4:30 AM - 9:00 PM", description: "Char Dham Pilgrimage / Himalayan Shrine" },
+  TS003: { city: "Varanasi, Uttar Pradesh", state: "Uttar Pradesh", altitude: "81 m", darshan_timings: "3:00 AM - 11:00 PM", description: "Sacred Riverfront & Jyotirlinga Heritage Corridor" },
+  TS004: { city: "Ayodhya, Uttar Pradesh", state: "Uttar Pradesh", altitude: "102 m", darshan_timings: "6:30 AM - 10:00 PM", description: "Major Religious Shrine & Cultural Heritage" },
+  TS005: { city: "Katra / Bhawan, Jammu & Kashmir", state: "Jammu and Kashmir", altitude: "1,585 m", darshan_timings: "Open 24 Hours", description: "Himalayan Cave Shrine / Hill Pilgrimage Trek" },
+  TS006: { city: "Tirumala, Andhra Pradesh", state: "Andhra Pradesh", altitude: "853 m", darshan_timings: "2:30 AM - 1:30 AM", description: "Major Dravidian Vaishnavite Pilgrimage Hub" },
+  TS007: { city: "Puri, Odisha", state: "Odisha", altitude: "10 m", darshan_timings: "5:00 AM - 11:00 PM", description: "Char Dham Coastal Pilgrimage & Kalinga Heritage" },
+  TS008: { city: "Ujjain, Madhya Pradesh", state: "Madhya Pradesh", altitude: "492 m", darshan_timings: "4:00 AM - 11:00 PM", description: "Jyotirlinga Shrine / Sacred River Kshipra Corridor" },
+  TS009: { city: "Amritsar, Punjab", state: "Punjab", altitude: "234 m", darshan_timings: "3:00 AM - 11:00 PM", description: "Spiritual Heritage Sanctuary & Community Kitchen (Langar)" },
+  TS010: { city: "Madurai, Tamil Nadu", state: "Tamil Nadu", altitude: "101 m", darshan_timings: "5:00 AM - 10:00 PM", description: "Historic Dravidian Temple Architecture & Cultural Landmark" },
+  TS011: { city: "Rameswaram, Tamil Nadu", state: "Tamil Nadu", altitude: "10 m", darshan_timings: "5:00 AM - 9:00 PM", description: "Island Jyotirlinga & Longest Pillared Temple Corridor" },
+  TS012: { city: "Somnath, Gujarat", state: "Gujarat", altitude: "12 m", darshan_timings: "6:00 AM - 10:00 PM", description: "First of the Twelve Holy Jyotirlingas on Arabian Coast" },
+  TS013: { city: "Shirdi, Maharashtra", state: "Maharashtra", altitude: "504 m", darshan_timings: "5:00 AM - 10:30 PM", description: "Sacred Pilgrimage Complex of Sai Baba of Shirdi" },
+  TS014: { city: "Sabarimala, Kerala", state: "Kerala", altitude: "468 m", darshan_timings: "3:00 AM - 11:00 PM", description: "Forest Hill Shrine of Lord Ayyappa in Periyar Reserve" },
+  TS015: { city: "Haridwar, Uttarakhand", state: "Uttarakhand", altitude: "314 m", darshan_timings: "Open 24 Hours", description: "Sacred Ganges Ghat Corridor & Ganga Aarti Hub" },
+  TS016: { city: "Prayagraj, Uttar Pradesh", state: "Uttar Pradesh", altitude: "98 m", darshan_timings: "Open 24 Hours", description: "Holy Confluence of Ganga, Yamuna & Saraswati (Triveni)" },
+  TS017: { city: "Vrindavan, Uttar Pradesh", state: "Uttar Pradesh", altitude: "170 m", darshan_timings: "7:45 AM - 9:30 PM", description: "Sacred Abode of Krishna Bhakti & Heritage Shrines" },
+  TS018: { city: "Agra, Uttar Pradesh", state: "Uttar Pradesh", altitude: "169 m", darshan_timings: "Sunrise to Sunset", description: "UNESCO World Heritage Mughal Architectural Wonder" },
+  TS019: { city: "Jaipur, Rajasthan", state: "Rajasthan", altitude: "431 m", darshan_timings: "8:00 AM - 9:00 PM", description: "Historic Hilltop Rajput Fortress & Heritage Palace" },
+  TS020: { city: "Delhi", state: "Delhi", altitude: "216 m", darshan_timings: "7:00 AM - 9:00 PM", description: "Historic Minaret & Ancient Archaeological Sanctuary" },
+  TS021: { city: "Chhatrapati Sambhajinagar, Maharashtra", state: "Maharashtra", altitude: "568 m", darshan_timings: "9:00 AM - 5:30 PM", description: "UNESCO Monumental Ancient Rock-Cut Monolithic Caves" },
+  TS022: { city: "Hampi, Karnataka", state: "Karnataka", altitude: "467 m", darshan_timings: "6:00 AM - 6:00 PM", description: "UNESCO World Heritage Vijayanagara Empire Capital Ruins" },
+  TS023: { city: "Leh, Ladakh", state: "Ladakh", altitude: "4,250 m", darshan_timings: "Daylight Hours", description: "Pristine High-Altitude Endorheic Himalayan Lake" },
+  TS024: { city: "Manali, Himachal Pradesh", state: "Himachal Pradesh", altitude: "2,050 m", darshan_timings: "Daylight Hours", description: "High-Altitude Himalayan Mountain Pass & Adventure Valley" },
+  TS025: { city: "Guwahati, Assam", state: "Assam", altitude: "150 m", darshan_timings: "5:30 AM - 8:00 PM", description: "Sacred Shakti Peetha Temple atop Nilachal Hill" },
+  SITE001: { city: "Bhubaneswar, Odisha", state: "Odisha", altitude: "45 m", darshan_timings: "6:00 AM - 9:00 PM", description: "Historic Temple City Shrine" },
+  SITE002: { city: "Puri, Odisha", state: "Odisha", altitude: "12 m", darshan_timings: "6:00 AM - 9:00 PM", description: "Sacred Coastal Heritage Shrine" }
+};
+
+export const SITE_ID_ALIASES = {
+  TS001: 'site_kedarnath',
+  TS002: 'site_badrinath',
+  TS003: 'site_kashi',
+  TS005: 'site_vaishnodevi',
+  TS006: 'site_tirupati',
+  site_kedarnath: 'TS001',
+  site_badrinath: 'TS002',
+  site_kashi: 'TS003',
+  site_vaishnodevi: 'TS005',
+  site_tirupati: 'TS006'
+};
+
+// ==========================================
+// API CLIENT IMPLEMENTATIONS WITH RESILIENT FALLBACKS
 // ==========================================
 
 export async function fetchSites() {
@@ -1169,7 +1215,20 @@ export async function fetchSites() {
     const res = await fetch(`${API_BASE_URL}/sites`, { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data) && data.length > 0) {
+        return data.map((site) => {
+          const meta = SITE_METADATA[site.id] || {};
+          return {
+            ...meta,
+            ...site,
+            city: site.city || meta.city || meta.state || 'Pilgrim Center',
+            state: site.state || meta.state || 'India',
+            description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
+            altitude: site.altitude || meta.altitude || '',
+            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours'
+          };
+        });
+      }
     }
   } catch (err) {
     console.warn("Using fallback sites data:", err);
@@ -1178,74 +1237,98 @@ export async function fetchSites() {
 }
 
 export async function fetchSiteDensity(siteId) {
+  if (!siteId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${siteId}/density`);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/density`);
+    if (res.ok) {
+      return await res.json();
+    }
   } catch (err) {
     console.warn(`Fallback density for ${siteId}:`, err);
   }
-  return MOCK_DENSITY[siteId] || {
-    site_id: siteId,
-    site_name: "Sacred Shrine",
-    people_count: 1200,
-    occupancy_percentage: 48.0,
-    status: "NORMAL",
-    last_updated: "Just now"
-  };
+  const alias = SITE_ID_ALIASES[siteId];
+  return (
+    MOCK_DENSITY[siteId] ||
+    (alias ? MOCK_DENSITY[alias] : null) || {
+      site_id: siteId,
+      site_name: "Sacred Shrine",
+      people_count: 0,
+      occupancy_percentage: 0.0,
+      status: "NORMAL",
+      last_updated: "Just now"
+    }
+  );
 }
 
 export async function fetchSiteForecast(siteId) {
+  if (!siteId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${siteId}/crowd-forecast`);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/crowd-forecast`);
+    if (res.ok) {
+      return await res.json();
+    }
   } catch (err) {
     console.warn(`Fallback forecast for ${siteId}:`, err);
   }
-  return MOCK_FORECAST[siteId] || {
-    site_id: siteId,
-    site_name: "Sacred Shrine",
-    live_status: { people_count: 1200, occupancy_percentage: 48.0, status: "NORMAL", last_updated: "Just now" },
-    queue_forecast: {
-      estimated_current_wait_mins: 35,
-      normal_wait_mins: 30,
-      peak_wait_mins: 110,
-      queue_management_system: "Token Q-System",
-      fast_track_details: "Senior & Divyang priority lane available"
-    },
-    seasonal_context: {
-      peak_seasons: "Summer & Festivals",
-      upcoming_peak_festivals: "Upcoming Utsav",
-      weather_warnings: "Pleasant weather, comfortable for darshan.",
-      surge_triggers: "Evening Aarti"
+  const alias = SITE_ID_ALIASES[siteId];
+  return (
+    MOCK_FORECAST[siteId] ||
+    (alias ? MOCK_FORECAST[alias] : null) || {
+      site_id: siteId,
+      site_name: "Sacred Shrine",
+      live_status: { people_count: 0, occupancy_percentage: 0.0, status: "NORMAL", last_updated: "Just now" },
+      queue_forecast: {
+        estimated_current_wait_mins: 20,
+        normal_wait_mins: 20,
+        peak_wait_mins: 90,
+        queue_management_system: "Standard Queue System",
+        fast_track_details: "Priority lane available for senior citizens"
+      },
+      seasonal_context: {
+        peak_seasons: "Festival and seasonal peak periods",
+        upcoming_peak_festivals: "Seasonal Utsav",
+        weather_warnings: "Pleasant weather conditions.",
+        surge_triggers: "Morning and Evening Aarti"
+      }
     }
-  };
+  );
 }
 
 export async function fetchSitePrediction(siteId) {
+  if (!siteId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${siteId}/prediction`);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/prediction`);
+    if (res.ok) {
+      return await res.json();
+    }
   } catch (err) {
     console.warn(`Fallback prediction for ${siteId}:`, err);
   }
-  return { site_id: siteId, predicted_next_count: 2250 };
+  return { site_id: siteId, predicted_next_count: null, prediction: "Prediction unavailable" };
 }
 
 export async function fetchAlternatives(siteId) {
+  if (!siteId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${siteId}/alternatives`);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/alternatives`);
+    if (res.ok) {
+      return await res.json();
+    }
   } catch (err) {
     console.warn(`Fallback alternatives for ${siteId}:`, err);
   }
-  return MOCK_ALTERNATIVES[siteId] || {
-    site_id: siteId,
-    site_name: "Sacred Spot",
-    current_occupancy_percentage: 78.5,
-    current_status: "HIGH",
-    redistribution_needed: true,
-    recommendations: MOCK_ALTERNATIVES.site_kedarnath ? MOCK_ALTERNATIVES.site_kedarnath.recommendations : []
-  };
+  const alias = SITE_ID_ALIASES[siteId];
+  return (
+    MOCK_ALTERNATIVES[siteId] ||
+    (alias ? MOCK_ALTERNATIVES[alias] : null) || {
+      site_id: siteId,
+      site_name: "Sacred Spot",
+      current_occupancy_percentage: 0,
+      current_status: "NORMAL",
+      redistribution_needed: false,
+      recommendations: []
+    }
+  );
 }
 
 export async function fetchAlerts() {
@@ -1253,7 +1336,7 @@ export async function fetchAlerts() {
     const res = await fetch(`${API_BASE_URL}/alerts`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     }
   } catch (err) {
     console.warn("Fallback alerts:", err);
@@ -1262,13 +1345,30 @@ export async function fetchAlerts() {
 }
 
 export async function fetchSafetyInfo(siteId) {
+  if (!siteId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${siteId}/safety-info`);
-    if (res.ok) return await res.json();
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/safety-info`);
+    if (res.ok) {
+      return await res.json();
+    }
   } catch (err) {
     console.warn(`Fallback safety info for ${siteId}:`, err);
   }
-  return MOCK_SAFETY_INFO[siteId] || MOCK_SAFETY_INFO.site_kedarnath;
+  const alias = SITE_ID_ALIASES[siteId];
+  return (
+    MOCK_SAFETY_INFO[siteId] ||
+    (alias ? MOCK_SAFETY_INFO[alias] : null) || {
+      nearest_hospital: "Local Community Health Center",
+      hospital_distance_km: 1.2,
+      hospital_phone: "108",
+      nearest_police: "Local Police Station",
+      police_phone: "112",
+      disaster_control_room: "1070",
+      evacuation_routes: "Follow marked emergency evacuation pathways.",
+      high_risk_zone_type: "Crowd Congestion Area",
+      risk_mitigation_measures: "Follow volunteer and SDRF security marshals."
+    }
+  );
 }
 
 export async function checkLocationSafety(latitude, longitude) {
@@ -1283,11 +1383,8 @@ export async function checkLocationSafety(latitude, longitude) {
     console.warn("Fallback check-safety:", err);
   }
   return {
-    in_danger_zone: true,
-    zone_name: "Sanctum Approach Zone",
-    risk_level: "HIGH",
-    message: "⚠️ High crowd density detected near your current sector. We recommend holding at Rest Shelter B.",
-    emergency_info: MOCK_SAFETY_INFO.site_kedarnath
+    in_danger_zone: false,
+    message: "You are currently in a safe area."
   };
 }
 
@@ -1310,18 +1407,29 @@ export async function triggerSOS(userId = "pilgrim_demo_user", latitude = 30.735
 
 export async function fetchVendors(siteId) {
   try {
-    const url = siteId ? `${API_BASE_URL}/vendors/${siteId}` : `${API_BASE_URL}/vendors`;
+    const url = siteId ? `${API_BASE_URL}/vendors/${encodeURIComponent(siteId)}` : `${API_BASE_URL}/vendors`;
     const res = await fetch(url);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) {
+        return data.map((v) => ({
+          ...v,
+          category: v.category || v.type || "Artisan / Merchant",
+          specialty: v.specialty || v.specialties_or_services || "Authentic Local Offerings",
+          discount_points_offer: v.discount_points_offer || v.offer || "",
+          location: v.location || v.address_locality || "Near Site Entrance",
+          rating: v.rating || 4.8,
+          reviews_count: v.reviews_count || 120
+        }));
+      }
     }
   } catch (err) {
     console.warn(`Fallback vendors for ${siteId}:`, err);
   }
   if (siteId) {
-    const filtered = MOCK_VENDORS.filter(v => v.site_id === siteId);
-    return filtered.length > 0 ? filtered : MOCK_VENDORS;
+    const alias = SITE_ID_ALIASES[siteId];
+    const filtered = MOCK_VENDORS.filter((v) => v.site_id === siteId || (alias && v.site_id === alias));
+    return filtered;
   }
   return MOCK_VENDORS;
 }

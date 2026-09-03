@@ -6,14 +6,15 @@ export default function LocalVendors({ vendors, siteName }) {
   const categories = useMemo(() => {
     const set = new Set();
     vendors.forEach((v) => {
-      if (v.category) set.add(v.category);
+      const cat = v.category || v.type;
+      if (cat) set.add(cat);
     });
     return ['ALL', ...Array.from(set)];
   }, [vendors]);
 
   const filteredVendors = useMemo(() => {
     if (selectedCategory === 'ALL') return vendors;
-    return vendors.filter((v) => v.category === selectedCategory);
+    return vendors.filter((v) => (v.category || v.type) === selectedCategory);
   }, [vendors, selectedCategory]);
 
   return (
@@ -48,50 +49,57 @@ export default function LocalVendors({ vendors, siteName }) {
 
       {/* Vendor Cards Grid */}
       <div className="vendors-grid">
-        {filteredVendors.map((vendor) => (
-          <div key={vendor.id} className="vendor-card">
-            <div className="vendor-card-header">
-              <div className="vendor-main-info">
-                <h3 className="vendor-name">
-                  {vendor.name}
-                  {vendor.verified && (
-                    <span className="verified-icon" title="Temple Board Verified Vendor">✓</span>
-                  )}
-                </h3>
-                <span className="vendor-category-tag">{vendor.category}</span>
-              </div>
-              <div className="vendor-rating-box">
-                <span className="star-icon">★</span>
-                <span className="rating-num">{vendor.rating || '4.8'}</span>
-                <span className="rating-count">({vendor.reviews_count || '150+'})</span>
-              </div>
-            </div>
-
-            <div className="vendor-location-line">
-              <span className="loc-pin">📍</span>
-              <span>{vendor.location || 'Near Temple Entrance'}</span>
-            </div>
-
-            <div className="vendor-specialty-box">
-              <span className="specialty-label">Specialty:</span>
-              <p className="specialty-text">{vendor.specialty || 'Traditional Prasad and Authentic Mountain Offerings'}</p>
-            </div>
-
-            <div className="vendor-pricing-bar">
-              <div className="price-tag">
-                <span className="price-label">Price Range:</span>
-                <span className="price-val">{vendor.price_range || '₹50 - ₹500'}</span>
-              </div>
-            </div>
-
-            {vendor.discount_points_offer && (
-              <div className="points-discount-banner">
-                <span className="discount-gift">🎁</span>
-                <span className="discount-text">{vendor.discount_points_offer}</span>
-              </div>
-            )}
+        {filteredVendors.length === 0 ? (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+            <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🏪</span>
+            <p style={{ margin: 0, fontWeight: 500 }}>No verified local artisan stalls registered for this destination yet.</p>
           </div>
-        ))}
+        ) : (
+          filteredVendors.map((vendor) => (
+            <div key={vendor.id} className="vendor-card">
+              <div className="vendor-card-header">
+                <div className="vendor-main-info">
+                  <h3 className="vendor-name">
+                    {vendor.name}
+                    {vendor.verified && (
+                      <span className="verified-icon" title="Temple Board Verified Vendor">✓</span>
+                    )}
+                  </h3>
+                  <span className="vendor-category-tag">{vendor.category || vendor.type || 'Local Merchant'}</span>
+                </div>
+                <div className="vendor-rating-box">
+                  <span className="star-icon">★</span>
+                  <span className="rating-num">{vendor.rating || '4.8'}</span>
+                  <span className="rating-count">({vendor.reviews_count || '150+'})</span>
+                </div>
+              </div>
+
+              <div className="vendor-location-line">
+                <span className="loc-pin">📍</span>
+                <span>{vendor.location || 'Near Temple Entrance'}</span>
+              </div>
+
+              <div className="vendor-specialty-box">
+                <span className="specialty-label">Specialty:</span>
+                <p className="specialty-text">{vendor.specialty || 'Traditional Prasad and Authentic Mountain Offerings'}</p>
+              </div>
+
+              <div className="vendor-pricing-bar">
+                <div className="price-tag">
+                  <span className="price-label">Price Range:</span>
+                  <span className="price-val">{vendor.price_range || '₹50 - ₹500'}</span>
+                </div>
+              </div>
+
+              {(vendor.discount_points_offer || vendor.offer) && (
+                <div className="points-discount-banner">
+                  <span className="discount-gift">🎁</span>
+                  <span className="discount-text">{vendor.discount_points_offer || vendor.offer}</span>
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </section>
   );

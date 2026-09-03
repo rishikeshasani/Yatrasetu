@@ -5,7 +5,12 @@ from database import supabase
 
 router = APIRouter()
 
-CSV_PATH = r"D:\YatraSetu\data\alternatives.csv"
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+CSV_PATH = os.path.abspath(os.path.join(CURRENT_DIR, "..", "..", "data", "alternatives.csv"))
+if not os.path.exists(CSV_PATH):
+    alt_path = os.path.abspath(os.path.join(CURRENT_DIR, "..", "data", "alternatives.csv"))
+    if os.path.exists(alt_path):
+        CSV_PATH = alt_path
 
 def parse_crowd_percentage(val_str):
     """Extracts numeric digits from crowd comparison string to convert to integer percentage."""

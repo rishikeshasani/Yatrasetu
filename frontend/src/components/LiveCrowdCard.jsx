@@ -72,7 +72,10 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
             <span className="blink-dot"></span> LIVE SURVEILLANCE FEED
           </span>
           <h1 className="destination-heading">{site.name}</h1>
-          <p className="destination-sub">{site.city || site.state} • {site.description}</p>
+          <p className="destination-sub">
+            {[site.city, site.state].filter(Boolean).join(', ') || 'Pilgrim Destination'}
+            {site.description ? ` • ${site.description}` : ''}
+          </p>
         </div>
 
         <div className="destination-quick-facts">
