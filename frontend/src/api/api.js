@@ -1457,3 +1457,26 @@ export async function rewardUser(userId = "pilgrim_demo_user", points = 50, reas
   }
   return { message: `${points} Green Pilgrim Punya Points credited!`, status: "success" };
 }
+
+export async function fetchSiteScheduleInsights(siteId) {
+  if (!siteId) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/schedule-insights`);
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn(`Fallback schedule insights for ${siteId}:`, err);
+  }
+  return null;
+}
+
+export async function fetchSiteMLForecast(siteId) {
+  if (!siteId) return null;
+  try {
+    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/forecast`);
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn(`Fallback ML forecast for ${siteId}:`, err);
+  }
+  return null;
+}
+
