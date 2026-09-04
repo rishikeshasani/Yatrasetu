@@ -1,17 +1,14 @@
 import { useState } from 'react';
-import { checkLocationSafety, triggerSOS } from '../api/api';
+import { checkLocationSafety } from '../api/api';
 
-export default function SafetyAlerts({ alerts, safetyInfo, currentSite }) {
+export default function SafetyAlerts({ alerts, safetyInfo, currentSite, onOpenSOS }) {
   const [checkingSafety, setCheckingSafety] = useState(false);
   const [safetyCheckResult, setSafetyCheckResult] = useState(null);
-  const [sosSent, setSosSent] = useState(false);
-  const [sosLoading, setSosLoading] = useState(false);
 
   const handleGeofenceCheck = async () => {
     setCheckingSafety(true);
     setSafetyCheckResult(null);
     try {
-      // Simulate/perform GPS check
       const lat = currentSite?.latitude || 30.7352;
       const lon = currentSite?.longitude || 79.0669;
       const res = await checkLocationSafety(lat, lon);
@@ -20,20 +17,6 @@ export default function SafetyAlerts({ alerts, safetyInfo, currentSite }) {
       console.error(err);
     } finally {
       setCheckingSafety(false);
-    }
-  };
-
-  const handleInstantSOS = async () => {
-    setSosLoading(true);
-    try {
-      const lat = currentSite?.latitude || 30.7352;
-      const lon = currentSite?.longitude || 79.0669;
-      await triggerSOS("pilgrim_demo_user", lat, lon);
-      setSosSent(true);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSosLoading(false);
     }
   };
 
@@ -89,25 +72,15 @@ export default function SafetyAlerts({ alerts, safetyInfo, currentSite }) {
 
           <button
             type="button"
-            className={`big-sos-btn ${sosSent ? 'sos-active' : ''}`}
-            onClick={handleInstantSOS}
-            disabled={sosLoading || sosSent}
+            className="big-sos-btn"
+            onClick={onOpenSOS}
           >
             <div className="sos-btn-inner">
               <span className="sos-icon-large">🆘</span>
-              <span className="sos-label">
-                {sosLoading ? 'Broadcasting Alert...' : sosSent ? 'SOS Dispatched to SDRF ✓' : 'TAP FOR INSTANT SOS'}
-              </span>
+              <span className="sos-label">TAP FOR INSTANT SOS</span>
               <span className="sos-sublabel">Transmits Live GPS to 112 & 108</span>
             </div>
           </button>
-
-          {sosSent && (
-            <div className="sos-confirmation-box">
-              <span className="check-icon">✅</span>
-              <span>Distress beacon received by Kedarnath Temple Command Center. Response team ETA: <strong>3-5 minutes</strong>. Stay calm at your current location.</span>
-            </div>
-          )}
         </div>
 
         {/* Card 2: Emergency Medical & Police Contacts */}

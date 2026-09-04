@@ -1,22 +1,55 @@
 import math
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database import supabase
 
 router = APIRouter()
 
+# In-memory storage for real-time SOS distress alerts during hackathon sessions
+active_sos_alerts: list[dict] = []
+
 class SOSRequest(BaseModel):
     user_id: str
     latitude: float
     longitude: float
+    emergency_type: str | None = "General Emergency"
+    site_id: str | None = None
+    site_name: str | None = None
+    location_source: str | None = "gps"
 
 @router.post("/sos")
 def trigger_sos(data: SOSRequest):
-    # Print SOS alert to server logs since table is not persistently created in database yet
-    print(f"SOS Alert received: User={data.user_id}, Lat={data.latitude}, Lon={data.longitude}")
+    alert_record = {
+        "id": f"SOS-{len(active_sos_alerts) + 1001}",
+        "user_id": data.user_id,
+        "emergency_type": data.emergency_type or "General Emergency",
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "site_id": data.site_id,
+        "site_name": data.site_name,
+        "location_source": data.location_source or "gps",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "status": "ACTIVE"
+    }
+    active_sos_alerts.insert(0, alert_record)
+    if len(active_sos_alerts) > 50:
+        active_sos_alerts.pop()
+
+    print(f"[SOS ALERT] ID={alert_record['id']} | User={data.user_id} | Type={alert_record['emergency_type']} | Lat={data.latitude:.4f}, Lon={data.longitude:.4f} ({alert_record['location_source']})")
+    
     return {
-        "message": "Alert received. Nearest response team notified.",
-        "status": "success"
+        "message": f"SOS distress alert received for {alert_record['emergency_type']}. Emergency network notified.",
+        "status": "success",
+        "alert_id": alert_record["id"],
+        "recorded_at": alert_record["timestamp"]
+    }
+
+@router.get("/sos/active")
+def get_active_sos():
+    return {
+        "count": len(active_sos_alerts),
+        "alerts": active_sos_alerts
     }
 
 class LocationCheck(BaseModel):

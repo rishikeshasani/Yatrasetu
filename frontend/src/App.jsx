@@ -10,6 +10,7 @@ import WalletModal from './components/WalletModal';
 import AuthModal from './components/AuthModal';
 import DigitalYatriCardModal from './components/DigitalYatriCardModal';
 import VendorDashboardModal from './components/VendorDashboardModal';
+import SOSModal from './components/SOSModal';
 import {
   fetchSites,
   fetchSiteDensity,
@@ -52,6 +53,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -325,20 +327,6 @@ export default function App() {
     showToast(`🎁 Redeemed "${voucher.title}" for ${voucher.cost} Points!`);
   };
 
-  const handleNavbarSOS = async (reason = 'Medical / Crowd Crush') => {
-    try {
-      const activeSite = sites.find((s) => s.id === selectedSiteId);
-      const lat = activeSite?.latitude || 30.7352;
-      const lon = activeSite?.longitude || 79.0669;
-      const uid = currentUser?.user_id || 'pilgrim_demo_user';
-      const res = await triggerSOS(uid, lat, lon);
-      const verifiedTag = currentUser?.is_aadhaar_verified ? ` (Aadhaar Verified: ${currentUser.aadhaar_masked})` : '';
-      showToast(res.message || `🚨 Emergency SOS broadcasted to SDRF & Temple Command Center for ${activeSite?.name || 'your location'}${verifiedTag}.`);
-    } catch (err) {
-      showToast('Emergency SOS dispatched to SDRF & Temple Command.');
-    }
-  };
-
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
 
   return (
@@ -348,8 +336,8 @@ export default function App() {
         walletPoints={wallet?.total_points || 260}
         pendingPoints={pendingPunyaReward}
         onOpenWallet={() => setIsWalletOpen(true)}
-        onOpenSOS={() => handleNavbarSOS('Emergency Alert')}
-        onTriggerSOS={() => handleNavbarSOS('Emergency Alert')}
+        onOpenSOS={() => setIsSOSModalOpen(true)}
+        onTriggerSOS={() => setIsSOSModalOpen(true)}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -406,6 +394,7 @@ export default function App() {
               alerts={alerts}
               safetyInfo={safetyInfo}
               currentSite={selectedSite}
+              onOpenSOS={() => setIsSOSModalOpen(true)}
             />
 
             <LocalVendors
@@ -453,6 +442,20 @@ export default function App() {
           user={currentUser}
           onClose={() => setIsProfileOpen(false)}
           onLogout={handleLogout}
+        />
+      )}
+
+      {/* Shared Emergency Distress SOS Modal */}
+      {isSOSModalOpen && (
+        <SOSModal
+          isOpen={isSOSModalOpen}
+          onClose={() => setIsSOSModalOpen(false)}
+          currentUser={currentUser}
+          currentSite={selectedSite}
+          safetyInfo={safetyInfo}
+          onSOSBroadcasted={(info) => {
+            showToast(`🚨 Distress beacon dispatched for ${info.type}. Emergency network notified.`);
+          }}
         />
       )}
 
