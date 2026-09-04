@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
-import SiteSelector from './components/SiteSelector';
-import LiveCrowdCard from './components/LiveCrowdCard';
-import PilgrimAdvisory from './components/PilgrimAdvisory';
-import SafetyAlerts from './components/SafetyAlerts';
-import LocalVendors from './components/LocalVendors';
-import TeamTracker from './components/TeamTracker';
+import TouristDashboard from './dashboards/TouristDashboard';
+import GovernmentDashboard from './dashboards/GovernmentDashboard';
+import HotelDashboard from './dashboards/HotelDashboard';
+import TravelCompanyDashboard from './dashboards/TravelCompanyDashboard';
 import WalletModal from './components/WalletModal';
 import AuthModal from './components/AuthModal';
 import DigitalYatriCardModal from './components/DigitalYatriCardModal';
@@ -22,7 +20,6 @@ import {
   fetchVendors,
   fetchWallet,
   rewardUser,
-  triggerSOS,
   loadUserSession,
   logoutUser
 } from './api/api';
@@ -42,6 +39,9 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Role Navigation State: 'tourist' | 'government' | 'hotel' | 'travel_company'
+  const [activeRole, setActiveRole] = useState('tourist');
 
   // Pilgrim Advisory Active Route & Pending Reward State
   const [activeAlternateRoute, setActiveAlternateRoute] = useState(null);
@@ -70,6 +70,9 @@ export default function App() {
     const savedUser = loadUserSession();
     if (savedUser) {
       setCurrentUser(savedUser);
+      if (savedUser.role && ['tourist', 'government', 'hotel', 'travel_company'].includes(savedUser.role)) {
+        setActiveRole(savedUser.role);
+      }
     }
 
     async function loadInitialData() {
@@ -150,7 +153,7 @@ export default function App() {
     };
   }, [selectedSiteId]);
 
-  // 2. Load dynamic telemetry (density, forecast, prediction) with live 3-second auto-polling & concurrency guard
+  // 2. Load dynamic telemetry (density, forecast, prediction) with live auto-polling & concurrency guard
   const isPollingRef = useRef(false);
 
   useEffect(() => {
@@ -158,7 +161,6 @@ export default function App() {
     if (!selectedSiteId) return;
 
     async function pollTelemetry() {
-      // Prevent overlapping polling requests / race conditions
       if (isPollingRef.current) return;
       isPollingRef.current = true;
 
@@ -206,12 +208,21 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
+    if (user.role && ['tourist', 'government', 'hotel', 'travel_company'].includes(user.role)) {
+      setActiveRole(user.role);
+    }
     if (user.role === 'tourist') {
       showToast(`🛡️ Welcome ${user.full_name}! Digital Yatri Card generated with Aadhaar verification.`);
       setIsProfileOpen(true);
-    } else {
+    } else if (user.role === 'vendor') {
       showToast(`🏪 Welcome ${user.business_name}! Local Temple Vendor portal active.`);
       setIsProfileOpen(true);
+    } else if (user.role === 'government') {
+      showToast(`🏛️ Welcome ${user.full_name}! National Pilgrimage Command Center authorized.`);
+    } else if (user.role === 'hotel') {
+      showToast(`🏨 Welcome ${user.full_name}! Shrine Hospitality Partner console active.`);
+    } else if (user.role === 'travel_company') {
+      showToast(`🚌 Welcome ${user.full_name}! Fleet Logistics & Tour Planner ready.`);
     }
   };
 
@@ -220,6 +231,38 @@ export default function App() {
     setCurrentUser(null);
     setIsProfileOpen(false);
     showToast('Signed out successfully.');
+  };
+
+  // Immediate synchronization when Government updates crowd telemetry (POST /crowd/update)
+  const handleCrowdUpdated = (siteId, updatedData) => {
+    if (!updatedData) return;
+    setDensityMap((prev) => ({
+      ...prev,
+      [siteId]: updatedData
+    }));
+
+    if (siteId === selectedSiteId) {
+      setCurrentDensity(updatedData);
+      setCurrentForecast((prev) => ({
+        ...(prev || {}),
+        live_status: {
+          people_count: updatedData.people_count,
+          occupancy_percentage: updatedData.occupancy_percentage,
+          status: updatedData.status,
+          last_updated: 'Just now (Govt Command Update)'
+        },
+        queue_forecast: {
+          ...(prev?.queue_forecast || {}),
+          estimated_current_wait_mins: updatedData.wait_time_minutes || (updatedData.occupancy_percentage >= 90 ? 540 : 25)
+        }
+      }));
+      setCurrentAlternatives((prev) => ({
+        ...(prev || {}),
+        current_occupancy_percentage: updatedData.occupancy_percentage,
+        current_status: updatedData.status,
+        redistribution_needed: updatedData.occupancy_percentage >= 50
+      }));
+    }
   };
 
   const handleClaimReward = async (points, reason) => {
@@ -253,7 +296,6 @@ export default function App() {
       return;
     }
 
-    // When switching to another alternative before reaching: cancel previous pending, set fresh +25 pending
     setActiveAlternateRoute(alt);
     setRouteStatus('ACTIVE');
     setPendingPunyaReward(25);
@@ -265,14 +307,12 @@ export default function App() {
     const routeKey = alt?.alternative_id || alt?.name;
     if (!routeKey) return;
 
-    // Guard against duplicate reward submissions
     if (completedRouteIds.includes(routeKey)) {
       console.log(`[YatraSetu] Duplicate reward blocked for ${routeKey}`);
       return;
     }
 
     try {
-      // ONLY now call backend POST /wallet/reward
       await rewardUser('pilgrim_demo_user', 25, `Reached alternate destination: ${alt.name}`);
 
       setCompletedRouteIds((prev) => [...prev, routeKey]);
@@ -299,13 +339,11 @@ export default function App() {
   const handleSwitchBack = () => {
     const siteTitle = selectedSite?.name || 'main shrine';
     if (routeStatus === 'ACTIVE') {
-      // Cancel pending reward; do NOT award points
       setPendingPunyaReward(0);
       setActiveAlternateRoute(null);
       setRouteStatus('IDLE');
       showToast(`Alternate route canceled. Returning to ${siteTitle}. (0 points awarded)`);
     } else if (routeStatus === 'ARRIVED') {
-      // Return to normal destination; do NOT remove already-earned points
       setActiveAlternateRoute(null);
       setRouteStatus('IDLE');
       showToast(`Returned view to ${siteTitle}. Earned Punya Points preserved.`);
@@ -331,16 +369,17 @@ export default function App() {
 
   return (
     <div className="yatrasetu-app app-container">
-      {/* Top Navigation */}
+      {/* Top Navigation with 4 Role Tabs */}
       <Navbar
         walletPoints={wallet?.total_points || 260}
         pendingPoints={pendingPunyaReward}
         onOpenWallet={() => setIsWalletOpen(true)}
         onOpenSOS={() => setIsSOSModalOpen(true)}
-        onTriggerSOS={() => setIsSOSModalOpen(true)}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
+        activeRole={activeRole}
+        onSelectRole={(role) => setActiveRole(role)}
       />
 
       {/* Global Toast Notification */}
@@ -352,56 +391,60 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Dynamic Role-Based Dashboard View */}
       <main className="main-content-container main-content">
-        <SiteSelector
-          sites={sites}
-          selectedSiteId={selectedSiteId}
-          onSelectSite={handleSelectSite}
-          densityMap={densityMap}
-        />
+        {activeRole === 'tourist' && (
+          <TouristDashboard
+            sites={sites}
+            selectedSiteId={selectedSiteId}
+            selectedSite={selectedSite}
+            onSelectSite={handleSelectSite}
+            densityMap={densityMap}
+            currentDensity={currentDensity}
+            currentForecast={currentForecast}
+            currentPrediction={currentPrediction}
+            currentAlternatives={currentAlternatives}
+            safetyInfo={safetyInfo}
+            alerts={alerts}
+            vendors={vendors}
+            activeAlternateRoute={activeAlternateRoute}
+            pendingPunyaReward={pendingPunyaReward}
+            routeStatus={routeStatus}
+            completedRouteIds={completedRouteIds}
+            onSelectRoute={handleSelectRoute}
+            onCompleteArrival={handleCompleteArrival}
+            onSwitchBack={handleSwitchBack}
+            onOpenSOS={() => setIsSOSModalOpen(true)}
+          />
+        )}
 
-        {selectedSite && (
-          <>
-            <LiveCrowdCard
-              site={selectedSite}
-              density={currentDensity}
-              forecast={currentForecast}
-              prediction={currentPrediction}
-            />
+        {activeRole === 'government' && (
+          <GovernmentDashboard
+            sites={sites}
+            densityMap={densityMap}
+            selectedSiteId={selectedSiteId}
+            onSelectSite={handleSelectSite}
+            onCrowdUpdated={handleCrowdUpdated}
+            currentUser={currentUser}
+            showToast={showToast}
+          />
+        )}
 
-            <PilgrimAdvisory
-              currentSite={selectedSite}
-              density={currentDensity}
-              forecast={currentForecast}
-              prediction={currentPrediction}
-              alternativesData={currentAlternatives}
-              activeAlternateRoute={activeAlternateRoute}
-              pendingPunyaReward={pendingPunyaReward}
-              routeStatus={routeStatus}
-              completedRouteIds={completedRouteIds}
-              onSelectRoute={handleSelectRoute}
-              onCompleteArrival={handleCompleteArrival}
-              onSwitchBack={handleSwitchBack}
-            />
+        {activeRole === 'hotel' && (
+          <HotelDashboard
+            currentUser={currentUser}
+            showToast={showToast}
+          />
+        )}
 
-            <TeamTracker
-              currentSite={selectedSite}
-              siteId={selectedSiteId}
-            />
-
-            <SafetyAlerts
-              alerts={alerts}
-              safetyInfo={safetyInfo}
-              currentSite={selectedSite}
-              onOpenSOS={() => setIsSOSModalOpen(true)}
-            />
-
-            <LocalVendors
-              vendors={vendors}
-              siteName={selectedSite.name}
-            />
-          </>
+        {activeRole === 'travel_company' && (
+          <TravelCompanyDashboard
+            sites={sites}
+            densityMap={densityMap}
+            selectedSiteId={selectedSiteId}
+            onSelectSite={handleSelectSite}
+            showToast={showToast}
+          />
         )}
       </main>
 
@@ -416,7 +459,7 @@ export default function App() {
         />
       )}
 
-      {/* Role-Based Authentication & Aadhaar Linking Modal */}
+      {/* Unified Role Authentication & Demo Quick-Login Modal */}
       {isAuthOpen && (
         <AuthModal
           isOpen={isAuthOpen}
@@ -426,10 +469,10 @@ export default function App() {
       )}
 
       {/* Tourist / Pilgrim Digital Yatri Suraksha Card Modal */}
-      {isProfileOpen && currentUser?.role === 'tourist' && (
+      {isProfileOpen && (!currentUser || currentUser?.role === 'tourist') && (
         <DigitalYatriCardModal
           isOpen={isProfileOpen}
-          user={currentUser}
+          user={currentUser || { full_name: 'Saatvik Sharma', role: 'tourist' }}
           onClose={() => setIsProfileOpen(false)}
           onLogout={handleLogout}
         />
@@ -467,7 +510,7 @@ export default function App() {
               <span className="footer-om">ॐ</span> YatraSetu Smart Pilgrimage Platform
             </div>
             <p className="footer-motto">
-              Ensuring Safe, Serene & Sustainable Darshan across India’s sacred shrines through Computer Vision, Queue Telemetry & Gamified Flow Balancing.
+              Ensuring Safe, Serene &amp; Sustainable Darshan across India’s sacred shrines through Computer Vision, Queue Telemetry &amp; Gamified Flow Balancing.
             </p>
           </div>
 
@@ -479,17 +522,17 @@ export default function App() {
               <p>Disaster Helpline: <strong>1070</strong></p>
             </div>
             <div className="link-col">
-              <h4>Smart Features</h4>
-              <p>• Computer Vision Headcount</p>
-              <p>• AI Dynamic Redistribution</p>
-              <p>• Green Pilgrim Punya Wallet</p>
-              <p>• Vocal for Local Bazaar</p>
+              <h4>Active Corridors</h4>
+              <p>• 25 Sacred Shrines (TS001–TS025)</p>
+              <p>• AI CCTV Vision &amp; Telemetry</p>
+              <p>• Punya Green Wallet &amp; Rewards</p>
+              <p>• Multi-Agency Command Center</p>
             </div>
           </div>
         </div>
         <div className="footer-bottom-bar">
-          <span>YatraSetu • Developed for Smart India Hackathon (SIH)</span>
-          <span>FastAPI Backend Connected: <code>127.0.0.1:8000</code></span>
+          <span>YatraSetu • Smart India Hackathon (SIH 2026)</span>
+          <span>FastAPI Backend: <code>127.0.0.1:8000</code> • Role: <strong style={{ textTransform: 'uppercase' }}>{activeRole}</strong></span>
         </div>
       </footer>
     </div>

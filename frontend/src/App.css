@@ -5466,5 +5466,1897 @@
   }
 }
 
+/* ==========================================================================
+   ROLE NAVIGATION TABS IN NAVBAR
+   ========================================================================== */
+.role-navigation-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+}
 
+.role-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
 
+.role-tab-btn:hover {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.role-tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.role-tab-icon {
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .role-navigation-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    overflow-x: auto;
+  }
+  .navbar-container {
+    flex-wrap: wrap;
+  }
+}
+
+/* ==========================================================================
+   GOVERNMENT DASHBOARD STYLES
+   ========================================================================== */
+.gov-dashboard-root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.gov-header-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gov-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gov-badge-icon {
+  font-size: 38px;
+  background: rgba(255, 255, 255, 0.1);
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.gov-top-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.gov-live-indicator {
+  color: #34d399;
+  font-weight: 800;
+  animation: pulse-animation 2s infinite;
+}
+
+.gov-header-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.3px;
+}
+
+.gov-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #cbd5e1;
+  max-width: 650px;
+  line-height: 1.4;
+}
+
+.gov-authority-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 10px 18px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.gov-pill-shield {
+  font-size: 24px;
+}
+
+.gov-pill-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.gov-pill-role {
+  font-size: 10px;
+  font-weight: 700;
+  color: #60a5fa;
+  letter-spacing: 0.5px;
+}
+
+/* KPI GRID */
+.gov-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px;
+}
+
+.gov-kpi-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+}
+
+.gov-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.kpi-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.kpi-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot-normal { background: #10b981; }
+.dot-moderate { background: #f59e0b; }
+.dot-high { background: #f97316; }
+.dot-critical { background: #ef4444; }
+
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: var(--font-mono, monospace);
+  margin-bottom: 4px;
+}
+
+.text-normal { color: #059669; }
+.text-moderate { color: #d97706; }
+.text-high { color: #ea580c; }
+.text-critical { color: #dc2626; }
+.text-sos-alert { color: #dc2626; animation: pulse-animation 1.5s infinite; }
+
+.kpi-subtext {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* 2-COLUMN SECTION: CROWD UPDATE & SOS FEED */
+.gov-two-col-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 960px) {
+  .gov-two-col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gov-card-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.panel-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-icon {
+  font-size: 24px;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.panel-desc {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.active-pill-counter {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid #fca5a5;
+}
+
+/* FORM CONTROLS */
+.gov-update-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-group-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.flex-1 { flex: 1; }
+.form-group.flex-2 { flex: 2; }
+
+.form-group label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.gov-select,
+.gov-input {
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 13.5px;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.gov-select:focus,
+.gov-input:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.demo-preset-box {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.demo-preset-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.demo-preset-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preset-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.preset-btn.surge {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
+.preset-btn.surge:hover {
+  background: #fecaca;
+}
+
+.preset-btn.normal {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.preset-btn.normal:hover {
+  background: #d1fae5;
+}
+
+.gov-submit-btn {
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+  margin-top: 4px;
+}
+
+.gov-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.gov-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* SOS FEED LIST */
+.sos-alerts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.sos-alert-item {
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.sos-alert-item.active-distress {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  border-left: 4px solid #e11d48;
+}
+
+.sos-alert-item.dispatched {
+  background: #f8fafc;
+  border-left: 4px solid #10b981;
+}
+
+.sos-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sos-type-tag {
+  font-size: 12px;
+  font-weight: 800;
+  color: #9f1239;
+}
+
+.sos-status-chip {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.sos-status-chip.active {
+  background: #e11d48;
+  color: #ffffff;
+}
+
+.sos-status-chip.dispatched {
+  background: #059669;
+  color: #ffffff;
+}
+
+.sos-item-body {
+  font-size: 12px;
+  color: #334155;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sos-location-info .coords {
+  color: #64748b;
+  font-family: monospace;
+  margin-left: 6px;
+}
+
+.sos-time-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+.sos-dispatch-btn {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 6px 12px;
+  background: #e11d48;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sos-dispatch-btn:hover {
+  background: #be123c;
+}
+
+.sos-empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* SURVEILLANCE TABLE */
+.monitoring-table-panel {
+  overflow: hidden;
+}
+
+.table-header-flex {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.table-search-input {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 12.5px;
+  outline: none;
+  min-width: 180px;
+}
+
+.table-filter-select {
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 12.5px;
+  background: #ffffff;
+  outline: none;
+}
+
+.status-filter-pills {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.filter-pill {
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.filter-pill.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.gov-telemetry-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.gov-telemetry-table th {
+  padding: 10px 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.gov-telemetry-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.gov-telemetry-table tr:hover {
+  background: #f8fafc;
+}
+
+.gov-telemetry-table tr.row-selected {
+  background: #eff6ff;
+}
+
+.shrine-city-sub {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: normal;
+}
+
+.table-occupancy-bar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 110px;
+}
+
+.table-bar-bg {
+  flex: 1;
+  height: 7px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.table-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.table-bar-fill.normal { background: #10b981; }
+.table-bar-fill.moderate { background: #f59e0b; }
+.table-bar-fill.high { background: #f97316; }
+.table-bar-fill.critical { background: #ef4444; }
+
+.table-bar-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  min-width: 32px;
+  text-align: right;
+  font-family: monospace;
+}
+
+.gov-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.gov-status-badge.normal { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.gov-status-badge.moderate { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+.gov-status-badge.high { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+.gov-status-badge.critical { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+.table-action-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.table-action-btn:hover {
+  background: #1e293b;
+  color: #ffffff;
+  border-color: #1e293b;
+}
+
+/* HOSPITALITY REPORT */
+.hospitality-report-panel {
+  border-left: 4px solid #f59e0b;
+}
+
+.hospitality-occupancy-pill {
+  background: #fffbeb;
+  color: #92400e;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #fde68a;
+}
+
+.hotel-report-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.report-stat-item {
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.report-stat-item .stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.report-stat-item .stat-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.hotels-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.hotel-mini-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.hotel-mini-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.hotel-mini-card .hotel-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.hotel-verified-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.hotel-addr {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0 0 8px;
+}
+
+.hotel-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.hotel-occ-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.hotel-occ-tag.normal { background: #ecfdf5; color: #047857; }
+.hotel-occ-tag.high { background: #fef2f2; color: #b91c1c; }
+
+/* INSPECT MODAL */
+.gov-inspect-modal {
+  max-width: 500px;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.inspect-body-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.inspect-stat-box {
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inspect-stat-box .lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.inspect-stat-box .val {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.inspect-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inspect-primary-btn {
+  padding: 10px 18px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   HOTEL DASHBOARD STYLES
+   ========================================================================== */
+.hotel-dashboard-root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.hotel-header-banner {
+  background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(120, 53, 15, 0.2);
+}
+
+.hotel-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hotel-badge-icon {
+  font-size: 38px;
+  background: rgba(255, 255, 255, 0.15);
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hotel-top-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fde68a;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+
+.hotel-header-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fffbeb;
+}
+
+.hotel-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #fef3c7;
+}
+
+.hotel-profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.hotel-pill-icon {
+  font-size: 24px;
+}
+
+.hotel-pill-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.hotel-pill-role {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fde68a;
+}
+
+.hotel-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.hotel-kpi-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.hotel-kpi-card.occupancy-gauge {
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+  border-color: #fde68a;
+}
+
+.gauge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+.occ-status-tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.occ-status-tag.good { background: #ecfdf5; color: #047857; }
+.occ-status-tag.full { background: #fef2f2; color: #b91c1c; }
+
+.hotel-occupancy-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.hotel-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.hotel-bar-fill.fill-green { background: #10b981; }
+.hotel-bar-fill.fill-yellow { background: #f59e0b; }
+.hotel-bar-fill.fill-red { background: #ef4444; }
+
+.overbooking-alert-banner {
+  background: #fee2e2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #991b1b;
+  font-size: 13.5px;
+}
+
+.shelter-mode-banner {
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shelter-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.shelter-icon {
+  font-size: 32px;
+}
+
+.shelter-toggle-btn {
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid #2563eb;
+  background: #ffffff;
+  color: #2563eb;
+  transition: all 0.2s;
+}
+
+.shelter-toggle-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.hotel-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.room-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.room-tier-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.room-tier-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.room-tier-card.room-full {
+  opacity: 0.85;
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.room-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.room-type-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.room-avail-pill {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.room-avail-pill.pill-avail { background: #ecfdf5; color: #047857; }
+.room-avail-pill.pill-full { background: #fee2e2; color: #b91c1c; }
+
+.room-price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.room-price-box .currency {
+  font-size: 16px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.room-price-box .amount {
+  font-size: 24px;
+  font-weight: 800;
+  color: #78350f;
+}
+
+.room-price-box .unit {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.room-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: #ffffff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.room-metrics .metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-metrics .m-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.room-metrics .m-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.edit-room-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.edit-room-btn:hover {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+/* BOOKINGS TABLE */
+.bookings-header-flex {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.booking-filter-pills {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.b-filter-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+}
+
+.b-filter-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.hotel-bookings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.hotel-bookings-table th {
+  padding: 10px 14px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.hotel-bookings-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.yatri-card-sub {
+  display: block;
+  font-size: 10.5px;
+  color: #059669;
+  font-weight: 600;
+}
+
+.booking-status-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.booking-status-badge.confirmed {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.booking-status-badge.checked-in {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.checkin-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.checked-in-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.hotel-edit-modal {
+  max-width: 440px;
+  padding: 24px;
+}
+
+/* ==========================================================================
+   TRAVEL COMPANY DASHBOARD STYLES
+   ========================================================================== */
+.travel-dashboard-root {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+.travel-header-banner {
+  background: linear-gradient(135deg, #581c87 0%, #6b21a8 100%);
+  border-radius: 16px;
+  padding: 24px 28px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(88, 28, 135, 0.2);
+}
+
+.travel-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.travel-badge-icon {
+  font-size: 38px;
+  background: rgba(255, 255, 255, 0.15);
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.travel-top-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #e9d5ff;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+
+.travel-partner-tag {
+  color: #fef08a;
+}
+
+.travel-header-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #faf5ff;
+}
+
+.travel-header-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #f3e8ff;
+}
+
+.travel-fleet-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 18px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.travel-pill-icon {
+  font-size: 24px;
+}
+
+.travel-pill-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.travel-pill-role {
+  font-size: 10px;
+  font-weight: 700;
+  color: #e9d5ff;
+}
+
+.travel-tab-bar {
+  display: flex;
+  gap: 8px;
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+}
+
+.travel-tab-btn {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.travel-tab-btn.active {
+  background: #6b21a8;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(107, 33, 168, 0.25);
+}
+
+/* CIRCUITS SECTION */
+.circuits-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.circuit-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.circuit-card {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.circuit-card:hover {
+  transform: translateY(-2px);
+  border-color: #a855f7;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.1);
+}
+
+.circuit-card.selected {
+  border-color: #6b21a8;
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+  box-shadow: 0 4px 14px rgba(107, 33, 168, 0.12);
+}
+
+.circuit-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.circuit-duration {
+  font-size: 11px;
+  font-weight: 800;
+  background: #f3e8ff;
+  color: #6b21a8;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.circuit-region-tag {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.circuit-name {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.circuit-desc {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.4;
+  flex: 1;
+}
+
+.circuit-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+}
+
+.circuit-select-action {
+  color: #6b21a8;
+}
+
+.active-circuit-detail-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.detail-header-flex {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.export-package-btn {
+  padding: 10px 18px;
+  background: #0f172a;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-package-btn:hover {
+  background: #334155;
+}
+
+.circuit-metrics-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 18px 0 22px;
+}
+
+.metric-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metric-box.highlighted {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.m-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.m-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.m-val.text-warning { color: #d97706; }
+.m-val.text-success { color: #059669; }
+.m-val.text-highlight { color: #7c3aed; }
+
+.m-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: #334155;
+  margin: 0 0 12px;
+}
+
+.circuit-sites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.circuit-site-card {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+.circuit-site-card.critical {
+  border-color: #fca5a5;
+  background: #fff5f5;
+}
+
+.site-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.site-card-top .site-name {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.site-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.site-wait-box {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.site-wait-box .w-val {
+  color: #d97706;
+}
+
+.recommended-slot {
+  font-size: 10.5px;
+  color: #047857;
+  background: #ecfdf5;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.sister-shrines-box {
+  background: #fdf4ff;
+  border: 1.5px solid #f0abfc;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.sister-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sister-icon {
+  font-size: 26px;
+}
+
+.sister-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.sister-card {
+  background: #ffffff;
+  border: 1px solid #e9d5ff;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sister-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #581c87;
+}
+
+.sister-stats {
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  color: #475569;
+  gap: 2px;
+}
+
+.sister-advantage {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #059669;
+  background: #f0fdf4;
+  padding: 3px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+/* OPTIMIZER SECTION */
+.optimizer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.optimizer-intro-card {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.intro-icon {
+  font-size: 34px;
+}
+
+.comparison-table-wrapper {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow-x: auto;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.comparison-table th {
+  padding: 12px 16px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 800;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.comparison-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.primary-congested-row {
+  background: #fff5f5;
+}
+
+.badge-primary {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.badge-sister {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #059669;
+  margin-top: 2px;
+}
+
+.efficiency-bar {
+  width: 80px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.efficiency-bar .bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.efficiency-bar.red .bar-fill { background: #ef4444; }
+.efficiency-bar.green .bar-fill { background: #10b981; }
+
+.eff-text {
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.action-warning {
+  color: #b91c1c;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.action-good {
+  color: #047857;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+/* MATRIX SECTION */
+.matrix-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.fleet-matrix-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.fleet-matrix-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.matrix-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.matrix-id {
+  font-size: 10px;
+  font-weight: 800;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.matrix-name {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.matrix-loc {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.matrix-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.matrix-stats-row .stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.matrix-stats-row .s-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.matrix-stats-row .s-val {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  font-family: monospace;
+}
+
+.matrix-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.road-cond {
+  font-size: 10.5px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.matrix-select-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.matrix-select-btn:hover {
+  background: #0f172a;
+  color: #ffffff;
+}

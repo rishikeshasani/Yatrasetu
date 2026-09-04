@@ -1,0 +1,983 @@
+/* HotelDashboard.css - High-Fidelity Styling for YatraSetu Hotel Partner Portal */
+
+.hotel-portal-wrapper {
+  background-color: #0f172a;
+  color: #f8fafc;
+  min-height: 100%;
+  border-radius: 20px;
+  padding: 0 0 32px 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid #1e293b;
+}
+
+/* Animations */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+  70% { box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+.ring-attention {
+  animation: pulse-ring 1.8s infinite;
+}
+
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 1; }
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* 1. Header & Top Bar */
+.hotel-portal-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #1e293b;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+}
+
+.hotel-portal-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.hotel-brand-box {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.hotel-icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.25);
+  font-size: 24px;
+}
+
+.hotel-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.hotel-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hotel-brand-name {
+  font-size: 20px;
+  font-weight: 900;
+  background: linear-gradient(to right, #fbbf24, #f59e0b, #fef08a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.hotel-partner-pill {
+  font-size: 10.5px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.hotel-property-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.hotel-property-sub strong {
+  color: #e2e8f0;
+}
+
+.hotel-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #34d399;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.hotel-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hotel-verified-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hotel-reset-btn {
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hotel-reset-btn:hover {
+  background: #334155;
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+/* 2. Toast Alert Banners */
+.hotel-toast-container {
+  max-width: 1280px;
+  margin: 16px auto 0;
+  padding: 0 24px;
+}
+
+.hotel-fraud-banner {
+  background: rgba(69, 10, 10, 0.95);
+  border: 1px solid #f43f5e;
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(69, 10, 10, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.fraud-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(136, 19, 55, 0.8);
+  border: 1px solid #be123c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.fraud-text-box h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fecdd3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fraud-cooldown-badge {
+  font-size: 10px;
+  background: #881337;
+  color: #fda4af;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.fraud-text-box p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #fda4af;
+}
+
+.toast-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: #fda4af;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: auto;
+}
+
+.hotel-success-banner {
+  background: rgba(6, 78, 59, 0.9);
+  border: 1px solid #10b981;
+  border-radius: 16px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 8px 24px rgba(6, 78, 59, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.success-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.success-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.success-text-box h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #a7f3d0;
+}
+
+.success-text-box p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #6ee7b7;
+}
+
+/* 3. Main Dashboard Layout */
+.hotel-main-body {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* HERO SECTION */
+.hotel-hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #451a03 0%, #0f172a 60%, #1e293b 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 28px 32px;
+  box-shadow: 0 12px 32px rgba(69, 26, 3, 0.4);
+}
+
+.hotel-hero-glow {
+  position: absolute;
+  right: -60px;
+  bottom: -60px;
+  width: 260px;
+  height: 260px;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+
+.hotel-hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 700px;
+}
+
+.hero-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.demand-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  transition: all 0.3s;
+}
+
+.demand-badge.normal {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.demand-badge.surge {
+  background: rgba(225, 29, 72, 0.2);
+  color: #fda4af;
+  border: 1px solid rgba(225, 29, 72, 0.5);
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.4);
+}
+
+.hub-location-tag {
+  font-size: 11.5px;
+  color: #94a3b8;
+  background: rgba(30, 41, 59, 0.8);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+}
+
+.hero-metrics-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}
+
+.hero-metrics-title .counter-highlight {
+  color: #fbbf24;
+  font-weight: 900;
+}
+
+.hero-eta-sub {
+  font-size: 18px;
+  font-weight: normal;
+  color: #94a3b8;
+  margin-left: 8px;
+}
+
+.hero-eta-sub strong {
+  color: #f1f5f9;
+}
+
+.hero-desc-p {
+  margin: 0;
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.hero-right-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 250px;
+}
+
+.simulate-reroute-btn {
+  padding: 14px 22px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s;
+}
+
+.simulate-reroute-btn.default {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+}
+
+.simulate-reroute-btn.default:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(245, 158, 11, 0.4);
+}
+
+.simulate-reroute-btn.surge-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1.5px solid rgba(16, 185, 129, 0.5);
+  cursor: default;
+}
+
+.simulate-subtext {
+  font-size: 11px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* 4. KPI Cards Grid */
+.hotel-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.hotel-kpi-item {
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 18px;
+  padding: 16px;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+}
+
+.hotel-kpi-item:hover {
+  border-color: #64748b;
+  transform: translateY(-2px);
+}
+
+.kpi-title-row {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-main-metric {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.metric-accent {
+  color: #fbbf24;
+}
+
+.metric-denom {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.kpi-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #090d16;
+  border-radius: 999px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.kpi-progress-fill {
+  height: 100%;
+  background: #f59e0b;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.kpi-footer-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+/* 5. Rule-Based Surge Pricing Bar */
+.pricing-control-strip {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  border-radius: 18px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pricing-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pricing-icon {
+  font-size: 26px;
+}
+
+.pricing-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.sih-layer-tag {
+  font-size: 10px;
+  font-family: monospace;
+  background: #334155;
+  color: #cbd5e1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid #475569;
+}
+
+.pricing-detail-row {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.pricing-detail-row strong {
+  color: #ffffff;
+}
+
+.pricing-surge-pill {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  margin-left: 8px;
+}
+
+.pricing-tooltip-row {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.apply-rate-btn {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.apply-rate-btn.default {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.apply-rate-btn.default:hover {
+  background: #475569;
+}
+
+.apply-rate-btn.surge-recommend {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+/* 6. Guest Check-In Terminal */
+.hotel-terminal-panel {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid #334155;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.terminal-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #334155;
+  flex-wrap: wrap;
+}
+
+.terminal-title-group h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-title-group p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.terminal-station-tag {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.terminal-station-tag strong {
+  color: #fbbf24;
+}
+
+.terminal-columns-grid {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 28px;
+  margin-top: 24px;
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .terminal-columns-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* QR Container */
+.qr-display-box {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.qr-badge-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.qr-canvas-holder {
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 4px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  min-width: 196px;
+  min-height: 196px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-payload-text {
+  font-size: 12px;
+  color: #94a3b8;
+  font-family: monospace;
+  margin-top: 14px;
+}
+
+.qr-payload-text strong {
+  color: #fbbf24;
+}
+
+.qr-instruction-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Pilgrim Details & Controls */
+.pilgrim-terminal-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pilgrim-card-frame {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #334155;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.pilgrim-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.booking-ref-tag {
+  font-size: 10px;
+  font-family: monospace;
+  background: #1e293b;
+  color: #fbbf24;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  text-transform: uppercase;
+}
+
+.pilgrim-name-row {
+  margin: 8px 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.pilgrim-party-sub {
+  font-size: 12px;
+  font-weight: normal;
+  color: #94a3b8;
+  margin-left: 6px;
+}
+
+.pilgrim-room-meta {
+  font-size: 12.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pilgrim-status-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pilgrim-status-pill.pending {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.pilgrim-status-pill.checked-in {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.pilgrim-status-pill.checked-out {
+  background: rgba(168, 85, 247, 0.2);
+  color: #e9d5ff;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.pilgrim-card-bottom {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #94a3b8;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Action Buttons */
+.checkin-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .checkin-action-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.terminal-action-btn {
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.terminal-action-btn.checkin-btn {
+  background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+.terminal-action-btn.checkin-btn:hover {
+  background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+  transform: translateY(-1px);
+}
+
+.terminal-action-btn.checkout-btn {
+  background: #1e293b;
+  color: #64748b;
+  border: 1px solid #334155;
+  cursor: not-allowed;
+}
+
+.terminal-action-btn.checkout-btn.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #eab308 100%);
+  color: #0f172a;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  cursor: pointer;
+}
+
+.terminal-action-btn.checkout-btn.active:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #facc15 100%);
+  transform: translateY(-1px);
+}
+
+.btn-sub-caption {
+  font-size: 10px;
+  font-weight: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 3px;
+  opacity: 0.9;
+}
+
+.terminal-demo-hint {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  border: 1px solid #1e293b;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terminal-demo-hint strong {
+  color: #cbd5e1;
+}
+
+/* 7. Live Supabase Bookings Table (Extra Bridge) */
+.hotel-supabase-bookings-box {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid #334155;
+  border-radius: 20px;
+  padding: 22px;
+}
+
+.supabase-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.supabase-box-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.supabase-table-wrap {
+  overflow-x: auto;
+}
+
+.hotel-portal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.hotel-portal-table th {
+  padding: 10px 14px;
+  background: #1e293b;
+  color: #94a3b8;
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid #334155;
+}
+
+.hotel-portal-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #1e293b;
+  color: #cbd5e1;
+}
+
+.hotel-portal-table tr:hover {
+  background: rgba(30, 41, 59, 0.9);
+}
+
+.booking-load-qr-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #fbbf24;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.booking-load-qr-btn:hover {
+  background: #fbbf24;
+  color: #0f172a;
+}

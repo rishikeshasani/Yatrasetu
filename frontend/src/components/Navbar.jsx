@@ -1,9 +1,36 @@
-export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, onOpenSOS, currentUser, onOpenAuth, onOpenProfile }) {
+import React from 'react';
+
+export default function Navbar({
+  walletPoints,
+  pendingPoints = 0,
+  onOpenWallet,
+  onOpenSOS,
+  currentUser,
+  onOpenAuth,
+  onOpenProfile,
+  activeRole = 'tourist',
+  onSelectRole
+}) {
+  const getRoleDisplayName = (role) => {
+    switch (role) {
+      case 'government':
+        return 'Government';
+      case 'hotel':
+        return 'Hotel Partner';
+      case 'travel_company':
+        return 'Travel Company';
+      case 'vendor':
+        return 'Local Vendor';
+      default:
+        return 'Tourist';
+    }
+  };
+
   return (
     <header className="navbar-header">
       <div className="navbar-container">
         {/* Brand Logo & Title */}
-        <div className="brand-wrapper">
+        <div className="brand-wrapper" onClick={() => onSelectRole && onSelectRole('tourist')} style={{ cursor: 'pointer' }}>
           <div className="brand-icon-box">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L15 8H9L12 2Z" fill="#F97316" />
@@ -17,20 +44,57 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
             <div className="brand-name">
               YatraSetu <span className="devanagari">यात्रासेतु</span>
             </div>
-            <div className="brand-tagline">Smart Pilgrimage & Crowd Governance</div>
+            <div className="brand-tagline">Smart Pilgrimage &amp; Crowd Governance</div>
           </div>
         </div>
 
-        {/* Live Monitoring Badge */}
-        <div className="live-status-pill desktop-only">
-          <span className="pulse-dot"></span>
-          <span className="live-status-label">AI CCTV & Telemetry Active</span>
-        </div>
+        {/* Center: 4 Role Navigation Tabs */}
+        <nav className="role-navigation-tabs">
+          <button
+            type="button"
+            className={`role-tab-btn ${activeRole === 'tourist' ? 'active' : ''}`}
+            onClick={() => onSelectRole && onSelectRole('tourist')}
+            title="Devotee & Pilgrim Dashboard"
+          >
+            <span className="role-tab-icon">🧳</span>
+            <span className="role-tab-label">Tourist</span>
+          </button>
 
-        {/* Action Controls: Yatra Dal, Wallet & SOS */}
+          <button
+            type="button"
+            className={`role-tab-btn ${activeRole === 'government' ? 'active' : ''}`}
+            onClick={() => onSelectRole && onSelectRole('government')}
+            title="DM & Command Center Dashboard"
+          >
+            <span className="role-tab-icon">🏛️</span>
+            <span className="role-tab-label">Government</span>
+          </button>
+
+          <button
+            type="button"
+            className={`role-tab-btn ${activeRole === 'hotel' ? 'active' : ''}`}
+            onClick={() => onSelectRole && onSelectRole('hotel')}
+            title="Shrine Lodging & Hospitality Partner"
+          >
+            <span className="role-tab-icon">🏨</span>
+            <span className="role-tab-label">Hotel Partner</span>
+          </button>
+
+          <button
+            type="button"
+            className={`role-tab-btn ${activeRole === 'travel_company' ? 'active' : ''}`}
+            onClick={() => onSelectRole && onSelectRole('travel_company')}
+            title="Tour Operator & Fleet Route Planner"
+          >
+            <span className="role-tab-icon">🚌</span>
+            <span className="role-tab-label">Travel Company</span>
+          </button>
+        </nav>
+
+        {/* Action Controls: User Profile, Yatra Dal, Wallet & SOS */}
         <div className="navbar-actions">
           {/* User Profile / Auth Button */}
-          {currentUser && currentUser.role === 'tourist' ? (
+          {currentUser ? (
             <button
               type="button"
               className="auth-profile-pill"
@@ -39,44 +103,78 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
-                backgroundColor: '#ECFDF5',
-                border: '1px solid #10B981',
-                padding: '0.4rem 0.75rem',
+                backgroundColor:
+                  currentUser.role === 'government'
+                    ? '#EFF6FF'
+                    : currentUser.role === 'hotel'
+                    ? '#FEF3C7'
+                    : currentUser.role === 'travel_company'
+                    ? '#F3E8FF'
+                    : '#ECFDF5',
+                border: `1px solid ${
+                  currentUser.role === 'government'
+                    ? '#3B82F6'
+                    : currentUser.role === 'hotel'
+                    ? '#F59E0B'
+                    : currentUser.role === 'travel_company'
+                    ? '#A855F7'
+                    : '#10B981'
+                }`,
+                padding: '0.35rem 0.75rem',
                 borderRadius: '999px',
-                color: '#065F46',
+                color:
+                  currentUser.role === 'government'
+                    ? '#1E40AF'
+                    : currentUser.role === 'hotel'
+                    ? '#92400E'
+                    : currentUser.role === 'travel_company'
+                    ? '#6B21A8'
+                    : '#065F46',
                 fontWeight: '700',
-                fontSize: '0.8rem',
+                fontSize: '0.78rem',
                 cursor: 'pointer'
               }}
-              title="View Digital Yatri Suraksha Card"
+              title={`Logged in as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role)})`}
             >
-              <span>🛡️</span>
-              <span>{currentUser.full_name?.split(' ')[0] || 'Pilgrim'}</span>
-              <span style={{ fontSize: '0.65rem', backgroundColor: '#059669', color: '#FFF', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>VERIFIED</span>
-            </button>
-          ) : currentUser && currentUser.role === 'vendor' ? (
-            <button
-              type="button"
-              className="auth-profile-pill"
-              onClick={onOpenProfile}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backgroundColor: '#FFFBEB',
-                border: '1px solid #F59E0B',
-                padding: '0.4rem 0.75rem',
-                borderRadius: '999px',
-                color: '#92400E',
-                fontWeight: '700',
-                fontSize: '0.8rem',
-                cursor: 'pointer'
-              }}
-              title="Open Vendor Dashboard"
-            >
-              <span>🏪</span>
-              <span>{currentUser.business_name?.slice(0, 14) || 'Vendor'}</span>
-              <span style={{ fontSize: '0.65rem', backgroundColor: '#D97706', color: '#FFF', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>PARTNER</span>
+              <span>
+                {currentUser.role === 'government'
+                  ? '🏛️'
+                  : currentUser.role === 'hotel'
+                  ? '🏨'
+                  : currentUser.role === 'travel_company'
+                  ? '🚌'
+                  : currentUser.role === 'vendor'
+                  ? '🏪'
+                  : '🛡️'}
+              </span>
+              <span>{currentUser.full_name?.split(' ')[0] || 'User'}</span>
+              <span
+                style={{
+                  fontSize: '0.62rem',
+                  backgroundColor:
+                    currentUser.role === 'government'
+                      ? '#1D4ED8'
+                      : currentUser.role === 'hotel'
+                      ? '#D97706'
+                      : currentUser.role === 'travel_company'
+                      ? '#7E22CE'
+                      : '#059669',
+                  color: '#FFF',
+                  padding: '0.1rem 0.35rem',
+                  borderRadius: '4px',
+                  fontWeight: '800'
+                }}
+              >
+                {currentUser.role === 'government'
+                  ? 'GOVT'
+                  : currentUser.role === 'hotel'
+                  ? 'HOTEL'
+                  : currentUser.role === 'travel_company'
+                  ? 'TOUR'
+                  : currentUser.role === 'vendor'
+                  ? 'VENDOR'
+                  : 'VERIFIED'}
+              </span>
             </button>
           ) : (
             <button
@@ -97,18 +195,28 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
               }}
+              title="Sign In or Access 1-Click Demo Accounts"
             >
               <span>🪪</span>
-              <span>Sign In / Link Aadhaar</span>
+              <span>Sign In / Demo</span>
             </button>
           )}
 
-          <button 
-            type="button" 
+          {/* Yatra Dal (visible in tourist dashboard or on desktop) */}
+          <button
+            type="button"
             className="team-nav-btn desktop-only"
             onClick={() => {
-              const el = document.querySelector('.team-tracker-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              if (activeRole !== 'tourist') {
+                onSelectRole && onSelectRole('tourist');
+                setTimeout(() => {
+                  const el = document.querySelector('.team-tracker-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              } else {
+                const el = document.querySelector('.team-tracker-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }
             }}
             title="Track Yatra Dal & Group Members"
           >
@@ -117,9 +225,10 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
             <span className="team-count-chip">5 Linked</span>
           </button>
 
-          <button 
-            type="button" 
-            className="wallet-badge-btn" 
+          {/* Green Pilgrim Wallet */}
+          <button
+            type="button"
+            className="wallet-badge-btn"
             onClick={onOpenWallet}
             title="Open Green Pilgrim Wallet"
           >
@@ -135,9 +244,10 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
             )}
           </button>
 
-          <button 
-            type="button" 
-            className="sos-nav-btn" 
+          {/* SOS Emergency Distress Beacon */}
+          <button
+            type="button"
+            className="sos-nav-btn"
             onClick={onOpenSOS}
             title="Instant 1-Click SOS Emergency"
           >

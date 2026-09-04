@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 26.8.0.3 (Linux)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="00:00:00"/>
+	<style type="text/css">
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		p { margin-bottom: 0.1in; line-height: 115%; background: transparent }
+		pre { font-size: 10pt; font-family: "Liberation Mono", monospace; background: transparent }
+	</style>
+</head>
+<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre>&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot; /&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; /&gt;
+  &lt;title&gt;YatraSetu — Hotel Partner Portal (SIH Grand Demo)&lt;/title&gt;
+
+  &lt;!-- Tailwind CSS CDN --&gt;
+  &lt;script src=&quot;https://cdn.tailwindcss.com&quot;&gt;&lt;/script&gt;
+
+  &lt;!-- Requirement 1: Lightweight QR Code Generator CDN --&gt;
+  &lt;script src=&quot;https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js&quot;&gt;&lt;/script&gt;
+
+  &lt;!-- Google Fonts: Plus Jakarta Sans --&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+  &lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+  &lt;link href=&quot;https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+
+  &lt;script&gt;
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['&quot;Plus Jakarta Sans&quot;', 'sans-serif'],
+          },
+          colors: {
+            saffron: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            }
+          }
+        }
+      }
+    }
+  &lt;/script&gt;
+
+  &lt;style&gt;
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { box-shadow: 0 0 0 14px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    .ring-attention {
+      animation: pulse-ring 1.8s infinite;
+    }
+    /* Dynamic QR code container alignment */
+    #qrcode canvas, #qrcode img {
+      margin: 0 auto;
+      border-radius: 8px;
+    }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body class=&quot;bg-slate-900 text-slate-100 min-h-screen font-sans antialiased selection:bg-saffron-500 selection:text-white&quot;&gt;
+
+  &lt;!-- ========================================================= --&gt;
+  &lt;!-- 1. HEADER &amp; TOP NAVIGATION BAR                            --&gt;
+  &lt;!-- ========================================================= --&gt;
+  &lt;header class=&quot;sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800&quot;&gt;
+    &lt;div class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between&quot;&gt;
+      
+      &lt;!-- Brand &amp; Property Location Info --&gt;
+      &lt;div class=&quot;flex items-center space-x-4&quot;&gt;
+        &lt;div class=&quot;w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-600 to-saffron-400 flex items-center justify-center shadow-lg shadow-saffron-500/20 text-white font-bold text-2xl&quot;&gt;
+          🕉️
+        &lt;/div&gt;
+        &lt;div&gt;
+          &lt;div class=&quot;flex items-center space-x-2&quot;&gt;
+            &lt;span class=&quot;text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-saffron-300 to-yellow-200 bg-clip-text text-transparent&quot;&gt;YatraSetu&lt;/span&gt;
+            &lt;span class=&quot;text-xs bg-saffron-500/20 text-saffron-300 border border-saffron-500/30 px-2 py-0.5 rounded-full font-semibold&quot;&gt;HOTEL PARTNER&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;p class=&quot;text-xs text-slate-400 flex items-center mt-0.5&quot;&gt;
+            &lt;span class=&quot;w-2 h-2 rounded-full bg-emerald-400 inline-block mr-1.5 animate-ping&quot;&gt;&lt;/span&gt;
+            &lt;strong class=&quot;text-slate-200&quot;&gt;Hotel Ganga Heritage&lt;/strong&gt; &amp;nbsp;• Kashi Corridor (Zone B-2)
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- Controls: Verification &amp; Master Reset --&gt;
+      &lt;div class=&quot;flex items-center space-x-3 sm:space-x-4&quot;&gt;
+        &lt;div class=&quot;hidden sm:flex items-center space-x-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold&quot;&gt;
+          &lt;svg class=&quot;w-4 h-4&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;&gt;&lt;path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z&quot;&gt;&lt;/path&gt;&lt;/svg&gt;
+          &lt;span&gt;Verified Partner&lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;!-- Discreet Demo Reset Button --&gt;
+        &lt;button onclick=&quot;resetFullDemoState()&quot; title=&quot;Reset all demo states back to baseline&quot; class=&quot;px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-750 hover:border-amber-500/50 text-slate-300 hover:text-amber-400 text-xs font-semibold transition flex items-center space-x-1.5 shadow-sm active:scale-95 cursor-pointer&quot;&gt;
+          &lt;svg class=&quot;w-3.5 h-3.5&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; viewBox=&quot;0 0 24 24&quot;&gt;&lt;path stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; stroke-width=&quot;2&quot; d=&quot;M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15&quot;&gt;&lt;/path&gt;&lt;/svg&gt;
+          &lt;span&gt;🔄 Reset Demo&lt;/span&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/header&gt;
+
+  &lt;!-- ========================================================= --&gt;
+  &lt;!-- TOAST ALERTS: FRAUD BANNER &amp; SUCCESS BANNER               --&gt;
+  &lt;!-- ========================================================= --&gt;
+  
+  &lt;!-- Requirement 2: Upgraded Cooldown Fraud Alert Banner --&gt;
+  &lt;div id=&quot;fraudAlertBanner&quot; class=&quot;hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 transition-all duration-300&quot;&gt;
+    &lt;div class=&quot;bg-rose-950/95 border border-rose-500/80 rounded-2xl p-4 flex items-start space-x-3 shadow-2xl shadow-rose-950/60 backdrop-blur-md&quot;&gt;
+      &lt;div class=&quot;w-10 h-10 rounded-xl bg-rose-900/80 border border-rose-700 flex-shrink-0 flex items-center justify-center text-rose-300 text-xl font-bold&quot;&gt;
+        ⚠️
+      &lt;/div&gt;
+      &lt;div class=&quot;flex-1&quot;&gt;
+        &lt;h4 class=&quot;text-sm font-bold text-rose-200 flex items-center space-x-2&quot;&gt;
+          &lt;span&gt;Security Alert: Duplicate Check-In Blocked&lt;/span&gt;
+          &lt;span class=&quot;text-[10px] uppercase bg-rose-900 text-rose-300 px-2 py-0.5 rounded font-mono&quot;&gt;60s Cooldown Active&lt;/span&gt;
+        &lt;/h4&gt;
+        &lt;p class=&quot;text-xs text-rose-300/90 mt-1&quot; id=&quot;fraudMessageText&quot;&gt;
+          ⚠️ Fraud Rule: Duplicate scan detected within cooldown window.
+        &lt;/p&gt;
+      &lt;/div&gt;
+      &lt;button onclick=&quot;dismissFraudAlert()&quot; class=&quot;text-rose-400 hover:text-white text-lg font-bold px-2 py-1 cursor-pointer&quot;&gt;✕&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- Success Checkout Banner --&gt;
+  &lt;div id=&quot;successCheckoutBanner&quot; class=&quot;hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 transition-all duration-300&quot;&gt;
+    &lt;div class=&quot;bg-emerald-950/90 border border-emerald-500/70 rounded-2xl p-4 flex items-center justify-between shadow-2xl shadow-emerald-950/60 backdrop-blur-md&quot;&gt;
+      &lt;div class=&quot;flex items-center space-x-3&quot;&gt;
+        &lt;div class=&quot;w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 text-xl font-bold&quot;&gt;
+          🎉
+        &lt;/div&gt;
+        &lt;div&gt;
+          &lt;h4 class=&quot;text-sm font-bold text-emerald-200&quot;&gt;
+            Stay Completed &amp; Verified!
+          &lt;/h4&gt;
+          &lt;p class=&quot;text-xs text-emerald-300/90 mt-0.5&quot;&gt;
+            +50 Punya Points awarded to Pilgrim Wallet! Hotel Tax Credit increased to ₹750.
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button onclick=&quot;dismissSuccessBanner()&quot; class=&quot;text-emerald-400 hover:text-white text-lg font-bold px-3 py-1 cursor-pointer&quot;&gt;✕&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;!-- ========================================================= --&gt;
+  &lt;!-- MAIN DASHBOARD CONTENT                                    --&gt;
+  &lt;!-- ========================================================= --&gt;
+  &lt;main class=&quot;max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6&quot;&gt;
+
+    &lt;!-- HERO SECTION: INCOMING REROUTED DEMAND &amp; SIMULATE BUTTON --&gt;
+    &lt;div class=&quot;relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-950 via-slate-900 to-slate-900 border border-amber-500/40 p-6 sm:p-8 shadow-2xl shadow-amber-950/50&quot;&gt;
+      
+      &lt;!-- Ambient Glow Graphics --&gt;
+      &lt;div class=&quot;absolute -right-16 -bottom-16 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none&quot;&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6&quot;&gt;
+        &lt;div class=&quot;space-y-3&quot;&gt;
+          
+          &lt;div class=&quot;flex flex-wrap items-center gap-2&quot;&gt;
+            &lt;!-- Dynamic Demand Badge --&gt;
+            &lt;span id=&quot;demandLevelBadge&quot; class=&quot;inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all duration-300&quot;&gt;
+              &lt;span class=&quot;w-2 h-2 rounded-full bg-emerald-400 mr-1.5&quot; id=&quot;demandLevelDot&quot;&gt;&lt;/span&gt;
+              &lt;span id=&quot;demandLevelText&quot;&gt;Demand: Normal&lt;/span&gt;
+            &lt;/span&gt;
+
+            &lt;span class=&quot;text-xs text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700&quot;&gt;
+              Kashi Vishwanath Gate #4 Smart Transit Hub
+            &lt;/span&gt;
+          &lt;/div&gt;
+
+          &lt;!-- Hero Metrics Text with Dynamic Tourist Count --&gt;
+          &lt;h2 class=&quot;text-2xl sm:text-3xl font-extrabold text-white tracking-tight&quot;&gt;
+            &lt;span&gt;Incoming Rerouted Demand:&lt;/span&gt; 
+            &lt;span id=&quot;incomingTouristsCount&quot; class=&quot;text-amber-400 font-black transition-all duration-300&quot;&gt;120&lt;/span&gt; 
+            &lt;span class=&quot;text-amber-400 font-black&quot;&gt;Pilgrims&lt;/span&gt;
+            &lt;span class=&quot;text-slate-400 font-normal text-lg sm:text-2xl&quot;&gt;| Expected ETA: &lt;span class=&quot;text-slate-200 font-bold&quot;&gt;2:00 PM&lt;/span&gt;&lt;/span&gt;
+          &lt;/h2&gt;
+
+          &lt;p class=&quot;text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed&quot; id=&quot;rerouteSubtext&quot;&gt;
+            Baseline crowd state. Automated district balancers are monitoring temple queue saturation. Click below to simulate an active shrine rerouting surge.
+          &lt;/p&gt;
+
+        &lt;/div&gt;
+
+        &lt;!-- PRIMARY ACTION BUTTON: SIMULATE REROUTING SPIKE --&gt;
+        &lt;div class=&quot;flex flex-col sm:flex-row lg:flex-col items-stretch gap-3 min-w-[240px]&quot;&gt;
+          &lt;button id=&quot;btnSimulateReroute&quot; onclick=&quot;triggerReroutingSpike()&quot; class=&quot;py-3.5 px-6 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2.5 bg-gradient-to-r from-amber-500 to-saffron-500 hover:from-amber-400 hover:to-saffron-400 text-slate-950 shadow-xl shadow-amber-500/25 active:scale-95 cursor-pointer&quot;&gt;
+            &lt;span class=&quot;text-base&quot;&gt;🔄&lt;/span&gt;
+            &lt;span id=&quot;rerouteBtnLabel&quot;&gt;Simulate Rerouting Spike&lt;/span&gt;
+          &lt;/button&gt;
+          
+          &lt;div class=&quot;text-[11px] text-center text-slate-400&quot;&gt;
+            Simulates &lt;strong class=&quot;text-amber-300&quot;&gt;Travel ➔ Hotel&lt;/strong&gt; rerouting bridge
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- ========================================================= --&gt;
+    &lt;!-- KPI DASHBOARD CARDS (FRONT AND CENTER)                    --&gt;
+    &lt;!-- ========================================================= --&gt;
+    &lt;div class=&quot;grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4&quot;&gt;
+
+      &lt;!-- 1. Room Availability --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;🛏️&lt;/span&gt;
+          &lt;span&gt;Room Availability&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-xl font-extrabold text-white mt-2&quot;&gt;
+          &lt;span id=&quot;statAvailableRooms&quot; class=&quot;text-amber-400 text-2xl&quot;&gt;18&lt;/span&gt;
+          &lt;span class=&quot;text-slate-400 text-sm font-normal&quot;&gt; / 50 Total&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-[11px] text-slate-400 mt-1&quot;&gt;Available for check-in&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- 2. Occupancy Rate --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;📊&lt;/span&gt;
+          &lt;span&gt;Occupancy Rate&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-2xl font-extrabold text-white mt-2&quot; id=&quot;statOccupancyPercent&quot;&gt;
+          64%
+        &lt;/div&gt;
+        &lt;!-- Progress bar --&gt;
+        &lt;div class=&quot;w-full bg-slate-950 rounded-full h-1.5 mt-2 overflow-hidden&quot;&gt;
+          &lt;div id=&quot;statProgressBar&quot; class=&quot;bg-amber-400 h-full rounded-full transition-all duration-300&quot; style=&quot;width: 64%&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- 3. Express Beds Available --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;🛏️&lt;/span&gt;
+          &lt;span&gt;Express Beds&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-2xl font-extrabold text-emerald-400 mt-2&quot; id=&quot;statExpressBeds&quot;&gt;
+          6
+        &lt;/div&gt;
+        &lt;div class=&quot;text-[11px] text-slate-400 mt-1&quot;&gt;Buffer Transit Ready&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- 4. Punya Points Today --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;🎁&lt;/span&gt;
+          &lt;span&gt;Punya Points Today&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-2xl font-extrabold text-yellow-400 mt-2&quot; id=&quot;statPunyaPoints&quot;&gt;
+          1,450
+        &lt;/div&gt;
+        &lt;div class=&quot;text-[11px] text-slate-400 mt-1&quot;&gt;+50 pts per stay&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- 5. Municipal Tax Credit --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;🧾&lt;/span&gt;
+          &lt;span&gt;Tax Credit Accrued&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-2xl font-extrabold text-emerald-400 mt-2&quot; id=&quot;statTaxCredit&quot;&gt;
+          ₹725
+        &lt;/div&gt;
+        &lt;div class=&quot;text-[11px] text-slate-400 mt-1&quot;&gt;Direct State Subsidy&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- 6. Current Base Rate &amp; Pricing Engine (Requirement 3: Honest Labeling) --&gt;
+      &lt;div class=&quot;bg-slate-800/70 border border-slate-700/80 rounded-2xl p-4 backdrop-blur hover:border-slate-600 transition&quot;&gt;
+        &lt;div class=&quot;text-xs font-bold text-slate-400 flex items-center space-x-1.5&quot;&gt;
+          &lt;span&gt;💰&lt;/span&gt;
+          &lt;span&gt;Live Room Rate&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;text-2xl font-extrabold text-white mt-2&quot; id=&quot;statLiveRate&quot;&gt;
+          ₹1,000
+        &lt;/div&gt;
+        &lt;div class=&quot;text-[11px] text-amber-300/90 mt-1&quot; id=&quot;statRateSubtext&quot;&gt;Standard Parity&lt;/div&gt;
+      &lt;/div&gt;
+
+    &lt;/div&gt;
+
+    &lt;!-- REQUIREMENT 3: HONEST AI LABELING &amp; DYNAMIC PRICING ENGINE BAR --&gt;
+    &lt;div id=&quot;pricingControlBar&quot; class=&quot;bg-slate-800/50 border border-slate-700/80 rounded-2xl p-4 backdrop-blur flex flex-col sm:flex-row items-center justify-between gap-4&quot;&gt;
+      &lt;div class=&quot;flex items-center space-x-3&quot;&gt;
+        &lt;span class=&quot;text-2xl&quot;&gt;⚡&lt;/span&gt;
+        &lt;div&gt;
+          &lt;!-- Transparent SIH Decision Layer Labeling --&gt;
+          &lt;div class=&quot;text-xs font-bold text-slate-300 flex items-center space-x-2&quot;&gt;
+            &lt;span&gt;Rule-Based Surge Pricing&lt;/span&gt;
+            &lt;span class=&quot;text-[10px] font-mono bg-slate-700 text-slate-300 px-2 py-0.2 rounded border border-slate-600&quot;&gt;SIH Decision Layer&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;div class=&quot;text-sm font-semibold text-slate-200 mt-0.5&quot;&gt;
+            Current Rate: &lt;span id=&quot;pricingCurrentRateText&quot; class=&quot;text-white font-bold&quot;&gt;₹1,000&lt;/span&gt; &amp;nbsp;|&amp;nbsp; 
+            AI-Simulated Suggested Rate: &lt;span id=&quot;pricingSuggestedRateText&quot; class=&quot;text-amber-400 font-extrabold&quot;&gt;₹1,000&lt;/span&gt;
+            &lt;span id=&quot;pricingSurgePill&quot; class=&quot;hidden ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40&quot;&gt;Surge Active (+30%)&lt;/span&gt;
+          &lt;/div&gt;
+          &lt;!-- Explicit Tooltip / Helper Text for SIH Jury --&gt;
+          &lt;div class=&quot;text-[11px] text-slate-400 mt-1 flex items-center space-x-1&quot;&gt;
+            &lt;span&gt;ℹ️&lt;/span&gt;
+            &lt;span&gt;Demonstrating the automated pricing decision layer for the SIH prototype based on real-time transit reroute volume.&lt;/span&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- Apply Suggested Rate Button --&gt;
+      &lt;button id=&quot;btnApplySuggestedRate&quot; onclick=&quot;toggleSuggestedRate()&quot; class=&quot;w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2 bg-slate-700 text-slate-200 hover:bg-slate-600 active:scale-98 cursor-pointer&quot;&gt;
+        &lt;span id=&quot;btnApplySuggestedRateText&quot;&gt;Apply Suggested Rate (₹1,000)&lt;/span&gt;
+      &lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;!-- ========================================================= --&gt;
+    &lt;!-- WORKFLOW: DYNAMIC SCANNABLE QR &amp; GUEST TERMINAL           --&gt;
+    &lt;!-- ========================================================= --&gt;
+    &lt;div class=&quot;bg-slate-800/80 border border-slate-700 rounded-3xl p-6 sm:p-8 backdrop-blur shadow-xl&quot;&gt;
+      
+      &lt;div class=&quot;flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-700&quot;&gt;
+        &lt;div&gt;
+          &lt;div class=&quot;flex items-center space-x-2&quot;&gt;
+            &lt;span class=&quot;text-xl&quot;&gt;🪪&lt;/span&gt;
+            &lt;h3 class=&quot;text-lg sm:text-xl font-extrabold text-white&quot;&gt;
+              Express QR Verification &amp; Guest Check-In Terminal
+            &lt;/h3&gt;
+          &lt;/div&gt;
+          &lt;p class=&quot;text-xs sm:text-sm text-slate-400 mt-1&quot;&gt;
+            Real-time digital pass verification for rerouted pilgrims with instant Punya Points release upon completed stay.
+          &lt;/p&gt;
+        &lt;/div&gt;
+
+        &lt;div class=&quot;text-xs text-slate-400 font-mono&quot;&gt;
+          STATION: &lt;span class=&quot;text-amber-400 font-bold&quot;&gt;DESK-01&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!-- Two-Column Interactive Grid --&gt;
+      &lt;div class=&quot;grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6 items-center&quot;&gt;
+
+        &lt;!-- Left Column: Requirement 1 - Genuinely Dynamic QR Engine --&gt;
+        &lt;div class=&quot;lg:col-span-5 flex flex-col items-center justify-center p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 text-center&quot;&gt;
+          
+          &lt;!-- Explicit Scannable Label --&gt;
+          &lt;div class=&quot;text-xs font-bold uppercase tracking-wider text-amber-400 mb-3 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20&quot;&gt;
+            Official Demo Check-In QR (Scannable)
+          &lt;/div&gt;
+
+          &lt;!-- Dynamic QR Container --&gt;
+          &lt;div class=&quot;p-3 bg-white rounded-2xl shadow-xl shadow-black/40 border-4 border-amber-500/40 min-h-[202px] min-w-[202px] flex items-center justify-center&quot;&gt;
+            &lt;div id=&quot;qrcode&quot; class=&quot;flex items-center justify-center&quot;&gt;&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;p class=&quot;text-xs text-slate-400 mt-3 font-mono&quot;&gt;
+            PAYLOAD: &lt;span id=&quot;qrBookingPayload&quot; class=&quot;text-amber-400 font-bold&quot;&gt;YS-KED-2026-8812&lt;/span&gt;
+          &lt;/p&gt;
+          
+          &lt;!-- Requirement 1: Transparent helper text --&gt;
+          &lt;span class=&quot;text-[11px] text-slate-400 mt-1&quot;&gt;
+            Scan QR to verify live booking ID.
+          &lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;!-- Right Column: Simulated Live Pilgrim &amp; Action Buttons --&gt;
+        &lt;div class=&quot;lg:col-span-7 space-y-4&quot;&gt;
+          
+          &lt;!-- Pilgrim Details Card --&gt;
+          &lt;div class=&quot;bg-slate-900/80 rounded-2xl p-5 border border-slate-700 relative overflow-hidden&quot;&gt;
+            
+            &lt;div class=&quot;flex items-start justify-between&quot;&gt;
+              &lt;div&gt;
+                &lt;span class=&quot;text-[10px] font-mono uppercase bg-slate-800 text-amber-400 px-2 py-0.5 rounded border border-slate-700&quot;&gt;
+                  BOOKING REF: &lt;span class=&quot;font-bold&quot;&gt;YS-KED-2026-8812&lt;/span&gt;
+                &lt;/span&gt;
+                &lt;h4 class=&quot;text-lg font-bold text-white mt-2 flex items-center space-x-2&quot;&gt;
+                  &lt;span&gt;Ramesh Sharma&lt;/span&gt;
+                  &lt;span class=&quot;text-xs text-slate-400 font-normal&quot;&gt;(Party: 3 Pilgrims • Origin: Lucknow)&lt;/span&gt;
+                &lt;/h4&gt;
+                &lt;div class=&quot;text-xs text-slate-400 mt-1 flex flex-wrap items-center gap-2&quot;&gt;
+                  &lt;span&gt;Room: &lt;strong class=&quot;text-slate-200&quot;&gt;#204 Deluxe Ganga View&lt;/strong&gt;&lt;/span&gt;
+                  &lt;span&gt;•&lt;/span&gt;
+                  &lt;span class=&quot;text-amber-400 font-semibold&quot;&gt;Category: Rerouted Transit&lt;/span&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              &lt;!-- Status Badge --&gt;
+              &lt;div id=&quot;guestStatusPill&quot; class=&quot;px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center space-x-1.5&quot;&gt;
+                &lt;span class=&quot;w-2 h-2 rounded-full bg-amber-400 animate-pulse&quot; id=&quot;guestStatusDot&quot;&gt;&lt;/span&gt;
+                &lt;span id=&quot;guestStatusText&quot;&gt;Pending Arrival&lt;/span&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;!-- Metadata row --&gt;
+            &lt;div class=&quot;mt-4 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2&quot;&gt;
+              &lt;span id=&quot;checkInTimestampDisplay&quot;&gt;Status: &lt;strong class=&quot;text-slate-300&quot;&gt;Awaiting QR Check-In&lt;/strong&gt;&lt;/span&gt;
+              &lt;span id=&quot;punyaAwardStatus&quot;&gt;Punya Incentive: &lt;strong class=&quot;text-yellow-400&quot;&gt;+50 pts on checkout&lt;/strong&gt;&lt;/span&gt;
+            &lt;/div&gt;
+
+          &lt;/div&gt;
+
+          &lt;!-- Simulator Action Buttons --&gt;
+          &lt;div class=&quot;grid grid-cols-1 sm:grid-cols-2 gap-4&quot;&gt;
+            
+            &lt;!-- SIMULATE QR CHECK-IN BUTTON --&gt;
+            &lt;button id=&quot;btnSimulateCheckIn&quot; onclick=&quot;simulateGuestCheckIn()&quot; class=&quot;group py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex flex-col items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-600/20 active:scale-98 cursor-pointer&quot;&gt;
+              &lt;span class=&quot;flex items-center space-x-2&quot;&gt;
+                &lt;span&gt;📱&lt;/span&gt;
+                &lt;span&gt;Simulate QR Check-In&lt;/span&gt;
+              &lt;/span&gt;
+              &lt;span class=&quot;text-[10px] text-emerald-100 font-normal lowercase tracking-normal mt-0.5&quot;&gt;
+                (verifies pass &amp; occupies room)
+              &lt;/span&gt;
+            &lt;/button&gt;
+
+            &lt;!-- SIMULATE CHECK-OUT BUTTON --&gt;
+            &lt;button id=&quot;btnSimulateCheckOut&quot; onclick=&quot;simulateGuestCheckOut()&quot; disabled class=&quot;group py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex flex-col items-center justify-center bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed&quot;&gt;
+              &lt;span class=&quot;flex items-center space-x-2&quot;&gt;
+                &lt;span&gt;✨&lt;/span&gt;
+                &lt;span&gt;Simulate Check-Out&lt;/span&gt;
+              &lt;/span&gt;
+              &lt;span class=&quot;text-[10px] text-slate-500 font-normal tracking-normal mt-0.5&quot; id=&quot;checkoutBtnSubtitle&quot;&gt;
+                (locked until guest checks in)
+              &lt;/span&gt;
+            &lt;/button&gt;
+
+          &lt;/div&gt;
+
+          &lt;!-- Demo Flow Helper Tip --&gt;
+          &lt;div class=&quot;bg-slate-900/50 rounded-xl p-3 border border-slate-800 text-[11px] text-slate-400 flex items-center justify-between&quot;&gt;
+            &lt;span class=&quot;flex items-center space-x-1.5&quot;&gt;
+              &lt;span&gt;💡&lt;/span&gt;
+              &lt;span class=&quot;text-slate-300&quot;&gt;
+                Demo Order: 1. Click &quot;Simulate Rerouting Spike&quot; ➔ 2. &quot;Apply Suggested Rate&quot; ➔ 3. &quot;Simulate QR Check-In&quot; ➔ 4. &quot;Simulate Check-Out&quot;.
+              &lt;/span&gt;
+            &lt;/span&gt;
+          &lt;/div&gt;
+
+        &lt;/div&gt;
+
+      &lt;/div&gt;
+
+    &lt;/div&gt;
+
+  &lt;/main&gt;
+
+  &lt;!-- ========================================================= --&gt;
+  &lt;!-- JAVASCRIPT STATE ENGINE &amp; SURGICAL LOGIC                  --&gt;
+  &lt;!-- ========================================================= --&gt;
+  &lt;script&gt;
+    // --- 1. REQUIREMENT 1: GENUINELY DYNAMIC QR GENERATOR ---
+    // Encodes arbitrary payload strings using QRCode.js with safe fallback
+    function renderDynamicQR(containerId, payload) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(container, {
+          text: payload,
+          width: 176,
+          height: 176,
+          colorDark: &quot;#0f172a&quot;,
+          colorLight: &quot;#ffffff&quot;,
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        // Fallback in case of local offline sandbox without cached CDN
+        container.innerHTML = `&lt;div class=&quot;flex flex-col items-center justify-center p-4 bg-slate-900 text-white rounded-xl border border-slate-700 min-h-[176px] min-w-[176px]&quot;&gt;
+          &lt;span class=&quot;text-3xl mb-1&quot;&gt;📱&lt;/span&gt;
+          &lt;span class=&quot;text-xs font-mono font-bold text-amber-400&quot;&gt;${payload}&lt;/span&gt;
+          &lt;span class=&quot;text-[10px] text-slate-400 mt-1&quot;&gt;Live Encoded Payload&lt;/span&gt;
+        &lt;/div&gt;`;
+      }
+
+      document.getElementById('qrBookingPayload').innerText = payload;
+    }
+
+    // --- 2. MASTER BASELINE STATE CONFIGURATION ---
+    const BASELINE_STATE = {
+      incomingTourists: 120,
+      isRerouteSpikeActive: false,
+      demandLevel: 'NORMAL', // 'NORMAL' | 'HIGH_SURGE'
+      baseRate: 1000,
+      suggestedRate: 1000,
+      currentRate: 1000,
+      isSuggestedApplied: false,
+      totalRooms: 50,
+      occupiedRooms: 32, // 18 available, 64% occupancy
+      expressBeds: 6,
+      punyaPoints: 1450,
+      taxCredit: 725,
+      guestStatus: 'PENDING', // 'PENDING' | 'CHECKED_IN' | 'CHECKED_OUT'
+      bookingRef: 'YS-KED-2026-8812'
+    };
+
+    let state = JSON.parse(JSON.stringify(BASELINE_STATE));
+
+    // Requirement 2: Scan Cooldown Timestamp Log (60-second window)
+    let scanCooldownLog = {}; // { [bookingId]: timestamp }
+    const COOLDOWN_WINDOW_MS = 60000; // 60 seconds
+
+    // --- 3. SYNCHRONIZED UI RENDER PIPELINE ---
+    function renderDashboard() {
+      // 1. Inbound Demand Hero
+      document.getElementById('incomingTouristsCount').innerText = state.incomingTourists;
+      const demandBadge = document.getElementById('demandLevelBadge');
+      const demandText = document.getElementById('demandLevelText');
+      const demandDot = document.getElementById('demandLevelDot');
+      const rerouteBtn = document.getElementById('btnSimulateReroute');
+      const rerouteBtnLabel = document.getElementById('rerouteBtnLabel');
+      const rerouteSubtext = document.getElementById('rerouteSubtext');
+
+      if (state.isRerouteSpikeActive) {
+        demandBadge.className = &quot;inline-flex items-center px-3.5 py-1 rounded-full text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/50 animate-pulse ring-2 ring-rose-500/40&quot;;
+        demandText.innerText = &quot;High Surge (+50%)&quot;;
+        demandDot.className = &quot;w-2 h-2 rounded-full bg-rose-400 mr-1.5 animate-ping&quot;;
+        rerouteSubtext.innerText = &quot;🚨 High Surge Active! 60 additional pilgrims redirected from congested sanctum. Incoming demand: 180 pilgrims.&quot;;
+        rerouteBtn.className = &quot;py-3.5 px-6 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-2.5 bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 cursor-default&quot;;
+        rerouteBtnLabel.innerText = &quot;Surge Active (+50%)&quot;;
+      } else {
+        demandBadge.className = &quot;inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 transition-all duration-300&quot;;
+        demandText.innerText = &quot;Demand: Normal&quot;;
+        demandDot.className = &quot;w-2 h-2 rounded-full bg-emerald-400 mr-1.5&quot;;
+        rerouteSubtext.innerText = &quot;Baseline crowd state. Automated district balancers are monitoring temple queue saturation. Click below to simulate an active shrine rerouting surge.&quot;;
+        rerouteBtn.className = &quot;py-3.5 px-6 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2.5 bg-gradient-to-r from-amber-500 to-saffron-500 hover:from-amber-400 hover:to-saffron-400 text-slate-950 shadow-xl shadow-amber-500/25 active:scale-95 cursor-pointer&quot;;
+        rerouteBtnLabel.innerText = &quot;Simulate Rerouting Spike&quot;;
+      }
+
+      // 2. KPI Cards
+      const available = state.totalRooms - state.occupiedRooms;
+      const occupancyPct = Math.round((state.occupiedRooms / state.totalRooms) * 100);
+
+      document.getElementById('statAvailableRooms').innerText = available;
+      document.getElementById('statOccupancyPercent').innerText = `${occupancyPct}%`;
+      document.getElementById('statProgressBar').style.width = `${occupancyPct}%`;
+      document.getElementById('statExpressBeds').innerText = state.expressBeds;
+      document.getElementById('statPunyaPoints').innerText = state.punyaPoints.toLocaleString('en-IN');
+      document.getElementById('statTaxCredit').innerText = `₹${state.taxCredit.toLocaleString('en-IN')}`;
+      document.getElementById('statLiveRate').innerText = `₹${state.currentRate.toLocaleString('en-IN')}`;
+      document.getElementById('statRateSubtext').innerText = state.currentRate &gt; 1000 ? &quot;Surge Rate Applied&quot; : &quot;Standard Parity&quot;;
+
+      // 3. Dynamic Pricing Bar (Requirement 3: Honest AI Labeling)
+      document.getElementById('pricingCurrentRateText').innerText = `₹${state.currentRate.toLocaleString('en-IN')}`;
+      document.getElementById('pricingSuggestedRateText').innerText = `₹${state.suggestedRate.toLocaleString('en-IN')}`;
+      
+      const surgePill = document.getElementById('pricingSurgePill');
+      const applyBtn = document.getElementById('btnApplySuggestedRate');
+      const applyBtnText = document.getElementById('btnApplySuggestedRateText');
+
+      if (state.isRerouteSpikeActive) {
+        surgePill.classList.remove('hidden');
+      } else {
+        surgePill.classList.add('hidden');
+      }
+
+      if (state.isSuggestedApplied) {
+        applyBtnText.innerText = &quot;Revert to Base Rate (₹1,000)&quot;;
+        applyBtn.className = &quot;w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2 bg-slate-700 text-slate-200 hover:bg-slate-600 active:scale-98 cursor-pointer&quot;;
+      } else {
+        applyBtnText.innerText = `Apply Suggested Rate (₹${state.suggestedRate.toLocaleString('en-IN')})`;
+        if (state.isRerouteSpikeActive) {
+          applyBtn.className = &quot;w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2 bg-gradient-to-r from-amber-500 to-saffron-500 hover:from-amber-400 hover:to-saffron-400 text-slate-950 shadow-xl shadow-amber-500/30 ring-attention cursor-pointer active:scale-98&quot;;
+        } else {
+          applyBtn.className = &quot;w-full sm:w-auto py-2.5 px-5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center space-x-2 bg-slate-700 text-slate-200 hover:bg-slate-600 active:scale-98 cursor-pointer&quot;;
+        }
+      }
+
+      // 4. Guest Status Card
+      const statusPill = document.getElementById('guestStatusPill');
+      const statusText = document.getElementById('guestStatusText');
+      const statusDot = document.getElementById('guestStatusDot');
+      const timestampDisplay = document.getElementById('checkInTimestampDisplay');
+      const checkoutBtn = document.getElementById('btnSimulateCheckOut');
+      const checkoutSubtitle = document.getElementById('checkoutBtnSubtitle');
+
+      if (state.guestStatus === 'PENDING') {
+        statusPill.className = &quot;px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center space-x-1.5&quot;;
+        statusDot.className = &quot;w-2 h-2 rounded-full bg-amber-400 animate-pulse&quot;;
+        statusText.innerText = &quot;Pending Arrival&quot;;
+        timestampDisplay.innerHTML = `Status: &lt;strong class=&quot;text-slate-300&quot;&gt;Awaiting QR Check-In&lt;/strong&gt;`;
+        checkoutBtn.disabled = true;
+        checkoutBtn.className = &quot;group py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex flex-col items-center justify-center bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed&quot;;
+        checkoutSubtitle.innerText = &quot;(locked until guest checks in)&quot;;
+        checkoutSubtitle.className = &quot;text-[10px] text-slate-500 font-normal tracking-normal mt-0.5&quot;;
+      } else if (state.guestStatus === 'CHECKED_IN') {
+        statusPill.className = &quot;px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center space-x-1.5&quot;;
+        statusDot.className = &quot;w-2 h-2 rounded-full bg-emerald-400&quot;;
+        statusText.innerText = &quot;Checked-In&quot;;
+        timestampDisplay.innerHTML = `Status: &lt;strong class=&quot;text-emerald-400&quot;&gt;Checked-In ✔ (Room #204 Allocated)&lt;/strong&gt;`;
+        checkoutBtn.disabled = false;
+        checkoutBtn.className = &quot;group py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex flex-col items-center justify-center bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 hover:from-amber-400 hover:to-yellow-400 shadow-lg shadow-amber-500/20 cursor-pointer active:scale-98&quot;;
+        checkoutSubtitle.innerText = &quot;(Click to award +50 Punya Points)&quot;;
+        checkoutSubtitle.className = &quot;text-[10px] text-slate-900 font-semibold tracking-normal mt-0.5&quot;;
+      } else if (state.guestStatus === 'CHECKED_OUT') {
+        statusPill.className = &quot;px-3 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center space-x-1.5&quot;;
+        statusDot.className = &quot;w-2 h-2 rounded-full bg-purple-400&quot;;
+        statusText.innerText = &quot;Checked-Out&quot;;
+        timestampDisplay.innerHTML = `Status: &lt;strong class=&quot;text-purple-400&quot;&gt;Stay Completed ✔ (Punya Points Minted)&lt;/strong&gt;`;
+        checkoutBtn.disabled = true;
+        checkoutBtn.className = &quot;group py-3.5 px-5 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-200 flex flex-col items-center justify-center bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed&quot;;
+        checkoutSubtitle.innerText = &quot;(Guest has checked out)&quot;;
+        checkoutSubtitle.className = &quot;text-[10px] text-slate-500 font-normal tracking-normal mt-0.5&quot;;
+      }
+    }
+
+    // --- 4. FLOW 1: REROUTING SPIKE SIMULATION ---
+    function triggerReroutingSpike() {
+      if (state.isRerouteSpikeActive) return;
+
+      state.isRerouteSpikeActive = true;
+      state.demandLevel = 'HIGH_SURGE';
+      state.suggestedRate = 1300;
+
+      animateCounter('incomingTouristsCount', 120, 180, 600);
+      dismissFraudAlert();
+      renderDashboard();
+    }
+
+    function animateCounter(elementId, start, end, duration) {
+      const obj = document.getElementById(elementId);
+      let startTimestamp = null;
+      const step = (timestamp) =&gt; {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress &lt; 1) {
+          window.requestAnimationFrame(step);
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // --- 5. FLOW 1B: DYNAMIC PRICING TOGGLE ---
+    function toggleSuggestedRate() {
+      state.isSuggestedApplied = !state.isSuggestedApplied;
+      state.currentRate = state.isSuggestedApplied ? state.suggestedRate : state.baseRate;
+      renderDashboard();
+    }
+
+    // --- 6. FLOW 2: GUEST CHECK-IN &amp; UPGRADED COOLDOWN FRAUD (Requirement 2) ---
+    function simulateGuestCheckIn() {
+      const now = Date.now();
+      const lastScanTime = scanCooldownLog[state.bookingRef];
+
+      // Requirement 2: Strict 60-second cooldown rule (blocks duplicate scans even if checked out)
+      if (lastScanTime &amp;&amp; (now - lastScanTime &lt; COOLDOWN_WINDOW_MS)) {
+        triggerFraudAlert(&quot;⚠️ Fraud Rule: Duplicate scan detected within cooldown window.&quot;);
+        return;
+      }
+
+      // Record this valid scan timestamp into the log
+      scanCooldownLog[state.bookingRef] = now;
+
+      dismissFraudAlert();
+      dismissSuccessBanner();
+
+      state.guestStatus = 'CHECKED_IN';
+      // Occupancy increases: 32 -&gt; 33 (Available reduces: 18 -&gt; 17)
+      state.occupiedRooms = 33;
+
+      renderDashboard();
+    }
+
+    // --- 7. FLOW 2B: GUEST CHECK-OUT ---
+    function simulateGuestCheckOut() {
+      if (state.guestStatus !== 'CHECKED_IN') return;
+
+      state.guestStatus = 'CHECKED_OUT';
+      // Available rooms return to 18 (Occupied returns to 32)
+      state.occupiedRooms = 32;
+
+      // Award +50 Punya points (1450 -&gt; 1500)
+      state.punyaPoints += 50;
+      // Hotel Tax Credit increased to ₹750 (725 -&gt; 750)
+      state.taxCredit = 750;
+
+      renderDashboard();
+      showSuccessBanner();
+    }
+
+    // --- 8. FRAUD &amp; SUCCESS BANNER CONTROLLERS ---
+    function triggerFraudAlert(msg) {
+      const banner = document.getElementById('fraudAlertBanner');
+      const text = document.getElementById('fraudMessageText');
+      if (msg) text.innerText = msg;
+      banner.classList.remove('hidden');
+      banner.classList.add('animate-bounce');
+      setTimeout(() =&gt; banner.classList.remove('animate-bounce'), 800);
+    }
+
+    function dismissFraudAlert() {
+      document.getElementById('fraudAlertBanner').classList.add('hidden');
+    }
+
+    function showSuccessBanner() {
+      const banner = document.getElementById('successCheckoutBanner');
+      banner.classList.remove('hidden');
+    }
+
+    function dismissSuccessBanner() {
+      document.getElementById('successCheckoutBanner').classList.add('hidden');
+    }
+
+    // --- 9. FLOW 4: MASTER DEMO RESET ---
+    function resetFullDemoState() {
+      state = JSON.parse(JSON.stringify(BASELINE_STATE));
+      scanCooldownLog = {}; // Flush fraud cooldown log
+      dismissFraudAlert();
+      dismissSuccessBanner();
+      renderDashboard();
+      renderDynamicQR('qrcode', state.bookingRef);
+    }
+
+    // --- 10. BOOTSTRAP INITIAL VIEW ---
+    window.addEventListener('DOMContentLoaded', () =&gt; {
+      renderDynamicQR('qrcode', state.bookingRef);
+      renderDashboard();
+    });
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</body>
+</html>
