@@ -1208,14 +1208,54 @@ export const SITE_ID_ALIASES = {
   TS001: 'site_kedarnath',
   TS002: 'site_badrinath',
   TS003: 'site_kashi',
+  TS004: 'site_ayodhya',
   TS005: 'site_vaishnodevi',
   TS006: 'site_tirupati',
+  TS010: 'site_meenakshi',
+  TS011: 'site_ts011',
+  TS015: 'site_ts015',
+  TS016: 'site_ts016',
   site_kedarnath: 'TS001',
   site_badrinath: 'TS002',
   site_kashi: 'TS003',
+  site_ayodhya: 'TS004',
   site_vaishnodevi: 'TS005',
-  site_tirupati: 'TS006'
+  site_tirupati: 'TS006',
+  site_meenakshi: 'TS010',
+  site_ts011: 'TS011',
+  site_ts015: 'TS015',
+  site_ts016: 'TS016'
 };
+
+export const MOCK_SITES = [
+  { id: "SITE001", name: "Main Temple", capacity: 1000, latitude: 20.1, longitude: 85.8, ...(SITE_METADATA.SITE001 || {}) },
+  { id: "SITE002", name: "Heritage Shrine", capacity: 500, latitude: 20.2, longitude: 85.9, ...(SITE_METADATA.SITE002 || {}) },
+  { id: "TS001", name: "Kedarnath Temple", capacity: 13000, latitude: 30.7346, longitude: 79.0669, ...(SITE_METADATA.TS001 || {}) },
+  { id: "TS002", name: "Badrinath Temple", capacity: 16000, latitude: 30.7433, longitude: 79.4938, ...(SITE_METADATA.TS002 || {}) },
+  { id: "TS003", name: "Kashi Vishwanath Temple & Dashashwamedh Ghat", capacity: 120000, latitude: 25.3109, longitude: 83.0107, ...(SITE_METADATA.TS003 || {}) },
+  { id: "TS004", name: "Shri Ram Janmabhoomi Mandir", capacity: 150000, latitude: 26.7956, longitude: 82.1943, ...(SITE_METADATA.TS004 || {}) },
+  { id: "TS005", name: "Shri Mata Vaishno Devi Shrine", capacity: 50000, latitude: 33.0308, longitude: 74.949, ...(SITE_METADATA.TS005 || {}) },
+  { id: "TS006", name: "Tirumala Venkateswara Temple", capacity: 85000, latitude: 13.6833, longitude: 79.3472, ...(SITE_METADATA.TS006 || {}) },
+  { id: "TS007", name: "Shree Jagannath Temple", capacity: 90000, latitude: 19.8049, longitude: 85.8179, ...(SITE_METADATA.TS007 || {}) },
+  { id: "TS008", name: "Mahakaleshwar Jyotirlinga Temple", capacity: 75000, latitude: 23.1827, longitude: 75.7682, ...(SITE_METADATA.TS008 || {}) },
+  { id: "TS009", name: "Golden Temple (Sri Harmandir Sahib)", capacity: 100000, latitude: 31.62, longitude: 74.8765, ...(SITE_METADATA.TS009 || {}) },
+  { id: "TS010", name: "Meenakshi Sundareswarar Temple", capacity: 45000, latitude: 9.9195, longitude: 78.1193, ...(SITE_METADATA.TS010 || {}) },
+  { id: "TS011", name: "Ramanathaswamy Temple", capacity: 50000, latitude: 9.2881, longitude: 79.3174, ...(SITE_METADATA.TS011 || {}) },
+  { id: "TS012", name: "Shree Somnath Jyotirlinga Temple", capacity: 60000, latitude: 20.888, longitude: 70.4013, ...(SITE_METADATA.TS012 || {}) },
+  { id: "TS013", name: "Shri Saibaba Sansthan Temple", capacity: 80000, latitude: 19.7667, longitude: 74.4764, ...(SITE_METADATA.TS013 || {}) },
+  { id: "TS014", name: "Sabarimala Sree Dharma Sastha Temple", capacity: 80000, latitude: 9.4402, longitude: 77.0819, ...(SITE_METADATA.TS014 || {}) },
+  { id: "TS015", name: "Har Ki Pauri Ghat & Mansa Devi", capacity: 150000, latitude: 29.9577, longitude: 78.1724, ...(SITE_METADATA.TS015 || {}) },
+  { id: "TS016", name: "Triveni Sangam & Kumbh Mela Grounds", capacity: 200000, latitude: 25.4283, longitude: 81.8847, ...(SITE_METADATA.TS016 || {}) },
+  { id: "TS017", name: "Bankey Bihari Temple & Prem Mandir", capacity: 70000, latitude: 27.5818, longitude: 77.6974, ...(SITE_METADATA.TS017 || {}) },
+  { id: "TS018", name: "Taj Mahal Monument Complex", capacity: 35000, latitude: 27.1751, longitude: 78.0421, ...(SITE_METADATA.TS018 || {}) },
+  { id: "TS019", name: "Amber Fort & Palace Complex", capacity: 25000, latitude: 26.9855, longitude: 75.8513, ...(SITE_METADATA.TS019 || {}) },
+  { id: "TS020", "name": "Qutub Minar & Mehrauli Archaeological Complex", capacity: 22000, latitude: 28.5245, longitude: 77.1855, ...(SITE_METADATA.TS020 || {}) },
+  { id: "TS021", "name": "Ajanta and Ellora Rock-Cut Caves", capacity: 18000, latitude: 20.0268, longitude: 75.178, ...(SITE_METADATA.TS021 || {}) },
+  { id: "TS022", "name": "Group of Monuments at Hampi (Virupaksha & Vijaya Vittala)", capacity: 20000, latitude: 15.335, longitude: 76.46, ...(SITE_METADATA.TS022 || {}) },
+  { id: "TS023", "name": "Pangong Tso Lake & Hemis Monastery", capacity: 6000, latitude: 33.7595, longitude: 78.6674, ...(SITE_METADATA.TS023 || {}) },
+  { id: "TS024", "name": "Rohtang Pass & Solang Valley Adventure Zone", capacity: 1200, latitude: 32.3716, longitude: 77.2466, ...(SITE_METADATA.TS024 || {}) },
+  { id: "TS025", "name": "Maa Kamakhya Devalaya", capacity: 35000, latitude: 26.1664, longitude: 91.7054, ...(SITE_METADATA.TS025 || {}) }
+];
 
 // ==========================================
 // API CLIENT IMPLEMENTATIONS WITH RESILIENT FALLBACKS
@@ -2255,6 +2295,110 @@ export async function fetchActiveSOSAlerts() {
   }
   return MOCK_ACTIVE_SOS_ALERTS;
 }
+
+// ==========================================================================
+// EMERGENCY REROUTE PERSISTENT EVENT HELPERS (Govt -> Backend -> Travel & Hotel)
+// ==========================================================================
+
+export async function activateEmergencyReroute(siteId, extraData = {}) {
+  const targetSiteId = siteId || "TS001";
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
+    const payload = {
+      site_id: targetSiteId,
+      diverted_tourists: extraData.diverted_tourists || 350,
+      partner_buses: extraData.partner_buses || 14,
+      partner_hotels: extraData.partner_hotels || 22,
+      notes: extraData.notes || null
+    };
+    const res = await fetch(`${API_BASE_URL}/alerts/reroute/activate`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: data }));
+      }
+      return data;
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { status: "error", detail: errData.detail || "Activation failed" };
+  } catch (err) {
+    console.warn("Fallback simulated activateEmergencyReroute:", err);
+    const fallbackData = {
+      status: "success",
+      is_active: true,
+      alert: {
+        id: `REROUTE-${targetSiteId}-${Date.now()}`,
+        site_id: targetSiteId,
+        site_name: targetSiteId === "TS001" ? "Kedarnath Temple" : targetSiteId,
+        crowd_status: "CRITICAL",
+        occupancy_percentage: 95.0,
+        people_count: 12350,
+        alert_type: "EMERGENCY_REROUTE",
+        status: "ACTIVE",
+        diverted_tourists: 350,
+        partner_buses: 14,
+        partner_hotels: 22,
+        activated_at: new Date().toISOString()
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: fallbackData }));
+    }
+    return fallbackData;
+  }
+}
+
+export async function deactivateEmergencyReroute(siteId = null, reason = "Situation normalized") {
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
+    const res = await fetch(`${API_BASE_URL}/alerts/reroute/deactivate`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ site_id: siteId, reason })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
+      }
+      return data;
+    }
+  } catch (err) {
+    console.warn("Fallback deactivateEmergencyReroute:", err);
+  }
+  const fallback = { status: "success", is_active: false, message: "Emergency reroute deactivated." };
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
+  }
+  return fallback;
+}
+
+export async function fetchActiveRerouteAlert(siteId = null) {
+  try {
+    const url = siteId
+      ? `${API_BASE_URL}/alerts/reroute?site_id=${encodeURIComponent(siteId)}`
+      : `${API_BASE_URL}/alerts/reroute`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn("Fallback fetchActiveRerouteAlert:", err);
+  }
+  return { is_active: false, alert: null };
+}
+
 
 
 // ============================================================

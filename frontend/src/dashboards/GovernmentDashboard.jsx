@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   updateCrowdObservation,
   fetchActiveSOSAlerts,
-  fetchGovernmentOccupancyReport
+  fetchGovernmentOccupancyReport,
+  activateEmergencyReroute,
+  deactivateEmergencyReroute,
+  fetchActiveRerouteAlert
 } from '../api/api';
 import './GovernmentDashboard.css';
 
@@ -13,7 +16,9 @@ export default function GovernmentDashboard({
   onSelectSite,
   onCrowdUpdated,
   currentUser,
-  showToast
+  showToast,
+  activeRerouteAlert,
+  onRerouteChanged
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -39,8 +44,25 @@ export default function GovernmentDashboard({
   // =========================================================================
   // WINNING FEATURE: EMERGENCY REROUTE & DEMO HEATMAP ZONES
   // =========================================================================
-  const [isRerouteActive, setIsRerouteActive] = useState(false);
+  const [isRerouteActive, setIsRerouteActive] = useState(Boolean(activeRerouteAlert));
   const [isRecalculating, setIsRecalculating] = useState(false);
+
+  useEffect(() => {
+    if (activeRerouteAlert) {
+      setIsRerouteActive(true);
+    } else {
+      setIsRerouteActive(false);
+    }
+  }, [activeRerouteAlert]);
+
+  useEffect(() => {
+    fetchActiveRerouteAlert().then((res) => {
+      if (res?.is_active && res?.alert) {
+        setIsRerouteActive(true);
+        if (onRerouteChanged) onRerouteChanged(res.alert);
+      }
+    }).catch(() => {});
+  }, []);
 
   // Surge Prediction Alert State
   const [surgeAlertVisible, setSurgeAlertVisible] = useState(true);
@@ -229,32 +251,74 @@ export default function GovernmentDashboard({
   // =========================================================================
   // EMERGENCY REROUTE TRIGGER (WINNING FEATURE)
   // =========================================================================
-  const handleActivateEmergencyReroute = () => {
+  const handleActivateEmergencyReroute = async () => {
+    const targetSiteId = updateSiteId || selectedSiteId || 'TS001';
     if (isRerouteActive) {
-      // Toggle back to baseline
-      setIsRerouteActive(false);
-      if (showToast) {
-        showToast('↺ Baseline simulation restored. Emergency reroute standby.');
+      // Toggle back to baseline / deactivation
+      setIsRecalculating(true);
+      try {
+        await deactivateEmergencyReroute(targetSiteId, 'Government Command manual deactivation');
+        setIsRerouteActive(false);
+        if (onRerouteChanged) onRerouteChanged(null);
+        if (showToast) {
+          showToast('↺ Baseline simulation restored. Emergency reroute deactivated across Travel & Hotel dashboards.');
+        }
+      } catch (err) {
+        console.error('Failed to deactivate emergency reroute:', err);
+        if (showToast) {
+          showToast(`⚠️ Deactivation error: ${err.message || err}`);
+        }
+      } finally {
+        setIsRecalculating(false);
       }
       return;
     }
 
     setIsRecalculating(true);
-    setTimeout(() => {
-      setIsRecalculating(false);
+    try {
+      const res = await activateEmergencyReroute(targetSiteId, {
+        reason: 'CRITICAL crowd threshold exceeded. Initiating cross-dashboard emergency diversion.',
+        reroute_percentage: 30.0,
+        partner_buses: 14,
+        partner_hotels: 22,
+        diverted_devotees: 350
+      });
       setIsRerouteActive(true);
+      const alertData = res?.alert || res;
+      if (onRerouteChanged) onRerouteChanged(alertData);
       if (showToast) {
-        showToast('🚨 Emergency rerouting activated: 350 tourists diverted to 14 travel buses & 22 partner hotels.');
+        showToast('🚨 Emergency rerouting activated: 350 tourists diverted to 14 travel buses & 22 partner hotels. Dispatched to Travel & Hotel dashboards.');
       }
-    }, 1200);
+    } catch (err) {
+      console.error('Failed to activate emergency reroute:', err);
+      if (showToast) {
+        showToast(`⚠️ Emergency reroute activation failed: ${err.message || err}`);
+      }
+    } finally {
+      setIsRecalculating(false);
+    }
   };
 
-  const handleResetSimulation = () => {
-    setIsRerouteActive(false);
-    setIsRecalculating(false);
-    setSurgeAlertVisible(true);
-    if (showToast) {
-      showToast('↺ Demonstration zones reset to baseline pre-reroute state.');
+  const handleResetSimulation = async () => {
+    const targetSiteId = updateSiteId || selectedSiteId || 'TS001';
+    setIsRecalculating(true);
+    try {
+      if (isRerouteActive) {
+        await deactivateEmergencyReroute(targetSiteId, 'Demonstration zones reset to baseline');
+      }
+      setIsRerouteActive(false);
+      if (onRerouteChanged) onRerouteChanged(null);
+      setSurgeAlertVisible(true);
+      if (showToast) {
+        showToast('↺ Demonstration zones reset to baseline pre-reroute state.');
+      }
+    } catch (err) {
+      console.error('Failed to reset emergency reroute simulation:', err);
+      if (showToast) {
+        showToast(`⚠️ Reset failed: ${err.message || err}`);
+      }
+    } finally {
+      setIsRecalculating(false);
     }
   };
 
@@ -491,8 +555,8 @@ export default function GovernmentDashboard({
               <div>
                 <div className="broadcast-headline">Emergency rerouting activated</div>
                 <div className="broadcast-detail">
-                  <strong>350 tourists diverted</strong> to <strong>14 travel buses</strong> &amp; <strong>22 partner hotels</strong>.
-                  Bypassing Haridwar bottleneck via Rishikesh Bypass Corridor.
+                  <strong>{activeRerouteAlert?.diverted_tourists || 350} tourists diverted</strong> to <strong>{activeRerouteAlert?.partner_buses || 14} travel buses</strong> &amp; <strong>{activeRerouteAlert?.partner_hotels || 22} partner hotels</strong>.
+                  Bypassing {activeRerouteAlert?.site_name || 'Haridwar'} bottleneck via dynamic AI sister shrine bypass corridors.
                 </div>
               </div>
             </div>

@@ -24,7 +24,9 @@ import {
   loadUserSession,
   logoutUser,
   fetchMe,
-  getAuthToken
+  getAuthToken,
+  SITE_ID_ALIASES,
+  fetchActiveRerouteAlert
 } from './api/api';
 import './App.css';
 
@@ -42,6 +44,9 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Emergency Reroute Persistent Cross-Dashboard Event State
+  const [activeRerouteAlert, setActiveRerouteAlert] = useState(null);
 
   // Role Navigation State: 'tourist' | 'government' | 'hotel' | 'travel_company'
   const [activeRole, setActiveRole] = useState('tourist');
@@ -128,6 +133,48 @@ export default function App() {
     };
   }, []);
 
+  // Synchronize Persistent Emergency Reroute Event across Dashboards
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncRerouteState() {
+      try {
+        const res = await fetchActiveRerouteAlert();
+        if (!isMounted) return;
+        if (res && res.is_active && res.alert) {
+          setActiveRerouteAlert(res.alert);
+        } else if (res && !res.is_active) {
+          setActiveRerouteAlert(null);
+        }
+      } catch (err) {
+        console.warn("Could not sync active reroute alert:", err);
+      }
+    }
+
+    syncRerouteState();
+
+    const handleRerouteEvent = (e) => {
+      if (!isMounted) return;
+      const data = e.detail;
+      if (data?.is_active && data?.alert) {
+        setActiveRerouteAlert(data.alert);
+      } else if (data?.is_active === false) {
+        setActiveRerouteAlert(null);
+      } else {
+        syncRerouteState();
+      }
+    };
+
+    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+    const pollInterval = setInterval(syncRerouteState, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+    };
+  }, []);
+
   // 1. Load static site metadata (alternatives, safety info, vendors) once per site selection
   useEffect(() => {
     let isMounted = true;
@@ -193,7 +240,12 @@ export default function App() {
 
         if (density) {
           setCurrentDensity(density);
-          setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
+          const alias = SITE_ID_ALIASES[selectedSiteId];
+          setDensityMap((prev) => {
+            const next = { ...prev, [selectedSiteId]: density };
+            if (alias) next[alias] = density;
+            return next;
+          });
         }
         if (forecast) setCurrentForecast(forecast);
         if (prediction) setCurrentPrediction(prediction);
@@ -257,7 +309,9 @@ export default function App() {
   };
 
   const handleNavigate = (target) => {
-    if (target === 'travel-trips' || target === 'travel-groups') {
+    if (target === 'travel-groups') {
+      setTravelTab('groups');
+    } else if (target === 'travel-trips' || target === 'travel-dashboard') {
       setTravelTab('circuits');
     } else if (target === 'travel-crowd-alerts') {
       setTravelTab('optimizer');
@@ -278,10 +332,12 @@ export default function App() {
   // Immediate synchronization when Government updates crowd telemetry (POST /crowd/update)
   const handleCrowdUpdated = (siteId, updatedData) => {
     if (!updatedData) return;
-    setDensityMap((prev) => ({
-      ...prev,
-      [siteId]: updatedData
-    }));
+    const alias = SITE_ID_ALIASES[siteId];
+    setDensityMap((prev) => {
+      const next = { ...prev, [siteId]: updatedData };
+      if (alias) next[alias] = updatedData;
+      return next;
+    });
 
     if (siteId === selectedSiteId) {
       setCurrentDensity(updatedData);
@@ -495,6 +551,8 @@ export default function App() {
                 onCrowdUpdated={handleCrowdUpdated}
                 currentUser={currentUser}
                 showToast={showToast}
+                activeRerouteAlert={activeRerouteAlert}
+                onRerouteChanged={(newAlert) => setActiveRerouteAlert(newAlert)}
               />
             )}
 
@@ -502,17 +560,20 @@ export default function App() {
               <HotelDashboard
                 currentUser={currentUser}
                 showToast={showToast}
+                activeRerouteAlert={activeRerouteAlert}
               />
             )}
 
             {currentUser.role === 'travel_company' && (
               <TravelCompanyDashboard
                 sites={sites}
+                selectedSite={selectedSite}
                 densityMap={densityMap}
                 selectedSiteId={selectedSiteId}
                 onSelectSite={handleSelectSite}
                 showToast={showToast}
                 externalTab={travelTab}
+                activeRerouteAlert={activeRerouteAlert}
               />
             )}
           </main>
