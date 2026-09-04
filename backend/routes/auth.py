@@ -1,6 +1,8 @@
 import re
+import time
+import uuid
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, field_validator
@@ -8,7 +10,10 @@ from supabase_auth.errors import AuthApiError, AuthError
 
 from database import supabase
 
-router = APIRouter()
+router = APIRouter(tags=["Authentication & Identity"])
+
+# In-memory session store for Aadhaar & Temple Vendor demo sessions
+sessions_db: Dict[str, Dict[str, Any]] = {}
 
 # --------------------------------------------------------------------------
 # Role Definitions & Validation
@@ -368,6 +373,169 @@ def tourist_only_endpoint(
     return {
         "message": "Authorized: Access granted to Pilgrim & Tourist Services.",
         "user_id": current_user.id,
-        "email": current_user.email,
         "role": current_user.role
     }
+
+
+# ==========================================================================
+# 2. Aadhaar Identity Verification Endpoints (origin/main)
+# ==========================================================================
+class AadhaarOtpRequest(BaseModel):
+    aadhaar_number: str = Field(..., description="12-digit Aadhaar number")
+    phone: Optional[str] = None
+
+
+class AadhaarVerifyRequest(BaseModel):
+    aadhaar_number: str
+    otp: str
+    full_name: str
+    phone: str
+    blood_group: Optional[str] = "O+"
+    emergency_contact: Optional[str] = "Family Member"
+    emergency_phone: Optional[str] = "9876543210"
+
+
+class VendorLoginRequest(BaseModel):
+    business_name: str
+    owner_name: str
+    phone: str
+    category: str = "Prasad & Puja Offerings"
+    spot_id: str = "site_kedarnath"
+    registration_id: Optional[str] = None
+
+
+def validate_aadhaar_format(aadhaar: str) -> bool:
+    cleaned = aadhaar.replace(" ", "").replace("-", "")
+    return len(cleaned) == 12 and cleaned.isdigit()
+
+
+@router.post("/auth/aadhaar/send-otp")
+@router.post("/aadhaar/send-otp")
+def send_aadhaar_otp(data: AadhaarOtpRequest):
+    """
+    Simulates sending an OTP to the mobile number linked with the 12-digit Aadhaar.
+    """
+    cleaned = data.aadhaar_number.replace(" ", "").replace("-", "")
+    if not validate_aadhaar_format(cleaned):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Aadhaar format. Must be a 12-digit numeric identifier."
+        )
+    
+    last_four = cleaned[-4:]
+    txn_id = f"TXN_{uuid.uuid4().hex[:8].upper()}"
+    
+    return {
+        "status": "success",
+        "message": f"Simulated 6-digit OTP sent to mobile linked with Aadhaar ending in XXXX-XXXX-{last_four}.",
+        "txn_id": txn_id,
+        "hint_otp": "123456"
+    }
+
+
+@router.post("/auth/aadhaar/verify-otp")
+@router.post("/aadhaar/verify-otp")
+def verify_aadhaar_and_login(data: AadhaarVerifyRequest):
+    """
+    Verifies 6-digit Aadhaar OTP and issues a Digital Yatri Suraksha Card profile.
+    """
+    cleaned_aadhaar = data.aadhaar_number.replace(" ", "").replace("-", "")
+    if not validate_aadhaar_format(cleaned_aadhaar):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid Aadhaar format."
+        )
+    
+    if len(data.otp.strip()) != 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP must be a 6-digit code."
+        )
+    
+    masked_aadhaar = f"XXXX-XXXX-{cleaned_aadhaar[-4:]}"
+    yatri_id = f"YATRI-{time.strftime('%Y')}-{uuid.uuid4().hex[:6].upper()}"
+    token = f"token_pilgrim_{uuid.uuid4().hex}"
+
+    user_profile = {
+        "user_id": yatri_id,
+        "token": token,
+        "role": "tourist",
+        "full_name": data.full_name,
+        "phone": data.phone,
+        "aadhaar_masked": masked_aadhaar,
+        "is_aadhaar_verified": True,
+        "blood_group": data.blood_group or "O+",
+        "emergency_contact": data.emergency_contact or "Primary Relative",
+        "emergency_phone": data.emergency_phone or data.phone,
+        "punya_points": 260,
+        "linked_dal": "Kedarnath Yatra Dal #42",
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    sessions_db[token] = user_profile
+
+    return {
+        "status": "success",
+        "message": "Aadhaar successfully verified! Digital Yatri Suraksha Card generated.",
+        "user": user_profile
+    }
+
+
+# ==========================================================================
+# 3. Local Temple Vendor Portal Endpoints (origin/main)
+# ==========================================================================
+@router.post("/auth/vendor/login")
+@router.post("/vendor/login")
+def vendor_login(data: VendorLoginRequest):
+    """
+    Authenticates a local temple vendor and issues a vendor partner session.
+    """
+    vendor_id = f"VEND-{uuid.uuid4().hex[:6].upper()}"
+    token = f"token_vendor_{uuid.uuid4().hex}"
+
+    reg_id = data.registration_id or f"TEMPLE-REG-{uuid.uuid4().hex[:5].upper()}"
+
+    vendor_profile = {
+        "user_id": vendor_id,
+        "token": token,
+        "role": "vendor",
+        "business_name": data.business_name,
+        "owner_name": data.owner_name,
+        "phone": data.phone,
+        "category": data.category,
+        "spot_id": data.spot_id,
+        "registration_id": reg_id,
+        "is_verified_partner": True,
+        "created_at": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    sessions_db[token] = vendor_profile
+
+    return {
+        "status": "success",
+        "message": f"Welcome, {data.business_name}! Local Temple Vendor portal active.",
+        "user": vendor_profile
+    }
+
+
+@router.get("/auth/session/me")
+@router.get("/me")
+def get_session_user(token: Optional[str] = None):
+    """
+    Session & Aadhaar identity check endpoint for in-memory demo sessions.
+    """
+    if token and token in sessions_db:
+        return {"status": "authenticated", "user": sessions_db[token]}
+    
+    # Return default guest session
+    return {
+        "status": "guest",
+        "user": {
+            "user_id": "pilgrim_demo_user",
+            "role": "guest",
+            "full_name": "Devotee Guest",
+            "is_aadhaar_verified": False,
+            "punya_points": 260
+        }
+    }
+
