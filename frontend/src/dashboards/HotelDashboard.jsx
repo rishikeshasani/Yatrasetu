@@ -270,54 +270,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
   };
 
   return (
-    <div className="hotel-portal-wrapper">
-
-        {/* HOTEL GANGA PALACE: DYNAMIC PRICING & BUS ARRIVALS */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', padding: '1.5rem 2.5rem 0' }}>
-          <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '0.75rem', padding: '1.25rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-              <span>🚌</span> Inbound Fleet Arrivals
-            </h3>
-            <p style={{ margin: '0 0 1rem', color: '#15803D', fontSize: '0.95rem' }}>
-              Live tracking of partnered travel agencies inbound to Haridwar for Somvati Amavasya.
-            </p>
-            <div style={{ backgroundColor: '#FFF', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#166534', marginBottom: '0.25rem' }}>
-                <span>Sharma Travels (Volvo A/C)</span>
-                <span>ETA: 4:15 PM</span>
-              </div>
-              <span style={{ fontSize: '0.9rem', color: '#15803D' }}>42 Passengers (94% Occupancy)</span>
-            </div>
-            <div style={{ backgroundColor: '#FFF', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#166534', marginBottom: '0.25rem' }}>
-                <span>Ganga Express (Sleeper)</span>
-                <span>ETA: 5:30 PM</span>
-              </div>
-              <span style={{ fontSize: '0.9rem', color: '#15803D' }}>38 Passengers (100% Occupancy)</span>
-            </div>
-          </div>
-
-          <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-              <span>📈</span> Dynamic Pricing Engine
-            </h3>
-            <p style={{ margin: '0 0 1rem', color: '#1D4ED8', fontSize: '0.95rem' }}>
-              YatraSetu AI has automatically adjusted rates based on the inbound bus volume and Somvati Amavasya demand.
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Friday Night Rate (Oct 12)</span>
-                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1E3A8A' }}>₹4,500</span>
-                <span style={{ textDecoration: 'line-through', color: '#94A3B8', marginLeft: '0.75rem', fontSize: '1.2rem' }}>₹3,330</span>
-              </div>
-              <div style={{ backgroundColor: '#DC2626', color: '#FFF', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                +35% Surge
-              </div>
-            </div>
-            <button style={{ width: '100%', marginTop: '1.25rem', padding: '0.75rem', backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>Lock Dynamic Rate</button>
-          </div>
-        </div>
-
+    <div className="hotel-portal-wrapper" id="hotel-dashboard">
       {/* 1. HEADER & TOP NAVIGATION BAR */}
       <header className="hotel-portal-header">
         <div className="hotel-portal-header-inner">
@@ -473,7 +426,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
         {/* 3. KPI DASHBOARD CARDS */}
         <div className="hotel-kpi-row">
           {/* 1. Room Availability */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-rooms">
             <div className="kpi-title-row">
               <span>🛏️</span>
               <span>Room Availability</span>
@@ -486,7 +439,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
           </div>
 
           {/* 2. Occupancy Rate */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-occupancy">
             <div className="kpi-title-row">
               <span>📊</span>
               <span>Occupancy Rate</span>
@@ -595,7 +548,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
         </div>
 
         {/* 5. WORKFLOW: DYNAMIC SCANNABLE QR & GUEST TERMINAL */}
-        <div className="hotel-terminal-panel">
+        <div className="hotel-terminal-panel" id="hotel-bookings">
           <div className="terminal-header-row">
             <div className="terminal-title-group">
               <h3>

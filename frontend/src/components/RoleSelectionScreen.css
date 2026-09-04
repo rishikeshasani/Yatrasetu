@@ -1,0 +1,813 @@
+/* ==========================================================================
+   YATRASETU ROLE SELECTION & AUTHENTICATION SCREEN
+   Modern, Premium Pilgrimage-Tech / Gov-Tech Visual Design System
+   ========================================================================== */
+
+.role-selection-wrapper {
+  min-height: 100vh;
+  position: relative;
+  background: linear-gradient(145deg, #FAFBFD 0%, #FFFDF9 45%, #F5F9F6 100%);
+  color: #0F172A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Subtle spiritual background glow & aura */
+.role-ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.55;
+}
+
+.glow-top-left {
+  top: -120px;
+  left: -80px;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.14) 0%, rgba(254, 240, 138, 0.08) 60%, transparent 100%);
+}
+
+.glow-bottom-right {
+  bottom: -150px;
+  right: -100px;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.09) 60%, transparent 100%);
+}
+
+.role-subtle-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#CBD5E1 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Top Header Navigation
+   -------------------------------------------------------------------------- */
+.role-selection-nav {
+  position: relative;
+  z-index: 10;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.role-nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.role-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.role-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.12);
+}
+
+.role-brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.role-brand-name {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.role-brand-name .devanagari {
+  font-size: 0.95rem;
+  color: #EA580C;
+  font-weight: 700;
+}
+
+.role-brand-sub {
+  font-size: 0.72rem;
+  color: #64748B;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.role-nav-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1D4ED8;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
+}
+
+.sih-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   Role Selection Main Hero
+   -------------------------------------------------------------------------- */
+.role-selection-main {
+  position: relative;
+  z-index: 5;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2.8rem 1.5rem 4rem 1.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.role-hero-section {
+  text-align: center;
+  max-width: 780px;
+  margin-bottom: 2.75rem;
+}
+
+.role-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.9rem;
+  background: rgba(255, 247, 237, 0.9);
+  border: 1px solid rgba(254, 215, 170, 0.8);
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #C2410C;
+  margin-bottom: 1.1rem;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, 0.06);
+}
+
+.role-main-title {
+  font-size: 2.85rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  color: #0F172A;
+  margin: 0 0 0.65rem 0;
+  line-height: 1.15;
+  background: linear-gradient(135deg, #0F172A 30%, #334155 70%, #EA580C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.role-main-subtitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #EA580C;
+  margin: 0 0 0.85rem 0;
+  letter-spacing: -0.01em;
+}
+
+.role-intro-caption {
+  font-size: 0.95rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   4 Role Cards Grid
+   -------------------------------------------------------------------------- */
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+.role-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1.5px solid rgba(226, 232, 240, 0.9);
+  border-radius: 1.35rem;
+  padding: 1.75rem 1.45rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+/* Card Hover Animations */
+.role-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(203, 213, 225, 0.8);
+  box-shadow: 0 20px 30px -8px rgba(15, 23, 42, 0.1), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
+}
+
+/* Distinctive Role Card Accents */
+.role-card.role-tourist::before {
+  background: linear-gradient(90deg, #F97316, #FBBF24);
+}
+.role-card.role-tourist:hover {
+  border-color: #FDBA74;
+  box-shadow: 0 20px 35px -8px rgba(249, 115, 22, 0.18);
+}
+.role-card.role-tourist .role-icon-box {
+  background: #FFF7ED;
+  color: #EA580C;
+  border: 1px solid #FFEDD5;
+}
+.role-card.role-tourist .role-continue-btn {
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+  color: #FFFFFF;
+}
+
+.role-card.role-hotel::before {
+  background: linear-gradient(90deg, #F59E0B, #D97706);
+}
+.role-card.role-hotel:hover {
+  border-color: #FCD34D;
+  box-shadow: 0 20px 35px -8px rgba(217, 119, 6, 0.18);
+}
+.role-card.role-hotel .role-icon-box {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+.role-card.role-hotel .role-continue-btn {
+  background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  color: #FFFFFF;
+}
+
+.role-card.role-travel::before {
+  background: linear-gradient(90deg, #8B5CF6, #6366F1);
+}
+.role-card.role-travel:hover {
+  border-color: #C4B5FD;
+  box-shadow: 0 20px 35px -8px rgba(124, 58, 237, 0.18);
+}
+.role-card.role-travel .role-icon-box {
+  background: #F5F3FF;
+  color: #7C3AED;
+  border: 1px solid #DDD6FE;
+}
+.role-card.role-travel .role-continue-btn {
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  color: #FFFFFF;
+}
+
+.role-card.role-government::before {
+  background: linear-gradient(90deg, #3B82F6, #1D4ED8);
+}
+.role-card.role-government:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 20px 35px -8px rgba(29, 78, 216, 0.18);
+}
+.role-card.role-government .role-icon-box {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+.role-card.role-government .role-continue-btn {
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%);
+  color: #FFFFFF;
+}
+
+/* Card Content Details */
+.role-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.role-icon-box {
+  width: 58px;
+  height: 58px;
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.role-type-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: #F1F5F9;
+  color: #475569;
+}
+
+.role-card-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 0.55rem 0;
+  letter-spacing: -0.02em;
+}
+
+.role-card-desc {
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0 0 1.25rem 0;
+  min-height: 48px;
+}
+
+.role-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.role-features-list li {
+  font-size: 0.78rem;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-weight: 600;
+}
+
+.feat-check {
+  color: #10B981;
+  font-weight: 900;
+  font-size: 0.8rem;
+}
+
+/* Continue Button */
+.role-continue-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.role-continue-btn:hover {
+  filter: brightness(1.08);
+  transform: scale(1.02);
+}
+
+.btn-arrow {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.role-card:hover .btn-arrow {
+  transform: translateX(4px);
+}
+
+/* --------------------------------------------------------------------------
+   SIH Quick Evaluation Strip
+   -------------------------------------------------------------------------- */
+.role-demo-helper-strip {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 1.1rem;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  backdrop-filter: blur(8px);
+}
+
+.demo-strip-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.demo-spark {
+  font-size: 1.3rem;
+}
+
+.demo-strip-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quick-eval-chip {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.quick-eval-chip:hover {
+  background: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+}
+
+/* --------------------------------------------------------------------------
+   VIEW 2: Role Login Form Panel
+   -------------------------------------------------------------------------- */
+.role-login-main {
+  position: relative;
+  z-index: 5;
+  max-width: 540px;
+  margin: 1.5rem auto 4rem auto;
+  padding: 0 1.25rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex: 1;
+}
+
+.role-login-container {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 1.4rem;
+  padding: 2rem 2.2rem;
+  box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.login-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.login-back-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.login-back-btn:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.login-role-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.login-header-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.login-role-icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 1rem;
+  background: #F8FAFC;
+  border: 2px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.login-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 0.35rem 0;
+  letter-spacing: -0.02em;
+}
+
+.login-desc {
+  font-size: 0.82rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Mode Switch Tabs */
+.login-mode-tabs {
+  display: flex;
+  gap: 0.35rem;
+  background: #F1F5F9;
+  padding: 0.3rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.mode-tab-btn {
+  flex: 1;
+  padding: 0.55rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  font-weight: 700;
+  font-size: 0.8rem;
+  border-radius: 0.55rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.mode-tab-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Feedback Alerts */
+.auth-feedback-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+.auth-feedback-box.error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+}
+
+.auth-feedback-box.info {
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+}
+
+/* Auth Form Fields */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.auth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.auth-input-group label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-sub-note {
+  font-size: 0.72rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.auth-text-input {
+  width: 100%;
+  padding: 0.75rem 0.95rem;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  color: #0F172A;
+  background: #FFFFFF;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.auth-text-input:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.role-lock-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.9rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.65rem;
+  font-size: 0.82rem;
+}
+
+.role-lock-pill strong {
+  color: #0F172A;
+}
+
+.lock-tag {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: #64748B;
+  background: #E2E8F0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.auth-submit-btn {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  margin-top: 0.4rem;
+}
+
+.auth-submit-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Fast Track Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 0.6rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.auth-divider span {
+  padding: 0 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+}
+
+/* Fast Track Button */
+.auth-demo-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.8rem 1rem;
+  background: #F8FAFC;
+  border: 1.5px dashed #CBD5E1;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #0F172A;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.auth-demo-quick-btn:hover {
+  background: #F1F5F9;
+  border-color: #94A3B8;
+  border-style: solid;
+}
+
+.demo-email-hint {
+  font-size: 0.72rem;
+  color: #64748B;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Media Queries
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .role-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .role-main-title {
+    font-size: 2.1rem;
+  }
+
+  .role-main-subtitle {
+    font-size: 1.05rem;
+  }
+
+  .role-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .role-demo-helper-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .demo-strip-buttons {
+    width: 100%;
+  }
+
+  .quick-eval-chip {
+    flex: 1;
+    text-align: center;
+  }
+
+  .role-login-container {
+    padding: 1.5rem 1.25rem;
+  }
+}
