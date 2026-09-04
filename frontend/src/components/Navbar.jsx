@@ -1,4 +1,4 @@
-export default function Navbar({ walletPoints, onOpenWallet, onOpenSOS }) {
+export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, onOpenSOS }) {
   return (
     <header className="navbar-header">
       <div className="navbar-container">
@@ -54,6 +54,11 @@ export default function Navbar({ walletPoints, onOpenWallet, onOpenSOS }) {
               <span className="wallet-points-val">{walletPoints ?? 260}</span>
               <span className="wallet-points-unit">Punya Pts</span>
             </div>
+            {pendingPoints > 0 && (
+              <span className="pending-pts-chip" title="Pending arrival at alternate route">
+                +{pendingPoints} pending
+              </span>
+            )}
           </button>
 
           <button 

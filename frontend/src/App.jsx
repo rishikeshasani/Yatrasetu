@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import SiteSelector from './components/SiteSelector';
 import LiveCrowdCard from './components/LiveCrowdCard';
-import AlternativeSpots from './components/AlternativeSpots';
+import PilgrimAdvisory from './components/PilgrimAdvisory';
 import SafetyAlerts from './components/SafetyAlerts';
 import LocalVendors from './components/LocalVendors';
 import TeamTracker from './components/TeamTracker';
@@ -36,6 +36,12 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Pilgrim Advisory Active Route & Pending Reward State
+  const [activeAlternateRoute, setActiveAlternateRoute] = useState(null);
+  const [pendingPunyaReward, setPendingPunyaReward] = useState(0);
+  const [routeStatus, setRouteStatus] = useState('IDLE'); // 'IDLE' | 'ACTIVE' | 'ARRIVED'
+  const [completedRouteIds, setCompletedRouteIds] = useState([]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -85,48 +91,101 @@ export default function App() {
     };
   }, []);
 
-  // Load selected site-specific telemetry with live 3-second auto-polling
+  // 1. Load static site metadata (alternatives, safety info, vendors) once per site selection
   useEffect(() => {
     let isMounted = true;
     if (!selectedSiteId) return;
 
-    async function loadSiteData() {
+    async function loadStaticSiteData() {
       try {
-        const [density, forecast, prediction, alternatives, sInfo, siteVendors] = await Promise.all([
-          fetchSiteDensity(selectedSiteId),
-          fetchSiteForecast(selectedSiteId),
-          fetchSitePrediction(selectedSiteId),
+        const [alternatives, sInfo, siteVendors] = await Promise.all([
           fetchAlternatives(selectedSiteId),
           fetchSafetyInfo(selectedSiteId),
           fetchVendors(selectedSiteId)
         ]);
 
         if (!isMounted) return;
-        setCurrentDensity(density);
-        setCurrentForecast(forecast);
-        setCurrentPrediction(prediction);
-        setCurrentAlternatives(alternatives);
-        setSafetyInfo(sInfo);
-        setVendors(siteVendors);
 
-        setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
+        // Defensive state preservation: prevent empty fallback from overwriting valid recommendations
+        setCurrentAlternatives((prev) => {
+          if (
+            prev &&
+            prev.site_id === selectedSiteId &&
+            Array.isArray(prev.recommendations) &&
+            prev.recommendations.length > 0 &&
+            (!alternatives || !Array.isArray(alternatives.recommendations) || alternatives.recommendations.length === 0)
+          ) {
+            return prev;
+          }
+          return alternatives;
+        });
+
+        if (sInfo) setSafetyInfo(sInfo);
+        if (siteVendors) setVendors(siteVendors);
       } catch (err) {
-        console.error(`Error fetching telemetry for ${selectedSiteId}:`, err);
+        console.error(`Error loading static data for ${selectedSiteId}:`, err);
       }
     }
 
-    loadSiteData();
+    loadStaticSiteData();
 
-    const pollInterval = setInterval(loadSiteData, 3000);
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedSiteId]);
+
+  // 2. Load dynamic telemetry (density, forecast, prediction) with live 3-second auto-polling & concurrency guard
+  const isPollingRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!selectedSiteId) return;
+
+    async function pollTelemetry() {
+      // Prevent overlapping polling requests / race conditions
+      if (isPollingRef.current) return;
+      isPollingRef.current = true;
+
+      try {
+        const [density, forecast, prediction] = await Promise.all([
+          fetchSiteDensity(selectedSiteId),
+          fetchSiteForecast(selectedSiteId),
+          fetchSitePrediction(selectedSiteId)
+        ]);
+
+        if (!isMounted) return;
+
+        if (density) {
+          setCurrentDensity(density);
+          setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
+        }
+        if (forecast) setCurrentForecast(forecast);
+        if (prediction) setCurrentPrediction(prediction);
+      } catch (err) {
+        console.error(`Error polling telemetry for ${selectedSiteId}:`, err);
+      } finally {
+        isPollingRef.current = false;
+      }
+    }
+
+    pollTelemetry();
+
+    const pollInterval = setInterval(pollTelemetry, 3000);
 
     return () => {
       isMounted = false;
       clearInterval(pollInterval);
+      isPollingRef.current = false;
     };
   }, [selectedSiteId]);
 
   const handleSelectSite = (siteId) => {
     setSelectedSiteId(siteId);
+    if (routeStatus === 'ACTIVE') {
+      setPendingPunyaReward(0);
+      setActiveAlternateRoute(null);
+      setRouteStatus('IDLE');
+    }
   };
 
   const handleClaimReward = async (points, reason) => {
@@ -143,6 +202,81 @@ export default function App() {
       showToast(`🎉 Claimed +${points} Green Pilgrim Points!`);
     } catch (err) {
       showToast('Error claiming reward.');
+    }
+  };
+
+  // Route selection: sets active route and marks +25 pending WITHOUT calling reward API
+  const handleSelectRoute = (alt) => {
+    const routeKey = alt?.alternative_id || alt?.name;
+    const isAlreadyCompleted = completedRouteIds.includes(routeKey);
+
+    if (isAlreadyCompleted) {
+      setActiveAlternateRoute(alt);
+      setRouteStatus('ARRIVED');
+      setPendingPunyaReward(0);
+      showToast(`Heading to ${alt.name} (Arrival reward already earned).`);
+      return;
+    }
+
+    // When switching to another alternative before reaching: cancel previous pending, set fresh +25 pending
+    setActiveAlternateRoute(alt);
+    setRouteStatus('ACTIVE');
+    setPendingPunyaReward(25);
+    showToast(`🟡 Alternate route selected: Heading to ${alt.name}. 🎁 +25 Punya Points pending arrival.`);
+  };
+
+  // Arrival completion: called ONLY when destination is reached via verified GPS or demo simulation
+  const handleCompleteArrival = async (alt, source = 'gps') => {
+    const routeKey = alt?.alternative_id || alt?.name;
+    if (!routeKey) return;
+
+    // Guard against duplicate reward submissions
+    if (completedRouteIds.includes(routeKey)) {
+      console.log(`[YatraSetu] Duplicate reward blocked for ${routeKey}`);
+      return;
+    }
+
+    try {
+      // ONLY now call backend POST /wallet/reward
+      await rewardUser('pilgrim_demo_user', 25, `Reached alternate destination: ${alt.name}`);
+
+      setCompletedRouteIds((prev) => [...prev, routeKey]);
+      setRouteStatus('ARRIVED');
+      setPendingPunyaReward(0);
+
+      setWallet((prev) => ({
+        ...prev,
+        total_points: (prev.total_points || 0) + 25,
+        history: [
+          { id: Date.now(), points: 25, reason: `Reached alternate destination: ${alt.name}`, timestamp: 'Just now' },
+          ...(prev.history || [])
+        ]
+      }));
+
+      showToast(`🎉 Destination Reached! Welcome to ${alt.name}. +25 Punya Points added to your Green Pilgrim Wallet.`);
+    } catch (err) {
+      console.error("Error rewarding user upon arrival:", err);
+      showToast(`Welcome to ${alt.name}! +25 Punya Points credited.`);
+    }
+  };
+
+  // Switch Back to original destination
+  const handleSwitchBack = () => {
+    const siteTitle = selectedSite?.name || 'main shrine';
+    if (routeStatus === 'ACTIVE') {
+      // Cancel pending reward; do NOT award points
+      setPendingPunyaReward(0);
+      setActiveAlternateRoute(null);
+      setRouteStatus('IDLE');
+      showToast(`Alternate route canceled. Returning to ${siteTitle}. (0 points awarded)`);
+    } else if (routeStatus === 'ARRIVED') {
+      // Return to normal destination; do NOT remove already-earned points
+      setActiveAlternateRoute(null);
+      setRouteStatus('IDLE');
+      showToast(`Returned view to ${siteTitle}. Earned Punya Points preserved.`);
+    } else {
+      setActiveAlternateRoute(null);
+      setRouteStatus('IDLE');
     }
   };
 
@@ -177,6 +311,7 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         walletPoints={wallet?.total_points || 260}
+        pendingPoints={pendingPunyaReward}
         onOpenWallet={() => setIsWalletOpen(true)}
         onOpenSOS={() => handleNavbarSOS('Emergency Alert')}
         onTriggerSOS={() => handleNavbarSOS('Emergency Alert')}
@@ -209,11 +344,19 @@ export default function App() {
               prediction={currentPrediction}
             />
 
-            <AlternativeSpots
+            <PilgrimAdvisory
+              currentSite={selectedSite}
+              density={currentDensity}
+              forecast={currentForecast}
+              prediction={currentPrediction}
               alternativesData={currentAlternatives}
-              alternatives={currentAlternatives}
-              currentSiteName={selectedSite.name}
-              onClaimReward={handleClaimReward}
+              activeAlternateRoute={activeAlternateRoute}
+              pendingPunyaReward={pendingPunyaReward}
+              routeStatus={routeStatus}
+              completedRouteIds={completedRouteIds}
+              onSelectRoute={handleSelectRoute}
+              onCompleteArrival={handleCompleteArrival}
+              onSwitchBack={handleSwitchBack}
             />
 
             <TeamTracker
@@ -240,6 +383,7 @@ export default function App() {
         <WalletModal
           isOpen={isWalletOpen}
           wallet={wallet}
+          pendingReward={{ points: pendingPunyaReward, routeName: activeAlternateRoute?.name }}
           onClose={() => setIsWalletOpen(false)}
           onRedeem={handleRedeemVoucher}
         />

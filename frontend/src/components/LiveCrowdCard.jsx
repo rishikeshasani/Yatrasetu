@@ -10,10 +10,10 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
 
   useEffect(() => {
     if (site?.id) {
-      fetchSiteScheduleInsights(site.id).then(res => {
+      fetchSiteScheduleInsights(site.id).then((res) => {
         if (res) setScheduleInsights(res);
       });
-      fetchSiteMLForecast(site.id).then(res => {
+      fetchSiteMLForecast(site.id).then((res) => {
         if (res?.forecasts) setMlForecast(res.forecasts);
       });
     }
@@ -27,12 +27,13 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
   const waitMins = forecast?.queue_forecast?.estimated_current_wait_mins ?? 35;
   const normalWait = forecast?.queue_forecast?.normal_wait_mins ?? 25;
   const peakWait = forecast?.queue_forecast?.peak_wait_mins ?? 120;
-  const queueSys = forecast?.queue_forecast?.queue_management_system || 'Automated Queue Lanes';
-  const fastTrack = forecast?.queue_forecast?.fast_track_details || 'Priority counters for senior citizens available';
+  const queueSys = forecast?.queue_forecast?.queue_management_system || 'Automated Queue Corridors';
+  const fastTrack = forecast?.queue_forecast?.fast_track_details || 'Priority counters available for seniors and families';
 
   const seasonalContext = forecast?.seasonal_context;
   const predictedCount = prediction?.predicted_next_count;
   const relativeSurge = density?.relative_surge_alert;
+  const isSurgeActive = Boolean(relativeSurge?.is_relative_surge || simulatedSurge);
 
   const getStatusTheme = (s) => {
     switch (s) {
@@ -83,14 +84,20 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
 
   return (
     <section className="live-crowd-section">
+      {/* 1. DESTINATION HERO HEADER */}
       <div className="destination-hero-header">
         <div className="destination-meta">
-          <span className="live-telemetry-tag">
-            <span className="blink-dot"></span> LIVE SURVEILLANCE FEED
-          </span>
+          <div className="telemetry-badge-row">
+            <span className="live-telemetry-tag">
+              <span className="blink-dot"></span> LIVE SURVEILLANCE FEED
+            </span>
+            <span className="live-poll-badge">
+              <span className="poll-dot"></span> 3s Live Refresh
+            </span>
+          </div>
           <h1 className="destination-heading">{site.name}</h1>
           <p className="destination-sub">
-            {[site.city, site.state].filter(Boolean).join(', ') || 'Pilgrim Destination'}
+            {[site.city, site.state].filter(Boolean).join(', ') || 'Sacred Destination'}
             {site.description ? ` • ${site.description}` : ''}
           </p>
         </div>
@@ -104,102 +111,78 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
           )}
           {site.darshan_timings && (
             <div className="fact-badge">
-              <span className="fact-label">Darshan Timings</span>
+              <span className="fact-label">Darshan Hours</span>
               <span className="fact-val">{site.darshan_timings}</span>
             </div>
           )}
         </div>
       </div>
 
+      {/* 2. AI BEST TIME TO VISIT BANNER */}
       {scheduleInsights && (
-        <div style={{
-          backgroundColor: '#ECFDF5',
-          borderColor: '#A7F3D0',
-          borderWidth: '1px',
-          borderRadius: '0.75rem',
-          padding: '0.85rem 1.2rem',
-          marginBottom: '1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1.4rem' }}>🕒</span>
-            <div>
-              <div style={{ fontWeight: '700', color: '#065F46', fontSize: '0.9rem' }}>
+        <div className="schedule-insights-banner">
+          <div className="schedule-insights-left">
+            <span className="insights-icon">🕒</span>
+            <div className="insights-text">
+              <div className="insights-title">
                 AI Best Time to Visit ({scheduleInsights.today_day_name || 'Today'}):
               </div>
-              <div style={{ color: '#047857', fontSize: '0.85rem' }}>
+              <div className="insights-desc">
                 {scheduleInsights.quietest_window_summary}
               </div>
             </div>
           </div>
           {scheduleInsights.peak_hours && scheduleInsights.peak_hours.length > 0 && (
-            <div style={{ fontSize: '0.78rem', color: '#991B1B', backgroundColor: '#FEE2E2', padding: '0.3rem 0.6rem', borderRadius: '0.5rem', fontWeight: '600' }}>
+            <div className="insights-peak-pill">
               ⚠️ Peak Congestion: {scheduleInsights.peak_hours.join(', ')}
             </div>
           )}
         </div>
       )}
 
-      <div style={{
-        backgroundColor: (relativeSurge?.is_relative_surge || simulatedSurge) ? '#FEF2F2' : '#F8FAFC',
-        borderColor: (relativeSurge?.is_relative_surge || simulatedSurge) ? '#FECACA' : '#E2E8F0',
-        borderWidth: '1px',
-        borderRadius: '0.75rem',
-        padding: '0.75rem 1.2rem',
-        marginBottom: '1.25rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '0.75rem',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ fontSize: '1.3rem' }}>{(relativeSurge?.is_relative_surge || simulatedSurge) ? '🚨' : '🛡️'}</span>
-          <div>
-            <div style={{ fontWeight: '700', color: (relativeSurge?.is_relative_surge || simulatedSurge) ? '#991B1B' : '#334155', fontSize: '0.85rem' }}>
-              {(relativeSurge?.is_relative_surge || simulatedSurge)
+      {/* 3. DYNAMIC SURGE ANOMALY MONITOR */}
+      <div className={`surge-monitor-banner ${isSurgeActive ? 'surge-active' : 'surge-normal'}`}>
+        <div className="surge-banner-left">
+          <span className="surge-icon">{isSurgeActive ? '🚨' : '🛡️'}</span>
+          <div className="surge-text">
+            <div className="surge-title">
+              {isSurgeActive
                 ? 'Dynamic Surge Anomaly: CRITICAL SURGE DETECTED'
                 : 'AI Walk-in Surge Monitor: Normal Traffic Flow'}
             </div>
-            <div style={{ color: (relativeSurge?.is_relative_surge || simulatedSurge) ? '#B91C1C' : '#64748B', fontSize: '0.8rem' }}>
-              {(relativeSurge?.is_relative_surge || simulatedSurge)
-                ? 'Unscheduled spike: +380% above historical baseline for this hour (Z-Score: 8.4)'
+            <div className="surge-sub">
+              {isSurgeActive
+                ? (relativeSurge?.message || 'Unscheduled spike: High visitor influx above historical baseline for this hour.')
                 : 'Current footfall is within ±1.2σ of historical hourly baseline.'}
             </div>
           </div>
         </div>
         <button
+          type="button"
+          className={`surge-simulate-btn ${simulatedSurge ? 'sim-active' : ''}`}
           onClick={() => setSimulatedSurge(!simulatedSurge)}
-          style={{
-            fontSize: '0.72rem',
-            padding: '0.3rem 0.65rem',
-            borderRadius: '0.5rem',
-            fontWeight: '600',
-            backgroundColor: simulatedSurge ? '#DC2626' : '#E2E8F0',
-            color: simulatedSurge ? '#FFFFFF' : '#334155',
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s'
-          }}
+          title="Toggle surge alert simulation for SIH demonstration"
         >
           {simulatedSurge ? 'Reset to Normal' : 'Simulate Spike Alert'}
         </button>
       </div>
 
+      {/* 4. DUAL HERO METRICS: CROWD DENSITY & WAIT TIME */}
       <div className="metrics-grid">
+        {/* Metric 1: Real-Time Crowd Density (Hero Gauge) */}
         <div className="metric-card occupancy-gauge-card" style={{ borderColor: theme.border }}>
           <div className="card-top-row">
-            <span className="metric-header-title">Real-Time Crowd Density</span>
+            <div className="card-title-wrap">
+              <span className="metric-header-title">Current Crowd Density</span>
+              <span className="metric-sub-label">Live camera & sensor telemetry</span>
+            </div>
             <span className={`status-pill-big ${theme.badge}`}>
               {theme.icon} {theme.label}
             </span>
           </div>
 
           <div className="occupancy-display-box">
+            {/* Radial Gauge Meter */}
             <div className="radial-meter-container">
               <svg className="radial-meter-svg" viewBox="0 0 120 120">
                 <circle
@@ -217,7 +200,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
                   strokeWidth="10"
                   stroke={theme.color}
                   strokeDasharray={314}
-                  strokeDashoffset={314 - (314 * Math.min(occupancy, 100)) / 100}
+                  strokeDashoffset={314 - (314 * Math.min(Math.max(occupancy, 0), 100)) / 100}
                 />
               </svg>
               <div className="radial-meter-text">
@@ -226,20 +209,29 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
               </div>
             </div>
 
+            {/* Clear Headcount & Capacity Breakdown */}
             <div className="headcount-details">
-              <div className="stat-line">
-                <span className="stat-muted">Live Headcount:</span>
-                <strong className="stat-bold">{peopleCount.toLocaleString()} pilgrims</strong>
+              <div className="stat-box-highlight">
+                <span className="stat-highlight-num" style={{ color: theme.color }}>
+                  👥 {peopleCount.toLocaleString()}
+                </span>
+                <span className="stat-highlight-label">Pilgrims Currently Present</span>
               </div>
+
               <div className="stat-line">
                 <span className="stat-muted">Safe Maximum:</span>
                 <strong className="stat-bold">{capacity.toLocaleString()} pilgrims</strong>
               </div>
               <div className="stat-line">
+                <span className="stat-muted">Current Load:</span>
+                <strong className="stat-bold">{occupancy}% of safe limit</strong>
+              </div>
+              <div className="stat-line">
                 <span className="stat-muted">Status Advisory:</span>
                 <span className="stat-desc">{theme.desc}</span>
               </div>
-              {predictedCount && (
+
+              {predictedCount != null && (
                 <div className="ai-prediction-pill">
                   <span className="ai-spark">✨</span> AI 30-min Trend: <strong>~{predictedCount.toLocaleString()} visitors</strong>
                 </div>
@@ -248,9 +240,13 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
           </div>
         </div>
 
+        {/* Metric 2: Queue & Darshan Wait Time */}
         <div className="metric-card queue-telemetry-card">
           <div className="card-top-row">
-            <span className="metric-header-title">Queue & Darshan Wait Time</span>
+            <div className="card-title-wrap">
+              <span className="metric-header-title">Estimated Darshan Wait Time</span>
+              <span className="metric-sub-label">From queue entrance to sanctum</span>
+            </div>
             <span className="wait-time-tag">
               ⏱️ AI Queue Estimation
             </span>
@@ -260,25 +256,31 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
             <div className="wait-time-clock">
               <span className="clock-icon">⏳</span>
               <div className="wait-time-numbers">
-                <span className="wait-time-value">{waitMins}</span>
-                <span className="wait-time-unit">Minutes Est. Wait</span>
+                <div className="wait-time-primary-row">
+                  <span className="wait-time-value">~{waitMins}</span>
+                  <span className="wait-time-mins-label">Minutes</span>
+                </div>
+                <span className="wait-time-unit">Estimated current queue wait</span>
               </div>
             </div>
 
             <div className="wait-time-comparison-bar">
               <div className="comparison-point">
                 <span className="pt-label">Normal Flow</span>
-                <span className="pt-val">{normalWait}m</span>
+                <span className="pt-val">{normalWait} min</span>
               </div>
               <div className="comparison-slider">
-                <div 
-                  className="comparison-fill" 
-                  style={{ width: `${Math.min(100, Math.max(15, (waitMins / (peakWait || 120)) * 100))}%`, backgroundColor: theme.color }}
+                <div
+                  className="comparison-fill"
+                  style={{
+                    width: `${Math.min(100, Math.max(12, Math.round((waitMins / Math.max(peakWait, 120)) * 100)))}%`,
+                    backgroundColor: theme.color
+                  }}
                 ></div>
               </div>
               <div className="comparison-point">
                 <span className="pt-label">Peak Surge</span>
-                <span className="pt-val">{peakWait}m</span>
+                <span className="pt-val">{peakWait} min</span>
               </div>
             </div>
           </div>
@@ -302,11 +304,43 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       </div>
 
+      {/* 5. VISUAL DECISION BRIDGE TO AI PILGRIM ADVISORY */}
+      <div className={`advisory-bridge-strip ${occupancy >= 75 || isSurgeActive ? 'bridge-surge' : 'bridge-optimal'}`}>
+        <div className="bridge-icon-col">
+          <span className="bridge-om-icon">{occupancy >= 75 || isSurgeActive ? '⚠️' : '🕉️'}</span>
+        </div>
+        <div className="bridge-text-col">
+          <div className="bridge-title">
+            {occupancy >= 75 || isSurgeActive
+              ? `Heavy Rush Detected at ${site.name}`
+              : `Smooth Darshan Flow at ${site.name}`}
+          </div>
+          <p className="bridge-sub">
+            {occupancy >= 75 || isSurgeActive
+              ? `Current waiting time is ~${waitMins} mins. YatraSetu AI has generated peaceful alternative routes with up to 70%+ shorter queues and +25 Punya Points on arrival.`
+              : `Current waiting time is ~${waitMins} mins. If you prefer quieter, off-beat spiritual sites, browse our AI-recommended alternatives below.`}
+          </p>
+        </div>
+        <button
+          type="button"
+          className="bridge-action-btn"
+          onClick={() => {
+            const el = document.getElementById('ai-pilgrim-advisory');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          title="Scroll down to AI Pilgrim Advisory & Alternative Routes"
+        >
+          <span>Explore Alternative Routes</span>
+          <span className="bridge-arrow">↓</span>
+        </button>
+      </div>
+
+      {/* 6. TEMPLE RITUAL & SEASONAL GUIDELINES */}
       {seasonalContext && (
         <div className="seasonal-context-box">
           <div className="seasonal-header">
             <span className="temple-bell">🔔</span>
-            <h4 className="seasonal-title">Pilgrim Advisory & Surge Intelligence</h4>
+            <h4 className="seasonal-title">Temple Ritual & Seasonal Guidelines</h4>
           </div>
           <div className="seasonal-grid">
             <div className="seasonal-col">
@@ -325,77 +359,64 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
+      {/* 7. 24-HOUR AI CROWD FORECAST & OCCUPANCY CURVE */}
       {mlForecast && mlForecast.length > 0 && (
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          borderColor: '#E2E8F0',
-          borderWidth: '1px',
-          borderRadius: '1rem',
-          padding: '1.25rem',
-          marginTop: '1.5rem',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="ml-forecast-card">
+          <div className="ml-forecast-header">
+            <div className="ml-forecast-title-row">
               <span style={{ fontSize: '1.25rem' }}>📈</span>
-              <h3 style={{ fontWeight: '700', fontSize: '1rem', color: '#0F172A', margin: 0 }}>
+              <h3 className="ml-forecast-title">
                 24-Hour AI Crowd Forecast & Occupancy Curve
               </h3>
             </div>
-            <span style={{ fontSize: '0.75rem', fontWeight: '600', backgroundColor: '#EFF6FF', color: '#1D4ED8', padding: '0.25rem 0.6rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+            <span className="ml-badge-tag">
               🤖 ML Model (Random Forest)
             </span>
           </div>
 
-          <div style={{
-            display: 'flex',
-            gap: '0.75rem',
-            overflowX: 'auto',
-            paddingBottom: '0.5rem',
-            scrollbarWidth: 'thin'
-          }}>
+          <div className="ml-forecast-track">
             {mlForecast.slice(0, 12).map((item, idx) => {
-              const itemColor = item.status === 'CRITICAL' ? '#DC2626' : item.status === 'HIGH' ? '#EA580C' : item.status === 'MODERATE' ? '#D97706' : '#059669';
-              const itemBg = item.status === 'CRITICAL' ? '#FEF2F2' : item.status === 'HIGH' ? '#FFF7ED' : item.status === 'MODERATE' ? '#FFFBEB' : '#ECFDF5';
+              const itemColor =
+                item.status === 'CRITICAL'
+                  ? '#DC2626'
+                  : item.status === 'HIGH'
+                  ? '#EA580C'
+                  : item.status === 'MODERATE'
+                  ? '#D97706'
+                  : '#059669';
+              const itemBg =
+                item.status === 'CRITICAL'
+                  ? '#FEF2F2'
+                  : item.status === 'HIGH'
+                  ? '#FFF7ED'
+                  : item.status === 'MODERATE'
+                  ? '#FFFBEB'
+                  : '#ECFDF5';
               return (
-                <div key={idx} style={{
-                  minWidth: '100px',
-                  flex: '0 0 auto',
-                  padding: '0.75rem 0.5rem',
-                  borderRadius: '0.75rem',
-                  backgroundColor: itemBg,
-                  border: `1px solid ${itemColor}33`,
-                  textAlign: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '600', color: '#64748B' }}>
+                <div
+                  key={idx}
+                  className="ml-forecast-item"
+                  style={{
+                    backgroundColor: itemBg,
+                    border: `1px solid ${itemColor}33`
+                  }}
+                >
+                  <span className="ml-time-label">
                     {item.time_label}
                   </span>
-                  <div style={{
-                    width: '6px',
-                    height: '36px',
-                    backgroundColor: '#E2E8F0',
-                    borderRadius: '999px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      height: `${Math.min(100, item.occupancy_percentage)}%`,
-                      backgroundColor: itemColor,
-                      borderRadius: '999px'
-                    }}></div>
+                  <div className="ml-bar-track">
+                    <div
+                      className="ml-bar-fill"
+                      style={{
+                        height: `${Math.min(100, item.occupancy_percentage)}%`,
+                        backgroundColor: itemColor
+                      }}
+                    ></div>
                   </div>
-                  <strong style={{ fontSize: '0.85rem', color: itemColor, fontWeight: '700' }}>
+                  <strong className="ml-pct-label" style={{ color: itemColor }}>
                     {item.occupancy_percentage}%
                   </strong>
-                  <span style={{ fontSize: '0.7rem', color: '#475569' }}>
+                  <span className="ml-count-label">
                     ~{item.predicted_count} ppl
                   </span>
                 </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function WalletModal({ isOpen, onClose, wallet, onRedeem }) {
+export default function WalletModal({ isOpen, onClose, wallet, pendingReward, onRedeem }) {
   const [redeemedVoucher, setRedeemedVoucher] = useState(null);
 
   if (!isOpen) return null;
@@ -44,7 +44,7 @@ export default function WalletModal({ isOpen, onClose, wallet, onRedeem }) {
           {/* Balance Hero Card */}
           <div className="wallet-balance-card">
             <div className="balance-info">
-              <span className="balance-label">Total Accumulated Punya Points</span>
+              <span className="balance-label">Total Verified Punya Points</span>
               <div className="balance-value-row">
                 <span className="balance-number">{points}</span>
                 <span className="balance-unit">Coins</span>
@@ -55,6 +55,22 @@ export default function WalletModal({ isOpen, onClose, wallet, onRedeem }) {
               <span className="floating-coin">🪙</span>
             </div>
           </div>
+
+          {/* Pending Reward Notice if alternate route is currently active */}
+          {pendingReward?.points > 0 && (
+            <div className="pending-reward-modal-banner">
+              <div className="pending-modal-left">
+                <span className="pending-modal-icon">🎁</span>
+                <div>
+                  <div className="pending-modal-title">+{pendingReward.points} Punya Points Pending Arrival</div>
+                  <div className="pending-modal-sub">
+                    En route to <strong>{pendingReward.routeName || 'Alternative Shrine'}</strong>. Points will credit automatically upon verified arrival.
+                  </div>
+                </div>
+              </div>
+              <span className="pending-modal-badge">🟡 In Transit</span>
+            </div>
+          )}
 
           {/* How to Earn */}
           <div className="earn-ways-box">
