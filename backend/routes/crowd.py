@@ -21,7 +21,7 @@ def internal_telemetry_sync(data: dict):
         "people_count": data.get("people_count", 0),
         "occupancy_percentage": round((data.get("people_count", 0) / 2500) * 100, 1),
         "status": "CRITICAL" if data.get("people_count", 0) > 2000 else "NORMAL",
-        "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, data.get("people_count", 0), 2500),
+        "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, data.get("people_count", 0), capacity=2500),
         "last_updated": "Just now (Live ML Feed)"
     }
     
