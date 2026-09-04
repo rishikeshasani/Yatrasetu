@@ -1171,7 +1171,7 @@ export const MOCK_SAFETY_INFO = {
   }
 };
 
-export // ==========================================
+// ==========================================
 // SITE METADATA & COMPATIBILITY HELPERS
 // ==========================================
 export const SITE_METADATA = {
