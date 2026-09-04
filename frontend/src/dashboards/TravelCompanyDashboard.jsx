@@ -127,6 +127,21 @@ export default function TravelCompanyDashboard({
 
   return (
     <div className="travel-dashboard-root" id="travel-dashboard">
+
+      {/* SHARMA TRAVELS: HARIDWAR PREDICTIVE WARNING */}
+      <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', margin: '1.5rem 1.5rem 0', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <span style={{ fontSize: '2.5rem' }}>⚠️</span>
+        <div>
+          <h3 style={{ margin: '0 0 0.4rem', color: '#92400E', fontSize: '1.2rem' }}>Sharma Travels Route Intelligence Alert</h3>
+          <p style={{ margin: 0, color: '#B45309', fontSize: '1.05rem', fontWeight: '500' }}>
+            High demand detected for <strong>Haridwar</strong> on <strong>Oct 12</strong> due to <strong>Somvati Amavasya</strong>. <br/>
+            Forward occupancy: <span style={{ color: '#DC2626', fontWeight: 'bold' }}>94%</span>. Return occupancy on Sunday: <span style={{ color: '#DC2626', fontWeight: 'bold' }}>88%</span> if departed at 4 PM.
+          </p>
+        </div>
+        <div style={{ marginLeft: 'auto' }}>
+          <button style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>Adjust Fleet Schedule</button>
+        </div>
+      </div>
       {/* Top Banner */}
       <div className="travel-header-banner">
         <div className="travel-header-title-row">
