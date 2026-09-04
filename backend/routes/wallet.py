@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from database import supabase
+from dependencies import require_role, AuthenticatedUser
 
 router = APIRouter()
 
@@ -10,7 +11,10 @@ class RewardRequest(BaseModel):
     reason: str
 
 @router.post("/wallet/reward")
-def reward_user(data: RewardRequest):
+def reward_user(
+    data: RewardRequest,
+    current_user: AuthenticatedUser = Depends(require_role(["government", "hotel", "travel_company"]))
+):
     supabase.table("wallet_transactions").insert({
         "user_id": data.user_id,
         "points": data.points,

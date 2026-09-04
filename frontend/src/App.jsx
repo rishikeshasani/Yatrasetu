@@ -7,6 +7,9 @@ import SafetyAlerts from './components/SafetyAlerts';
 import LocalVendors from './components/LocalVendors';
 import TeamTracker from './components/TeamTracker';
 import WalletModal from './components/WalletModal';
+import AuthModal from './components/AuthModal';
+import DigitalYatriCardModal from './components/DigitalYatriCardModal';
+import VendorDashboardModal from './components/VendorDashboardModal';
 import {
   fetchSites,
   fetchSiteDensity,
@@ -18,7 +21,9 @@ import {
   fetchVendors,
   fetchWallet,
   rewardUser,
-  triggerSOS
+  triggerSOS,
+  loadUserSession,
+  logoutUser
 } from './api/api';
 import './App.css';
 
@@ -43,6 +48,11 @@ export default function App() {
   const [routeStatus, setRouteStatus] = useState('IDLE'); // 'IDLE' | 'ACTIVE' | 'ARRIVED'
   const [completedRouteIds, setCompletedRouteIds] = useState([]);
 
+  // Authentication state
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -50,9 +60,15 @@ export default function App() {
     }, 4500);
   };
 
-  // Initial Data Load
+  // Initial Data Load & Session restore
   useEffect(() => {
     let isMounted = true;
+
+    // Check localStorage session
+    const savedUser = loadUserSession();
+    if (savedUser) {
+      setCurrentUser(savedUser);
+    }
 
     async function loadInitialData() {
       try {
@@ -60,20 +76,18 @@ export default function App() {
         if (!isMounted) return;
         setSites(fetchedSites);
 
-        // Select initial site from real backend sites (prefer TS001 Kedarnath if present, else first returned site)
-        const defaultSite = fetchedSites.find(s => s.id === 'TS001') || fetchedSites[0];
+        const defaultSite = fetchedSites.find(s => s.id === 'TS001' || s.id === 'site_kedarnath') || fetchedSites[0];
         const firstSiteId = defaultSite?.id || '';
         setSelectedSiteId(firstSiteId);
 
         const [fetchedAlerts, fetchedWallet] = await Promise.all([
           fetchAlerts(),
-          fetchWallet('pilgrim_demo_user')
+          fetchWallet(savedUser?.user_id || 'pilgrim_demo_user')
         ]);
         if (!isMounted) return;
         setAlerts(fetchedAlerts);
         setWallet(fetchedWallet);
 
-        // Build density map for all sites in parallel
         const dEntries = await Promise.all(
           fetchedSites.map(async (s) => [s.id, await fetchSiteDensity(s.id)])
         );
@@ -188,9 +202,28 @@ export default function App() {
     }
   };
 
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    if (user.role === 'tourist') {
+      showToast(`🛡️ Welcome ${user.full_name}! Digital Yatri Card generated with Aadhaar verification.`);
+      setIsProfileOpen(true);
+    } else {
+      showToast(`🏪 Welcome ${user.business_name}! Local Temple Vendor portal active.`);
+      setIsProfileOpen(true);
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setCurrentUser(null);
+    setIsProfileOpen(false);
+    showToast('Signed out successfully.');
+  };
+
   const handleClaimReward = async (points, reason) => {
+    const uid = currentUser?.user_id || 'pilgrim_demo_user';
     try {
-      await rewardUser('pilgrim_demo_user', points, reason);
+      await rewardUser(uid, points, reason);
       setWallet((prev) => ({
         ...prev,
         total_points: (prev.total_points || 0) + points,
@@ -297,10 +330,12 @@ export default function App() {
       const activeSite = sites.find((s) => s.id === selectedSiteId);
       const lat = activeSite?.latitude || 30.7352;
       const lon = activeSite?.longitude || 79.0669;
-      const res = await triggerSOS(selectedSiteId || 'pilgrim_demo_user', lat, lon);
-      showToast(res.message || `🚨 Emergency SOS broadcasted to SDRF & Temple Command Center for ${activeSite?.name || 'your location'}.`);
+      const uid = currentUser?.user_id || 'pilgrim_demo_user';
+      const res = await triggerSOS(uid, lat, lon);
+      const verifiedTag = currentUser?.is_aadhaar_verified ? ` (Aadhaar Verified: ${currentUser.aadhaar_masked})` : '';
+      showToast(res.message || `🚨 Emergency SOS broadcasted to SDRF & Temple Command Center for ${activeSite?.name || 'your location'}${verifiedTag}.`);
     } catch (err) {
-      showToast('Emergency SOS dispatched.');
+      showToast('Emergency SOS dispatched to SDRF & Temple Command.');
     }
   };
 
@@ -315,6 +350,9 @@ export default function App() {
         onOpenWallet={() => setIsWalletOpen(true)}
         onOpenSOS={() => handleNavbarSOS('Emergency Alert')}
         onTriggerSOS={() => handleNavbarSOS('Emergency Alert')}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenProfile={() => setIsProfileOpen(true)}
       />
 
       {/* Global Toast Notification */}
@@ -386,6 +424,35 @@ export default function App() {
           pendingReward={{ points: pendingPunyaReward, routeName: activeAlternateRoute?.name }}
           onClose={() => setIsWalletOpen(false)}
           onRedeem={handleRedeemVoucher}
+        />
+      )}
+
+      {/* Role-Based Authentication & Aadhaar Linking Modal */}
+      {isAuthOpen && (
+        <AuthModal
+          isOpen={isAuthOpen}
+          onClose={() => setIsAuthOpen(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      )}
+
+      {/* Tourist / Pilgrim Digital Yatri Suraksha Card Modal */}
+      {isProfileOpen && currentUser?.role === 'tourist' && (
+        <DigitalYatriCardModal
+          isOpen={isProfileOpen}
+          user={currentUser}
+          onClose={() => setIsProfileOpen(false)}
+          onLogout={handleLogout}
+        />
+      )}
+
+      {/* Local Temple Vendor Dashboard Modal */}
+      {isProfileOpen && currentUser?.role === 'vendor' && (
+        <VendorDashboardModal
+          isOpen={isProfileOpen}
+          user={currentUser}
+          onClose={() => setIsProfileOpen(false)}
+          onLogout={handleLogout}
         />
       )}
 

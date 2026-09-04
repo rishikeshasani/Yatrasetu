@@ -1,4 +1,4 @@
-export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, onOpenSOS }) {
+export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, onOpenSOS, currentUser, onOpenAuth, onOpenProfile }) {
   return (
     <header className="navbar-header">
       <div className="navbar-container">
@@ -29,6 +29,80 @@ export default function Navbar({ walletPoints, pendingPoints = 0, onOpenWallet, 
 
         {/* Action Controls: Yatra Dal, Wallet & SOS */}
         <div className="navbar-actions">
+          {/* User Profile / Auth Button */}
+          {currentUser && currentUser.role === 'tourist' ? (
+            <button
+              type="button"
+              className="auth-profile-pill"
+              onClick={onOpenProfile}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: '#ECFDF5',
+                border: '1px solid #10B981',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '999px',
+                color: '#065F46',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+              title="View Digital Yatri Suraksha Card"
+            >
+              <span>🛡️</span>
+              <span>{currentUser.full_name?.split(' ')[0] || 'Pilgrim'}</span>
+              <span style={{ fontSize: '0.65rem', backgroundColor: '#059669', color: '#FFF', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>VERIFIED</span>
+            </button>
+          ) : currentUser && currentUser.role === 'vendor' ? (
+            <button
+              type="button"
+              className="auth-profile-pill"
+              onClick={onOpenProfile}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: '#FFFBEB',
+                border: '1px solid #F59E0B',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '999px',
+                color: '#92400E',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+              title="Open Vendor Dashboard"
+            >
+              <span>🏪</span>
+              <span>{currentUser.business_name?.slice(0, 14) || 'Vendor'}</span>
+              <span style={{ fontSize: '0.65rem', backgroundColor: '#D97706', color: '#FFF', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>PARTNER</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="auth-login-btn"
+              onClick={onOpenAuth}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                backgroundColor: '#0F172A',
+                border: 'none',
+                padding: '0.45rem 0.85rem',
+                borderRadius: '0.6rem',
+                color: '#FFFFFF',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
+              }}
+            >
+              <span>🪪</span>
+              <span>Sign In / Link Aadhaar</span>
+            </button>
+          )}
+
           <button 
             type="button" 
             className="team-nav-btn desktop-only"
