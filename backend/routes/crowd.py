@@ -9,6 +9,32 @@ router = APIRouter()
 
 latest_observations: dict[str, dict] = {}
 
+@router.post("/internal/telemetry")
+def internal_telemetry_sync(data: dict):
+    site_id = data.get("site_id")
+    if not site_id:
+        return {"status": "error"}
+    
+    # Update the in-memory cache instantly
+    latest_observations[site_id] = {
+        "site_id": site_id,
+        "people_count": data.get("people_count", 0),
+        "occupancy_percentage": round((data.get("people_count", 0) / 2500) * 100, 1),
+        "status": "CRITICAL" if data.get("people_count", 0) > 2000 else "NORMAL",
+        "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, data.get("people_count", 0), 2500),
+        "last_updated": "Just now (Live ML Feed)"
+    }
+    
+    # Try pushing to DB in background
+    try:
+        supabase.table("crowd_observations").insert(data).execute()
+    except Exception:
+        pass
+        
+    return {"status": "success"}
+
+
+
 class CrowdUpdate(BaseModel):
     site_id: str
     people_count: int

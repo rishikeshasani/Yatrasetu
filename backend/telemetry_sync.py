@@ -1,9 +1,9 @@
 import os
 import time
 import json
-from database import supabase_admin
+import urllib.request
+import urllib.parse
 
-# Assume the YOLO pipeline writes to data/crowd_data.json relative to the project root
 DATA_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "crowd_data.json"))
 
 def get_last_modified(path):
@@ -14,58 +14,57 @@ def get_last_modified(path):
 
 def sync_telemetry():
     print("==========================================================")
-    print(">>> YATRA SETU: TELEMETRY SYNC WATCHER ACTIVE <<<")
+    print(">>> YATRA SETU: TELEMETRY HTTP SYNC WATCHER ACTIVE <<<")
     print("==========================================================")
-    print(f"Monitoring: {DATA_FILE}")
-    print("Waiting for YOLO pipeline updates...\n")
     
     last_mtime = 0
 
     while True:
         current_mtime = get_last_modified(DATA_FILE)
-
-        # If the file has been modified since we last checked
         if current_mtime > last_mtime:
             try:
                 with open(DATA_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
 
-                # YOLO output might be a single object or a list of objects
                 if not isinstance(data, list):
                     data = [data]
 
-                records_to_insert = []
+                success_count = 0
                 for item in data:
-                    # Extract the necessary fields based on YOLO pipeline output
                     site_id = item.get("site") or item.get("site_id")
                     people_count = item.get("person_count") or item.get("people_count", 0)
                     
                     if not site_id:
                         continue
 
-                    # Map to the Supabase schema for crowd_observations
+                    # FORCE map SITE001 to TS001 so the UI sees it!
+                    if site_id == "SITE001":
+                        site_id = "TS001"
+                    elif site_id == "site_kedarnath":
+                        site_id = "TS001"
+
                     payload = {
                         "site_id": site_id,
                         "people_count": people_count,
                         "queue_length": item.get("queue_length", 0)
                     }
-                    records_to_insert.append(payload)
+                    
+                    # POST to FastAPI backend
+                    req = urllib.request.Request("http://127.0.0.1:8000/internal/telemetry", method="POST")
+                    req.add_header('Content-Type', 'application/json')
+                    urllib.request.urlopen(req, data=json.dumps(payload).encode('utf-8'))
+                    success_count += 1
 
-                if records_to_insert:
-                    # Execute the INSERT into Supabase using the admin client
-                    res = supabase_admin.table("crowd_observations").insert(records_to_insert).execute()
-                    print(f"[{time.strftime('%X')}] Successfully pushed {len(records_to_insert)} live observation(s) to Supabase.")
+                if success_count > 0:
+                    print(f"[{time.strftime('%X')}] Synced {success_count} observation(s) to API -> {payload['site_id']}: {payload['people_count']} people")
 
-                # Update the last modified tracker
                 last_mtime = current_mtime
                 
             except json.JSONDecodeError:
-                # File might be mid-write by the YOLO script, just skip this tick
                 pass
             except Exception as e:
                 print(f"[{time.strftime('%X')}] Error syncing telemetry: {e}")
 
-        # Poll every 1 second
         time.sleep(1)
 
 if __name__ == "__main__":
