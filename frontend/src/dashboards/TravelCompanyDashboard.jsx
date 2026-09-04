@@ -136,17 +136,84 @@ export default function TravelCompanyDashboard({
     <div className="travel-dashboard-root" id="travel-dashboard">
 
       {/* SHARMA TRAVELS: HARIDWAR PREDICTIVE WARNING */}
-      <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.75rem', padding: '1.25rem 1.5rem', margin: '1.5rem 1.5rem 0', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-        <span style={{ fontSize: '2.5rem' }}>⚠️</span>
-        <div>
-          <h3 style={{ margin: '0 0 0.4rem', color: '#92400E', fontSize: '1.2rem' }}>Sharma Travels Route Intelligence Alert</h3>
-          <p style={{ margin: 0, color: '#B45309', fontSize: '1.05rem', fontWeight: '500' }}>
-            High demand detected for <strong>Haridwar</strong> on <strong>Oct 12</strong> due to <strong>Somvati Amavasya</strong>. <br/>
-            Forward occupancy: <span style={{ color: '#DC2626', fontWeight: 'bold' }}>94%</span>. Return occupancy on Sunday: <span style={{ color: '#DC2626', fontWeight: 'bold' }}>88%</span> if departed at 4 PM.
-          </p>
+      <div style={{ backgroundColor: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: '0.75rem', margin: '1.5rem 1.5rem 0', overflow: 'hidden' }}>
+        {/* Top row: alert headline + button */}
+        <div style={{ padding: '1rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: '1px solid #FDE68A' }}>
+          <span style={{ fontSize: '2rem' }}>⚠️</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: '0 0 0.2rem', color: '#92400E', fontSize: '1.1rem' }}>Sharma Travels Route Intelligence Alert</h3>
+            <p style={{ margin: 0, color: '#B45309', fontSize: '0.95rem' }}>
+              High demand detected for <strong>Haridwar</strong> on <strong>Oct 12</strong> due to <strong>Somvati Amavasya</strong>. AI has pre-computed forward & return schedules below.
+            </p>
+          </div>
+          <button onClick={() => setShowFleetModal(true)} style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>🚌 Adjust Fleet Schedule</button>
         </div>
-        <div style={{ marginLeft: 'auto' }}>
-          <button onClick={() => setShowFleetModal(true)} style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>🚌 Adjust Fleet Schedule</button>
+
+        {/* Journey timing cards: Forward | Return */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+
+          {/* FORWARD JOURNEY */}
+          <div style={{ padding: '1rem 1.5rem', borderRight: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '1.1rem' }}>➡️</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Forward Journey · Oct 12 (Fri)</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {[
+                { time: '06:00 AM', route: 'Delhi ISBT → Haridwar', duration: '~5 hrs', arrive: '11:00 AM', buses: 3 },
+                { time: '08:30 AM', route: 'Dehradun → Haridwar', duration: '~2 hrs', arrive: '10:30 AM', buses: 2 },
+                { time: '10:00 AM', route: 'Rishikesh → Haridwar', duration: '~1 hr', arrive: '11:00 AM', buses: 1 },
+              ].map((leg, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#FFF', borderRadius: '0.4rem', padding: '0.5rem 0.75rem', border: '1px solid #FEF3C7' }}>
+                  <div>
+                    <span style={{ fontWeight: 'bold', color: '#1E3A8A', fontSize: '1rem' }}>{leg.time}</span>
+                    <span style={{ color: '#6B7280', fontSize: '0.8rem', marginLeft: '0.4rem' }}>→ {leg.arrive}</span>
+                    <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#374151' }}>{leg.route} <span style={{ color: '#9CA3AF' }}>({leg.duration})</span></p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 'bold', color: '#D97706', fontSize: '1rem' }}>{leg.buses} 🚌</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>buses</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '0.65rem', padding: '0.4rem 0.75rem', backgroundColor: '#FEF3C7', borderRadius: '0.4rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.85rem', color: '#92400E', fontWeight: '600' }}>Forward Avg Occupancy</span>
+              <span style={{ fontWeight: 'bold', color: '#DC2626' }}>94%</span>
+            </div>
+          </div>
+
+          {/* RETURN JOURNEY */}
+          <div style={{ padding: '1rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '1.1rem' }}>↩️</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return Journey · Oct 13 (Sun)</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {[
+                { time: '02:00 PM', route: 'Haridwar → Delhi ISBT', duration: '~5.5 hrs', arrive: '07:30 PM', buses: 3, warning: true },
+                { time: '04:00 PM', route: 'Haridwar → Delhi ISBT', duration: '~5.5 hrs', arrive: '09:30 PM', buses: 3, warning: true },
+                { time: '06:00 PM', route: 'Haridwar → Dehradun', duration: '~2 hrs', arrive: '08:00 PM', buses: 2, warning: false },
+              ].map((leg, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: leg.warning ? '#FEF2F2' : '#FFF', borderRadius: '0.4rem', padding: '0.5rem 0.75rem', border: `1px solid ${leg.warning ? '#FECACA' : '#FEF3C7'}` }}>
+                  <div>
+                    <span style={{ fontWeight: 'bold', color: leg.warning ? '#DC2626' : '#1E3A8A', fontSize: '1rem' }}>{leg.time}</span>
+                    <span style={{ color: '#6B7280', fontSize: '0.8rem', marginLeft: '0.4rem' }}>→ {leg.arrive}</span>
+                    <p style={{ margin: '0.1rem 0 0', fontSize: '0.82rem', color: '#374151' }}>{leg.route} <span style={{ color: '#9CA3AF' }}>({leg.duration})</span></p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 'bold', color: leg.warning ? '#DC2626' : '#D97706', fontSize: '1rem' }}>{leg.buses} 🚌</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6B7280' }}>buses</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '0.65rem', padding: '0.4rem 0.75rem', backgroundColor: '#FEE2E2', borderRadius: '0.4rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.85rem', color: '#991B1B', fontWeight: '600' }}>Return Avg Occupancy (4 PM dep.)</span>
+              <span style={{ fontWeight: 'bold', color: '#DC2626' }}>88%</span>
+            </div>
+          </div>
+
         </div>
       </div>
       {/* Top Banner */}
