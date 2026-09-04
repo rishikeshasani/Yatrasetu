@@ -8,8 +8,8 @@ export default function DigitalYatriCardModal({ user, isOpen, onClose, onLogout 
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box yatri-card-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', borderRadius: '1.25rem', overflow: 'hidden' }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content yatri-card-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px', borderRadius: '1.25rem', overflow: 'hidden' }}>
         <div style={{
           background: 'linear-gradient(135deg, #065F46 0%, #059669 50%, #10B981 100%)',
           padding: '1.25rem',
