@@ -40,6 +40,26 @@ export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }
   // 1. FOOD & PRASAD STATE (e.g. Raghu Tiffins / Mandakini Bhojanalaya)
   // =========================================================================
   const [punyaDiscountPct, setPunyaDiscountPct] = useState(20); // 20% discount slider
+  const [liveAlert, setLiveAlert] = useState(null);
+
+  useEffect(() => {
+    if (domain === 'food' && user?.spot_id) {
+      // Poll every 10 seconds for real-time telemetry from Supabase backend
+      const checkSurge = async () => {
+        try {
+          const data = await fetchSiteDensity(user.spot_id);
+          if (data && data.relative_surge_alert) {
+            setLiveAlert(data.relative_surge_alert);
+          }
+        } catch (err) {
+          console.error("Error fetching live crowd telemetry:", err);
+        }
+      };
+      checkSurge();
+      const interval = setInterval(checkSurge, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [domain, user]);
   const [thaliBasePrice, setThaliBasePrice] = useState(150);
   const [preparedBatches, setPreparedBatches] = useState({
     thalis: 65,
@@ -330,7 +350,7 @@ export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }
                   </div>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#78350F', lineHeight: '1.35' }}>
                     {liveAlert?.is_surge ? (
-                      <><strong>+{liveAlert.surge_percentage}% footfall spike detected in live feed!</strong> Upstream crowd from {vendor?.spot_id || 'temple'} is being routed toward your zone.</>
+                      <><strong>+{liveAlert.surge_percentage}% footfall spike detected in live feed!</strong> Upstream crowd from {user?.spot_id || 'temple'} is being routed toward your zone.</>
                     ) : (
                       "Crowd telemetry is currently normal. Normal routing active."
                     )}
