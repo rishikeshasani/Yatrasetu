@@ -5,112 +5,532 @@ export const API_BASE_URL = "http://127.0.0.1:8000";
 // Mock Fallback Data for resilient hackathon demos
 export const MOCK_SITES = [
   {
-    id: "site_kedarnath",
-    name: "Kedarnath Temple",
-    city: "Rudraprayag, Uttarakhand",
-    state: "Uttarakhand",
-    latitude: 30.7352,
-    longitude: 79.0669,
-    capacity: 2500,
-    description: "One of the twelve sacred Jyotirlingas nestled in the Garhwal Himalayas at 3,583m.",
-    image: "https://images.unsplash.com/photo-1626714485848-18e3c66f5647?auto=format&fit=crop&w=800&q=80",
-    altitude: "3,584 m",
-    darshan_timings: "4:00 AM - 9:00 PM"
+    "id": "site_kedarnath",
+    "name": "Kedarnath Temple",
+    "city": "Kedarnath (Gaurikund-Kedarnath Trek), Uttarakhand",
+    "state": "Uttarakhand",
+    "latitude": 30.7346,
+    "longitude": 79.0669,
+    "capacity": 13000,
+    "description": "One of the twelve sacred Jyotirlingas nestled in the Garhwal Himalayas at 3,583m.",
+    "image": "https://images.unsplash.com/photo-1626714485848-18e3c66f5647?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
   },
   {
-    id: "site_badrinath",
-    name: "Badrinath Temple",
-    city: "Chamoli, Uttarakhand",
-    state: "Uttarakhand",
-    latitude: 30.7433,
-    longitude: 79.4938,
-    capacity: 3200,
-    description: "Sacred abode of Lord Vishnu along the Alaknanda River, part of Char Dham.",
-    image: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80",
-    altitude: "3,300 m",
-    darshan_timings: "4:30 AM - 9:30 PM"
+    "id": "site_badrinath",
+    "name": "Badrinath Temple",
+    "city": "Badrinath, Uttarakhand",
+    "state": "Uttarakhand",
+    "latitude": 30.7433,
+    "longitude": 79.4938,
+    "capacity": 16000,
+    "description": "Sacred abode of Lord Vishnu along the Alaknanda River, part of Char Dham.",
+    "image": "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
   },
   {
-    id: "site_kashi",
-    name: "Kashi Vishwanath Temple",
-    city: "Varanasi, Uttar Pradesh",
-    state: "Uttar Pradesh",
-    latitude: 25.3109,
-    longitude: 83.0107,
-    capacity: 6000,
-    description: "The spiritual heart of Varanasi on the holy Ganges, standing since ancient times.",
-    image: "https://images.unsplash.com/photo-1561359313-0639aad49ca6?auto=format&fit=crop&w=800&q=80",
-    altitude: "81 m",
-    darshan_timings: "3:00 AM - 11:00 PM"
+    "id": "site_kashi",
+    "name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
+    "city": "Varanasi, Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "latitude": 25.3109,
+    "longitude": 83.0107,
+    "capacity": 120000,
+    "description": "The spiritual heart of Varanasi on the holy Ganges, standing since ancient times.",
+    "image": "https://images.unsplash.com/photo-1561359313-0639aad49ca6?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
   },
   {
-    id: "site_tirupati",
-    name: "Tirupati Balaji (Venkateswara)",
-    city: "Tirupati, Andhra Pradesh",
-    state: "Andhra Pradesh",
-    latitude: 13.6833,
-    longitude: 79.3472,
-    capacity: 12000,
-    description: "World's most visited sacred pilgrimage spot on the seven peaks of Tirumala Hills.",
-    image: "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80",
-    altitude: "853 m",
-    darshan_timings: "2:30 AM - 11:30 PM"
+    "id": "site_ayodhya",
+    "name": "Shri Ram Janmabhoomi Mandir",
+    "city": "Ayodhya, Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "latitude": 26.7956,
+    "longitude": 82.1943,
+    "capacity": 150000,
+    "description": "Grand birthplace shrine of Bhagwan Shri Ram on the banks of holy Sarayu River.",
+    "image": "https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
   },
   {
-    id: "site_vaishnodevi",
-    name: "Vaishno Devi Bhawan",
-    city: "Katra, Jammu & Kashmir",
-    state: "Jammu & Kashmir",
-    latitude: 33.0308,
-    longitude: 74.9490,
-    capacity: 8500,
-    description: "Holy cave shrine of Mata Vaishno Devi located in the Trikuta Mountains.",
-    image: "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=800&q=80",
-    altitude: "1,585 m",
-    darshan_timings: "Open 24 Hours"
+    "id": "site_vaishnodevi",
+    "name": "Shri Mata Vaishno Devi Shrine",
+    "city": "Katra / Bhawan, Jammu and Kashmir",
+    "state": "Jammu and Kashmir",
+    "latitude": 33.0308,
+    "longitude": 74.949,
+    "capacity": 50000,
+    "description": "Holy cave shrine of Mata Vaishno Devi located in the Trikuta Mountains.",
+    "image": "https://images.unsplash.com/photo-1589182373726-e4f658ab50f0?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_tirupati",
+    "name": "Tirumala Venkateswara Temple",
+    "city": "Tirumala, Tirupati, Andhra Pradesh",
+    "state": "Andhra Pradesh",
+    "latitude": 13.6833,
+    "longitude": 79.3472,
+    "capacity": 85000,
+    "description": "World's most visited sacred pilgrimage spot on the seven peaks of Tirumala Hills.",
+    "image": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_puri",
+    "name": "Shree Jagannath Temple",
+    "city": "Puri, Odisha",
+    "state": "Odisha",
+    "latitude": 19.8049,
+    "longitude": 85.8179,
+    "capacity": 90000,
+    "description": "Sacred pilgrimage shrine in Odisha attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1590076215667-875d4ef2d7ee?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_mahakaleshwar",
+    "name": "Mahakaleshwar Jyotirlinga Temple",
+    "city": "Ujjain, Madhya Pradesh",
+    "state": "Madhya Pradesh",
+    "latitude": 23.1827,
+    "longitude": 75.7682,
+    "capacity": 75000,
+    "description": "Sacred pilgrimage shrine in Madhya Pradesh attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1600100397608-f010e42e5d7a?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_goldentemple",
+    "name": "Golden Temple (Sri Harmandir Sahib)",
+    "city": "Amritsar, Punjab",
+    "state": "Punjab",
+    "latitude": 31.62,
+    "longitude": 74.8765,
+    "capacity": 100000,
+    "description": "Sacred pilgrimage shrine in Punjab attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1514222134-b57cbb8ce073?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_meenakshi",
+    "name": "Meenakshi Sundareswarar Temple",
+    "city": "Madurai, Tamil Nadu",
+    "state": "Tamil Nadu",
+    "latitude": 9.9195,
+    "longitude": 78.1193,
+    "capacity": 45000,
+    "description": "Sacred pilgrimage shrine in Tamil Nadu attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts011",
+    "name": "Ramanathaswamy Temple",
+    "city": "Rameswaram, Tamil Nadu",
+    "state": "Tamil Nadu",
+    "latitude": 9.2881,
+    "longitude": 79.3174,
+    "capacity": 50000,
+    "description": "Sacred pilgrimage shrine in Tamil Nadu attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts012",
+    "name": "Shree Somnath Jyotirlinga Temple",
+    "city": "Prabhas Patan, Somnath, Gujarat",
+    "state": "Gujarat",
+    "latitude": 20.888,
+    "longitude": 70.4013,
+    "capacity": 60000,
+    "description": "Sacred pilgrimage shrine in Gujarat attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts013",
+    "name": "Shri Saibaba Sansthan Temple",
+    "city": "Shirdi, Maharashtra",
+    "state": "Maharashtra",
+    "latitude": 19.7667,
+    "longitude": 74.4764,
+    "capacity": 80000,
+    "description": "Sacred pilgrimage shrine in Maharashtra attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts014",
+    "name": "Sabarimala Sree Dharma Sastha Temple",
+    "city": "Periyar Tiger Reserve, Sabarimala, Kerala",
+    "state": "Kerala",
+    "latitude": 9.4402,
+    "longitude": 77.0819,
+    "capacity": 80000,
+    "description": "Sacred pilgrimage shrine in Kerala attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts015",
+    "name": "Har Ki Pauri Ghat & Mansa Devi",
+    "city": "Haridwar, Uttarakhand",
+    "state": "Uttarakhand",
+    "latitude": 29.9577,
+    "longitude": 78.1724,
+    "capacity": 150000,
+    "description": "Sacred pilgrimage shrine in Uttarakhand attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts016",
+    "name": "Triveni Sangam & Kumbh Mela Grounds",
+    "city": "Prayagraj, Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "latitude": 25.4283,
+    "longitude": 81.8847,
+    "capacity": 200000,
+    "description": "Sacred pilgrimage shrine in Uttar Pradesh attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts017",
+    "name": "Bankey Bihari Temple & Prem Mandir",
+    "city": "Vrindavan, Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "latitude": 27.5818,
+    "longitude": 77.6974,
+    "capacity": 70000,
+    "description": "Sacred pilgrimage shrine in Uttar Pradesh attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts018",
+    "name": "Taj Mahal Monument Complex",
+    "city": "Agra, Uttar Pradesh",
+    "state": "Uttar Pradesh",
+    "latitude": 27.1751,
+    "longitude": 78.0421,
+    "capacity": 35000,
+    "description": "Sacred pilgrimage shrine in Uttar Pradesh attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts019",
+    "name": "Amber Fort & Palace Complex",
+    "city": "Amer, Jaipur, Rajasthan",
+    "state": "Rajasthan",
+    "latitude": 26.9855,
+    "longitude": 75.8513,
+    "capacity": 25000,
+    "description": "Sacred pilgrimage shrine in Rajasthan attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts020",
+    "name": "Qutub Minar & Mehrauli Archaeological Complex",
+    "city": "Mehrauli, New Delhi, Delhi",
+    "state": "Delhi",
+    "latitude": 28.5245,
+    "longitude": 77.1855,
+    "capacity": 22000,
+    "description": "Sacred pilgrimage shrine in Delhi attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts021",
+    "name": "Ajanta and Ellora Rock-Cut Caves",
+    "city": "Aurangabad / Ellora, Maharashtra",
+    "state": "Maharashtra",
+    "latitude": 20.0268,
+    "longitude": 75.178,
+    "capacity": 18000,
+    "description": "Sacred pilgrimage shrine in Maharashtra attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts022",
+    "name": "Group of Monuments at Hampi (Virupaksha & Vijaya Vittala)",
+    "city": "Hampi, Hosapete, Karnataka",
+    "state": "Karnataka",
+    "latitude": 15.335,
+    "longitude": 76.46,
+    "capacity": 20000,
+    "description": "Sacred pilgrimage shrine in Karnataka attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts023",
+    "name": "Pangong Tso Lake & Hemis Monastery",
+    "city": "Leh / Durbuk, Ladakh (UT)",
+    "state": "Ladakh (UT)",
+    "latitude": 33.7595,
+    "longitude": 78.6674,
+    "capacity": 6000,
+    "description": "Sacred pilgrimage shrine in Ladakh (UT) attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts024",
+    "name": "Rohtang Pass & Solang Valley Adventure Zone",
+    "city": "Manali, Himachal Pradesh",
+    "state": "Himachal Pradesh",
+    "latitude": 32.3716,
+    "longitude": 77.2466,
+    "capacity": 1200,
+    "description": "Sacred pilgrimage shrine in Himachal Pradesh attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
+  },
+  {
+    "id": "site_ts025",
+    "name": "Maa Kamakhya Devalaya",
+    "city": "Guwahati (Nilachal Hill), Assam",
+    "state": "Assam",
+    "latitude": 26.1664,
+    "longitude": 91.7054,
+    "capacity": 35000,
+    "description": "Sacred pilgrimage shrine in Assam attracting devotees nationwide.",
+    "image": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
+    "altitude": "Ground Level",
+    "darshan_timings": "5:00 AM - 9:30 PM"
   }
 ];
 
 export const MOCK_DENSITY = {
-  site_kedarnath: {
-    site_id: "site_kedarnath",
-    site_name: "Kedarnath Temple",
-    people_count: 2180,
-    occupancy_percentage: 87.2,
-    status: "HIGH",
-    last_updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  "site_kedarnath": {
+    "site_id": "site_kedarnath",
+    "site_name": "Kedarnath Temple",
+    "people_count": 11336,
+    "occupancy_percentage": 87.2,
+    "status": "HIGH",
+    "last_updated": "Just now"
   },
-  site_badrinath: {
-    site_id: "site_badrinath",
-    site_name: "Badrinath Temple",
-    people_count: 1450,
-    occupancy_percentage: 45.3,
-    status: "NORMAL",
-    last_updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  "site_badrinath": {
+    "site_id": "site_badrinath",
+    "site_name": "Badrinath Temple",
+    "people_count": 7680,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
   },
-  site_kashi: {
-    site_id: "site_kashi",
-    site_name: "Kashi Vishwanath Temple",
-    people_count: 5640,
-    occupancy_percentage: 94.0,
-    status: "CRITICAL",
-    last_updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  "site_kashi": {
+    "site_id": "site_kashi",
+    "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
+    "people_count": 112800,
+    "occupancy_percentage": 94.0,
+    "status": "CRITICAL",
+    "last_updated": "Just now"
   },
-  site_tirupati: {
-    site_id: "site_tirupati",
-    site_name: "Tirupati Balaji",
-    people_count: 8100,
-    occupancy_percentage: 67.5,
-    status: "MODERATE",
-    last_updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  "site_ayodhya": {
+    "site_id": "site_ayodhya",
+    "site_name": "Shri Ram Janmabhoomi Mandir",
+    "people_count": 72000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
   },
-  site_vaishnodevi: {
-    site_id: "site_vaishnodevi",
-    site_name: "Vaishno Devi Bhawan",
-    people_count: 3600,
-    occupancy_percentage: 42.3,
-    status: "NORMAL",
-    last_updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  "site_vaishnodevi": {
+    "site_id": "site_vaishnodevi",
+    "site_name": "Shri Mata Vaishno Devi Shrine",
+    "people_count": 24000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_tirupati": {
+    "site_id": "site_tirupati",
+    "site_name": "Tirumala Venkateswara Temple",
+    "people_count": 40800,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_puri": {
+    "site_id": "site_puri",
+    "site_name": "Shree Jagannath Temple",
+    "people_count": 43200,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_mahakaleshwar": {
+    "site_id": "site_mahakaleshwar",
+    "site_name": "Mahakaleshwar Jyotirlinga Temple",
+    "people_count": 36000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_goldentemple": {
+    "site_id": "site_goldentemple",
+    "site_name": "Golden Temple (Sri Harmandir Sahib)",
+    "people_count": 48000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_meenakshi": {
+    "site_id": "site_meenakshi",
+    "site_name": "Meenakshi Sundareswarar Temple",
+    "people_count": 21600,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts011": {
+    "site_id": "site_ts011",
+    "site_name": "Ramanathaswamy Temple",
+    "people_count": 24000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts012": {
+    "site_id": "site_ts012",
+    "site_name": "Shree Somnath Jyotirlinga Temple",
+    "people_count": 28800,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts013": {
+    "site_id": "site_ts013",
+    "site_name": "Shri Saibaba Sansthan Temple",
+    "people_count": 38400,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts014": {
+    "site_id": "site_ts014",
+    "site_name": "Sabarimala Sree Dharma Sastha Temple",
+    "people_count": 38400,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts015": {
+    "site_id": "site_ts015",
+    "site_name": "Har Ki Pauri Ghat & Mansa Devi",
+    "people_count": 72000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts016": {
+    "site_id": "site_ts016",
+    "site_name": "Triveni Sangam & Kumbh Mela Grounds",
+    "people_count": 96000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts017": {
+    "site_id": "site_ts017",
+    "site_name": "Bankey Bihari Temple & Prem Mandir",
+    "people_count": 33600,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts018": {
+    "site_id": "site_ts018",
+    "site_name": "Taj Mahal Monument Complex",
+    "people_count": 16800,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts019": {
+    "site_id": "site_ts019",
+    "site_name": "Amber Fort & Palace Complex",
+    "people_count": 12000,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts020": {
+    "site_id": "site_ts020",
+    "site_name": "Qutub Minar & Mehrauli Archaeological Complex",
+    "people_count": 10560,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts021": {
+    "site_id": "site_ts021",
+    "site_name": "Ajanta and Ellora Rock-Cut Caves",
+    "people_count": 8640,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts022": {
+    "site_id": "site_ts022",
+    "site_name": "Group of Monuments at Hampi (Virupaksha & Vijaya Vittala)",
+    "people_count": 9600,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts023": {
+    "site_id": "site_ts023",
+    "site_name": "Pangong Tso Lake & Hemis Monastery",
+    "people_count": 2880,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts024": {
+    "site_id": "site_ts024",
+    "site_name": "Rohtang Pass & Solang Valley Adventure Zone",
+    "people_count": 576,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
+  },
+  "site_ts025": {
+    "site_id": "site_ts025",
+    "site_name": "Maa Kamakhya Devalaya",
+    "people_count": 16800,
+    "occupancy_percentage": 48.0,
+    "status": "NORMAL",
+    "last_updated": "Just now"
   }
 };
 
