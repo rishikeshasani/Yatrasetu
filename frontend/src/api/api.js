@@ -1,4 +1,6 @@
 // YatraSetu API Client Service
+import { getShrineImage, CANONICAL_25_SHRINES } from '../utils/shrineImages';
+
 // Backend Base URL
 export const API_BASE_URL = "http://127.0.0.1:8000";
 
@@ -1221,6 +1223,8 @@ export const SITE_ID_ALIASES = {
 // API CLIENT IMPLEMENTATIONS WITH RESILIENT FALLBACKS
 // ==========================================
 
+export const MOCK_SITES = CANONICAL_25_SHRINES;
+
 export async function fetchSites() {
   try {
     const res = await fetch(`${API_BASE_URL}/sites`, { cache: 'no-store' });
@@ -1236,7 +1240,8 @@ export async function fetchSites() {
             state: site.state || meta.state || 'India',
             description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
             altitude: site.altitude || meta.altitude || '',
-            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours'
+            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours',
+            image: getShrineImage(site.id)
           };
         });
       }

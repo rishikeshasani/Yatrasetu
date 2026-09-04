@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
+import LandingPage from './components/LandingPage';
 import TouristDashboard from './dashboards/TouristDashboard';
+import ExplorePage from './components/ExplorePage';
 import GovernmentDashboard from './dashboards/GovernmentDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
+import HotelPartnerPortal from './components/HotelPartnerPortal';
 import TravelCompanyDashboard from './dashboards/TravelCompanyDashboard';
 import WalletModal from './components/WalletModal';
 import AuthModal from './components/AuthModal';
@@ -39,6 +42,9 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // View Navigation: 'landing' (Modern Landing Page) | 'dashboard' (Multi-Role Consoles)
+  const [currentView, setCurrentView] = useState('landing');
 
   // Role Navigation State: 'tourist' | 'government' | 'hotel' | 'travel_company'
   const [activeRole, setActiveRole] = useState('tourist');
@@ -153,7 +159,7 @@ export default function App() {
     };
   }, [selectedSiteId]);
 
-  // 2. Load dynamic telemetry (density, forecast, prediction) with live auto-polling & concurrency guard
+  // 2. Load dynamic telemetry (density, forecast, prediction) with live 3-second auto-polling & concurrency guard
   const isPollingRef = useRef(false);
 
   useEffect(() => {
@@ -161,6 +167,7 @@ export default function App() {
     if (!selectedSiteId) return;
 
     async function pollTelemetry() {
+      // Prevent overlapping polling requests / race conditions
       if (isPollingRef.current) return;
       isPollingRef.current = true;
 
@@ -248,19 +255,8 @@ export default function App() {
         live_status: {
           people_count: updatedData.people_count,
           occupancy_percentage: updatedData.occupancy_percentage,
-          status: updatedData.status,
-          last_updated: 'Just now (Govt Command Update)'
-        },
-        queue_forecast: {
-          ...(prev?.queue_forecast || {}),
-          estimated_current_wait_mins: updatedData.wait_time_minutes || (updatedData.occupancy_percentage >= 90 ? 540 : 25)
+          status: updatedData.status
         }
-      }));
-      setCurrentAlternatives((prev) => ({
-        ...(prev || {}),
-        current_occupancy_percentage: updatedData.occupancy_percentage,
-        current_status: updatedData.status,
-        redistribution_needed: updatedData.occupancy_percentage >= 50
       }));
     }
   };
@@ -296,6 +292,7 @@ export default function App() {
       return;
     }
 
+    // When switching to another alternative before reaching: cancel previous pending, set fresh +25 pending
     setActiveAlternateRoute(alt);
     setRouteStatus('ACTIVE');
     setPendingPunyaReward(25);
@@ -365,11 +362,30 @@ export default function App() {
     showToast(`🎁 Redeemed "${voucher.title}" for ${voucher.cost} Points!`);
   };
 
+  // Navigation Helper for Navbar and Footer anchor links
+  const handleNavigateSection = (sectionId) => {
+    if (sectionId === 'top') {
+      setCurrentView('landing');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (currentView !== 'landing') {
+      setCurrentView('landing');
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 80);
+    } else {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
 
   return (
     <div className="yatrasetu-app app-container">
-      {/* Top Navigation with 4 Role Tabs */}
+      {/* Top Navigation with 4 Role Tabs & Landing Page Anchors */}
       <Navbar
         walletPoints={wallet?.total_points || 260}
         pendingPoints={pendingPunyaReward}
@@ -379,7 +395,16 @@ export default function App() {
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenProfile={() => setIsProfileOpen(true)}
         activeRole={activeRole}
-        onSelectRole={(role) => setActiveRole(role)}
+        onSelectRole={(role) => {
+          setActiveRole(role);
+          setCurrentView('dashboard');
+        }}
+        currentView={currentView}
+        onToggleView={() => {
+          setCurrentView((prev) => (prev === 'landing' ? 'dashboard' : 'landing'));
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNavigateSection={handleNavigateSection}
       />
 
       {/* Global Toast Notification */}
@@ -391,60 +416,129 @@ export default function App() {
         </div>
       )}
 
-      {/* Dynamic Role-Based Dashboard View */}
+      {/* Dynamic Main View: Modern Landing Page OR Multi-Role Dashboards */}
       <main className="main-content-container main-content">
-        {activeRole === 'tourist' && (
-          <TouristDashboard
+        {currentView === 'landing' ? (
+          <LandingPage
             sites={sites}
-            selectedSiteId={selectedSiteId}
-            selectedSite={selectedSite}
-            onSelectSite={handleSelectSite}
             densityMap={densityMap}
-            currentDensity={currentDensity}
-            currentForecast={currentForecast}
-            currentPrediction={currentPrediction}
-            currentAlternatives={currentAlternatives}
-            safetyInfo={safetyInfo}
-            alerts={alerts}
-            vendors={vendors}
-            activeAlternateRoute={activeAlternateRoute}
-            pendingPunyaReward={pendingPunyaReward}
-            routeStatus={routeStatus}
-            completedRouteIds={completedRouteIds}
-            onSelectRoute={handleSelectRoute}
-            onCompleteArrival={handleCompleteArrival}
-            onSwitchBack={handleSwitchBack}
+            selectedSiteId={selectedSiteId}
+            onSelectSite={(siteId) => {
+              handleSelectSite(siteId);
+              setActiveRole('tourist');
+            }}
+            onOpenDashboard={() => {
+              setCurrentView('dashboard');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onOpenSOS={() => setIsSOSModalOpen(true)}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            currentUser={currentUser}
           />
-        )}
-
-        {activeRole === 'government' && (
-          <GovernmentDashboard
-            sites={sites}
-            densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={handleSelectSite}
-            onCrowdUpdated={handleCrowdUpdated}
+        ) : currentView === 'hotel' ? (
+          <HotelPartnerPortal
             currentUser={currentUser}
             showToast={showToast}
+            onBackToLanding={() => {
+              setCurrentView('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           />
-        )}
-
-        {activeRole === 'hotel' && (
-          <HotelDashboard
-            currentUser={currentUser}
-            showToast={showToast}
-          />
-        )}
-
-        {activeRole === 'travel_company' && (
-          <TravelCompanyDashboard
+        ) : currentView === 'explore' ? (
+          <ExplorePage
             sites={sites}
             densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={handleSelectSite}
-            showToast={showToast}
+            onSelectShrine={(siteId) => {
+              handleSelectSite(siteId);
+              setActiveRole('tourist');
+              setCurrentView('dashboard');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onBackToLanding={() => {
+              setCurrentView('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
           />
+        ) : (
+          <div className="pilgrim-dashboard-wrapper">
+            {/* Dashboard Sub-Header Strip */}
+            <div className="dashboard-top-nav-strip">
+              <button
+                type="button"
+                className="btn-back-to-landing"
+                onClick={() => {
+                  setCurrentView('landing');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                <span>← Back to Platform Overview</span>
+              </button>
+              <div className="dashboard-mode-indicator">
+                <span className="live-pulse-radar"></span>
+                <span>
+                  {activeRole.toUpperCase().replace('_', ' ')} CONSOLE • AUTO-POLLING TELEMETRY (3s)
+                </span>
+              </div>
+            </div>
+
+            {activeRole === 'tourist' && (
+              <TouristDashboard
+                sites={sites}
+                selectedSiteId={selectedSiteId}
+                selectedSite={selectedSite}
+                onSelectSite={handleSelectSite}
+                densityMap={densityMap}
+                currentDensity={currentDensity}
+                currentForecast={currentForecast}
+                currentPrediction={currentPrediction}
+                currentAlternatives={currentAlternatives}
+                safetyInfo={safetyInfo}
+                alerts={alerts}
+                vendors={vendors}
+                activeAlternateRoute={activeAlternateRoute}
+                pendingPunyaReward={pendingPunyaReward}
+                routeStatus={routeStatus}
+                completedRouteIds={completedRouteIds}
+                onSelectRoute={handleSelectRoute}
+                onCompleteArrival={handleCompleteArrival}
+                onSwitchBack={handleSwitchBack}
+                onOpenSOS={() => setIsSOSModalOpen(true)}
+              />
+            )}
+
+            {activeRole === 'government' && (
+              <GovernmentDashboard
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId}
+                onSelectSite={handleSelectSite}
+                onCrowdUpdated={handleCrowdUpdated}
+                currentUser={currentUser}
+                showToast={showToast}
+              />
+            )}
+
+            {activeRole === 'hotel' && (
+              <HotelDashboard
+                currentUser={currentUser}
+                showToast={showToast}
+                onBackToLanding={() => {
+                  setCurrentView('landing');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              />
+            )}
+
+            {activeRole === 'travel_company' && (
+              <TravelCompanyDashboard
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId}
+                onSelectSite={handleSelectSite}
+                showToast={showToast}
+              />
+            )}
+          </div>
         )}
       </main>
 
@@ -502,24 +596,39 @@ export default function App() {
         />
       )}
 
-      {/* Footer */}
+      {/* Professional Civic-Tech Footer */}
       <footer className="yatrasetu-footer">
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="footer-logo">
-              <span className="footer-om">ॐ</span> YatraSetu Smart Pilgrimage Platform
+              <span className="footer-om">ॐ</span> YatraSetu <span className="devanagari-sm">यात्रासेतु</span>
             </div>
             <p className="footer-motto">
-              Ensuring Safe, Serene &amp; Sustainable Darshan across India’s sacred shrines through Computer Vision, Queue Telemetry &amp; Gamified Flow Balancing.
+              Next-generation smart tourism &amp; pilgrimage crowd management platform powered by edge computer vision,
+              queue-theory analytics, gamified route redistribution, and civic emergency coordination.
             </p>
+            <div className="footer-badges-row">
+              <span className="footer-badge">Smart India Hackathon 2026</span>
+              <span className="footer-badge">Ministry of Tourism</span>
+              <span className="footer-badge">Vision AI 3.0</span>
+            </div>
           </div>
 
           <div className="footer-links">
             <div className="link-col">
-              <h4>Quick Emergency</h4>
+              <h4>Emergency Helplines</h4>
               <p>National Emergency: <strong>112</strong></p>
               <p>Medical Ambulance: <strong>108</strong></p>
               <p>Disaster Helpline: <strong>1070</strong></p>
+              <p>Tourist Helpline: <strong>1363</strong></p>
+            </div>
+            <div className="link-col">
+              <h4>Platform Navigation</h4>
+              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('top')}>Platform Overview</button></p>
+              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('smart-destinations')}>Explore 25 Shrines</button></p>
+              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('crowd-intelligence')}>Crowd Intelligence</button></p>
+              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('how-it-works')}>How It Works</button></p>
+              <p><button type="button" className="footer-link-btn" onClick={() => { setCurrentView('dashboard'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Live Consoles</button></p>
             </div>
             <div className="link-col">
               <h4>Active Corridors</h4>
@@ -532,7 +641,7 @@ export default function App() {
         </div>
         <div className="footer-bottom-bar">
           <span>YatraSetu • Smart India Hackathon (SIH 2026)</span>
-          <span>FastAPI Backend: <code>127.0.0.1:8000</code> • Role: <strong style={{ textTransform: 'uppercase' }}>{activeRole}</strong></span>
+          <span>FastAPI Backend: <code>127.0.0.1:8000</code> • Mode: <strong style={{ textTransform: 'uppercase' }}>{currentView === 'landing' ? 'Platform Overview' : activeRole.replace('_', ' ')}</strong></span>
         </div>
       </footer>
     </div>

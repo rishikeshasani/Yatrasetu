@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Navbar({
   walletPoints,
@@ -9,8 +9,13 @@ export default function Navbar({
   onOpenAuth,
   onOpenProfile,
   activeRole = 'tourist',
-  onSelectRole
+  onSelectRole,
+  currentView = 'landing',
+  onToggleView,
+  onNavigateSection
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'government':
@@ -26,11 +31,27 @@ export default function Navbar({
     }
   };
 
+  const handleNavClick = (sectionId) => {
+    setMobileMenuOpen(false);
+    if (onNavigateSection) {
+      onNavigateSection(sectionId);
+    } else {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className="navbar-header">
       <div className="navbar-container">
         {/* Brand Logo & Title */}
-        <div className="brand-wrapper" onClick={() => onSelectRole && onSelectRole('tourist')} style={{ cursor: 'pointer' }}>
+        <div 
+          className="brand-wrapper" 
+          onClick={() => handleNavClick('top')} 
+          style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
+        >
           <div className="brand-icon-box">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L15 8H9L12 2Z" fill="#F97316" />
@@ -48,51 +69,111 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Center: 4 Role Navigation Tabs */}
-        <nav className="role-navigation-tabs">
-          <button
-            type="button"
-            className={`role-tab-btn ${activeRole === 'tourist' ? 'active' : ''}`}
-            onClick={() => onSelectRole && onSelectRole('tourist')}
-            title="Devotee & Pilgrim Dashboard"
-          >
-            <span className="role-tab-icon">🧳</span>
-            <span className="role-tab-label">Tourist</span>
-          </button>
+        {/* Center: When in Landing View, show Section Anchors; When in Dashboard View, show 4 Role Tabs */}
+        {currentView === 'landing' ? (
+          <nav className="desktop-nav-links desktop-only" aria-label="Main Navigation">
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('top')}
+            >
+              Home
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('smart-destinations')}
+            >
+              Explore 25
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('crowd-intelligence')}
+            >
+              Crowd AI
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('how-it-works')}
+            >
+              How It Works
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('safety')}
+            >
+              Safety &amp; SOS
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('impact')}
+            >
+              Civic Impact
+            </button>
+          </nav>
+        ) : (
+          <nav className="role-navigation-tabs desktop-only">
+            <button
+              type="button"
+              className={`role-tab-btn ${activeRole === 'tourist' ? 'active' : ''}`}
+              onClick={() => onSelectRole && onSelectRole('tourist')}
+              title="Devotee & Pilgrim Dashboard"
+            >
+              <span className="role-tab-icon">🧳</span>
+              <span className="role-tab-label">Tourist</span>
+            </button>
 
-          <button
-            type="button"
-            className={`role-tab-btn ${activeRole === 'government' ? 'active' : ''}`}
-            onClick={() => onSelectRole && onSelectRole('government')}
-            title="DM & Command Center Dashboard"
-          >
-            <span className="role-tab-icon">🏛️</span>
-            <span className="role-tab-label">Government</span>
-          </button>
+            <button
+              type="button"
+              className={`role-tab-btn ${activeRole === 'government' ? 'active' : ''}`}
+              onClick={() => onSelectRole && onSelectRole('government')}
+              title="DM & Command Center Dashboard"
+            >
+              <span className="role-tab-icon">🏛️</span>
+              <span className="role-tab-label">Government</span>
+            </button>
 
-          <button
-            type="button"
-            className={`role-tab-btn ${activeRole === 'hotel' ? 'active' : ''}`}
-            onClick={() => onSelectRole && onSelectRole('hotel')}
-            title="Shrine Lodging & Hospitality Partner"
-          >
-            <span className="role-tab-icon">🏨</span>
-            <span className="role-tab-label">Hotel Partner</span>
-          </button>
+            <button
+              type="button"
+              className={`role-tab-btn ${activeRole === 'hotel' ? 'active' : ''}`}
+              onClick={() => onSelectRole && onSelectRole('hotel')}
+              title="Shrine Lodging & Hospitality Partner"
+            >
+              <span className="role-tab-icon">🏨</span>
+              <span className="role-tab-label">Hotel Partner</span>
+            </button>
 
-          <button
-            type="button"
-            className={`role-tab-btn ${activeRole === 'travel_company' ? 'active' : ''}`}
-            onClick={() => onSelectRole && onSelectRole('travel_company')}
-            title="Tour Operator & Fleet Route Planner"
-          >
-            <span className="role-tab-icon">🚌</span>
-            <span className="role-tab-label">Travel Company</span>
-          </button>
-        </nav>
+            <button
+              type="button"
+              className={`role-tab-btn ${activeRole === 'travel_company' ? 'active' : ''}`}
+              onClick={() => onSelectRole && onSelectRole('travel_company')}
+              title="Tour Operator & Fleet Route Planner"
+            >
+              <span className="role-tab-icon">🚌</span>
+              <span className="role-tab-label">Travel Company</span>
+            </button>
+          </nav>
+        )}
 
-        {/* Action Controls: User Profile, Yatra Dal, Wallet & SOS */}
+        {/* Action Controls: View Switcher, User Profile, Yatra Dal, Wallet & SOS */}
         <div className="navbar-actions">
+          {/* Main View Switcher (Landing vs Live Console) */}
+          <button
+            type="button"
+            className={`view-switcher-btn ${currentView === 'dashboard' ? 'active-dashboard' : ''}`}
+            onClick={onToggleView}
+            title={currentView === 'landing' ? 'Switch to Live Multi-Role Console' : 'Switch to Platform Overview'}
+          >
+            <span className="view-switch-icon">{currentView === 'landing' ? '⚡' : '🏠'}</span>
+            <span className="view-switch-text">
+              {currentView === 'landing' ? 'Live Console' : 'Overview'}
+            </span>
+          </button>
+
           {/* User Profile / Auth Button */}
           {currentUser ? (
             <button
@@ -147,7 +228,7 @@ export default function Navbar({
                   ? '🏪'
                   : '🛡️'}
               </span>
-              <span>{currentUser.full_name?.split(' ')[0] || 'User'}</span>
+              <span className="desktop-only">{currentUser.full_name?.split(' ')[0] || 'User'}</span>
               <span
                 style={{
                   fontSize: '0.62rem',
@@ -198,7 +279,7 @@ export default function Navbar({
               title="Sign In or Access 1-Click Demo Accounts"
             >
               <span>🪪</span>
-              <span>Sign In / Demo</span>
+              <span className="desktop-only">Sign In / Demo</span>
             </button>
           )}
 
@@ -207,16 +288,16 @@ export default function Navbar({
             type="button"
             className="team-nav-btn desktop-only"
             onClick={() => {
+              if (currentView !== 'dashboard') {
+                onToggleView && onToggleView();
+              }
               if (activeRole !== 'tourist') {
                 onSelectRole && onSelectRole('tourist');
-                setTimeout(() => {
-                  const el = document.querySelector('.team-tracker-section');
-                  if (el) el.scrollIntoView({ behavior: 'smooth' });
-                }, 100);
-              } else {
+              }
+              setTimeout(() => {
                 const el = document.querySelector('.team-tracker-section');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }
+              }, 120);
             }}
             title="Track Yatra Dal & Group Members"
           >
@@ -235,11 +316,11 @@ export default function Navbar({
             <span className="coin-icon">🪙</span>
             <div className="wallet-btn-content">
               <span className="wallet-points-val">{walletPoints ?? 260}</span>
-              <span className="wallet-points-unit">Punya Pts</span>
+              <span className="wallet-points-unit desktop-only">Pts</span>
             </div>
             {pendingPoints > 0 && (
-              <span className="pending-pts-chip" title="Pending arrival at alternate route">
-                +{pendingPoints} pending
+              <span className="pending-pts-chip desktop-only" title="Pending arrival at alternate route">
+                +{pendingPoints}
               </span>
             )}
           </button>
@@ -257,8 +338,81 @@ export default function Navbar({
             </svg>
             <span className="sos-btn-text">SOS</span>
           </button>
+
+          {/* Mobile Hamburger Button */}
+          <button
+            type="button"
+            className="mobile-hamburger-btn mobile-only"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle mobile menu"
+          >
+            {mobileMenuOpen ? '✕' : '☰'}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-nav-drawer mobile-only">
+          <div className="mobile-nav-links">
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('top')}
+            >
+              🏠 Home Overview
+            </button>
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('smart-destinations')}
+            >
+              📍 Explore 25 Shrines
+            </button>
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('crowd-intelligence')}
+            >
+              👁️ Crowd Intelligence
+            </button>
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('how-it-works')}
+            >
+              🧠 How It Works
+            </button>
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('safety')}
+            >
+              🚨 Emergency Safety &amp; SOS
+            </button>
+            <button
+              type="button"
+              className="mobile-nav-item"
+              onClick={() => handleNavClick('impact')}
+            >
+              📊 Civic &amp; Economic Impact
+            </button>
+          </div>
+
+          <div className="mobile-drawer-footer">
+            <button
+              type="button"
+              className="mobile-switch-view-btn"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onToggleView && onToggleView();
+              }}
+            >
+              {currentView === 'landing' ? '⚡ Open Live Console' : '🏠 Switch to Overview'}
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
