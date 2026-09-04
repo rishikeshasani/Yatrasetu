@@ -5,11 +5,18 @@ export default function TravelCompanyDashboard({
   densityMap = {},
   selectedSiteId,
   onSelectSite,
-  showToast
+  showToast,
+  externalTab
 }) {
   const [selectedCircuit, setSelectedCircuit] = useState('chardham');
   const [customSelectedSites, setCustomSelectedSites] = useState(['site_kedarnath', 'site_badrinath']);
   const [activeTab, setActiveTab] = useState('circuits'); // 'circuits' | 'optimizer' | 'matrix'
+
+  React.useEffect(() => {
+    if (externalTab && ['circuits', 'optimizer', 'matrix'].includes(externalTab)) {
+      setActiveTab(externalTab);
+    }
+  }, [externalTab]);
 
   // Pre-configured Sacred Circuits
   const PRESET_CIRCUITS = [
@@ -99,7 +106,7 @@ export default function TravelCompanyDashboard({
   };
 
   return (
-    <div className="travel-dashboard-root">
+    <div className="travel-dashboard-root" id="travel-dashboard">
       {/* Top Banner */}
       <div className="travel-header-banner">
         <div className="travel-header-title-row">
@@ -154,7 +161,8 @@ export default function TravelCompanyDashboard({
 
       {/* TAB 1: Smart Pilgrimage Circuits & Itinerary Planner */}
       {activeTab === 'circuits' && (
-        <div className="circuits-section">
+        <div className="circuits-section" id="travel-trips">
+          <div id="travel-groups" style={{ display: 'none' }} />
           {/* Circuit Selectors Grid */}
           <div className="circuit-selector-grid">
             {PRESET_CIRCUITS.map((c) => {
@@ -284,7 +292,7 @@ export default function TravelCompanyDashboard({
 
       {/* TAB 2: Queue vs Distance Optimizer */}
       {activeTab === 'optimizer' && (
-        <div className="optimizer-section">
+        <div className="optimizer-section" id="travel-crowd-alerts">
           <div className="optimizer-intro-card">
             <span className="intro-icon">⚡</span>
             <div>
@@ -401,7 +409,7 @@ export default function TravelCompanyDashboard({
 
       {/* TAB 3: National 25-Shrine Fleet Intelligence Matrix */}
       {activeTab === 'matrix' && (
-        <div className="matrix-section">
+        <div className="matrix-section" id="travel-routes">
           <div className="matrix-grid">
             {sites.map((site) => {
               const tel = getSiteTelemetry(site.id);

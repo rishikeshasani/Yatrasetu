@@ -244,10 +244,10 @@ export default function GovernmentDashboard({
   };
 
   return (
-    <div className="gov-command-root">
+    <div className="gov-command-root" id="gov-command-center">
       {/* 1. SURGE PREDICTION ALERT CARD / BANNER (FEATURE 4) */}
       {surgeAlertVisible && (
-        <div className="gov-surge-alert-banner">
+        <div className="gov-surge-alert-banner" id="gov-forecast">
           <div className="surge-alert-content">
             <div className="surge-alert-icon">⚠️</div>
             <div>
@@ -375,7 +375,7 @@ export default function GovernmentDashboard({
       </div>
 
       {/* 4. CENTRALIZED CROWD HEATMAP & EMERGENCY REROUTE HUB (FEATURE 1 & 2) */}
-      <div className="gov-central-heatmap-hub">
+      <div className="gov-central-heatmap-hub" id="gov-crowd-monitoring">
         <div className="hub-top-header">
           <div className="hub-title-group">
             <div className="hub-icon-shield">📡</div>
@@ -391,7 +391,7 @@ export default function GovernmentDashboard({
           </div>
 
           {/* EMERGENCY REROUTE CONTROLS (WINNING FEATURE) */}
-          <div className="emergency-reroute-controls">
+          <div className="emergency-reroute-controls" id="gov-emergency-reroute">
             <button
               type="button"
               onClick={handleActivateEmergencyReroute}
@@ -695,7 +695,7 @@ export default function GovernmentDashboard({
       )}
 
       {/* 6. MULTI-DEPARTMENT VIEW CONSOLE (FEATURE 5) */}
-      <div className="gov-multidept-section">
+      <div className="gov-multidept-section" id="gov-agencies">
         <div className="multidept-header-bar">
           <div className="multidept-title-box">
             <h3>Multi-Agency Operational Command</h3>
@@ -1209,7 +1209,7 @@ export default function GovernmentDashboard({
         </div>
 
         {/* Right Column: Real-Time SOS Distress Alerts Feed */}
-        <div className="gov-card-panel sos-feed-panel">
+        <div className="gov-card-panel sos-feed-panel" id="gov-sos">
           <div className="panel-header">
             <div className="panel-title-box">
               <span className="panel-icon">🚨</span>
@@ -1280,7 +1280,7 @@ export default function GovernmentDashboard({
       </div>
 
       {/* 8. FULL-WIDTH SECTION: ALL 25 SHIRNES MONITORING TABLE (PRESERVED) */}
-      <div className="gov-card-panel monitoring-table-panel">
+      <div className="gov-card-panel monitoring-table-panel" id="gov-sites">
         <div className="panel-header table-header-flex">
           <div className="panel-title-box">
             <span className="panel-icon">📊</span>
@@ -1400,7 +1400,7 @@ export default function GovernmentDashboard({
 
       {/* 9. BOTTOM SECTION: PILGRIMAGE HOSPITALITY & HOTEL CAPACITY REPORT (PRESERVED) */}
       {hotelReport && (
-        <div className="gov-card-panel hospitality-report-panel">
+        <div className="gov-card-panel hospitality-report-panel" id="gov-hotels">
           <div className="panel-header">
             <div className="panel-title-box">
               <span className="panel-icon">🏨</span>

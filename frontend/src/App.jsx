@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
+import RoleSelectionScreen from './components/RoleSelectionScreen';
 import TouristDashboard from './dashboards/TouristDashboard';
 import GovernmentDashboard from './dashboards/GovernmentDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
@@ -21,7 +22,9 @@ import {
   fetchWallet,
   rewardUser,
   loadUserSession,
-  logoutUser
+  logoutUser,
+  fetchMe,
+  getAuthToken
 } from './api/api';
 import './App.css';
 
@@ -51,6 +54,7 @@ export default function App() {
 
   // Authentication state
   const [currentUser, setCurrentUser] = useState(null);
+  const [travelTab, setTravelTab] = useState('circuits');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
@@ -68,11 +72,25 @@ export default function App() {
 
     // Check localStorage session
     const savedUser = loadUserSession();
-    if (savedUser) {
+    if (savedUser && savedUser.role) {
       setCurrentUser(savedUser);
-      if (savedUser.role && ['tourist', 'government', 'hotel', 'travel_company'].includes(savedUser.role)) {
+      if (['tourist', 'government', 'hotel', 'travel_company'].includes(savedUser.role)) {
         setActiveRole(savedUser.role);
       }
+      // Re-verify token with backend in background
+      fetchMe().then((freshUser) => {
+        if (!isMounted) return;
+        if (freshUser && freshUser.role) {
+          setCurrentUser(freshUser);
+          if (['tourist', 'government', 'hotel', 'travel_company'].includes(freshUser.role)) {
+            setActiveRole(freshUser.role);
+          }
+        } else if (freshUser === null && getAuthToken()) {
+          // Token expired or invalid
+          logoutUser();
+          setCurrentUser(null);
+        }
+      }).catch(() => {});
     }
 
     async function loadInitialData() {
@@ -207,21 +225,22 @@ export default function App() {
   };
 
   const handleLoginSuccess = (user) => {
+    if (!user) return;
+    const authRole = user.role || 'tourist';
     setCurrentUser(user);
-    if (user.role && ['tourist', 'government', 'hotel', 'travel_company'].includes(user.role)) {
-      setActiveRole(user.role);
+    if (['tourist', 'government', 'hotel', 'travel_company'].includes(authRole)) {
+      setActiveRole(authRole);
     }
-    if (user.role === 'tourist') {
+    if (authRole === 'tourist') {
       showToast(`🛡️ Welcome ${user.full_name}! Digital Yatri Card generated with Aadhaar verification.`);
-      setIsProfileOpen(true);
-    } else if (user.role === 'vendor') {
+    } else if (authRole === 'vendor') {
       showToast(`🏪 Welcome ${user.business_name}! Local Temple Vendor portal active.`);
       setIsProfileOpen(true);
-    } else if (user.role === 'government') {
+    } else if (authRole === 'government') {
       showToast(`🏛️ Welcome ${user.full_name}! National Pilgrimage Command Center authorized.`);
-    } else if (user.role === 'hotel') {
+    } else if (authRole === 'hotel') {
       showToast(`🏨 Welcome ${user.full_name}! Shrine Hospitality Partner console active.`);
-    } else if (user.role === 'travel_company') {
+    } else if (authRole === 'travel_company') {
       showToast(`🚌 Welcome ${user.full_name}! Fleet Logistics & Tour Planner ready.`);
     }
   };
@@ -229,8 +248,31 @@ export default function App() {
   const handleLogout = () => {
     logoutUser();
     setCurrentUser(null);
+    setActiveRole('tourist');
     setIsProfileOpen(false);
-    showToast('Signed out successfully.');
+    setIsWalletOpen(false);
+    setIsSOSModalOpen(false);
+    setIsAuthOpen(false);
+    showToast('Signed out successfully. Returned to role selection.');
+  };
+
+  const handleNavigate = (target) => {
+    if (target === 'travel-trips' || target === 'travel-groups') {
+      setTravelTab('circuits');
+    } else if (target === 'travel-crowd-alerts') {
+      setTravelTab('optimizer');
+    } else if (target === 'travel-routes') {
+      setTravelTab('matrix');
+    }
+
+    setTimeout(() => {
+      const el = document.getElementById(target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 60);
   };
 
   // Immediate synchronization when Government updates crowd telemetry (POST /crowd/update)
@@ -369,19 +411,6 @@ export default function App() {
 
   return (
     <div className="yatrasetu-app app-container">
-      {/* Top Navigation with 4 Role Tabs */}
-      <Navbar
-        walletPoints={wallet?.total_points || 260}
-        pendingPoints={pendingPunyaReward}
-        onOpenWallet={() => setIsWalletOpen(true)}
-        onOpenSOS={() => setIsSOSModalOpen(true)}
-        currentUser={currentUser}
-        onOpenAuth={() => setIsAuthOpen(true)}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        activeRole={activeRole}
-        onSelectRole={(role) => setActiveRole(role)}
-      />
-
       {/* Global Toast Notification */}
       {toastMessage && (
         <div className="toast-notification">
@@ -391,62 +420,84 @@ export default function App() {
         </div>
       )}
 
-      {/* Dynamic Role-Based Dashboard View */}
-      <main className="main-content-container main-content">
-        {activeRole === 'tourist' && (
-          <TouristDashboard
-            sites={sites}
-            selectedSiteId={selectedSiteId}
-            selectedSite={selectedSite}
-            onSelectSite={handleSelectSite}
-            densityMap={densityMap}
-            currentDensity={currentDensity}
-            currentForecast={currentForecast}
-            currentPrediction={currentPrediction}
-            currentAlternatives={currentAlternatives}
-            safetyInfo={safetyInfo}
-            alerts={alerts}
-            vendors={vendors}
-            activeAlternateRoute={activeAlternateRoute}
-            pendingPunyaReward={pendingPunyaReward}
-            routeStatus={routeStatus}
-            completedRouteIds={completedRouteIds}
-            onSelectRoute={handleSelectRoute}
-            onCompleteArrival={handleCompleteArrival}
-            onSwitchBack={handleSwitchBack}
+      {/* Unauthenticated Role Selection Screen vs Authenticated Protected Experience */}
+      {!currentUser ? (
+        <RoleSelectionScreen onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <>
+          {/* Top Navigation with Role-Specific Menu */}
+          <Navbar
+            walletPoints={wallet?.total_points || 260}
+            pendingPoints={pendingPunyaReward}
+            onOpenWallet={() => setIsWalletOpen(true)}
             onOpenSOS={() => setIsSOSModalOpen(true)}
-          />
-        )}
-
-        {activeRole === 'government' && (
-          <GovernmentDashboard
-            sites={sites}
-            densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={handleSelectSite}
-            onCrowdUpdated={handleCrowdUpdated}
             currentUser={currentUser}
-            showToast={showToast}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenProfile={() => setIsProfileOpen(true)}
+            activeRole={currentUser.role || activeRole}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
           />
-        )}
 
-        {activeRole === 'hotel' && (
-          <HotelDashboard
-            currentUser={currentUser}
-            showToast={showToast}
-          />
-        )}
+          {/* Dynamic Protected Role-Based Dashboard View */}
+          <main className="main-content-container main-content">
+            {(currentUser.role === 'tourist' || (!currentUser.role && activeRole === 'tourist')) && (
+              <TouristDashboard
+                sites={sites}
+                selectedSiteId={selectedSiteId}
+                selectedSite={selectedSite}
+                onSelectSite={handleSelectSite}
+                densityMap={densityMap}
+                currentDensity={currentDensity}
+                currentForecast={currentForecast}
+                currentPrediction={currentPrediction}
+                currentAlternatives={currentAlternatives}
+                safetyInfo={safetyInfo}
+                alerts={alerts}
+                vendors={vendors}
+                activeAlternateRoute={activeAlternateRoute}
+                pendingPunyaReward={pendingPunyaReward}
+                routeStatus={routeStatus}
+                completedRouteIds={completedRouteIds}
+                onSelectRoute={handleSelectRoute}
+                onCompleteArrival={handleCompleteArrival}
+                onSwitchBack={handleSwitchBack}
+                onOpenSOS={() => setIsSOSModalOpen(true)}
+              />
+            )}
 
-        {activeRole === 'travel_company' && (
-          <TravelCompanyDashboard
-            sites={sites}
-            densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={handleSelectSite}
-            showToast={showToast}
-          />
-        )}
-      </main>
+            {currentUser.role === 'government' && (
+              <GovernmentDashboard
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId}
+                onSelectSite={handleSelectSite}
+                onCrowdUpdated={handleCrowdUpdated}
+                currentUser={currentUser}
+                showToast={showToast}
+              />
+            )}
+
+            {currentUser.role === 'hotel' && (
+              <HotelDashboard
+                currentUser={currentUser}
+                showToast={showToast}
+              />
+            )}
+
+            {currentUser.role === 'travel_company' && (
+              <TravelCompanyDashboard
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId}
+                onSelectSite={handleSelectSite}
+                showToast={showToast}
+                externalTab={travelTab}
+              />
+            )}
+          </main>
+        </>
+      )}
 
       {/* Green Pilgrim Wallet Modal */}
       {isWalletOpen && (
@@ -474,7 +525,6 @@ export default function App() {
           isOpen={isProfileOpen}
           user={currentUser || { full_name: 'Saatvik Sharma', role: 'tourist' }}
           onClose={() => setIsProfileOpen(false)}
-          onLogout={handleLogout}
         />
       )}
 
@@ -484,7 +534,6 @@ export default function App() {
           isOpen={isProfileOpen}
           user={currentUser}
           onClose={() => setIsProfileOpen(false)}
-          onLogout={handleLogout}
         />
       )}
 

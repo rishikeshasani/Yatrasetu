@@ -270,7 +270,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
   };
 
   return (
-    <div className="hotel-portal-wrapper">
+    <div className="hotel-portal-wrapper" id="hotel-dashboard">
       {/* 1. HEADER & TOP NAVIGATION BAR */}
       <header className="hotel-portal-header">
         <div className="hotel-portal-header-inner">
@@ -426,7 +426,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
         {/* 3. KPI DASHBOARD CARDS */}
         <div className="hotel-kpi-row">
           {/* 1. Room Availability */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-rooms">
             <div className="kpi-title-row">
               <span>🛏️</span>
               <span>Room Availability</span>
@@ -439,7 +439,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
           </div>
 
           {/* 2. Occupancy Rate */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-occupancy">
             <div className="kpi-title-row">
               <span>📊</span>
               <span>Occupancy Rate</span>
@@ -548,7 +548,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
         </div>
 
         {/* 5. WORKFLOW: DYNAMIC SCANNABLE QR & GUEST TERMINAL */}
-        <div className="hotel-terminal-panel">
+        <div className="hotel-terminal-panel" id="hotel-bookings">
           <div className="terminal-header-row">
             <div className="terminal-title-group">
               <h3>
