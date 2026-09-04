@@ -135,8 +135,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box auth-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', borderRadius: '1rem' }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content auth-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', borderRadius: '1rem' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span style={{ fontSize: '1.4rem' }}>{role === 'tourist' ? '🪪' : '🏪'}</span>

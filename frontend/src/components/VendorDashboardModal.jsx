@@ -39,8 +39,8 @@ export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box vendor-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', borderRadius: '1.25rem' }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content vendor-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px', borderRadius: '1.25rem' }}>
         <div style={{
           background: 'linear-gradient(135deg, #B45309 0%, #D97706 100%)',
           padding: '1.25rem',
