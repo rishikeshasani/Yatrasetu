@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from database import supabase
+from dependencies import require_role, AuthenticatedUser
 
 router = APIRouter()
 
@@ -11,7 +12,10 @@ class CrowdUpdate(BaseModel):
     timestamp: str = None
 
 @router.post("/crowd/update")
-def update_crowd(data: CrowdUpdate):
+def update_crowd(
+    data: CrowdUpdate,
+    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+):
     # Prepare payload
     payload = {
         "site_id": data.site_id,
