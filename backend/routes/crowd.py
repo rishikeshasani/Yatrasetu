@@ -130,21 +130,51 @@ def predict_crowd(site_id: str):
 
 @router.get("/sites/{site_id}/density")
 def get_site_density(site_id: str):
+    site_capacities = {"site_kedarnath": 2500, "site_badrinath": 3200, "site_kashi": 6000, "site_tirupati": 12000, "site_vaishnodevi": 8000}
+    capacity = site_capacities.get(site_id, 2500)
+    site_name = site_id.replace("site_", "").capitalize()
+
+    # Query the latest observation from Supabase directly!
+    try:
+        res = supabase.table("crowd_observations").select("*").eq("site_id", site_id).order("id", desc=True).limit(1).execute()
+        if res.data and len(res.data) > 0:
+            latest = res.data[0]
+            people_count = latest["people_count"]
+            occupancy = round((people_count / capacity) * 100, 1)
+            
+            if occupancy < 50:
+                status = "NORMAL"
+            elif occupancy < 75:
+                status = "MODERATE"
+            elif occupancy < 90:
+                status = "HIGH"
+            else:
+                status = "CRITICAL"
+                
+            return {
+                "site_id": site_id,
+                "site_name": site_name,
+                "people_count": people_count,
+                "occupancy_percentage": occupancy,
+                "status": status,
+                "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, people_count, capacity=capacity),
+                "last_updated": "Just now (Live Feed)"
+            }
+    except Exception as e:
+        print(f"Error fetching density from DB: {e}")
+
+    # Fallback if DB fetch fails or is empty
     if site_id in latest_observations:
         cached = latest_observations[site_id]
         return {
             "site_id": site_id,
-            "site_name": site_id.replace("site_", "").capitalize() + " Shrine",
+            "site_name": site_name + " Shrine",
             "people_count": cached["people_count"],
             "occupancy_percentage": cached["occupancy_percentage"],
             "status": cached["status"],
             "relative_surge_alert": cached.get("relative_surge_alert"),
             "last_updated": "Just now (Live Feed)"
         }
-
-    site_capacities = {"site_kedarnath": 2500, "site_badrinath": 3200, "site_kashi": 6000, "site_tirupati": 12000, "site_vaishnodevi": 8000}
-    capacity = site_capacities.get(site_id, 2500)
-    site_name = site_id.replace("site_", "").capitalize()
 
     return {
         "site_id": site_id,
