@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { fetchSiteDensity } from '../api/api';
 
 export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }) {
   if (!isOpen || !user) return null;
