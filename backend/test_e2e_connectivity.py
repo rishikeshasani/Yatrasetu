@@ -69,14 +69,60 @@ def test_connectivity():
     log(f"Government & Tourist GET /alerts: {len(alerts)} alerts active", "PASS")
 
     # 3. Test Hotel Booking Sync (Tourist -> Hotel & Government)
-    log("\nStep 2: Tourist books a room at Kedarnath Real Pilgrimage Lodge...")
-    # Get hotels
+    log("\nStep 2: Tourist books a room at verified shrine hotel...")
+
+    # Authenticate hotel partner to obtain owner identity and auth headers
+    owner_login = client.post("/auth/login", json={
+        "email": "hotel_partner@yatrasetu.org",
+        "password": "DemoPassword123!"
+    })
+    assert owner_login.status_code == 200, f"Hotel partner login failed: {owner_login.text}"
+    owner_token = owner_login.json().get("access_token") or owner_login.json().get("token")
+    owner_user_id = owner_login.json().get("user", {}).get("id")
+    owner_headers = {"Authorization": f"Bearer {owner_token}"}
+    log("Hotel Partner authenticated with JWT", "PASS")
+
+    # Get hotels and select one owned by the partner
     hotels_res = client.get("/hotels")
     assert hotels_res.status_code == 200
     hotels = hotels_res.json()
-    lodge = next((h for h in hotels if "Kedarnath" in h.get("name", "")), hotels[0])
+    lodge = next((h for h in hotels if h.get("owner_id") == owner_user_id), hotels[0])
     hotel_id = lodge["id"]
-    log(f"Target Hotel: {lodge['name']} (ID: {hotel_id})")
+    hotel_name = lodge["name"]
+    log(f"Target Hotel: {hotel_name} (ID: {hotel_id})")
+
+    # Query the live hotel availability API (Requirement 2)
+    avail_res = client.get(f"/hotels/{hotel_id}/availability")
+    assert avail_res.status_code == 200, f"Availability check failed: {avail_res.text}"
+    avail_data = avail_res.json()
+    rooms = avail_data.get("rooms", [])
+    assert len(rooms) > 0, "No rooms configured for target hotel"
+
+    # Select a room with available inventory, or safely prepare test inventory (Requirement 1)
+    target_room = next((r for r in rooms if r.get("available_rooms", 0) > 0), None)
+    if not target_room:
+        log("Inventory exhausted (0 available rooms). Safely preparing test inventory in Supabase...", "INFO")
+        from database import supabase_admin
+        room_to_top = rooms[0]
+        supabase_admin.table("hotel_rooms").update({
+            "total_rooms": max(5, room_to_top.get("total_rooms", 5)),
+            "available_rooms": 5
+        }).eq("id", room_to_top["id"]).execute()
+        # Re-fetch from availability API to obtain fresh verified values
+        avail_res = client.get(f"/hotels/{hotel_id}/availability")
+        assert avail_res.status_code == 200
+        avail_data = avail_res.json()
+        rooms = avail_data.get("rooms", [])
+        target_room = next((r for r in rooms if r.get("available_rooms", 0) > 0), None)
+
+    assert target_room is not None, "Failed to obtain room with available inventory"
+    room_id = target_room["id"]
+    room_type = target_room["room_type"]
+    initial_available = target_room["available_rooms"]
+    log(f"Selected Room: '{room_type}' (ID: {room_id}) with {initial_available} available rooms", "PASS")
+
+    # Requirement 3: Books only when available_rooms > 0
+    assert initial_available > 0, f"Cannot book room {room_id} because available_rooms is 0"
 
     # Authenticate as tourist
     login_res = client.post("/auth/login", json={
@@ -87,8 +133,7 @@ def test_connectivity():
     tourist_token = login_res.json().get("access_token") or login_res.json().get("token")
     tourist_headers = {"Authorization": f"Bearer {tourist_token}"}
 
-    # Book room
-    room_id = lodge["rooms"][0]["id"]
+    # Requirement 4: Books room and verifies booking succeeds
     book_res = client.post(
         f"/hotels/{hotel_id}/book",
         json={
@@ -101,17 +146,23 @@ def test_connectivity():
     )
     assert book_res.status_code in [200, 201], f"Booking failed: {book_res.text}"
     booking_data = book_res.json()
-    log(f"Tourist booking confirmed: ID={booking_data.get('id')} Status={booking_data.get('status')}", "PASS")
+    assert booking_data.get("status") == "confirmed"
+    assert booking_data.get("room_type") == room_type
+    log(f"Tourist booking confirmed: ID={booking_data.get('id')} Status={booking_data.get('status')} RoomType={booking_data.get('room_type')}", "PASS")
+
+    # Requirement 5: Verifies hotel inventory decreased by 1
+    post_avail_res = client.get(f"/hotels/{hotel_id}/availability")
+    assert post_avail_res.status_code == 200
+    post_avail_data = post_avail_res.json()
+    post_room = next((r for r in post_avail_data.get("rooms", []) if r["id"] == room_id), None)
+    assert post_room is not None, "Target room not found in post-booking availability check"
+    post_available = post_room["available_rooms"]
+    assert post_available == initial_available - 1, (
+        f"Inventory count did not decrement correctly! Initial: {initial_available}, Post-booking: {post_available}"
+    )
+    log(f"Hotel inventory verified decreased by 1: from {initial_available} to {post_available}", "PASS")
 
     # Check Hotel Owner sees the booking
-    owner_login = client.post("/auth/login", json={
-        "email": "hotel_partner@yatrasetu.org",
-        "password": "DemoPassword123!"
-    })
-    assert owner_login.status_code == 200
-    owner_token = owner_login.json().get("access_token") or owner_login.json().get("token")
-    owner_headers = {"Authorization": f"Bearer {owner_token}"}
-    
     owner_bookings_res = client.get("/hotels/owner/bookings", headers=owner_headers)
     assert owner_bookings_res.status_code == 200
     owner_bookings = owner_bookings_res.json()
@@ -123,7 +174,7 @@ def test_connectivity():
     govt_report_res = client.get("/hotels/government/occupancy-report", headers=govt_headers)
     assert govt_report_res.status_code == 200
     govt_report = govt_report_res.json()
-    log(f"Government Dashboard GET /hotels/government/occupancy-report: {govt_report.get('total_hotels')} hotels, {govt_report.get('total_rooms')} rooms, {govt_report.get('occupied_rooms')} occupied ({govt_report.get('overall_occupancy_percentage')}%)", "PASS")
+    log(f"Government Dashboard GET /hotels/government/occupancy-report: {govt_report.get('total_hotels')} hotels evaluated, overall occupancy: {govt_report.get('overall_occupancy_percentage')}%", "PASS")
 
     # 4. Test SOS Alert Propagation (Tourist -> Government)
     log("\nStep 3: Tourist triggers SOS distress beacon...")

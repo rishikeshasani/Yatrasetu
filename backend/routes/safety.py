@@ -1,3 +1,5 @@
+import os
+import json
 import math
 import uuid
 from datetime import datetime, timezone
@@ -5,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 from database import supabase, supabase_admin
-from dependencies import get_current_user, AuthenticatedUser
+from dependencies import get_current_user, require_role, AuthenticatedUser
 
 router = APIRouter()
 
@@ -248,6 +250,258 @@ def get_site_safety_info(site_id: str):
         "risk_mitigation_measures": "Follow SDRF/volunteer instructions."
     }
 
+# ============================================================================
+# EMERGENCY REROUTE PERSISTENT EVENT STORE (Supabase Source of Truth)
+# ============================================================================
+
+class RerouteActivateRequest(BaseModel):
+    site_id: str = Field(..., description="Target site identifier, e.g. TS001")
+    diverted_tourists: Optional[int] = 350
+    partner_buses: Optional[int] = 14
+    partner_hotels: Optional[int] = 22
+    notes: Optional[str] = None
+
+class RerouteDeactivateRequest(BaseModel):
+    site_id: Optional[str] = None
+    reason: Optional[str] = "Situation normalized"
+
+REROUTE_STATE_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "emergency_reroute_state.json"))
+
+def load_local_reroute_state():
+    try:
+        if os.path.exists(REROUTE_STATE_FILE):
+            with open(REROUTE_STATE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Warning: error reading local reroute state: {e}")
+    return None
+
+def save_local_reroute_state(state):
+    try:
+        os.makedirs(os.path.dirname(REROUTE_STATE_FILE), exist_ok=True)
+        with open(REROUTE_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(state, f, indent=2)
+    except Exception as e:
+        print(f"Warning: error saving local reroute state: {e}")
+
+def get_active_reroute_from_db(site_id: Optional[str] = None):
+    """
+    Reads active reroute event with Supabase public.emergency_reroutes as primary source of truth.
+    Falls back to local persistent store if table migration is pending.
+    """
+    try:
+        q = supabase_admin.table("emergency_reroutes").select("*").eq("status", "ACTIVE").order("activated_at", desc=True)
+        if site_id:
+            q = q.eq("site_id", site_id)
+        res = q.limit(1).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+    except Exception:
+        pass
+
+    # Fallback to local persistent state file
+    local_state = load_local_reroute_state()
+    if local_state and local_state.get("status") == "ACTIVE":
+        if site_id is None or local_state.get("site_id") == site_id:
+            return local_state
+    return None
+
+def resolve_sister_alternatives(site_id: str):
+    """Retrieves sister shrine recommendations from CSV or recommendations engine."""
+    recommendations = []
+    try:
+        from routes.recommendations import get_alternatives, CSV_PATH, parse_crowd_percentage
+        try:
+            alt_data = get_alternatives(site_id)
+            if isinstance(alt_data, dict) and alt_data.get("recommendations"):
+                recommendations = alt_data["recommendations"]
+        except Exception:
+            pass
+
+        if not recommendations and os.path.exists(CSV_PATH):
+            import csv
+            with open(CSV_PATH, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    if row.get("main_spot_id") == site_id:
+                        try:
+                            recommendations.append({
+                                "alternative_id": row.get("alt_id"),
+                                "name": row.get("alternative_spot_name"),
+                                "type": row.get("alternative_type"),
+                                "distance_km": float(row.get("distance_km_from_main", 0)),
+                                "travel_time_mins": int(row.get("travel_time_mins", 0)),
+                                "relative_crowd_percentage": parse_crowd_percentage(row.get("crowd_comparison_percentage", "")),
+                                "why_visit": row.get("why_visit_key_attraction"),
+                                "best_time_to_visit": row.get("best_time_to_visit"),
+                                "road_connectivity": row.get("road_connectivity_status")
+                            })
+                        except Exception:
+                            continue
+            recommendations.sort(key=lambda x: (x.get("relative_crowd_percentage", 100), x.get("travel_time_mins", 999)))
+    except Exception as e:
+        print(f"Non-blocking alternatives lookup error: {e}")
+    return recommendations
+
+@router.post("/alerts/reroute/activate")
+def activate_emergency_reroute(
+    data: RerouteActivateRequest,
+    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+):
+    """
+    Activates an Emergency Reroute Event for a congested shrine.
+    - Protected: Only users with verified JWT role='government' can activate.
+    - Dynamic Validation: Validates site_id against public.sites table.
+    - Source of Truth: Persists to public.emergency_reroutes in Supabase.
+    - Genuine Alternatives: Queries get_alternatives(site_id) for sister shrine destinations.
+    """
+    # 1. Validate site exists in DB
+    site_res = supabase.table("sites").select("*").eq("id", data.site_id).execute()
+    if not site_res.data:
+        # Try finding by partial name or alias
+        alt_id = data.site_id.replace("site_", "")
+        site_res = supabase.table("sites").select("*").ilike("name", f"%{alt_id}%").execute()
+    if not site_res.data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Site '{data.site_id}' not found in registered shrines database."
+        )
+    site_obj = site_res.data[0]
+    resolved_site_id = site_obj["id"]
+    site_name = site_obj.get("name", resolved_site_id)
+    capacity = site_obj.get("capacity", 13000)
+
+    # 2. Get latest crowd observation & occupancy
+    people_count = 12350
+    try:
+        from routes.crowd import latest_observations
+        if resolved_site_id in latest_observations:
+            people_count = latest_observations[resolved_site_id]["people_count"]
+        else:
+            obs = supabase.table("crowd_observations").select("*").eq("site_id", resolved_site_id).order("id", desc=True).limit(1).execute()
+            if obs.data and len(obs.data) > 0:
+                people_count = obs.data[0]["people_count"]
+    except Exception:
+        pass
+
+    occupancy = round((people_count / capacity) * 100, 1)
+    if occupancy < 50:
+        crowd_status = "NORMAL"
+    elif occupancy < 75:
+        crowd_status = "MODERATE"
+    elif occupancy < 90:
+        crowd_status = "HIGH"
+    else:
+        crowd_status = "CRITICAL"
+
+    # 3. Retrieve genuine alternatives from recommendations engine
+    recommendations = resolve_sister_alternatives(resolved_site_id)
+
+    reroute_id = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    record = {
+        "id": reroute_id,
+        "site_id": resolved_site_id,
+        "site_name": site_name,
+        "crowd_status": crowd_status,
+        "occupancy_percentage": occupancy,
+        "people_count": people_count,
+        "alert_type": "EMERGENCY_REROUTE",
+        "status": "ACTIVE",
+        "diverted_tourists": data.diverted_tourists or 350,
+        "partner_buses": data.partner_buses or 14,
+        "partner_hotels": data.partner_hotels or 22,
+        "alternative_routes": recommendations,
+        "notes": data.notes or f"Automated diversion active for {site_name} due to {crowd_status} congestion.",
+        "activated_by": current_user.id,
+        "activated_at": now_iso,
+        "resolved_at": None
+    }
+
+    # 4. Persist to Supabase emergency_reroutes table as source of truth
+    db_saved = False
+    try:
+        # Resolve any prior active reroute for this site
+        supabase_admin.table("emergency_reroutes").update({
+            "status": "RESOLVED",
+            "resolved_at": now_iso
+        }).eq("site_id", resolved_site_id).eq("status", "ACTIVE").execute()
+
+        res = supabase_admin.table("emergency_reroutes").insert(record).execute()
+        if res.data and len(res.data) > 0:
+            db_saved = True
+            record = res.data[0]
+    except Exception as e:
+        print(f"Supabase emergency_reroutes persistence notice: {e}")
+
+    # Save local persistent JSON backup
+    save_local_reroute_state(record)
+
+    return {
+        "status": "success",
+        "is_active": True,
+        "alert": record,
+        "persisted_to_supabase": db_saved
+    }
+
+@router.post("/alerts/reroute/deactivate")
+def deactivate_emergency_reroute(
+    data: RerouteDeactivateRequest,
+    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+):
+    """
+    Deactivates / resolves an active emergency reroute.
+    - Protected: Only users with verified JWT role='government' can deactivate.
+    - Updates status='RESOLVED' in Supabase emergency_reroutes.
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    try:
+        q = supabase_admin.table("emergency_reroutes").update({
+            "status": "RESOLVED",
+            "resolved_at": now_iso
+        }).eq("status", "ACTIVE")
+        if data.site_id:
+            q = q.eq("site_id", data.site_id)
+        q.execute()
+    except Exception as e:
+        print(f"Supabase emergency_reroutes deactivation notice: {e}")
+
+    local_state = load_local_reroute_state()
+    if local_state:
+        local_state["status"] = "RESOLVED"
+        local_state["resolved_at"] = now_iso
+        save_local_reroute_state(local_state)
+
+    return {
+        "status": "success",
+        "is_active": False,
+        "message": "Emergency reroute deactivated."
+    }
+
+@router.get("/alerts/reroute")
+def get_reroute_alert(site_id: Optional[str] = None):
+    """
+    Returns the currently active emergency reroute alert if one exists.
+    Accessible to all authenticated or public dashboard clients (Travel, Hotel, Tourist, Govt).
+    """
+    active_record = get_active_reroute_from_db(site_id)
+    if active_record:
+        # Ensure alternative routes are populated
+        if not active_record.get("alternative_routes"):
+            active_record["alternative_routes"] = resolve_sister_alternatives(active_record["site_id"])
+
+        return {
+            "is_active": True,
+            "alert": active_record
+        }
+
+    return {
+        "is_active": False,
+        "alert": None
+    }
+
 @router.get("/alerts")
 def get_alerts():
     # Fetch safety zones and sites
@@ -255,6 +509,26 @@ def get_alerts():
     sites = supabase.table("sites").select("*").execute().data
 
     active_alerts = []
+
+    # Check active emergency reroute first
+    reroute = get_active_reroute_from_db()
+    if reroute:
+        active_alerts.append({
+            "id": reroute.get("id"),
+            "site_id": reroute.get("site_id"),
+            "site_name": reroute.get("site_name"),
+            "alert_type": "EMERGENCY_REROUTE",
+            "severity": reroute.get("crowd_status", "CRITICAL"),
+            "message": f"🚨 EMERGENCY REROUTE ACTIVE: High crowd congestion ({reroute.get('occupancy_percentage')}%) at {reroute.get('site_name')}. {reroute.get('diverted_tourists', 350)} tourists diverted to {reroute.get('partner_buses', 14)} buses and {reroute.get('partner_hotels', 22)} partner hotels.",
+            "people_count": reroute.get("people_count"),
+            "occupancy_percentage": reroute.get("occupancy_percentage"),
+            "timestamp": reroute.get("activated_at"),
+            "diverted_tourists": reroute.get("diverted_tourists"),
+            "partner_buses": reroute.get("partner_buses"),
+            "partner_hotels": reroute.get("partner_hotels"),
+            "alternative_routes": reroute.get("alternative_routes")
+        })
+
     for zone in zones:
         nearest_site, latest_obs, people_count, occupancy, status = get_nearest_site_with_status(
             zone["latitude"], zone["longitude"], sites
