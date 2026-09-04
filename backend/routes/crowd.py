@@ -156,9 +156,17 @@ def predict_crowd(site_id: str):
 
 @router.get("/sites/{site_id}/density")
 def get_site_density(site_id: str):
-    site_capacities = {"site_kedarnath": 2500, "site_badrinath": 3200, "site_kashi": 6000, "site_tirupati": 12000, "site_vaishnodevi": 8000}
+    site_capacities = {"site_kedarnath": 13000, "TS001": 13000, "site_badrinath": 16000, "TS002": 16000, "site_kashi": 60000, "TS003": 60000, "site_tirupati": 85000, "TS006": 85000, "site_vaishnodevi": 50000, "TS005": 50000}
     capacity = site_capacities.get(site_id, 2500)
     site_name = site_id.replace("site_", "").capitalize()
+
+    try:
+        site_res = supabase.table("sites").select("*").eq("id", site_id).execute()
+        if site_res.data:
+            capacity = site_res.data[0].get("capacity", capacity)
+            site_name = site_res.data[0].get("name", site_name)
+    except Exception:
+        pass
 
     # Query the latest observation from Supabase directly!
     try:

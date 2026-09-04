@@ -100,7 +100,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
   // Animate counter
   const [displayTouristsCount, setDisplayTouristsCount] = useState(120);
 
-  // Fetch real hotel data on mount
+  // Fetch real hotel data on mount & listen to live booking events
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -113,7 +113,11 @@ export default function HotelDashboard({ currentUser, showToast }) {
         if (!isMounted) return;
 
         if (Array.isArray(hotelsList) && hotelsList.length > 0) {
-          const matched = hotelsList.find(h => h.id === 'hotel-kedarnath-1') || hotelsList[0];
+          const matched =
+            hotelsList.find(h => currentUser?.id && h.owner_id === currentUser.id) ||
+            hotelsList.find(h => currentUser?.hotel_id && h.id === currentUser.hotel_id) ||
+            hotelsList.find(h => h.name.toLowerCase().includes('kedarnath')) ||
+            hotelsList[0];
           setBackendHotel(matched);
         }
         if (Array.isArray(ownerBookings)) {
@@ -126,8 +130,20 @@ export default function HotelDashboard({ currentUser, showToast }) {
       }
     }
     loadData();
-    return () => { isMounted = false; };
-  }, []);
+
+    // Auto-refresh when tourist books room or on 6-second heartbeat
+    const handleHotelBooked = () => {
+      loadData();
+    };
+    window.addEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+    const pollInterval = setInterval(loadData, 6000);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+      clearInterval(pollInterval);
+    };
+  }, [currentUser]);
 
   // Animate counter when incomingTourists changes
   useEffect(() => {
@@ -154,9 +170,13 @@ export default function HotelDashboard({ currentUser, showToast }) {
     };
   }, [state.incomingTourists]);
 
-  // Derived metrics
-  const availableRooms = state.totalRooms - state.occupiedRooms;
-  const occupancyPercent = Math.round((state.occupiedRooms / state.totalRooms) * 100);
+  // Derived metrics connecting live Supabase room inventory
+  const realTotalRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.total_rooms || 0), 0);
+  const realAvailableRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.available_rooms != null ? r.available_rooms : 0), 0);
+  const totalRoomsCount = (realTotalRooms && realTotalRooms > 0) ? realTotalRooms : state.totalRooms;
+  const availableRooms = (realAvailableRooms != null && realTotalRooms > 0) ? realAvailableRooms : (state.totalRooms - state.occupiedRooms);
+  const occupiedRoomsCount = totalRoomsCount - availableRooms;
+  const occupancyPercent = totalRoomsCount > 0 ? Math.round((occupiedRoomsCount / totalRoomsCount) * 100) : 0;
 
   // FLOW 1: Rerouting Spike Simulation
   const triggerReroutingSpike = () => {
@@ -433,7 +453,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
             </div>
             <div className="kpi-main-metric">
               <span className="metric-accent">{availableRooms}</span>
-              <span className="metric-denom"> / {state.totalRooms} Total</span>
+              <span className="metric-denom"> / {totalRoomsCount} Total</span>
             </div>
             <div className="kpi-footer-sub">Available for check-in</div>
           </div>

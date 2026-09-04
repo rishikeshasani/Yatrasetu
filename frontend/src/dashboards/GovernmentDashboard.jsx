@@ -78,21 +78,36 @@ export default function GovernmentDashboard({
 
     loadGovtData();
 
-    // Poll SOS alerts every 5 seconds for live distress beacon updates
-    const sosInterval = setInterval(async () => {
+    // Live sync listeners across dashboards
+    const handleSOS = async () => {
       try {
         const freshAlerts = await fetchActiveSOSAlerts();
         if (isMounted && Array.isArray(freshAlerts)) {
           setSosAlerts(freshAlerts);
         }
-      } catch (err) {
-        // silent fallback
-      }
-    }, 5000);
+      } catch (err) {}
+    };
+
+    const handleHotelBooking = async () => {
+      try {
+        const report = await fetchGovernmentOccupancyReport();
+        if (isMounted && report) {
+          setHotelReport(report);
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('yatrasetu:sos_triggered', handleSOS);
+    window.addEventListener('yatrasetu:hotel_booked', handleHotelBooking);
+
+    // Poll SOS alerts every 5 seconds for live distress beacon updates
+    const sosInterval = setInterval(handleSOS, 5000);
 
     return () => {
       isMounted = false;
       clearInterval(sosInterval);
+      window.removeEventListener('yatrasetu:sos_triggered', handleSOS);
+      window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooking);
     };
   }, []);
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SITE_ID_ALIASES } from '../api/api';
 
 export default function TravelCompanyDashboard({
   sites = [],
@@ -64,10 +65,28 @@ export default function TravelCompanyDashboard({
 
   const activeCircuitData = PRESET_CIRCUITS.find((c) => c.id === selectedCircuit) || PRESET_CIRCUITS[0];
 
+  // Helper to resolve site objects across aliases
+  const resolveSite = (id) => {
+    const alias = SITE_ID_ALIASES[id];
+    return (
+      sites.find((s) => s.id === id || (alias && s.id === alias)) ||
+      sites.find((s) => s.name.toLowerCase().includes(id.replace('site_', '').toLowerCase())) ||
+      { id, name: id.replace('site_', '').toUpperCase(), capacity: 10000 }
+    );
+  };
+
   // Helper to get telemetry for any site
   const getSiteTelemetry = (siteId) => {
-    const siteObj = sites.find((s) => s.id === siteId) || { id: siteId, name: 'Sacred Shrine', capacity: 10000 };
-    const d = densityMap[siteId] || { people_count: Math.round((siteObj.capacity || 10000) * 0.48), occupancy_percentage: 48, status: 'NORMAL' };
+    const siteObj = resolveSite(siteId);
+    const alias = SITE_ID_ALIASES[siteId] || SITE_ID_ALIASES[siteObj.id];
+    const d =
+      densityMap[siteObj.id] ||
+      densityMap[siteId] ||
+      (alias ? densityMap[alias] : null) || {
+        people_count: Math.round((siteObj.capacity || 10000) * 0.48),
+        occupancy_percentage: 48,
+        status: 'NORMAL'
+      };
     const occ = d.occupancy_percentage != null ? d.occupancy_percentage : 48;
     const status = d.status || (occ >= 90 ? 'CRITICAL' : occ >= 75 ? 'HIGH' : occ >= 50 ? 'MODERATE' : 'NORMAL');
     
@@ -86,6 +105,7 @@ export default function TravelCompanyDashboard({
   };
 
   // Calculate Total Circuit Wait Time
+  const kedaTel = getSiteTelemetry('TS001');
   const circuitTelemetries = activeCircuitData.siteIds.map((sid) => getSiteTelemetry(sid));
   const totalCircuitWait = circuitTelemetries.reduce((acc, t) => acc + t.waitMins, 0);
 
@@ -324,18 +344,24 @@ export default function TravelCompanyDashboard({
                     <span className="badge-primary">PRIMARY SHRINE</span>
                   </td>
                   <td>
-                    <span className="gov-status-badge critical">95% CRITICAL</span>
+                    <span className={`gov-status-badge ${(kedaTel.status || 'normal').toLowerCase()}`}>
+                      {kedaTel.occupancy}% {kedaTel.status}
+                    </span>
                   </td>
-                  <td className="font-mono font-bold text-critical">⏱️ 540 min (9 Hours)</td>
+                  <td className={`font-mono font-bold ${kedaTel.status === 'CRITICAL' ? 'text-critical' : ''}`}>
+                    ⏱️ {kedaTel.waitMins} min {kedaTel.waitMins >= 60 ? `(${Math.round(kedaTel.waitMins / 60)} Hours)` : ''}
+                  </td>
                   <td>16 km Trek from Gaurikund</td>
                   <td>
-                    <div className="efficiency-bar red">
-                      <div className="bar-fill" style={{ width: '20%' }}></div>
+                    <div className={`efficiency-bar ${kedaTel.occupancy >= 80 ? 'red' : kedaTel.occupancy >= 50 ? 'yellow' : 'green'}`}>
+                      <div className="bar-fill" style={{ width: `${Math.max(10, 100 - kedaTel.occupancy)}%` }}></div>
                     </div>
-                    <span className="eff-text">20% (Severe Delay)</span>
+                    <span className="eff-text">{Math.max(10, 100 - kedaTel.occupancy)}% {kedaTel.occupancy >= 80 ? '(Severe Delay)' : '(Optimal)'}</span>
                   </td>
                   <td>
-                    <span className="action-warning">🚨 Hold Tour Groups in Buffer Lodge</span>
+                    <span className={kedaTel.occupancy >= 80 ? "action-warning" : "action-good"}>
+                      {kedaTel.occupancy >= 80 ? "🚨 Hold Tour Groups in Buffer Lodge" : "✅ Normal Tour Flow"}
+                    </span>
                   </td>
                 </tr>
 

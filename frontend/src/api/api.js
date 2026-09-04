@@ -1271,6 +1271,22 @@ export async function fetchSiteDensity(siteId) {
   );
 }
 
+export async function fetchAllSiteDensities(sites = []) {
+  if (!Array.isArray(sites) || sites.length === 0) return {};
+  try {
+    const entries = await Promise.all(
+      sites.map(async (s) => {
+        const d = await fetchSiteDensity(s.id);
+        return [s.id, d];
+      })
+    );
+    return Object.fromEntries(entries);
+  } catch (err) {
+    console.warn("Error in fetchAllSiteDensities:", err);
+    return {};
+  }
+}
+
 export async function fetchSiteForecast(siteId) {
   if (!siteId) return null;
   try {
@@ -1407,29 +1423,39 @@ export async function triggerSOS(
   extraDetails = {}
 ) {
   try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
     const res = await fetch(`${API_BASE_URL}/sos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
-        user_id: userId,
-        latitude,
-        longitude,
-        emergency_type: emergencyType,
-        site_id: extraDetails.site_id || null,
-        site_name: extraDetails.site_name || null,
-        location_source: extraDetails.location_source || "gps"
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+        user_id: userId
       })
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
+      }
+      return data;
+    }
   } catch (err) {
     console.warn("Fallback SOS:", err);
   }
-  return {
+  const fallback = {
     message: `🚨 Emergency SOS alert broadcasted for ${emergencyType}. Emergency response network notified.`,
     status: "success",
     alert_id: `SOS-${Math.floor(1000 + Math.random() * 9000)}`,
     recorded_at: new Date().toISOString()
   };
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: fallback }));
+  }
+  return fallback;
 }
 
 export async function fetchVendors(siteId) {
@@ -1847,6 +1873,9 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
       const data = await res.json();
       // Synchronize in-memory mock structures as well so fallback queries match
       syncLocalCrowdObservation(siteId, count, qLen, data.occupancy_percentage, data.status);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data } }));
+      }
       return { status: "success", data };
     }
   } catch (err) {
@@ -1898,6 +1927,10 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
   };
 
   syncLocalCrowdObservation(siteId, count, qLen, occupancy, crowdStatus, waitMins);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data: result } }));
+  }
 
   return {
     status: "success",
@@ -2147,6 +2180,32 @@ export async function fetchGovernmentOccupancyReport() {
     overall_occupancy_percentage: occ,
     hotels: allHotels
   };
+}
+
+export async function bookHotelRoom(hotelId, bookingData = {}) {
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
+    const res = await fetch(`${API_BASE_URL}/hotels/${encodeURIComponent(hotelId)}/book`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(bookingData)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:hotel_booked', { detail: { hotelId, data } }));
+      }
+      return { status: "success", data };
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { status: "error", detail: errData.detail || "Booking failed" };
+  } catch (err) {
+    console.warn("Backend hotel booking error:", err);
+    return { status: "error", detail: "Booking endpoint temporarily unreachable" };
+  }
 }
 
 // ==========================================================================

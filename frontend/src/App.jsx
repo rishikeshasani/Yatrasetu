@@ -307,6 +307,26 @@ export default function App() {
     }
   };
 
+  useEffect(() => {
+    const handleGlobalCrowdUpdate = async (e) => {
+      const { siteId, data } = e.detail || {};
+      if (siteId && data) {
+        handleCrowdUpdated(siteId, data);
+        if (siteId === selectedSiteId) {
+          try {
+            const freshAlts = await fetchAlternatives(siteId);
+            if (freshAlts) setCurrentAlternatives(freshAlts);
+          } catch {}
+        }
+      }
+    };
+
+    window.addEventListener('yatrasetu:crowd_updated', handleGlobalCrowdUpdate);
+    return () => {
+      window.removeEventListener('yatrasetu:crowd_updated', handleGlobalCrowdUpdate);
+    };
+  }, [selectedSiteId]);
+
   const handleClaimReward = async (points, reason) => {
     const uid = currentUser?.user_id || 'pilgrim_demo_user';
     try {
