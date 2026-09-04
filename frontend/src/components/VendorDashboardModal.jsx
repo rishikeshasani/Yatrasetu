@@ -322,12 +322,18 @@ export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: '800', fontSize: '0.85rem', color: '#92400E', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <span>LIVE UPSTREAM CROWD TELEMETRY ALERT</span>
-                    <span style={{ backgroundColor: '#DC2626', color: '#FFF', fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: '800' }}>
-                      +35% SURGE
-                    </span>
+                    {liveAlert?.is_surge && (
+                      <span style={{ backgroundColor: '#DC2626', color: '#FFF', fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontWeight: '800' }}>
+                        +{liveAlert.surge_percentage}% SURGE
+                      </span>
+                    )}
                   </div>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#78350F', lineHeight: '1.35' }}>
-                    <strong>+35% footfall spike expected in ~25 mins</strong> due to Temple Gate Zone 2 diversion queue. Pilgrims being routed along your bhojanalaya lane.
+                    {liveAlert?.is_surge ? (
+                      <><strong>+{liveAlert.surge_percentage}% footfall spike detected in live feed!</strong> Upstream crowd from {vendor?.spot_id || 'temple'} is being routed toward your zone.</>
+                    ) : (
+                      "Crowd telemetry is currently normal. Normal routing active."
+                    )}
                   </p>
                 </div>
               </div>
