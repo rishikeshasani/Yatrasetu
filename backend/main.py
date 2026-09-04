@@ -6,6 +6,7 @@ from routes.recommendations import router as recommendations_router
 from routes.safety import router as safety_router
 from routes.vendors import router as vendors_router
 from routes.wallet import router as wallet_router
+from routes.auth import router as auth_router
 
 app = FastAPI(title="YatraSetu Backend")
 
@@ -17,6 +18,7 @@ origins = [
     "http://127.0.0.1:5174",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "*",
 ]
 
 app.add_middleware(
@@ -32,6 +34,7 @@ app.include_router(recommendations_router)
 app.include_router(safety_router)
 app.include_router(vendors_router)
 app.include_router(wallet_router)
+app.include_router(auth_router)
 
 
 @app.get("/")
