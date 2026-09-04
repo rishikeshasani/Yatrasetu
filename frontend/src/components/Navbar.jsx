@@ -12,10 +12,13 @@ export default function Navbar({
   onSelectRole,
   currentView = 'landing',
   onToggleView,
-  onNavigateSection
+  onNavigateSection,
+  onLogout,
+  onNavigate
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Derive role-specific display info
   const getRoleDisplayName = (role) => {
     switch (role) {
       case 'government':
@@ -31,6 +34,72 @@ export default function Navbar({
     }
   };
 
+  const getRoleBadgeStyle = (role) => {
+    switch (role) {
+      case 'government':
+        return { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF', badgeBg: '#1D4ED8', badgeText: 'GOVT' };
+      case 'hotel':
+        return { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E', badgeBg: '#D97706', badgeText: 'HOTEL' };
+      case 'travel_company':
+        return { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9', badgeBg: '#7C3AED', badgeText: 'TRAVEL' };
+      default:
+        return { bg: '#ECFDF5', border: '#10B981', text: '#065F46', badgeBg: '#059669', badgeText: 'PILGRIM' };
+    }
+  };
+
+  // Define role-specific navigation lists strictly matching specifications
+  const getRoleNavItems = () => {
+    const role = currentUser?.role || activeRole || 'tourist';
+
+    if (role === 'hotel') {
+      return [
+        { label: 'Dashboard', target: 'hotel-dashboard' },
+        { label: 'Rooms', target: 'hotel-rooms' },
+        { label: 'Bookings', target: 'hotel-bookings' },
+        { label: 'Occupancy', target: 'hotel-occupancy' }
+      ];
+    }
+
+    if (role === 'travel_company') {
+      return [
+        { label: 'Dashboard', target: 'travel-dashboard' },
+        { label: 'Trips', target: 'travel-trips' },
+        { label: 'Groups', target: 'travel-groups' },
+        { label: 'Crowd Alerts', target: 'travel-crowd-alerts' },
+        { label: 'Routes', target: 'travel-routes' }
+      ];
+    }
+
+    if (role === 'government') {
+      return [
+        { label: 'Command Center', target: 'gov-command-center' },
+        { label: 'Sites', target: 'gov-sites' },
+        { label: 'Crowd Monitoring', target: 'gov-crowd-monitoring' },
+        { label: 'Forecast', target: 'gov-forecast' },
+        { label: 'Emergency Reroute', target: 'gov-emergency-reroute' },
+        { label: 'SOS', target: 'gov-sos' },
+        { label: 'Hotels', target: 'gov-hotels' },
+        { label: 'Agencies', target: 'gov-agencies' }
+      ];
+    }
+
+    // Default: Tourist
+    return [
+      { label: 'Home', target: 'tourist-home' },
+      { label: 'Destinations', target: 'tourist-destinations' },
+      { label: 'Crowd Status', target: 'tourist-crowd-status' },
+      { label: 'Forecast', target: 'tourist-forecast' },
+      { label: 'Alternatives', target: 'tourist-alternatives' },
+      { label: 'Safety', target: 'tourist-safety' },
+      { label: 'Hotels', target: 'tourist-hotels' },
+      { label: 'Wallet', action: 'wallet' },
+      { label: 'SOS', action: 'sos', isDanger: true }
+    ];
+  };
+
+  const navItems = getRoleNavItems();
+  const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole);
+
   const handleNavClick = (sectionId) => {
     setMobileMenuOpen(false);
     if (onNavigateSection) {
@@ -41,13 +110,46 @@ export default function Navbar({
     }
   };
 
+  const handleItemClick = (item) => {
+    setMobileMenuOpen(false);
+
+    if (item.action === 'wallet') {
+      if (onOpenWallet) onOpenWallet();
+      return;
+    }
+
+    if (item.action === 'sos') {
+      if (onOpenSOS) onOpenSOS();
+      return;
+    }
+
+    if (onNavigate) {
+      onNavigate(item.target);
+    } else {
+      const el = document.getElementById(item.target);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <header className="navbar-header">
       <div className="navbar-container">
         {/* Brand Logo & Title */}
-        <div 
-          className="brand-wrapper" 
-          onClick={() => handleNavClick('top')} 
+        <div
+          className="brand-wrapper"
+          onClick={() => {
+            if (currentView === 'landing') {
+              handleNavClick('top');
+            } else {
+              const el = document.getElementById('tourist-home') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard') || document.getElementById('gov-command-center');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              else window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }}
           style={{ cursor: 'pointer' }}
           role="button"
           tabIndex={0}
@@ -69,7 +171,7 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Center: When in Landing View, show Section Anchors; When in Dashboard View, show 4 Role Tabs */}
+        {/* Center: When in Landing View, show Section Anchors; When in Dashboard View, show Role Nav Tabs */}
         {currentView === 'landing' ? (
           <nav className="desktop-nav-links desktop-only" aria-label="Main Navigation">
             <button
@@ -116,50 +218,22 @@ export default function Navbar({
             </button>
           </nav>
         ) : (
-          <nav className="role-navigation-tabs desktop-only">
-            <button
-              type="button"
-              className={`role-tab-btn ${activeRole === 'tourist' ? 'active' : ''}`}
-              onClick={() => onSelectRole && onSelectRole('tourist')}
-              title="Devotee & Pilgrim Dashboard"
-            >
-              <span className="role-tab-icon">🧳</span>
-              <span className="role-tab-label">Tourist</span>
-            </button>
-
-            <button
-              type="button"
-              className={`role-tab-btn ${activeRole === 'government' ? 'active' : ''}`}
-              onClick={() => onSelectRole && onSelectRole('government')}
-              title="DM & Command Center Dashboard"
-            >
-              <span className="role-tab-icon">🏛️</span>
-              <span className="role-tab-label">Government</span>
-            </button>
-
-            <button
-              type="button"
-              className={`role-tab-btn ${activeRole === 'hotel' ? 'active' : ''}`}
-              onClick={() => onSelectRole && onSelectRole('hotel')}
-              title="Shrine Lodging & Hospitality Partner"
-            >
-              <span className="role-tab-icon">🏨</span>
-              <span className="role-tab-label">Hotel Partner</span>
-            </button>
-
-            <button
-              type="button"
-              className={`role-tab-btn ${activeRole === 'travel_company' ? 'active' : ''}`}
-              onClick={() => onSelectRole && onSelectRole('travel_company')}
-              title="Tour Operator & Fleet Route Planner"
-            >
-              <span className="role-tab-icon">🚌</span>
-              <span className="role-tab-label">Travel Company</span>
-            </button>
+          <nav className="role-navigation-tabs role-specific-nav desktop-only">
+            {navItems.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`role-nav-link-btn ${item.isDanger ? 'nav-link-danger' : ''}`}
+                onClick={() => handleItemClick(item)}
+                title={item.label}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
           </nav>
         )}
 
-        {/* Action Controls: View Switcher, User Profile, Yatra Dal, Wallet & SOS */}
+        {/* Action Controls: View Switcher, User Profile, Yatra Dal, Wallet & SOS, Logout */}
         <div className="navbar-actions">
           {/* Main View Switcher (Landing vs Live Console) */}
           <button
@@ -174,93 +248,80 @@ export default function Navbar({
             </span>
           </button>
 
-          {/* User Profile / Auth Button */}
+          {/* Authenticated User / Role Indicator */}
           {currentUser ? (
-            <button
-              type="button"
-              className="auth-profile-pill"
-              onClick={onOpenProfile}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backgroundColor:
-                  currentUser.role === 'government'
-                    ? '#EFF6FF'
-                    : currentUser.role === 'hotel'
-                    ? '#FEF3C7'
-                    : currentUser.role === 'travel_company'
-                    ? '#F3E8FF'
-                    : '#ECFDF5',
-                border: `1px solid ${
-                  currentUser.role === 'government'
-                    ? '#3B82F6'
-                    : currentUser.role === 'hotel'
-                    ? '#F59E0B'
-                    : currentUser.role === 'travel_company'
-                    ? '#A855F7'
-                    : '#10B981'
-                }`,
-                padding: '0.35rem 0.75rem',
-                borderRadius: '999px',
-                color:
-                  currentUser.role === 'government'
-                    ? '#1E40AF'
-                    : currentUser.role === 'hotel'
-                    ? '#92400E'
-                    : currentUser.role === 'travel_company'
-                    ? '#6B21A8'
-                    : '#065F46',
-                fontWeight: '700',
-                fontSize: '0.78rem',
-                cursor: 'pointer'
-              }}
-              title={`Logged in as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role)})`}
-            >
-              <span>
-                {currentUser.role === 'government'
-                  ? '🏛️'
-                  : currentUser.role === 'hotel'
-                  ? '🏨'
-                  : currentUser.role === 'travel_company'
-                  ? '🚌'
-                  : currentUser.role === 'vendor'
-                  ? '🏪'
-                  : '🛡️'}
-              </span>
-              <span className="desktop-only">{currentUser.full_name?.split(' ')[0] || 'User'}</span>
-              <span
+            <>
+              <button
+                type="button"
+                className="auth-profile-pill"
+                onClick={onOpenProfile}
                 style={{
-                  fontSize: '0.62rem',
-                  backgroundColor:
-                    currentUser.role === 'government'
-                      ? '#1D4ED8'
-                      : currentUser.role === 'hotel'
-                      ? '#D97706'
-                      : currentUser.role === 'travel_company'
-                      ? '#7E22CE'
-                      : '#059669',
-                  color: '#FFF',
-                  padding: '0.1rem 0.35rem',
-                  borderRadius: '4px',
-                  fontWeight: '800'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  backgroundColor: roleStyle.bg,
+                  border: `1px solid ${roleStyle.border}`,
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '999px',
+                  color: roleStyle.text,
+                  fontWeight: '700',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer'
                 }}
+                title={`Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role)})`}
               >
-                {currentUser.role === 'government'
-                  ? 'GOVT'
-                  : currentUser.role === 'hotel'
-                  ? 'HOTEL'
-                  : currentUser.role === 'travel_company'
-                  ? 'TOUR'
-                  : currentUser.role === 'vendor'
-                  ? 'VENDOR'
-                  : 'VERIFIED'}
-              </span>
-            </button>
+                <span className="user-short-name">
+                  {currentUser.full_name?.split(' ')[0] || 'User'}
+                </span>
+                <span
+                  style={{
+                    fontSize: '0.62rem',
+                    backgroundColor: roleStyle.badgeBg,
+                    color: '#FFF',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '4px',
+                    fontWeight: '800',
+                    letterSpacing: '0.04em'
+                  }}
+                >
+                  {roleStyle.badgeText}
+                </span>
+              </button>
+
+              {/* Logout Button */}
+              {onLogout && (
+                <button
+                  type="button"
+                  className="nav-logout-btn desktop-only"
+                  onClick={onLogout}
+                  title="Sign Out & Return to Role Selection"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'transparent',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '6px',
+                    color: '#EF4444',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              )}
+            </>
           ) : (
             <button
               type="button"
-              className="auth-login-btn"
+              className="auth-login-btn desktop-only"
               onClick={onOpenAuth}
               style={{
                 display: 'flex',
@@ -276,35 +337,11 @@ export default function Navbar({
                 cursor: 'pointer',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.15)'
               }}
-              title="Sign In or Access 1-Click Demo Accounts"
+              title="Sign In to YatraSetu"
             >
-              <span>🪪</span>
-              <span className="desktop-only">Sign In / Demo</span>
+              <span>Sign In / Demo</span>
             </button>
           )}
-
-          {/* Yatra Dal (visible in tourist dashboard or on desktop) */}
-          <button
-            type="button"
-            className="team-nav-btn desktop-only"
-            onClick={() => {
-              if (currentView !== 'dashboard') {
-                onToggleView && onToggleView();
-              }
-              if (activeRole !== 'tourist') {
-                onSelectRole && onSelectRole('tourist');
-              }
-              setTimeout(() => {
-                const el = document.querySelector('.team-tracker-section');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }, 120);
-            }}
-            title="Track Yatra Dal & Group Members"
-          >
-            <span className="team-icon">👥</span>
-            <span className="team-btn-text">Yatra Dal</span>
-            <span className="team-count-chip">5 Linked</span>
-          </button>
 
           {/* Green Pilgrim Wallet */}
           <button
@@ -313,7 +350,7 @@ export default function Navbar({
             onClick={onOpenWallet}
             title="Open Green Pilgrim Wallet"
           >
-            <span className="coin-icon">🪙</span>
+            <span className="coin-icon">🌿</span>
             <div className="wallet-btn-content">
               <span className="wallet-points-val">{walletPoints ?? 260}</span>
               <span className="wallet-points-unit desktop-only">Pts</span>
@@ -339,12 +376,12 @@ export default function Navbar({
             <span className="sos-btn-text">SOS</span>
           </button>
 
-          {/* Mobile Hamburger Button */}
+          {/* Mobile Menu Toggle */}
           <button
             type="button"
-            className="mobile-hamburger-btn mobile-only"
+            className="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle mobile menu"
+            aria-label="Toggle navigation menu"
           >
             {mobileMenuOpen ? '✕' : '☰'}
           </button>
@@ -353,56 +390,44 @@ export default function Navbar({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="mobile-nav-drawer mobile-only">
-          <div className="mobile-nav-links">
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('top')}
-            >
-              🏠 Home Overview
-            </button>
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('smart-destinations')}
-            >
-              📍 Explore 25 Shrines
-            </button>
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('crowd-intelligence')}
-            >
-              👁️ Crowd Intelligence
-            </button>
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('how-it-works')}
-            >
-              🧠 How It Works
-            </button>
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('safety')}
-            >
-              🚨 Emergency Safety &amp; SOS
-            </button>
-            <button
-              type="button"
-              className="mobile-nav-item"
-              onClick={() => handleNavClick('impact')}
-            >
-              📊 Civic &amp; Economic Impact
-            </button>
-          </div>
+        <div className="mobile-nav-drawer">
+          {currentUser && (
+            <div className="mobile-user-row" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
+                Role: <strong>{getRoleDisplayName(currentUser?.role)}</strong>
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                {currentUser?.full_name || 'User'}
+              </span>
+            </div>
+          )}
 
-          <div className="mobile-drawer-footer">
+          <div className="mobile-nav-links">
+            {currentView === 'landing' ? (
+              <>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>Home Overview</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('smart-destinations')}>Explore 25 Shrines</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('crowd-intelligence')}>Crowd Intelligence</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('how-it-works')}>How It Works</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('safety')}>Emergency Safety &amp; SOS</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('impact')}>Civic &amp; Economic Impact</button>
+              </>
+            ) : (
+              navItems.map((item, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`mobile-nav-link ${item.isDanger ? 'mobile-link-danger' : ''}`}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <span>{item.label}</span>
+                </button>
+              ))
+            )}
+
             <button
               type="button"
-              className="mobile-switch-view-btn"
+              className="mobile-nav-link"
               onClick={() => {
                 setMobileMenuOpen(false);
                 onToggleView && onToggleView();
@@ -410,6 +435,31 @@ export default function Navbar({
             >
               {currentView === 'landing' ? '⚡ Open Live Console' : '🏠 Switch to Overview'}
             </button>
+
+            {currentUser && onLogout && (
+              <button
+                type="button"
+                className="mobile-nav-link mobile-link-danger mobile-logout-btn"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onLogout();
+                }}
+                style={{
+                  gridColumn: 'span 2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            )}
           </div>
         </div>
       )}

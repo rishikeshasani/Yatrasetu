@@ -152,21 +152,6 @@ export default function DigitalYatriCardModal({ user, isOpen, onClose, onLogout 
             >
               <span>🖨️</span> Print / Save Offline
             </button>
-            <button
-              onClick={onLogout}
-              style={{
-                padding: '0.65rem 1rem',
-                backgroundColor: '#FEE2E2',
-                color: '#DC2626',
-                border: 'none',
-                borderRadius: '0.5rem',
-                fontWeight: '700',
-                fontSize: '0.85rem',
-                cursor: 'pointer'
-              }}
-            >
-              Sign Out
-            </button>
           </div>
         </div>
       </div>

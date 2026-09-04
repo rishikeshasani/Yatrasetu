@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   fetchHotels,
-  fetchHotelOwnerBookings
+  fetchHotelOwnerBookings,
+  fetchInboundBuses
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -100,7 +101,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
   // Animate counter
   const [displayTouristsCount, setDisplayTouristsCount] = useState(120);
 
-  // Fetch real hotel data on mount
+  // Fetch real hotel data on mount & listen to live booking events
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -113,7 +114,11 @@ export default function HotelDashboard({ currentUser, showToast }) {
         if (!isMounted) return;
 
         if (Array.isArray(hotelsList) && hotelsList.length > 0) {
-          const matched = hotelsList.find(h => h.id === 'hotel-kedarnath-1') || hotelsList[0];
+          const matched =
+            hotelsList.find(h => currentUser?.id && h.owner_id === currentUser.id) ||
+            hotelsList.find(h => currentUser?.hotel_id && h.id === currentUser.hotel_id) ||
+            hotelsList.find(h => h.name.toLowerCase().includes('kedarnath')) ||
+            hotelsList[0];
           setBackendHotel(matched);
         }
         if (Array.isArray(ownerBookings)) {
@@ -126,8 +131,20 @@ export default function HotelDashboard({ currentUser, showToast }) {
       }
     }
     loadData();
-    return () => { isMounted = false; };
-  }, []);
+
+    // Auto-refresh when tourist books room or on 6-second heartbeat
+    const handleHotelBooked = () => {
+      loadData();
+    };
+    window.addEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+    const pollInterval = setInterval(loadData, 6000);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+      clearInterval(pollInterval);
+    };
+  }, [currentUser]);
 
   // Animate counter when incomingTourists changes
   useEffect(() => {
@@ -154,9 +171,31 @@ export default function HotelDashboard({ currentUser, showToast }) {
     };
   }, [state.incomingTourists]);
 
-  // Derived metrics
-  const availableRooms = state.totalRooms - state.occupiedRooms;
-  const occupancyPercent = Math.round((state.occupiedRooms / state.totalRooms) * 100);
+  // ─── LIVE INBOUND FLEET: poll /fleet/schedules/inbound every 30s ───────────
+  const [inboundBuses, setInboundBuses] = useState([]);
+  const [inboundLastUpdated, setInboundLastUpdated] = useState(null);
+  useEffect(() => {
+    let isMounted = true;
+    const refresh = async () => {
+      const buses = await fetchInboundBuses();
+      if (isMounted) {
+        setInboundBuses(buses);
+        setInboundLastUpdated(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      }
+    };
+    refresh();
+    const interval = setInterval(refresh, 30000); // refresh every 30s
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Derived metrics connecting live Supabase room inventory
+  const realTotalRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.total_rooms || 0), 0);
+  const realAvailableRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.available_rooms != null ? r.available_rooms : 0), 0);
+  const totalRoomsCount = (realTotalRooms && realTotalRooms > 0) ? realTotalRooms : state.totalRooms;
+  const availableRooms = (realAvailableRooms != null && realTotalRooms > 0) ? realAvailableRooms : (state.totalRooms - state.occupiedRooms);
+  const occupiedRoomsCount = totalRoomsCount - availableRooms;
+  const occupancyPercent = totalRoomsCount > 0 ? Math.round((occupiedRoomsCount / totalRoomsCount) * 100) : 0;
 
   // FLOW 1: Rerouting Spike Simulation
   const triggerReroutingSpike = () => {
@@ -270,7 +309,66 @@ export default function HotelDashboard({ currentUser, showToast }) {
   };
 
   return (
-    <div className="hotel-portal-wrapper">
+    <div className="hotel-portal-wrapper" id="hotel-dashboard">
+
+        {/* HOTEL GANGA PALACE: DYNAMIC PRICING & BUS ARRIVALS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', padding: '1.5rem 2.5rem 0' }}>
+          <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '0.75rem', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
+                <span>🚌</span> Inbound Fleet Arrivals
+              </h3>
+              {inboundLastUpdated && (
+                <span style={{ fontSize: '0.75rem', color: '#6B7280', backgroundColor: '#E5E7EB', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  🔴 Live · {inboundLastUpdated}
+                </span>
+              )}
+            </div>
+            <p style={{ margin: '0 0 1rem', color: '#15803D', fontSize: '0.9rem' }}>
+              Live tracking from Sharma Travels fleet schedule — updates every 30s.
+            </p>
+            {inboundBuses.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>Loading live data...</div>
+            ) : (
+              inboundBuses.map((bus) => {
+                const totalSeats = bus.buses * (bus.capacity || 42);
+                const isFull = bus.occupancy >= 100;
+                return (
+                  <div key={bus.id} style={{ backgroundColor: '#FFF', padding: '0.85rem', borderRadius: '0.5rem', border: `1px solid ${isFull ? '#FECACA' : '#BBF7D0'}`, marginBottom: '0.6rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: isFull ? '#DC2626' : '#166534', marginBottom: '0.25rem' }}>
+                      <span>{bus.operator || 'Sharma Travels'} · {bus.buses} 🚌 {bus.bus_type || bus.type}</span>
+                      <span>ETA: {bus.arrival_time || 'TBD'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
+                      <span>📍 {bus.from_location || bus.from} → {bus.to_location || bus.to}</span>
+                      <span style={{ fontWeight: 'bold', color: isFull ? '#DC2626' : '#16A34A' }}>{totalSeats} seats · {bus.occupancy}% occ.</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
+              <span>📈</span> Dynamic Pricing Engine
+            </h3>
+            <p style={{ margin: '0 0 1rem', color: '#1D4ED8', fontSize: '0.95rem' }}>
+              YatraSetu AI has automatically adjusted rates based on the inbound bus volume and Somvati Amavasya demand.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+              <div>
+                <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Friday Night Rate (Oct 12)</span>
+                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1E3A8A' }}>₹4,500</span>
+                <span style={{ textDecoration: 'line-through', color: '#94A3B8', marginLeft: '0.75rem', fontSize: '1.2rem' }}>₹3,330</span>
+              </div>
+              <div style={{ backgroundColor: '#DC2626', color: '#FFF', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                +35% Surge
+              </div>
+            </div>
+            <button style={{ width: '100%', marginTop: '1.25rem', padding: '0.75rem', backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>Lock Dynamic Rate</button>
+          </div>
+        </div>
       {/* 1. HEADER & TOP NAVIGATION BAR */}
       <header className="hotel-portal-header">
         <div className="hotel-portal-header-inner">
@@ -426,20 +524,20 @@ export default function HotelDashboard({ currentUser, showToast }) {
         {/* 3. KPI DASHBOARD CARDS */}
         <div className="hotel-kpi-row">
           {/* 1. Room Availability */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-rooms">
             <div className="kpi-title-row">
               <span>🛏️</span>
               <span>Room Availability</span>
             </div>
             <div className="kpi-main-metric">
               <span className="metric-accent">{availableRooms}</span>
-              <span className="metric-denom"> / {state.totalRooms} Total</span>
+              <span className="metric-denom"> / {totalRoomsCount} Total</span>
             </div>
             <div className="kpi-footer-sub">Available for check-in</div>
           </div>
 
           {/* 2. Occupancy Rate */}
-          <div className="hotel-kpi-item">
+          <div className="hotel-kpi-item" id="hotel-occupancy">
             <div className="kpi-title-row">
               <span>📊</span>
               <span>Occupancy Rate</span>
@@ -548,7 +646,7 @@ export default function HotelDashboard({ currentUser, showToast }) {
         </div>
 
         {/* 5. WORKFLOW: DYNAMIC SCANNABLE QR & GUEST TERMINAL */}
-        <div className="hotel-terminal-panel">
+        <div className="hotel-terminal-panel" id="hotel-bookings">
           <div className="terminal-header-row">
             <div className="terminal-title-group">
               <h3>
