@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import supabase
 from routes.auth import router as auth_router
 from routes.crowd import router as crowd_router
+from routes.fleet import router as fleet_router
 from routes.hotels import router as hotels_router
 from routes.recommendations import router as recommendations_router
 from routes.safety import router as safety_router
@@ -31,6 +32,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(crowd_router)
+app.include_router(fleet_router)
 app.include_router(hotels_router)
 app.include_router(recommendations_router)
 app.include_router(safety_router)

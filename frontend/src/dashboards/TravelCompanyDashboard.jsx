@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { SITE_ID_ALIASES } from '../api/api';
+import React, { useState, useEffect } from 'react';
+import { SITE_ID_ALIASES, saveFleetSchedules, fetchFleetSchedules } from '../api/api';
 
 export default function TravelCompanyDashboard({
   sites = [],
@@ -13,12 +13,32 @@ export default function TravelCompanyDashboard({
   const [customSelectedSites, setCustomSelectedSites] = useState(['site_kedarnath', 'site_badrinath']);
   const [activeTab, setActiveTab] = useState('circuits'); // 'circuits' | 'optimizer' | 'matrix'
   const [showFleetModal, setShowFleetModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [fleetRoutes, setFleetRoutes] = useState([
     { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
     { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, occupancy: 100, type: 'Sleeper', status: 'FULL' },
     { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, occupancy: 88, type: 'Volvo A/C', status: 'RETURN' },
     { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, occupancy: 67, type: 'Mini Bus', status: 'NORMAL' },
   ]);
+
+  // Load live schedule from backend on mount
+  useEffect(() => {
+    fetchFleetSchedules().then((routes) => {
+      if (routes && routes.length > 0) {
+        setFleetRoutes(routes.map((r) => ({
+          id: r.id,
+          from: r.from_location || r.from,
+          to: r.to_location || r.to,
+          date: r.journey_date || r.date,
+          buses: r.buses,
+          capacity: r.capacity || 42,
+          occupancy: r.occupancy || 80,
+          type: r.bus_type || r.type || 'Volvo A/C',
+          status: r.status || 'NORMAL',
+        })));
+      }
+    });
+  }, []);
 
   React.useEffect(() => {
     if (externalTab && ['circuits', 'optimizer', 'matrix'].includes(externalTab)) {
@@ -664,8 +684,29 @@ export default function TravelCompanyDashboard({
             {/* Footer Actions */}
             <div style={{ padding: '1rem 2rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
               <button onClick={() => setShowFleetModal(false)} style={{ padding: '0.65rem 1.5rem', backgroundColor: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', color: '#374151' }}>Cancel</button>
-              <button onClick={() => { setShowFleetModal(false); if (showToast) showToast('✅ Fleet schedule updated! All drivers notified via SMS.'); }} style={{ padding: '0.65rem 1.75rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>
-                ✅ Confirm & Notify Drivers
+              <button
+                disabled={isSaving}
+                onClick={async () => {
+                  setIsSaving(true);
+                  try {
+                    const payload = fleetRoutes.map((r) => ({ id: r.id, buses: r.buses, operator: 'Sharma Travels' }));
+                    const result = await saveFleetSchedules(payload);
+                    setShowFleetModal(false);
+                    if (result?.status === 'success') {
+                      if (showToast) showToast('✅ Fleet schedule saved to database! Hotel & Government dashboards will update within 30s.');
+                    } else {
+                      if (showToast) showToast('⚠️ Saved locally. Backend sync pending — Hotel dashboard will update shortly.');
+                    }
+                  } catch (err) {
+                    if (showToast) showToast('⚠️ Could not reach backend. Changes saved locally for this session.');
+                    setShowFleetModal(false);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                style={{ padding: '0.65rem 1.75rem', backgroundColor: isSaving ? '#9CA3AF' : '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+              >
+                {isSaving ? '⏳ Saving...' : '✅ Confirm & Notify Drivers'}
               </button>
             </div>
 

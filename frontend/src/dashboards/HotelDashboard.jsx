@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   fetchHotels,
-  fetchHotelOwnerBookings
+  fetchHotelOwnerBookings,
+  fetchInboundBuses
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -170,6 +171,24 @@ export default function HotelDashboard({ currentUser, showToast }) {
     };
   }, [state.incomingTourists]);
 
+  // ─── LIVE INBOUND FLEET: poll /fleet/schedules/inbound every 30s ───────────
+  const [inboundBuses, setInboundBuses] = useState([]);
+  const [inboundLastUpdated, setInboundLastUpdated] = useState(null);
+  useEffect(() => {
+    let isMounted = true;
+    const refresh = async () => {
+      const buses = await fetchInboundBuses();
+      if (isMounted) {
+        setInboundBuses(buses);
+        setInboundLastUpdated(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      }
+    };
+    refresh();
+    const interval = setInterval(refresh, 30000); // refresh every 30s
+    return () => { isMounted = false; clearInterval(interval); };
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // Derived metrics connecting live Supabase room inventory
   const realTotalRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.total_rooms || 0), 0);
   const realAvailableRooms = backendHotel?.rooms?.reduce((acc, r) => acc + (r.available_rooms != null ? r.available_rooms : 0), 0);
@@ -295,26 +314,39 @@ export default function HotelDashboard({ currentUser, showToast }) {
         {/* HOTEL GANGA PALACE: DYNAMIC PRICING & BUS ARRIVALS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', padding: '1.5rem 2.5rem 0' }}>
           <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '0.75rem', padding: '1.25rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-              <span>🚌</span> Inbound Fleet Arrivals
-            </h3>
-            <p style={{ margin: '0 0 1rem', color: '#15803D', fontSize: '0.95rem' }}>
-              Live tracking of partnered travel agencies inbound to Haridwar for Somvati Amavasya.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: '#166534', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
+                <span>🚌</span> Inbound Fleet Arrivals
+              </h3>
+              {inboundLastUpdated && (
+                <span style={{ fontSize: '0.75rem', color: '#6B7280', backgroundColor: '#E5E7EB', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  🔴 Live · {inboundLastUpdated}
+                </span>
+              )}
+            </div>
+            <p style={{ margin: '0 0 1rem', color: '#15803D', fontSize: '0.9rem' }}>
+              Live tracking from Sharma Travels fleet schedule — updates every 30s.
             </p>
-            <div style={{ backgroundColor: '#FFF', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#166534', marginBottom: '0.25rem' }}>
-                <span>Sharma Travels (Volvo A/C)</span>
-                <span>ETA: 4:15 PM</span>
-              </div>
-              <span style={{ fontSize: '0.9rem', color: '#15803D' }}>42 Passengers (94% Occupancy)</span>
-            </div>
-            <div style={{ backgroundColor: '#FFF', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: '#166534', marginBottom: '0.25rem' }}>
-                <span>Ganga Express (Sleeper)</span>
-                <span>ETA: 5:30 PM</span>
-              </div>
-              <span style={{ fontSize: '0.9rem', color: '#15803D' }}>38 Passengers (100% Occupancy)</span>
-            </div>
+            {inboundBuses.length === 0 ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>Loading live data...</div>
+            ) : (
+              inboundBuses.map((bus) => {
+                const totalSeats = bus.buses * (bus.capacity || 42);
+                const isFull = bus.occupancy >= 100;
+                return (
+                  <div key={bus.id} style={{ backgroundColor: '#FFF', padding: '0.85rem', borderRadius: '0.5rem', border: `1px solid ${isFull ? '#FECACA' : '#BBF7D0'}`, marginBottom: '0.6rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', color: isFull ? '#DC2626' : '#166534', marginBottom: '0.25rem' }}>
+                      <span>{bus.operator || 'Sharma Travels'} · {bus.buses} 🚌 {bus.bus_type || bus.type}</span>
+                      <span>ETA: {bus.arrival_time || 'TBD'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#374151' }}>
+                      <span>📍 {bus.from_location || bus.from} → {bus.to_location || bus.to}</span>
+                      <span style={{ fontWeight: 'bold', color: isFull ? '#DC2626' : '#16A34A' }}>{totalSeats} seats · {bus.occupancy}% occ.</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>

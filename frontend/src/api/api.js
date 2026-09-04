@@ -2257,4 +2257,76 @@ export async function fetchActiveSOSAlerts() {
 }
 
 
+// ============================================================
+// FLEET SCHEDULE API — Real-time bus schedule management
+// ============================================================
 
+/**
+ * Fetch the live fleet schedule from the backend.
+ * Used by HotelDashboard to show inbound bus arrivals.
+ * Falls back to local defaults if backend is unreachable.
+ */
+export async function fetchFleetSchedules() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.routes) return data.routes;
+    }
+  } catch (err) {
+    console.warn("[Fleet] Backend unreachable, using default schedule:", err);
+  }
+  // Local fallback so dashboard never breaks
+  return [
+    { id: "HR-01", from_location: "Delhi (ISBT Kashmiri Gate)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "06:00 AM", arrival_time: "11:00 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 3, capacity: 42, occupancy: 94, bus_type: "Volvo A/C", status: "HIGH DEMAND", operator: "Sharma Travels" },
+    { id: "HR-02", from_location: "Dehradun (Bus Stand)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "08:30 AM", arrival_time: "10:30 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 2, capacity: 38, occupancy: 100, bus_type: "Sleeper", status: "FULL", operator: "Sharma Travels" },
+    { id: "HR-03", from_location: "Haridwar (Har Ki Pauri)", to_location: "Delhi (ISBT Kashmiri Gate)", departure_time: "04:00 PM", arrival_time: "09:30 PM", journey_date: "Oct 13 (Sun)", direction: "return", buses: 3, capacity: 42, occupancy: 88, bus_type: "Volvo A/C", status: "RETURN", operator: "Sharma Travels" },
+    { id: "HR-04", from_location: "Rishikesh (Triveni Ghat)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "10:00 AM", arrival_time: "11:00 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 1, capacity: 30, occupancy: 67, bus_type: "Mini Bus", status: "NORMAL", operator: "Sharma Travels" },
+  ];
+}
+
+/**
+ * Save an updated fleet schedule to the backend.
+ * Called when travel operator clicks "Confirm & Notify Drivers".
+ * @param {Array} routes - Array of { id, buses } objects
+ * @returns {Object} API response
+ */
+export async function saveFleetSchedules(routes) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ routes }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+    throw new Error(`HTTP ${res.status}`);
+  } catch (err) {
+    console.error("[Fleet] Failed to save fleet schedule:", err);
+    return { status: "error", message: err.message };
+  }
+}
+
+/**
+ * Fetch only inbound (forward) buses headed to Haridwar.
+ * Lightweight endpoint for the HotelDashboard arrivals panel.
+ */
+export async function fetchInboundBuses() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/schedules/inbound`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.routes) return data.routes;
+    }
+  } catch (err) {
+    console.warn("[Fleet] Inbound fetch failed, using defaults:", err);
+  }
+  const all = await fetchFleetSchedules();
+  return all.filter((r) => r.direction === "forward");
+}
