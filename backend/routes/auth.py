@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from supabase_auth.errors import AuthApiError, AuthError
 
 from database import supabase
+from dependencies import AuthenticatedUser, get_current_user, require_role
 
 router = APIRouter(tags=["Authentication & Identity"])
 
@@ -102,9 +103,6 @@ class MeResponse(BaseModel):
     role: Optional[str] = None
     created_at: Optional[str] = None
     profile: Optional[ProfileResponse] = None
-
-
-from dependencies import AuthenticatedUser, get_current_user, require_role
 
 
 # --------------------------------------------------------------------------

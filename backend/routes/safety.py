@@ -1,56 +1,18 @@
 import math
+import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from database import supabase
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends, status
+from pydantic import BaseModel, Field
+from database import supabase, supabase_admin
+from dependencies import get_current_user, AuthenticatedUser
 
 router = APIRouter()
 
-# In-memory storage for real-time SOS distress alerts during hackathon sessions
-active_sos_alerts: list[dict] = []
-
 class SOSRequest(BaseModel):
-    user_id: str
-    latitude: float
-    longitude: float
-    emergency_type: str | None = "General Emergency"
-    site_id: str | None = None
-    site_name: str | None = None
-    location_source: str | None = "gps"
-
-@router.post("/sos")
-def trigger_sos(data: SOSRequest):
-    alert_record = {
-        "id": f"SOS-{len(active_sos_alerts) + 1001}",
-        "user_id": data.user_id,
-        "emergency_type": data.emergency_type or "General Emergency",
-        "latitude": data.latitude,
-        "longitude": data.longitude,
-        "site_id": data.site_id,
-        "site_name": data.site_name,
-        "location_source": data.location_source or "gps",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "status": "ACTIVE"
-    }
-    active_sos_alerts.insert(0, alert_record)
-    if len(active_sos_alerts) > 50:
-        active_sos_alerts.pop()
-
-    print(f"[SOS ALERT] ID={alert_record['id']} | User={data.user_id} | Type={alert_record['emergency_type']} | Lat={data.latitude:.4f}, Lon={data.longitude:.4f} ({alert_record['location_source']})")
-    
-    return {
-        "message": f"SOS distress alert received for {alert_record['emergency_type']}. Emergency network notified.",
-        "status": "success",
-        "alert_id": alert_record["id"],
-        "recorded_at": alert_record["timestamp"]
-    }
-
-@router.get("/sos/active")
-def get_active_sos():
-    return {
-        "count": len(active_sos_alerts),
-        "alerts": active_sos_alerts
-    }
+    latitude: float = Field(..., ge=-90.0, le=90.0, description="Latitude between -90 and 90")
+    longitude: float = Field(..., ge=-180.0, le=180.0, description="Longitude between -180 and 180")
+    user_id: Optional[str] = Field(None, description="Optional legacy user ID; ignored in favor of verified JWT identity")
 
 class LocationCheck(BaseModel):
     latitude: float
@@ -62,6 +24,89 @@ def get_distance(lat1, lon1, lat2, lon2):
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
     return R * 2 * math.asin(math.sqrt(a))
+
+def find_nearest_site(lat: float, lon: float) -> Optional[dict]:
+    """Finds the geographically closest site to the given coordinates. Returns None if lookup fails."""
+    try:
+        res = supabase.table("sites").select("id, name, latitude, longitude").execute()
+        sites = res.data or []
+        if not sites:
+            return None
+        nearest = None
+        min_dist = float("inf")
+        for s in sites:
+            if s.get("latitude") is not None and s.get("longitude") is not None:
+                d = get_distance(lat, lon, s["latitude"], s["longitude"])
+                if d < min_dist:
+                    min_dist = d
+                    nearest = s
+        return nearest
+    except Exception as e:
+        print(f"Warning: Could not fetch sites for nearest site lookup: {e}")
+        return None
+
+@router.post("/sos")
+def trigger_sos(
+    data: SOSRequest,
+    current_user: AuthenticatedUser = Depends(get_current_user)
+):
+    """
+    Emergency SOS Endpoint:
+    - Protected: Requires authenticated user (tourist, etc.).
+    - Identity: Derives user_id strictly from verified JWT/auth context (current_user.id).
+    - Coordinates: Validated (-90 to 90 lat, -180 to 180 lon).
+    - Nearest Site: Dynamically resolved from existing sites database (NULL if unresolved).
+    - Persistence: Persisted to public.sos_alerts table in Supabase.
+    - Lifecycle Status: Stored with status='ACTIVE'.
+    - Response: Preserves frontend contract with message and status='success'.
+    """
+    # 1. Determine nearest site if available (non-blocking: NULL if lookup fails)
+    nearest_site = None
+    try:
+        nearest_site = find_nearest_site(data.latitude, data.longitude)
+    except Exception as e:
+        print(f"Non-blocking nearest-site lookup error: {e}")
+
+    nearest_site_id = nearest_site["id"] if nearest_site else None
+    nearest_name = nearest_site["name"] if nearest_site else None
+
+    alert_id = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    alert_record = {
+        "id": alert_id,
+        "user_id": current_user.id,
+        "latitude": data.latitude,
+        "longitude": data.longitude,
+        "nearest_site_id": nearest_site_id,
+        "status": "ACTIVE",
+        "created_at": now_iso
+    }
+
+    # 2. Persist to Supabase database (admin client)
+    try:
+        res = supabase_admin.table("sos_alerts").insert(alert_record).execute()
+        if not res.data:
+            raise Exception("Database returned empty response on insert")
+    except Exception as e:
+        print(f"Error persisting SOS alert: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to record emergency SOS alert in database."
+        )
+
+    # 3. Server diagnostic log (no secrets/passwords/tokens)
+    print(f"SOS Alert Recorded: alert_id={alert_id}, user={current_user.id}, lat={data.latitude}, lon={data.longitude}, nearest_site={nearest_site_id}, status=ACTIVE")
+
+    # 4. Return frontend-compatible response
+    site_msg = f" for {nearest_name}" if nearest_name else ""
+    return {
+        "message": f"Alert received. Nearest response team notified{site_msg}.",
+        "status": "success",
+        "alert_id": alert_id,
+        "nearest_site_id": nearest_site_id,
+        "sos_status": "ACTIVE"
+    }
 
 def get_nearest_site_with_status(zone_lat, zone_lon, sites):
     """Finds the nearest site and computes its latest crowd status."""

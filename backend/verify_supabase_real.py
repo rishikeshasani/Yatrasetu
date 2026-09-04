@@ -7,6 +7,20 @@ from dependencies import get_current_user, AuthenticatedUser
 
 client = TestClient(app)
 
+def get_or_create_test_user(email: str, role: str, full_name: str) -> AuthenticatedUser:
+    try:
+        users = supabase_admin.auth.admin.list_users()
+        for u in users:
+            if u.email == email:
+                supabase_admin.table("profiles").upsert({"id": u.id, "role": role, "full_name": full_name}).execute()
+                return AuthenticatedUser(id=u.id, email=email, role=role, full_name=full_name)
+        res = supabase_admin.auth.admin.create_user({"email": email, "password": "TestPassword123!", "email_confirm": True})
+        uid = res.user.id
+        supabase_admin.table("profiles").upsert({"id": uid, "role": role, "full_name": full_name}).execute()
+        return AuthenticatedUser(id=uid, email=email, role=role, full_name=full_name)
+    except Exception:
+        return AuthenticatedUser(id="59afb8b6-6a33-4fe8-8837-ed1c55c05868", email=email, role=role, full_name=full_name)
+
 def verify_all():
     print("==================================================================")
     print(">>> REAL SUPABASE HOTEL TABLES ACCESSIBILITY & RBAC VERIFICATION <<<")
@@ -29,12 +43,7 @@ def verify_all():
 
     # Test 2: Create a hotel as a hotel-role user
     print("\n--- Test 2: Create a hotel as a hotel-role user (POST /hotels) ---")
-    hotel_user = AuthenticatedUser(
-        id="3c067bf6-7a88-488f-b0db-66acde6961f6",  # Real existing user in auth.users & profiles
-        email="hotel_owner_real@gmail.com",
-        role="hotel",
-        full_name="Kedarnath Hotel Partner"
-    )
+    hotel_user = get_or_create_test_user("hotel_verifier_real@yatrasetu.org", "hotel", "Kedarnath Hotel Partner")
     app.dependency_overrides[get_current_user] = lambda: hotel_user
 
     hotel_created = None
@@ -102,12 +111,7 @@ def verify_all():
 
     # Test 5: Login as a tourist
     print("\n--- Test 5: Login as a tourist ---")
-    tourist_user = AuthenticatedUser(
-        id="5c766e52-179b-4a40-baf8-18e967076e56",  # Real existing user in auth.users & profiles
-        email="tourist_real@gmail.com",
-        role="tourist",
-        full_name="Test Check"
-    )
+    tourist_user = get_or_create_test_user("tourist_verifier_real@yatrasetu.org", "tourist", "Test Check")
     app.dependency_overrides[get_current_user] = lambda: tourist_user
     # Test GET /auth/me to verify authentication and role resolution from public.profiles
     res = client.get("/auth/me")
@@ -243,7 +247,7 @@ def verify_all():
     try:
         supabase.table("hotels").insert({
             "id": str(uuid.uuid4()),
-            "owner_id": "5c766e52-179b-4a40-baf8-18e967076e56",
+            "owner_id": tourist_user.id,
             "name": "RLS Test",
             "address": "Test",
             "latitude": 30.0,
