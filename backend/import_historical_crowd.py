@@ -2,7 +2,7 @@ import os
 import csv
 from database import supabase
 
-csv_path = r"D:\YatraSetu\data\crowd_data.csv"
+csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "crowd_data.csv"))
 
 def import_historical_crowd(dry_run=True):
     if not os.path.exists(csv_path):

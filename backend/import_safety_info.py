@@ -2,7 +2,7 @@ import os
 import csv
 from database import supabase
 
-csv_path = r"D:\YatraSetu\data\safety_zones.csv"
+csv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "safety_zones.csv"))
 
 def import_safety_info(dry_run=True):
     if not os.path.exists(csv_path):

@@ -93,7 +93,7 @@ export default function SiteSelector({ sites, selectedSiteId, onSelectSite, dens
       <div className="sites-grid">
         {filteredSites.map((site) => {
           const isSelected = site.id === selectedSiteId;
-          const density = densityMap[site.id] || { status: 'NORMAL', occupancy_percentage: 45 };
+          const density = densityMap[site.id] || { status: 'NORMAL', occupancy_percentage: 0 };
           const statusClass = `status-${density.status.toLowerCase()}`;
 
           return (
