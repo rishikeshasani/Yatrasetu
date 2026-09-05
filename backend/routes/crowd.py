@@ -136,14 +136,19 @@ def internal_telemetry_sync(data: dict):
     if not site_id:
         return {"status": "error"}
     
-    # Update the in-memory cache instantly
+    people_count = data.get("people_count", 0)
+    capacity = data.get("capacity", 2500)
+    zones = data.get("zones", {})
+    
+    # Update the in-memory cache instantly with multi-zone chokepoints
     latest_observations[site_id] = {
         "site_id": site_id,
-        "people_count": data.get("people_count", 0),
-        "occupancy_percentage": round((data.get("people_count", 0) / 2500) * 100, 1),
-        "status": "CRITICAL" if data.get("people_count", 0) > 2000 else "NORMAL",
-        "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, data.get("people_count", 0), capacity=2500),
-        "last_updated": "Just now (Live ML Feed)"
+        "people_count": people_count,
+        "zones": zones,
+        "occupancy_percentage": round((people_count / capacity) * 100, 1),
+        "status": "CRITICAL" if people_count > (capacity * 0.8) else ("HIGH" if people_count > (capacity * 0.6) else "NORMAL"),
+        "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, people_count, capacity=capacity),
+        "last_updated": "Just now (Live YOLO CCTV Feed)"
     }
     
     # Try pushing to DB in background

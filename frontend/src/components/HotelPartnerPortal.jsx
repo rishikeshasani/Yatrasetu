@@ -193,18 +193,8 @@ export default function HotelPartnerPortal({ currentUser, showToast, onBackToLan
     });
   };
 
-  // Flow 2: Guest Check-in with strict 60s duplicate cooldown fraud detection
+  // Flow 2: Guest Check-in
   const simulateGuestCheckIn = () => {
-    const now = Date.now();
-    const lastScanTime = scanCooldownLogRef.current[state.bookingRef];
-
-    if (lastScanTime && (now - lastScanTime < COOLDOWN_WINDOW_MS)) {
-      triggerFraudAlert('⚠️ Fraud Rule: Duplicate scan detected within cooldown window.');
-      return;
-    }
-
-    scanCooldownLogRef.current[state.bookingRef] = now;
-    setFraudAlert(null);
     setShowSuccessBanner(false);
 
     setState((prev) => ({
@@ -553,26 +543,6 @@ export default function HotelPartnerPortal({ currentUser, showToast, onBackToLan
 
         {/* ALERT BANNERS CONTAINER */}
         <div className="hpp-alert-container">
-          {/* 60-Second Cooldown Fraud Alert Banner */}
-          {fraudAlert && (
-            <div className={`hpp-fraud-banner ${isFraudBouncing ? 'hpp-animate-bounce' : ''}`}>
-              <div className="hpp-fraud-icon-box">⚠️</div>
-              <div className="hpp-fraud-body">
-                <div className="hpp-fraud-title-row">
-                  <h4 className="hpp-fraud-title">Security Alert: Duplicate Check-In Blocked</h4>
-                  <span className="hpp-cooldown-badge">60s Cooldown Active</span>
-                </div>
-                <p className="hpp-fraud-desc">{fraudAlert}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setFraudAlert(null)}
-                className="hpp-banner-close-btn"
-              >
-                ✕
-              </button>
-            </div>
-          )}
 
           {/* Success Checkout Banner */}
           {showSuccessBanner && (
