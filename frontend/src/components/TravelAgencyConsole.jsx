@@ -1,23 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { fetchTravelAgencyProfile } from '../api/api';
 
-export default function TravelAgencyConsole() {
+export default function TravelAgencyConsole({ onOpenFleetModal }) {
   const [profile, setProfile] = useState(null);
   const [activeSurgeId, setActiveSurgeId] = useState('somvati_amavasya');
-  const [deployBuses, setDeployBuses] = useState(255);
+  const [deployBuses, setDeployBuses] = useState(220);
 
   useEffect(() => {
     fetchTravelAgencyProfile().then((data) => {
       if (data) {
         setProfile(data);
-        const currentWindow = data.surge_windows?.find((w) => w.id === activeSurgeId) || data.surge_windows?.[0];
-        if (currentWindow) {
-          setDeployBuses(currentWindow.default_deploy_buses || 255);
-        }
       }
     });
-  }, [activeSurgeId]);
+  }, []);
 
+  // Active surge window data
   const activeWindow = profile?.surge_windows?.find((w) => w.id === activeSurgeId) || {
     id: 'somvati_amavasya',
     name: 'Oct 12-13 · Somvati Amavasya',
@@ -25,7 +22,6 @@ export default function TravelAgencyConsole() {
     total_demand_buses: 370,
     demand_range_min: 340,
     demand_range_max: 400,
-    default_deploy_buses: 255,
     forward_occupancy_low: 90,
     forward_occupancy_high: 97,
     return_occupancy_low: 15,
@@ -34,98 +30,111 @@ export default function TravelAgencyConsole() {
     forward_surge_pct: '+35%',
     suggested_return_fare: 680,
     return_discount_pct: '-20%',
-    insight: 'Return leg is significantly underfilled. Consider a return fare discount or shifting the return pickup hub to reduce empty seats.'
   };
 
   const agencyName = profile?.agency_name || 'Himalaya Yatra Travels';
-  const totalFleetCapacity = profile?.total_fleet_capacity || 350;
+  const totalFleetCapacity = profile?.total_fleet_capacity || 250;
   const baseFare = profile?.base_fare_per_seat || 850;
 
   const totalDemand = activeWindow.total_demand_buses;
   const coveragePct = Math.min(100, Math.round((deployBuses / totalDemand) * 100));
-  const busesNeededMore = Math.max(0, totalDemand - deployBuses);
+  const fleetUtilizationPct = Math.round((deployBuses / totalFleetCapacity) * 100);
 
   return (
     <div style={{
-      backgroundColor: '#0F172A',
-      color: '#F8FAFC',
-      borderRadius: '1rem',
-      padding: '2rem',
-      margin: '1.5rem 1.5rem',
-      boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+      backgroundColor: '#FFFFFF',
+      color: '#0F172A',
+      borderRadius: '0.85rem',
+      padding: '1.75rem',
+      margin: '1.5rem 1.5rem 0',
+      border: '1px solid #E2E8F0',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
       fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
       {/* Header */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <div style={{ fontSize: '0.85rem', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
-          YatraSetu Partner Ecosystem
-        </div>
-        <h2 style={{ fontSize: '1.75rem', fontWeight: '800', color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span>🚌</span> {agencyName} — Partner Console
-        </h2>
-        <div style={{ fontSize: '0.88rem', color: '#64748B', marginTop: '0.25rem' }}>
-          Fleet Capacity: <strong>{totalFleetCapacity} Buses</strong> • Base Seat Rate: <strong>₹{baseFare}</strong>
-        </div>
-      </div>
-
-      {/* Upcoming Surge Window Selector */}
-      <div style={{ marginBottom: '1.75rem' }}>
-        <div style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '0.6rem' }}>Upcoming surge window</div>
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-          {profile?.surge_windows?.map((w) => (
-            <button
-              key={w.id}
-              onClick={() => {
-                setActiveSurgeId(w.id);
-                setDeployBuses(w.default_deploy_buses);
-              }}
-              style={{
-                padding: '0.55rem 1.25rem',
-                borderRadius: '9999px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                border: activeSurgeId === w.id ? '1.5px solid #F59E0B' : '1px solid #334155',
-                backgroundColor: activeSurgeId === w.id ? '#1E293B' : '#1E293B00',
-                color: activeSurgeId === w.id ? '#FBBF24' : '#94A3B8',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {w.name}
-            </button>
-          )) || [
-            <button key="default" style={{ padding: '0.55rem 1.25rem', borderRadius: '9999px', backgroundColor: '#1E293B', color: '#FBBF24', border: '1.5px solid #F59E0B' }}>
-              Oct 12-13 · Somvati Amavasya
-            </button>
-          ]}
-        </div>
-      </div>
-
-      {/* Main Grid Layout */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-        {/* CARD 1: Buses needed to meet expected demand */}
-        <div style={{ backgroundColor: '#1E293B', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #334155' }}>
-          <div style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '0.75rem' }}>
-            Buses needed to meet expected demand — {activeWindow.corridor}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', borderBottom: '1px solid #F1F5F9', paddingBottom: '1rem' }}>
+        <div>
+          <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+            YatraSetu AI Route Intelligence
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem' }}>
-            <span style={{ fontSize: '3rem', fontWeight: '900', color: '#FFFFFF', lineHeight: 1 }}>
-              {totalDemand}
-            </span>
-            <span style={{ fontSize: '1.1rem', color: '#94A3B8' }}>
-              buses total - range {activeWindow.demand_range_min}–{activeWindow.demand_range_max}
-            </span>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span>🚌</span> {agencyName} — Partner Console
+          </h2>
+          <div style={{ fontSize: '0.88rem', color: '#64748B', marginTop: '0.2rem' }}>
+            Simulated Agency Profile • Total Fleet: <strong>{totalFleetCapacity} Buses</strong> • Standard Base Rate: <strong>₹{baseFare}/seat</strong>
           </div>
         </div>
 
-        {/* CARD 2: How many buses will you deploy? */}
-        <div style={{ backgroundColor: '#1E293B', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #334155' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-            <div style={{ fontSize: '1.05rem', fontWeight: '700', color: '#F8FAFC' }}>
-              How many buses will you deploy?
+        {/* Surge Window Selector */}
+        <div style={{ display: 'flex', gap: '0.5rem', backgroundColor: '#F8FAFC', padding: '0.3rem', borderRadius: '2rem', border: '1px solid #E2E8F0' }}>
+          {['somvati_amavasya', 'kartik_purnima', 'maha_shivratri'].map((id) => {
+            const labels = {
+              somvati_amavasya: 'Oct 12-13 · Somvati Amavasya',
+              kartik_purnima: 'Nov 15 · Kartik Purnima',
+              maha_shivratri: 'Feb 26 · Maha Shivratri'
+            };
+            const isActive = activeSurgeId === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActiveSurgeId(id)}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '2rem',
+                  fontSize: '0.82rem',
+                  fontWeight: isActive ? '700' : '500',
+                  border: 'none',
+                  backgroundColor: isActive ? '#D97706' : 'transparent',
+                  color: isActive ? '#FFFFFF' : '#64748B',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                {labels[id]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 3 CORE FEATURES GRID */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '1.25rem' }}>
+
+        {/* FEATURE 1: TOTAL PREDICTED BUS DEMAND */}
+        <div style={{ backgroundColor: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#92400E', textTransform: 'uppercase' }}>Feature 1 · Total Demand</span>
+              <span style={{ fontSize: '0.75rem', backgroundColor: '#FEF3C7', color: '#B45309', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold' }}>Live AI Estimate</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#0F172A', padding: '0.4rem 0.8rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
+            <h4 style={{ margin: '0 0 0.5rem', color: '#78350F', fontSize: '1rem', fontWeight: '700' }}>
+              Total Predicted Bus Demand
+            </h4>
+            <div style={{ fontSize: '2.4rem', fontWeight: '900', color: '#B45309', lineHeight: 1, margin: '0.5rem 0' }}>
+              {totalDemand} <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#78350F' }}>buses needed</span>
+            </div>
+            <div style={{ fontSize: '0.82rem', color: '#92400E', fontWeight: '600', marginBottom: '0.5rem' }}>
+              Range: {activeWindow.demand_range_min}–{activeWindow.demand_range_max} buses total
+            </div>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#78350F', backgroundColor: '#FEF3C7', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #FCD34D' }}>
+            🚨 <strong>4:00 PM Exit Spike:</strong> YOLO CCTV detected +312% exit surge at Har Ki Pauri ghats.
+          </div>
+        </div>
+
+        {/* FEATURE 2: ACCOMMODATION / FLEET DEPLOYMENT RECOMMENDATION */}
+        <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#1E40AF', textTransform: 'uppercase' }}>Feature 2 · Fleet Capacity</span>
+              <span style={{ fontSize: '0.75rem', backgroundColor: '#DBEAFE', color: '#1E40AF', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold' }}>Your Agency</span>
+            </div>
+            <h4 style={{ margin: '0 0 0.5rem', color: '#1E3A8A', fontSize: '1rem', fontWeight: '700' }}>
+              How Many Buses Will You Deploy?
+            </h4>
+            
+            {/* Deploy Counter Input */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.75rem 0' }}>
               <input
                 type="number"
                 min="0"
@@ -133,99 +142,101 @@ export default function TravelAgencyConsole() {
                 value={deployBuses}
                 onChange={(e) => setDeployBuses(Math.min(totalFleetCapacity, Math.max(0, parseInt(e.target.value) || 0)))}
                 style={{
-                  width: '60px',
-                  backgroundColor: 'transparent',
-                  border: 'none',
-                  color: '#FBBF24',
-                  fontSize: '1.25rem',
+                  width: '75px',
+                  padding: '0.35rem 0.5rem',
+                  borderRadius: '0.5rem',
+                  border: '1.5px solid #2563EB',
+                  fontSize: '1.3rem',
                   fontWeight: 'bold',
-                  textAlign: 'center',
-                  outline: 'none'
+                  color: '#1E3A8A',
+                  textAlign: 'center'
                 }}
               />
-              <span style={{ color: '#64748B', fontSize: '0.85rem' }}>buses</span>
+              <span style={{ fontSize: '0.88rem', color: '#475569', fontWeight: '600' }}>
+                out of <strong>{totalFleetCapacity} buses</strong> available
+              </span>
             </div>
-          </div>
 
-          {/* Interactive Range Slider */}
-          <div style={{ marginBottom: '1.25rem' }}>
+            {/* Slider */}
             <input
               type="range"
               min="0"
               max={totalFleetCapacity}
               value={deployBuses}
               onChange={(e) => setDeployBuses(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: '#F59E0B',
-                height: '8px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              style={{ width: '100%', accentColor: '#2563EB', cursor: 'pointer', marginBottom: '0.5rem' }}
             />
           </div>
 
-          {/* Coverage Bar */}
-          <div style={{ width: '100%', backgroundColor: '#0F172A', borderRadius: '9999px', height: '0.6rem', overflow: 'hidden', marginBottom: '1rem' }}>
-            <div style={{ width: `${coveragePct}%`, backgroundColor: coveragePct > 80 ? '#22C55E' : '#F59E0B', height: '100%', transition: 'width 0.3s ease' }}></div>
-          </div>
-
-          <div style={{ fontSize: '0.9rem', color: '#CBD5E1', lineHeight: '1.4' }}>
-            <strong>{coveragePct}% of required capacity covered.</strong>{' '}
-            {busesNeededMore > 0
-              ? `${busesNeededMore} more buses would fully meet expected demand and maximize the passengers you can serve.`
-              : 'Maximum fleet capacity committed! Excellent coverage for this surge window.'}
+          <div style={{ fontSize: '0.78rem', color: '#1E3A8A', backgroundColor: '#EFF6FF', padding: '0.55rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE', lineHeight: '1.4' }}>
+            ✨ <strong>AI Recommendation:</strong> Deploy <strong>{deployBuses} buses</strong> ({fleetUtilizationPct}% of your fleet). This covers <strong>{coveragePct}%</strong> of total corridor demand.
           </div>
         </div>
 
-        {/* CARD 3: Forward & Return Occupancy + Dynamic Pricing Recommendations */}
-        <div style={{ backgroundColor: '#1E293B', borderRadius: '0.75rem', padding: '1.5rem', border: '1px solid #334155' }}>
-          <div style={{ fontSize: '0.9rem', color: '#94A3B8', marginBottom: '1rem' }}>
-            Forward &amp; return occupancy — this travel window
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.25rem' }}>
-            {/* Forward */}
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '0.25rem' }}>Forward (Outbound)</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#38BDF8' }}>
-                {activeWindow.forward_occupancy_low}–{activeWindow.forward_occupancy_high}%
+        {/* FEATURE 3: FORWARD vs RETURN OCCUPANCY & DYNAMIC FARE PRICING */}
+        <div style={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '0.75rem', padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 'bold', color: '#15803D', textTransform: 'uppercase' }}>Feature 3 · Dynamic Pricing</span>
+              <span style={{ fontSize: '0.75rem', backgroundColor: '#DCFCE7', color: '#15803D', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold' }}>Per Seat Fares</span>
+            </div>
+            
+            {/* 2-column pricing grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', margin: '0.5rem 0' }}>
+              {/* Forward Pricing */}
+              <div style={{ backgroundColor: '#EFF6FF', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#1E40AF' }}>➡️ FORWARD TRIP</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#1E3A8A', margin: '0.2rem 0' }}>
+                  {activeWindow.forward_occupancy_low}–{activeWindow.forward_occupancy_high}% <span style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: 'normal' }}>full</span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#1E40AF', fontWeight: 'bold' }}>
+                  ₹{activeWindow.suggested_forward_fare} <span style={{ fontSize: '0.72rem', color: '#166534', backgroundColor: '#DCFCE7', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>{activeWindow.forward_surge_pct} Surge</span>
+                </div>
               </div>
-              <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
-                Suggested Fare: <strong style={{ color: '#38BDF8' }}>₹{activeWindow.suggested_forward_fare}</strong> ({activeWindow.forward_surge_pct} Surge)
+
+              {/* Return Pricing */}
+              <div style={{ backgroundColor: '#FEF2F2', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #FECACA' }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#991B1B' }}>↩️ RETURN TRIP</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#DC2626', margin: '0.2rem 0' }}>
+                  {activeWindow.return_occupancy_low}–{activeWindow.return_occupancy_high}% <span style={{ fontSize: '0.72rem', color: '#DC2626', fontWeight: 'normal' }}>full</span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#991B1B', fontWeight: 'bold' }}>
+                  ₹{activeWindow.suggested_return_fare} <span style={{ fontSize: '0.72rem', color: '#991B1B', backgroundColor: '#FEE2E2', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>{activeWindow.return_discount_pct} Discount</span>
+                </div>
               </div>
             </div>
-
-            {/* Return */}
-            <div>
-              <div style={{ fontSize: '0.85rem', color: '#94A3B8', marginBottom: '0.25rem' }}>Return (Inbound)</div>
-              <div style={{ fontSize: '2rem', fontWeight: '800', color: '#F43F5E' }}>
-                {activeWindow.return_occupancy_low}–{activeWindow.return_occupancy_high}%
-              </div>
-              <div style={{ fontSize: '0.85rem', color: '#64748B', marginTop: '0.2rem' }}>
-                Suggested Fare: <strong style={{ color: '#F43F5E' }}>₹{activeWindow.suggested_return_fare}</strong> ({activeWindow.return_discount_pct} Discount)
-              </div>
-            </div>
           </div>
 
-          <div style={{ fontSize: '0.78rem', color: '#64748B', fontStyle: 'italic', marginBottom: '1rem' }}>
-            Based on historical {activeWindow.name} pattern + live corridor density
-          </div>
-
-          {/* Actionable Insight Box */}
-          <div style={{ backgroundColor: '#451A03', border: '1px solid #78350F', borderRadius: '0.5rem', padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '1.2rem' }}>💡</span>
-            <div style={{ fontSize: '0.88rem', color: '#FDE68A', lineHeight: '1.4' }}>
-              {activeWindow.insight}
-            </div>
+          <div style={{ fontSize: '0.76rem', color: '#7F1D1D', backgroundColor: '#FEF2F2', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #FCA5A5', lineHeight: '1.35' }}>
+            💡 <strong>Fare Advice:</strong> Charge ₹1,150 on forward seats during high morning demand. Offer ₹680 return tickets to fill empty returning buses.
           </div>
         </div>
 
       </div>
 
-      {/* Footer */}
-      <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.8rem', color: '#475569' }}>
-        Aggregate operational estimates only — no individual passenger data shown.
+      {/* Action Footer */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #F1F5F9' }}>
+        <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>
+          Aggregate operational estimates for {agencyName} • Corridor: {activeWindow.corridor}
+        </span>
+        {onOpenFleetModal && (
+          <button
+            onClick={onOpenFleetModal}
+            style={{
+              padding: '0.6rem 1.25rem',
+              backgroundColor: '#D97706',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '0.5rem',
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(217, 119, 6, 0.2)'
+            }}
+          >
+            🚌 Dispatch &amp; Confirm Bus Schedule
+          </button>
+        )}
       </div>
     </div>
   );
