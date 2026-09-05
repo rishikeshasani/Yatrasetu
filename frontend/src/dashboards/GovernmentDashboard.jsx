@@ -16,29 +16,49 @@ export default function GovernmentDashboard({
   currentUser,
   showToast
 }) {
+  // Filters & Search
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [stateFilter, setStateFilter] = useState('ALL');
 
-  // Crowd Update Form State (POST /crowd/update)
+  // Multi-Agency Operations Tab ('police' | 'transport' | 'health' | 'disaster' | 'municipal')
+  const [activeAgencyTab, setActiveAgencyTab] = useState('police');
+
+  // Crowd Headcount Update Form (POST /crowd/update)
   const [updateSiteId, setUpdateSiteId] = useState(selectedSiteId || 'TS001');
   const [updatePeopleCount, setUpdatePeopleCount] = useState(12350);
   const [updateQueueLength, setUpdateQueueLength] = useState(480);
   const [updateWaitTime, setUpdateWaitTime] = useState(540);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // SOS Distress Alerts Feed
+  // SOS Distress Alerts
   const [sosAlerts, setSosAlerts] = useState([]);
   const [isLoadingSOS, setIsLoadingSOS] = useState(false);
+  const [viewingAlert, setViewingAlert] = useState(null);
 
   // Hospitality Report
   const [hotelReport, setHotelReport] = useState(null);
 
-  // Selected Site Detail Drawer / Modal
+  // Inspect Modal
   const [inspectSite, setInspectSite] = useState(null);
 
+  // Surge Warning Banner
+  const [surgeAlertVisible, setSurgeAlertVisible] = useState(true);
+
+  // Live Clock
+  const [currentTime, setCurrentTime] = useState(() =>
+    new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  );
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // =========================================================================
-  // WINNING FEATURE: EMERGENCY REROUTE — SUPABASE REALTIME
+  // EMERGENCY REROUTE — SUPABASE REALTIME & PERSISTENCE
   // =========================================================================
   const [isRerouteActive, setIsRerouteActive] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
@@ -56,7 +76,9 @@ export default function GovernmentDashboard({
           .limit(1);
         if (data && data.length > 0 && data[0].event_type === 'emergency') {
           setIsRerouteActive(true);
-          setEmergencyTimestamp(new Date(data[0].created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+          setEmergencyTimestamp(
+            new Date(data[0].created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+          );
         }
       } catch (err) {
         console.warn('[Gov] Failed to check existing emergency:', err);
@@ -65,7 +87,7 @@ export default function GovernmentDashboard({
     checkExisting();
   }, []);
 
-  // Activate emergency — inserts into platform_events (all dashboards receive via Realtime)
+  // Activate emergency reroute
   const handleActivateEmergency = async () => {
     setIsRecalculating(true);
     try {
@@ -73,24 +95,25 @@ export default function GovernmentDashboard({
         event_type: 'emergency',
         payload: {
           corridor: 'haridwar',
-          message: 'EMERGENCY: Haridwar corridor reroute enforced by District Magistrate. All inbound buses diverted to BHEL Ground Satellite Parking.',
-          zones_affected: ['Har Ki Pauri', 'Haridwar City Center'],
+          message: 'EMERGENCY: Haridwar corridor reroute enforced by District Administration. Inbound vehicles diverted to BHEL Satellite Hub.',
+          zones_affected: ['Har Ki Pauri', 'Haridwar City Center', 'Zone A'],
           satellite_destination: 'BHEL Ground / Rishikesh Bypass',
         },
         created_by: currentUser?.name || 'District Magistrate',
       });
       setIsRerouteActive(true);
-      setEmergencyTimestamp(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
-      if (showToast) showToast('🚨 Emergency reroute ACTIVATED — all connected dashboards notified in real-time.');
+      const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      setEmergencyTimestamp(timeStr);
+      if (showToast) showToast('🚨 Emergency reroute ACTIVATED — all agency dashboards notified in real-time.');
     } catch (err) {
       console.error('[Gov] Failed to activate emergency:', err);
-      if (showToast) showToast('⚠️ Failed to activate. Check Supabase connection.');
+      if (showToast) showToast('⚠️ Failed to activate emergency reroute.');
     } finally {
       setIsRecalculating(false);
     }
   };
 
-  // Deactivate emergency
+  // Deactivate / lift emergency reroute
   const handleLiftEmergency = async () => {
     setIsRecalculating(true);
     try {
@@ -98,13 +121,13 @@ export default function GovernmentDashboard({
         event_type: 'emergency_lifted',
         payload: {
           corridor: 'haridwar',
-          message: 'Emergency reroute lifted. Normal traffic flow resumed on Haridwar corridor.',
+          message: 'Emergency reroute lifted. Normal corridor transit resumed on Haridwar arterial routes.',
         },
         created_by: currentUser?.name || 'District Magistrate',
       });
       setIsRerouteActive(false);
       setEmergencyTimestamp(null);
-      if (showToast) showToast('✅ Emergency reroute LIFTED — all dashboards updated.');
+      if (showToast) showToast('✅ Emergency reroute DEACTIVATED — normal operations restored.');
     } catch (err) {
       console.error('[Gov] Failed to lift emergency:', err);
     } finally {
@@ -112,11 +135,14 @@ export default function GovernmentDashboard({
     }
   };
 
-  // Surge Prediction Alert State
-  const [surgeAlertVisible, setSurgeAlertVisible] = useState(true);
-
-  // Multi-Department Tab State ('police' | 'ndrf' | 'transport' | 'tourism')
-  const [activeDeptTab, setActiveDeptTab] = useState('police');
+  const handleResetSimulation = () => {
+    setIsRerouteActive(false);
+    setIsRecalculating(false);
+    setSurgeAlertVisible(true);
+    if (showToast) {
+      showToast('↺ Baseline simulation restored. All demonstration zones reset.');
+    }
+  };
 
   // Sync update form if selectedSiteId changes externally
   useEffect(() => {
@@ -184,7 +210,7 @@ export default function GovernmentDashboard({
   // Compute Telemetry Aggregates across all 25 sites
   const siteTelemetryList = sites.map((site) => {
     const d = densityMap[site.id] || {
-      people_count: Math.round(site.capacity * 0.48),
+      people_count: Math.round((site.capacity || 10000) * 0.48),
       occupancy_percentage: 48,
       status: 'NORMAL'
     };
@@ -198,11 +224,16 @@ export default function GovernmentDashboard({
     else if (occ >= 75) estWait = 360;
     else if (occ >= 50) estWait = 120;
 
+    let trend = '→';
+    if (status === 'CRITICAL' || status === 'HIGH') trend = '↑';
+    else if (status === 'NORMAL') trend = '↓';
+
     return {
       ...site,
       people_count: count,
       occupancy_percentage: occ,
       status,
+      trend,
       estimated_wait_mins: estWait
     };
   });
@@ -230,7 +261,7 @@ export default function GovernmentDashboard({
 
   const uniqueStates = ['ALL', ...new Set(sites.map((s) => s.state).filter(Boolean))];
 
-  // Handle Form Submission for Crowd Headcount Update (POST /crowd/update)
+  // Handle Crowd Update Form Submission (POST /crowd/update)
   const handleCrowdUpdateSubmit = async (e) => {
     if (e) e.preventDefault();
     setIsUpdating(true);
@@ -248,7 +279,7 @@ export default function GovernmentDashboard({
 
       if (showToast) {
         showToast(
-          `🏛️ [Govt Command] Updated ${siteName} to ${Number(updatePeopleCount).toLocaleString()} devotees (${res.data?.occupancy_percentage}% ${res.data?.status}).`
+          `🏛️ [Gov Command] ${siteName} updated: ${Number(updatePeopleCount).toLocaleString()} pilgrims (${res.data?.occupancy_percentage}% ${res.data?.status}).`
         );
       }
 
@@ -257,14 +288,14 @@ export default function GovernmentDashboard({
       }
     } catch (err) {
       if (showToast) {
-        showToast('Error sending crowd telemetry update.');
+        showToast('Error broadcasting crowd observation update.');
       }
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Demo Presets for Hackathon Storytelling
+  // Demo Presets
   const handleApplySurgePreset = () => {
     setUpdateSiteId('TS001'); // Kedarnath
     setUpdatePeopleCount(12350);
@@ -292,966 +323,339 @@ export default function GovernmentDashboard({
       prev.map((a) => (a.id === alertId ? { ...a, status: 'DISPATCHED' } : a))
     );
     if (showToast) {
-      showToast(`🚨 SDRF Unit & Emergency Ambulance 108 dispatched to ${alertId}.`);
+      showToast(`🚨 Police Patrol & SDRF Rescue dispatched to Beacon ${alertId}.`);
     }
   };
 
-  // =========================================================================
-  // EMERGENCY REROUTE TRIGGER (WINNING FEATURE)
-  // =========================================================================
-  const handleActivateEmergencyReroute = () => {
-    if (isRerouteActive) {
-      // Toggle back to baseline
-      setIsRerouteActive(false);
-      if (showToast) {
-        showToast('↺ Baseline simulation restored. Emergency reroute standby.');
-      }
-      return;
-    }
-
-    setIsRecalculating(true);
-    setTimeout(() => {
-      setIsRecalculating(false);
-      setIsRerouteActive(true);
-      if (showToast) {
-        showToast('🚨 Emergency rerouting activated: 350 tourists diverted to 14 travel buses & 22 partner hotels.');
-      }
-    }, 1200);
-  };
-
-  const handleResetSimulation = () => {
-    setIsRerouteActive(false);
-    setIsRecalculating(false);
-    setSurgeAlertVisible(true);
-    if (showToast) {
-      showToast('↺ Demonstration zones reset to baseline pre-reroute state.');
-    }
+  const handleViewAlert = (alert) => {
+    setViewingAlert(alert);
   };
 
   return (
     <div className="gov-command-root" id="gov-dashboard">
 
-      {/* DISTRICT MAGISTRATE: HARIDWAR EMERGENCY OVERRIDE — SUPABASE REALTIME */}
-      <div style={{ backgroundColor: isRerouteActive ? '#450A0A' : '#FEF2F2', border: `2px solid ${isRerouteActive ? '#DC2626' : '#FECACA'}`, borderRadius: '0.75rem', padding: '1.5rem', margin: '1.5rem 1.5rem 0', transition: 'all 0.3s ease' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div>
-            <h3 style={{ margin: '0 0 0.25rem', color: isRerouteActive ? '#FCA5A5' : '#991B1B', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.3rem' }}>
-              <span style={{ fontSize: '1.75rem' }}>🚨</span> Haridwar District Magistrate — Emergency Override
-            </h3>
-            <p style={{ margin: 0, color: isRerouteActive ? '#FEE2E2' : '#B91C1C', fontSize: '1rem' }}>
-              {isRerouteActive ? `REROUTE ACTIVE since ${emergencyTimestamp || 'now'} — all dashboards notified via Supabase Realtime` : 'Somvati Amavasya — Crowd capacity threshold controls'}
-            </p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: isRerouteActive ? '#7F1D1D' : '#FEE2E2', padding: '0.5rem 1rem', borderRadius: '2rem', border: `1px solid ${isRerouteActive ? '#EF4444' : '#FCA5A5'}` }}>
-            <div style={{ width: '14px', height: '14px', backgroundColor: isRerouteActive ? '#22C55E' : '#EF4444', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
-            <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: isRerouteActive ? '#FCA5A5' : '#991B1B' }}>
-              {isRerouteActive ? '🟢 OVERRIDE ACTIVE' : '🔴 Live · 88,000+ in City Center'}
-            </span>
+      {/* ===================================================================== */}
+      {/* 1. COMPACT GOVERNMENT COMMAND HEADER                                  */}
+      {/* ===================================================================== */}
+      <header className="gov-command-header">
+        <div className="gov-header-left">
+          <div className="gov-header-emblem">🏛️</div>
+          <div className="gov-header-titles">
+            <div className="gov-brand-row">
+              <span className="gov-brand-name">YATRASETU</span>
+              <span className="gov-brand-divider">|</span>
+              <span className="gov-brand-dept">Government Operations Center</span>
+            </div>
+            <div className="gov-header-sub">
+              LIVE PILGRIMAGE MONITORING • ADMINISTRATIVE CONTROL
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', backgroundColor: isRerouteActive ? '#7F1D1D' : '#FFF', padding: '1.5rem', borderRadius: '0.5rem', border: `1px solid ${isRerouteActive ? '#991B1B' : '#FCA5A5'}` }}>
-          <div style={{ flex: 1 }}>
-            <h4 style={{ margin: '0 0 0.5rem', color: isRerouteActive ? '#FCA5A5' : '#7F1D1D', fontSize: '1.1rem' }}>
-              {isRerouteActive ? '⚡ Emergency Reroute is ACTIVE' : 'Trigger Emergency Corridor Reroute'}
-            </h4>
-            <p style={{ margin: 0, fontSize: '0.95rem', color: isRerouteActive ? '#FECACA' : '#475569', lineHeight: '1.4' }}>
-              {isRerouteActive
-                ? 'All inbound highway traffic diverted from Har Ki Pauri to BHEL Ground Satellite Parking. Travel operators, hotels, and tourists have been notified in real-time via Supabase Realtime.'
-                : 'Divert all incoming highway traffic from Haridwar City Center (Har Ki Pauri corridor) to the peripheral satellite parking zones (BHEL Ground / Rishikesh Bypass). This action broadcasts to ALL connected dashboards instantly.'}
-            </p>
+        <div className="gov-header-right">
+          <div className="gov-live-indicator">
+            <span className="gov-live-dot"></span>
+            <span className="gov-live-label">LIVE</span>
           </div>
-          {isRerouteActive ? (
-            <button
-              disabled={isRecalculating}
-              onClick={handleLiftEmergency}
-              style={{ padding: '0.85rem 1.75rem', backgroundColor: isRecalculating ? '#6B7280' : '#16A34A', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRecalculating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
-            >
-              {isRecalculating ? '⏳ Processing...' : '✅ LIFT EMERGENCY'}
-            </button>
-          ) : (
-            <button
-              disabled={isRecalculating}
-              onClick={handleActivateEmergency}
-              style={{ padding: '0.85rem 1.75rem', backgroundColor: isRecalculating ? '#6B7280' : '#DC2626', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRecalculating ? 'not-allowed' : 'pointer', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.3)', whiteSpace: 'nowrap' }}
-            >
-              {isRecalculating ? '⏳ Processing...' : '🚨 ACTIVATE EMERGENCY REROUTE'}
-            </button>
-          )}
+          <div className="gov-header-meta">
+            <div className="gov-meta-time">Last updated: <strong>{currentTime}</strong></div>
+            <div className="gov-meta-admin">
+              {currentUser?.name || currentUser?.full_name || 'District Administration (Command)'}
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* 1. SURGE PREDICTION ALERT CARD / BANNER (FEATURE 4) */}
-      {surgeAlertVisible && (
-        <div className="gov-surge-alert-banner" id="gov-forecast">
-          <div className="surge-alert-content">
-            <div className="surge-alert-icon">⚠️</div>
-            <div>
-              <div className="surge-alert-title-row">
-                <span className="surge-alert-tag">SURGE PREDICTION</span>
-                <span className="surge-alert-headline">
-                  2-hour stampede risk detected in Zone A (Haridwar Main).
-                </span>
-                <span className="alert-dispatch-pill">
-                  🚨 Alert Sent: Police HQ &amp; 108 Emergency Dispatch
-                </span>
+      {/* ===================================================================== */}
+      {/* 2. EMERGENCY ALERT BAR (Immediately Below Header)                    */}
+      {/* ===================================================================== */}
+      <div className={`gov-emergency-strip ${isRerouteActive ? 'is-emergency-active' : 'is-emergency-normal'}`}>
+        {isRerouteActive ? (
+          <div className="emergency-strip-content">
+            <div className="emergency-strip-left">
+              <span className="emergency-strip-siren">⚠</span>
+              <div>
+                <div className="emergency-strip-title">ACTIVE EMERGENCY REROUTE</div>
+                <div className="emergency-strip-details">
+                  <strong>Haridwar / Kashi Vishwanath Corridor</strong> • Crowd level: <span className="text-danger font-bold">CRITICAL</span> • Route diversion active • 14 buses redirected • 350 tourists diverted
+                </div>
               </div>
-              <p className="surge-alert-sub">
-                <span>Autonomous AI crowd velocity anomaly triggered early warning.</span>
-                <span>• Threshold: &gt;90% capacity within 120 minutes</span>
-                <span>• Status: <strong>Automated Multi-Agency Dispatch Triggered</strong></span>
-                <span style={{ opacity: 0.8 }}>(Simulation Alert)</span>
-              </p>
             </div>
-          </div>
-          <div className="surge-alert-actions">
-            <button
-              type="button"
-              onClick={() => setSurgeAlertVisible(false)}
-              className="surge-dismiss-btn"
-              title="Acknowledge Alert"
-            >
-              ✓ Acknowledge
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 2. TOP COMMAND BANNER */}
-      <div className="gov-command-header">
-        <div className="gov-header-title-box">
-          <div className="gov-header-logo">🏛️</div>
-          <div>
-            <div className="gov-header-crumbs">
-              <span>MINISTRY OF TOURISM &amp; NATIONAL DISASTER MANAGEMENT AUTHORITY</span>
-              <span className="gov-live-secure-pill">
-                <span className="gov-live-dot"></span> LIVE SECURE TELEMETRY FEED
-              </span>
-            </div>
-            <h1 className="gov-main-heading">YatraSetu National Pilgrimage Command Center</h1>
-            <p className="gov-main-subtext">
-              Centralized AI CCTV Vision, Crowd Influx Governance, Queue Corridors &amp; Emergency Response for India's 25 Sacred Shrines (TS001–TS025)
-            </p>
-          </div>
-        </div>
-
-        <div className="gov-officer-pill">
-          <span className="gov-officer-shield">🛡️</span>
-          <div>
-            <div className="gov-officer-name">{currentUser?.full_name || 'DM Rudraprayag / Uttarakhand Command'}</div>
-            <div className="gov-officer-role">CHIEF CROWD DISPATCHER • VERIFIED GOVT JWT</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. EXECUTIVE KPI METRIC STRIP */}
-      <div className="gov-metrics-strip">
-        <div className="gov-metric-box">
-          <div className="metric-label-row">
-            <span className="metric-lbl">MONITORED SHRINES</span>
-            <span>📍</span>
-          </div>
-          <div className="metric-num">{totalSites}</div>
-          <div className="metric-foot">25 Official Sites (TS001–TS025)</div>
-        </div>
-
-        <div className="gov-metric-box metric-box-normal">
-          <div className="metric-label-row">
-            <span className="metric-lbl">NORMAL FLOW</span>
-            <span className="kpi-status-dot dot-normal"></span>
-          </div>
-          <div className="metric-num">{normalCount}</div>
-          <div className="metric-foot">&lt; 50% • Smooth Darshan</div>
-        </div>
-
-        <div className="gov-metric-box metric-box-moderate">
-          <div className="metric-label-row">
-            <span className="metric-lbl">MODERATE SURGE</span>
-            <span className="kpi-status-dot dot-moderate"></span>
-          </div>
-          <div className="metric-num">{moderateCount}</div>
-          <div className="metric-foot">50% - 74% • Managed Corridors</div>
-        </div>
-
-        <div className="gov-metric-box metric-box-high">
-          <div className="metric-label-row">
-            <span className="metric-lbl">HIGH CONGESTION</span>
-            <span className="kpi-status-dot dot-high"></span>
-          </div>
-          <div className="metric-num">{highCount}</div>
-          <div className="metric-foot">75% - 89% • Buffer Holding</div>
-        </div>
-
-        <div className="gov-metric-box metric-box-critical">
-          <div className="metric-label-row">
-            <span className="metric-lbl">CRITICAL DENSITY</span>
-            <span className="kpi-status-dot dot-critical"></span>
-          </div>
-          <div className="metric-num">{criticalCount}</div>
-          <div className="metric-foot">&gt;= 90% • Diversion Alert</div>
-        </div>
-
-        <div className="gov-metric-box">
-          <div className="metric-label-row">
-            <span className="metric-lbl">PILGRIMS IN TRANSIT</span>
-            <span>👥</span>
-          </div>
-          <div className="metric-num">{totalDevotees.toLocaleString()}</div>
-          <div className="metric-foot">Live Across 25 Shrines</div>
-        </div>
-
-        <div className={`gov-metric-box metric-box-sos ${activeSOSCount > 0 ? 'active-pulse' : ''}`}>
-          <div className="metric-label-row">
-            <span className="metric-lbl">ACTIVE SOS BEACONS</span>
-            <span>🚨</span>
-          </div>
-          <div className="metric-num">{activeSOSCount}</div>
-          <div className="metric-foot">112 / SDRF Connected</div>
-        </div>
-      </div>
-
-      {/* 4. CENTRALIZED CROWD HEATMAP & EMERGENCY REROUTE HUB (FEATURE 1 & 2) */}
-      <div className="gov-central-heatmap-hub" id="gov-crowd-monitoring">
-        <div className="hub-top-header">
-          <div className="hub-title-group">
-            <div className="hub-icon-shield">📡</div>
-            <div>
-              <h2 className="hub-heading">
-                Centralized Crowd Heatmap &amp; Arterial Corridor Telemetry
-                <span className="hub-demo-pill">DEMO ZONES / SIMULATION (Char Dham Gateway)</span>
-              </h2>
-              <p className="hub-subtitle">
-                High-density bottleneck tracking across Haridwar, Neelkanth, and Rishikesh arterial pilgrimage corridors with AI drone &amp; CCTV telemetry.
-              </p>
-            </div>
-          </div>
-
-          {/* EMERGENCY REROUTE CONTROLS (WINNING FEATURE) */}
-          <div className="emergency-reroute-controls" id="gov-emergency-reroute">
-            <button
-              type="button"
-              onClick={handleActivateEmergencyReroute}
-              disabled={isRecalculating}
-              className={`btn-emergency-reroute ${isRerouteActive ? 'is-active' : ''} ${isRecalculating ? 'is-loading' : ''}`}
-            >
-              <span className="reroute-siren">{isRerouteActive ? '✅' : '🚨'}</span>
-              <span>
-                {isRecalculating
-                  ? 'Recalculating AI Diversion Corridor...'
-                  : isRerouteActive
-                  ? 'EMERGENCY REROUTE ACTIVE'
-                  : '🚨 ACTIVATE EMERGENCY REROUTE'}
-              </span>
-            </button>
-
-            {isRerouteActive && (
+            <div className="emergency-strip-actions">
               <button
                 type="button"
-                onClick={handleResetSimulation}
-                className="btn-reset-simulation"
-                title="Reset simulation back to 92% high congestion"
+                onClick={() => {
+                  const el = document.getElementById('gov-reroute-control');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="btn-strip-action view"
               >
-                ↺ Reset Demo
+                VIEW RESPONSE
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Recalculation Loading Animation */}
-        {isRecalculating && (
-          <div className="reroute-loading-overlay">
-            <div className="loading-text-row">
-              <span>⚡ AI Algorithmic Recalculation in progress...</span>
-              <span>Optimizing corridor bypass via Zone C &amp; 14 partner buses</span>
-            </div>
-            <div className="loading-bar-track">
-              <div className="loading-bar-animated-fill"></div>
+              <button
+                type="button"
+                onClick={handleLiftEmergency}
+                disabled={isRecalculating}
+                className="btn-strip-action lift"
+              >
+                {isRecalculating ? 'PROCESSING...' : 'LIFT EMERGENCY'}
+              </button>
             </div>
           </div>
-        )}
-
-        {/* Active Reroute State Broadcast Banner */}
-        {isRerouteActive && !isRecalculating && (
-          <div className="reroute-active-broadcast-banner">
-            <div className="broadcast-left">
-              <span className="broadcast-icon">🚀</span>
+        ) : (
+          <div className="emergency-strip-content">
+            <div className="emergency-strip-left">
+              <span className="normal-strip-icon">✓</span>
               <div>
-                <div className="broadcast-headline">Emergency rerouting activated</div>
-                <div className="broadcast-detail">
-                  <strong>350 tourists diverted</strong> to <strong>14 travel buses</strong> &amp; <strong>22 partner hotels</strong>.
-                  Bypassing Haridwar bottleneck via Rishikesh Bypass Corridor.
+                <div className="normal-strip-title">NO ACTIVE EMERGENCY</div>
+                <div className="normal-strip-details">
+                  All 25 sacred pilgrimage corridors operating within safe nominal capacities. Sensor networks nominal.
                 </div>
               </div>
             </div>
-            <span className="broadcast-tag-pill">DYNAMIC AI DIVERSION IN EFFECT</span>
+            <div className="emergency-strip-actions">
+              <button
+                type="button"
+                onClick={handleActivateEmergency}
+                disabled={isRecalculating}
+                className="btn-strip-action activate"
+              >
+                {isRecalculating ? 'ACTIVATING...' : 'TRIGGER CORRIDOR REROUTE'}
+              </button>
+            </div>
           </div>
         )}
-
-        {/* 3 DEMONSTRATION HEATMAP ZONES */}
-        <div className="heatmap-zones-grid">
-          {/* ZONE A — HARIDWAR MAIN */}
-          <div className={`zone-card ${isRerouteActive ? 'zone-controlled' : 'zone-red'}`}>
-            <div className="zone-header">
-              <div>
-                <span className="zone-id-tag">DEMO ZONE A • ARTERIAL GHAT CORRIDOR</span>
-                <h3 className="zone-name">Zone A — Haridwar Main</h3>
-              </div>
-              <span className={`zone-badge ${isRerouteActive ? 'badge-controlled' : 'badge-red'}`}>
-                {isRerouteActive ? '58% — CONTROLLED' : '92% — HIGH CONGESTION — RED'}
-              </span>
-            </div>
-
-            <div className="zone-metric-row">
-              <div className={`zone-pct ${isRerouteActive ? 'text-controlled' : 'text-red'}`}>
-                {isRerouteActive ? '58%' : '92%'}
-              </div>
-              <span className="zone-density-status">
-                {isRerouteActive ? 'Controlled Density' : 'Critical Bottleneck'}
-              </span>
-            </div>
-
-            <div className="zone-bar-track">
-              <div
-                className={`zone-bar-fill ${isRerouteActive ? 'bar-controlled' : 'bar-red'}`}
-                style={{ width: `${isRerouteActive ? 58 : 92}%` }}
-              ></div>
-            </div>
-
-            <div className="zone-meta-grid">
-              <div className="meta-item">
-                <span className="meta-lbl">Live Pilgrims</span>
-                <span className="meta-val">
-                  {isRerouteActive ? '8,700 Devotees' : '13,800 Devotees'}
-                </span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Corridor Capacity</span>
-                <span className="meta-val">15,000 Safe Limit</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Inflow / Velocity</span>
-                <span className="meta-val">{isRerouteActive ? 'Controlled Flow' : '+840/hr (Surge)'}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">CCTV Cameras</span>
-                <span className="meta-val">12 Active Drones</span>
-              </div>
-            </div>
-
-            <div className="zone-footer-status">
-              <span>{isRerouteActive ? '🟢' : '🔴'}</span>
-              <span>
-                Status:{' '}
-                <strong>
-                  {isRerouteActive
-                    ? 'Flow stabilized via automated diversion to Zone C'
-                    : 'Stampede hazard imminent without immediate diversion'}
-                </strong>
-              </span>
-            </div>
-          </div>
-
-          {/* ZONE B — NEELKANTH */}
-          <div className="zone-card zone-yellow">
-            <div className="zone-header">
-              <div>
-                <span className="zone-id-tag">DEMO ZONE B • MOUNTAIN PILGRIMAGE PASS</span>
-                <h3 className="zone-name">Zone B — Neelkanth</h3>
-              </div>
-              <span className="zone-badge badge-yellow">
-                55% — MODERATE — YELLOW
-              </span>
-            </div>
-
-            <div className="zone-metric-row">
-              <div className="zone-pct text-yellow">55%</div>
-              <span className="zone-density-status">Moderate Flow</span>
-            </div>
-
-            <div className="zone-bar-track">
-              <div className="zone-bar-fill bar-yellow" style={{ width: '55%' }}></div>
-            </div>
-
-            <div className="zone-meta-grid">
-              <div className="meta-item">
-                <span className="meta-lbl">Live Pilgrims</span>
-                <span className="meta-val">4,400 Devotees</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Pass Capacity</span>
-                <span className="meta-val">8,000 Safe Limit</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Buffer Holding</span>
-                <span className="meta-val">Operational</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Avg Wait</span>
-                <span className="meta-val">35 Mins</span>
-              </div>
-            </div>
-
-            <div className="zone-footer-status">
-              <span>🟡</span>
-              <span>Status: <strong>Steady queue progression. Barricades active.</strong></span>
-            </div>
-          </div>
-
-          {/* ZONE C — RISHIKESH BYPASS */}
-          <div className="zone-card zone-green">
-            <div className="zone-header">
-              <div>
-                <span className="zone-id-tag">DEMO ZONE C • AI TRANSIT ARTERY</span>
-                <h3 className="zone-name">Zone C — Rishikesh Bypass</h3>
-              </div>
-              <span className="zone-badge badge-green">
-                {isRerouteActive ? '39% — OPTIMAL FLOW' : '22% — LOW CONGESTION — GREEN'}
-              </span>
-            </div>
-
-            <div className="zone-metric-row">
-              <div className="zone-pct text-green">{isRerouteActive ? '39%' : '22%'}</div>
-              <span className="zone-density-status">
-                {isRerouteActive ? 'Absorbing Diversion' : 'Low Congestion'}
-              </span>
-            </div>
-
-            <div className="zone-bar-track">
-              <div
-                className="zone-bar-fill bar-green"
-                style={{ width: `${isRerouteActive ? 39 : 22}%` }}
-              ></div>
-            </div>
-
-            <div className="zone-meta-grid">
-              <div className="meta-item">
-                <span className="meta-lbl">Live Pilgrims</span>
-                <span className="meta-val">{isRerouteActive ? '4,740 (+350 Diverted)' : '2,640 Devotees'}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Bypass Capacity</span>
-                <span className="meta-val">12,000 Safe Limit</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Partner Buses</span>
-                <span className="meta-val">{isRerouteActive ? '14 En Route' : 'Ready on Standby'}</span>
-              </div>
-              <div className="meta-item">
-                <span className="meta-lbl">Transit Time</span>
-                <span className="meta-val">38 Mins (Clear)</span>
-              </div>
-            </div>
-
-            <div className="zone-footer-status">
-              <span>🟢</span>
-              <span>
-                Status:{' '}
-                <strong>
-                  {isRerouteActive
-                    ? 'Receiving 350 rerouted pilgrims smoothly'
-                    : 'Designated green bypass corridor for Haridwar relief'}
-                </strong>
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* 5. BEFORE VS AFTER IMPACT CARD (FEATURE 3 - JUDGE-FACING WINNING DEMO) */}
-      {isRerouteActive && (
-        <div className="gov-impact-showcase-card">
-          <div className="impact-header-strip">
-            <div>
-              <span className="impact-badge-tag">JUDGE EVALUATION • ALGORITHMIC IMPACT</span>
-              <h2 className="impact-title">Dynamic Corridor Rerouting: Before vs. After Assessment</h2>
-              <p className="impact-sub">
-                Quantified telemetry showcasing crowd load shedding and automated diversion across the Char Dham arterial gateway.
-              </p>
-            </div>
-            <span style={{ fontSize: '11px', color: '#059669', fontWeight: '800' }}>
-              SIMULATION BENCHMARK
-            </span>
-          </div>
-
-          <div className="impact-comparison-grid">
-            {/* BEFORE */}
-            <div className="impact-col col-before">
-              <span className="impact-col-lbl">BEFORE INTERVENTION</span>
-              <div className="impact-col-metric">92%</div>
-              <span className="impact-col-badge badge-risk">HIGH RISK</span>
-              <p className="impact-col-desc">
-                Severe bottleneck in Zone A (Haridwar Main). Stampede danger with 13,800 pilgrims choked at Brahma Kund corridor.
-              </p>
-            </div>
-
-            {/* DIVIDER */}
-            <div className="impact-divider-arrow">
-              <span className="divider-arrow-symbol">➔</span>
-              <span className="divider-tag">AI OPTIMIZED</span>
-            </div>
-
-            {/* AFTER */}
-            <div className="impact-col col-after">
-              <span className="impact-col-lbl">AFTER REROUTING</span>
-              <div className="impact-col-metric">58%</div>
-              <span className="impact-col-badge badge-controlled-opt">CONTROLLED</span>
-              <p className="impact-col-desc">
-                Flow successfully stabilized. Crowd density brought down to safe operational levels with 0 casualty risk.
-              </p>
+      {/* Surge Early Warning Banner */}
+      {surgeAlertVisible && !isRerouteActive && (
+        <div className="gov-surge-warning-banner">
+          <div className="surge-warning-content">
+            <span className="surge-warning-icon">⚠️</span>
+            <div className="surge-warning-text">
+              <strong>SURGE PREDICTION:</strong> Anomaly detection indicates high congestion risk (&gt;90% threshold) in Zone A (Haridwar Main) within 120 minutes. Multi-agency alert dispatched.
             </div>
           </div>
-
-          {/* 4 KEY QUANTIFIED REDUCTION METRICS */}
-          <div className="impact-stats-quad">
-            <div className="quad-stat-card">
-              <span className="quad-stat-label">Congestion reduction</span>
-              <div className="quad-stat-val highlight-green">34 % pts</div>
-              <span className="quad-stat-sub">From 92% to 58% Controlled</span>
-            </div>
-
-            <div className="quad-stat-card">
-              <span className="quad-stat-label">Tourists diverted</span>
-              <div className="quad-stat-val highlight-green">350</div>
-              <span className="quad-stat-sub">Pilgrims safely rerouted</span>
-            </div>
-
-            <div className="quad-stat-card">
-              <span className="quad-stat-label">Partner buses</span>
-              <div className="quad-stat-val highlight-green">14</div>
-              <span className="quad-stat-sub">Deployed on bypass routes</span>
-            </div>
-
-            <div className="quad-stat-card">
-              <span className="quad-stat-label">Partner hotels</span>
-              <div className="quad-stat-val highlight-green">22</div>
-              <span className="quad-stat-sub">Transit shelters allocated</span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => setSurgeAlertVisible(false)}
+            className="surge-warning-dismiss"
+          >
+            ✕ Dismiss
+          </button>
         </div>
       )}
 
-      {/* 6. MULTI-DEPARTMENT VIEW CONSOLE (FEATURE 5) */}
-      <div className="gov-multidept-section" id="gov-agencies">
-        <div className="multidept-header-bar">
-          <div className="multidept-title-box">
-            <h3>Multi-Agency Operational Command</h3>
-            <p>Unified cross-departmental dispatch, disaster response, and logistics telemetry.</p>
+      {/* ===================================================================== */}
+      {/* 3. TOP KPI ROW                                                        */}
+      {/* ===================================================================== */}
+      <section className="gov-kpi-grid">
+        {/* KPI 1: TOTAL PILGRIMS */}
+        <div className="gov-kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">TOTAL PILGRIMS</span>
+            <span className="kpi-icon">👥</span>
           </div>
-
-          {/* 4 DEPARTMENT TABS */}
-          <div className="dept-tab-bar">
-            <button
-              type="button"
-              onClick={() => setActiveDeptTab('police')}
-              className={`dept-tab-btn ${activeDeptTab === 'police' ? 'active' : ''}`}
-            >
-              👮 Police
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDeptTab('ndrf')}
-              className={`dept-tab-btn ${activeDeptTab === 'ndrf' ? 'active' : ''}`}
-            >
-              🦺 NDRF View
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDeptTab('transport')}
-              className={`dept-tab-btn ${activeDeptTab === 'transport' ? 'active' : ''}`}
-            >
-              🚌 Transport Dept
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveDeptTab('tourism')}
-              className={`dept-tab-btn ${activeDeptTab === 'tourism' ? 'active' : ''}`}
-            >
-              🏛️ Tourism Board
-            </button>
+          <div className="kpi-number">{totalDevotees.toLocaleString()}</div>
+          <div className="kpi-context">
+            <span className="kpi-tag-sub">Across 25 monitored shrines</span>
           </div>
         </div>
 
-        <div className="multidept-body">
-          {/* TAB 1: POLICE VIEW */}
-          {activeDeptTab === 'police' && (
-            <div className="dept-widget-grid">
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🚨 Active SOS Alerts (Real API Feed)</span>
-                  <span className="dept-pill badge-red">{activeSOSCount} Active</span>
-                </div>
-                <div className="mini-sos-feed">
-                  {sosAlerts.length === 0 ? (
-                    <div style={{ color: '#64748B', fontSize: '12px', padding: '10px 0' }}>
-                      No active distress beacons. Corridors secure.
-                    </div>
-                  ) : (
-                    sosAlerts.slice(0, 3).map((a) => (
-                      <div key={a.id} className="mini-sos-item">
-                        <div className="mini-sos-title">
-                          <span>{a.emergency_type}</span>
-                          <span style={{ fontSize: '10px', color: '#DC2626' }}>{a.status}</span>
-                        </div>
-                        <div className="mini-sos-victim">
-                          {a.user_name || a.user_id} • 📍 {a.site_name || 'Sacred Corridor'}
-                        </div>
-                        {a.status === 'ACTIVE' && (
-                          <button
-                            type="button"
-                            onClick={() => handleDispatchRescue(a.id)}
-                            className="mini-sos-action-btn"
-                          >
-                            Dispatch 112 / PCR Van
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
-                <span className="dept-sim-note">Live data polled from GET /sos/active</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🛡️ Police Deployment</span>
-                  <span className="dept-pill badge-green">Operational</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">PAC Platoons Deployed</span>
-                    <span className="dept-stat-val">4 Platoons (120 Officers)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Traffic Constabulary</span>
-                    <span className="dept-stat-val">48 Traffic Personnel</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Aerial Drones In Flight</span>
-                    <span className="dept-stat-val">6 AI Drone Units</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Rapid Barricades</span>
-                    <span className="dept-stat-val">12 Active Checkpoints</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Simulation telemetry for Haridwar-Rudraprayag sector</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">⚡ High-Risk Zones</span>
-                  <span className="dept-pill badge-red">Monitored</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Zone A — Haridwar Main</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#DC2626' }}>
-                      {isRerouteActive ? 'Controlled (58%)' : 'High Risk (92%)'}
-                    </span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Kedarnath (TS001) Queue</span>
-                    <span className="dept-stat-val" style={{ color: '#EA580C' }}>
-                      {densityMap['TS001']?.occupancy_percentage || 48}% Occupancy
-                    </span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Avg Response Time</span>
-                    <span className="dept-stat-val">4.2 Minutes</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">108 PCR Ambulances</span>
-                    <span className="dept-stat-val">8 Standby at Sector 4</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Synchronized with State Police Control Room</span>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: NDRF VIEW */}
-          {activeDeptTab === 'ndrf' && (
-            <div className="dept-widget-grid">
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">⚠️ Disaster-Risk Zones</span>
-                  <span className="dept-pill badge-yellow">Monitored</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Landslide Risk: Rudraprayag Route</span>
-                    <span className="dept-stat-val" style={{ color: '#D97706' }}>Moderate (Sensor Level 2)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Alaknanda Water Flow</span>
-                    <span className="dept-stat-val">18,200 cusecs (Safe)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Mandakini Flood Gauges</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>Green Baseline</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Ghat Stampede Risk</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#DC2626' }}>
-                      {isRerouteActive ? 'Mitigated (Reroute Active)' : 'Elevated (Zone A 92%)'}
-                    </span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Telemetry from Central Water Commission &amp; IMD</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🦺 Rescue Teams</span>
-                  <span className="dept-pill badge-green">Deployed</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">NDRF Quick Reaction Teams</span>
-                    <span className="dept-stat-val">3 Teams (45 Personnel)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">SDRF River Patrol Boats</span>
-                    <span className="dept-stat-val">8 Inflatable Motorboats</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">High-Angle Rope Rescue</span>
-                    <span className="dept-stat-val">2 Squads Standby</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Helipad Air Evacuation</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>Operational / Clear</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">15th Battalion NDRF Command</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🏥 Medical Camps &amp; Evacuation</span>
-                  <span className="dept-pill badge-green">100% Ready</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">High-Altitude Medical Relief</span>
-                    <span className="dept-stat-val">5 Active Centers</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Available Oxygen Beds</span>
-                    <span className="dept-stat-val">120 Beds Ready</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Trauma Stretchers</span>
-                    <span className="dept-stat-val">18 Mobile Stretchers</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Green Corridor Link</span>
-                    <span className="dept-stat-val">AIIMS Rishikesh (Open)</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Uttarakhand Emergency Health Mission</span>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: TRANSPORT DEPT VIEW */}
-          {activeDeptTab === 'transport' && (
-            <div className="dept-widget-grid">
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🚌 Available Buses</span>
-                  <span className="dept-pill badge-green">14 Partner Buses</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Partner Electric/State Buses</span>
-                    <span className="dept-stat-val">14 Deployed</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Total Seat Capacity</span>
-                    <span className="dept-stat-val">420 Passengers</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Current Passenger Load</span>
-                    <span className="dept-stat-val">{isRerouteActive ? '350 Diverted Yatris' : '0 (Standby)'}</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Bus Fleet Status</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#64748B' }}>
-                      {isRerouteActive ? '14 / 14 En Route' : 'Parked at Rishikesh Hub'}
-                    </span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Coordinated with UTC &amp; Travel Operators</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🛣️ Diversion Routes</span>
-                  <span className="dept-pill badge-green">Clear</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Primary Bypass Route</span>
-                    <span className="dept-stat-val">Zone C (Rishikesh Corridor)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Bypass Transit Time</span>
-                    <span className="dept-stat-val">38 Minutes</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Choked Main Route Time</span>
-                    <span className="dept-stat-val" style={{ color: '#DC2626' }}>145 Minutes (Congested)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Time Saved Per Yatri</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>107 Minutes</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">NHAI &amp; Border Roads Organisation</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🔄 Rerouting Status</span>
-                  <span className={`dept-pill ${isRerouteActive ? 'badge-controlled' : 'badge-yellow'}`}>
-                    {isRerouteActive ? 'ACTIVE' : 'STANDBY'}
-                  </span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">AI Routing Engine</span>
-                    <span className="dept-stat-val">Active Recalculation</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Tourists Diverted</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>
-                      {isRerouteActive ? '350 Devotees' : '0'}
-                    </span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Partner Hotels Allocated</span>
-                    <span className="dept-stat-val">{isRerouteActive ? '22 Properties' : 'On Standby'}</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Electronic Toll Override</span>
-                    <span className="dept-stat-val">FASTag Emergency Pass</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Automated trigger via YatraSetu Emergency Protocol</span>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: TOURISM BOARD VIEW */}
-          {activeDeptTab === 'tourism' && (
-            <div className="dept-widget-grid">
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">👥 Visitor Count &amp; Footfall</span>
-                  <span className="dept-pill badge-green">Live Registry</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Today's Total Pilgrims</span>
-                    <span className="dept-stat-val">68,400 Devotees</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Char Dham Season Total</span>
-                    <span className="dept-stat-val">1.42M Registered</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Digital Yatri Cards Issued</span>
-                    <span className="dept-stat-val">54,200 Active QR</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Green Punya Points Awarded</span>
-                    <span className="dept-stat-val">184,250 Points</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Tourism Department Devotee Registry</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">🏨 Hotel Occupancy (Real API)</span>
-                  <span className="dept-pill badge-green">
-                    {hotelReport?.overall_occupancy_percentage || 30}% City Occ
-                  </span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Verified Shrines Lodges</span>
-                    <span className="dept-stat-val">{hotelReport?.total_hotels || 11} Properties</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Total Capacity</span>
-                    <span className="dept-stat-val">{hotelReport?.total_capacity_rooms || 73} Rooms</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Available Vacancies</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>
-                      {hotelReport?.total_available_rooms || 51} Rooms
-                    </span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Partner Shelters (Reroute)</span>
-                    <span className="dept-stat-val">22 Verified Partners</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Polled from GET /hotels/government/occupancy-report</span>
-              </div>
-
-              <div className="dept-card">
-                <div className="dept-card-header">
-                  <span className="dept-card-title">⛩️ Alternative Destinations</span>
-                  <span className="dept-pill badge-green">Load Balanced</span>
-                </div>
-                <div className="dept-stat-list">
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Tungnath Mahadev</span>
-                    <span className="dept-stat-val">20 Min Wait (Smooth)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Omkareshwar Ukhimath</span>
-                    <span className="dept-stat-val">15 Min Wait (Optimal)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Triyuginarayan Temple</span>
-                    <span className="dept-stat-val">25 Min Wait (Smooth)</span>
-                  </div>
-                  <div className="dept-stat-row">
-                    <span className="dept-stat-lbl">Punya Reward Incentive</span>
-                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>+25 Points / Yatri</span>
-                  </div>
-                </div>
-                <span className="dept-sim-note">Dynamic gamified crowd deflection system</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 7. MAIN 2-COLUMN SECTION: CROWD UPDATE FORM + SOS FEED (PRESERVED) */}
-      <div className="gov-two-col-grid">
-        {/* Left Column: Live Crowd Headcount Dispatch (POST /crowd/update) */}
-        <div className="gov-card-panel crowd-update-panel">
-          <div className="panel-header">
-            <div className="panel-title-box">
-              <span className="panel-icon">📡</span>
-              <div>
-                <h3 className="panel-title">Official Live Crowd Telemetry Update</h3>
-                <p className="panel-desc">
-                  Dispatches verified sensor count directly to <code>POST /crowd/update</code> with Government JWT authorization.
-                </p>
-              </div>
-            </div>
+        {/* KPI 2: CURRENT CROWD */}
+        <div className="gov-kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">CURRENT CROWD</span>
+            <span className="kpi-trend-up">↑ 8.4%</span>
           </div>
+          <div className="kpi-number">
+            {(isRerouteActive ? 11240 : 18420).toLocaleString()}
+          </div>
+          <div className="kpi-context">
+            <span className="kpi-context-text">Peak sector (Haridwar / Kashi)</span>
+          </div>
+        </div>
 
-          <form onSubmit={handleCrowdUpdateSubmit} className="gov-update-form">
-            <div className="form-group-row">
-              <div className="form-group flex-2">
-                <label>Select Sacred Shrine / Site *</label>
+        {/* KPI 3: ACTIVE SOS */}
+        <div className={`gov-kpi-card ${activeSOSCount > 0 ? 'kpi-card-danger' : ''}`}>
+          <div className="kpi-header">
+            <span className="kpi-label">ACTIVE SOS</span>
+            <span className={`kpi-indicator-dot ${activeSOSCount > 0 ? 'dot-red' : 'dot-green'}`}></span>
+          </div>
+          <div className="kpi-number">
+            {String(activeSOSCount).padStart(2, '0')}
+          </div>
+          <div className="kpi-context">
+            <span className="kpi-context-text">
+              {sosAlerts.filter((a) => a.status === 'ACTIVE').length} awaiting dispatch
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 4: HIGH-RISK ZONES */}
+        <div className="gov-kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">HIGH-RISK ZONES</span>
+            <span className="kpi-indicator-dot dot-amber"></span>
+          </div>
+          <div className="kpi-number">
+            {String(isRerouteActive ? 0 : Math.max(1, criticalCount + highCount)).padStart(2, '0')}
+          </div>
+          <div className="kpi-context">
+            <span className="kpi-context-text">
+              {isRerouteActive ? 'All corridors stabilized' : 'Zone A & Kedarnath queue'}
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 5: BUSES ACTIVE */}
+        <div className="gov-kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">BUSES ACTIVE</span>
+            <span className="kpi-indicator-dot dot-green"></span>
+          </div>
+          <div className="kpi-number">14</div>
+          <div className="kpi-context">
+            <span className="kpi-context-text">
+              {isRerouteActive ? '14 deployed on bypass routes' : 'Ready at satellite parking'}
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 6: HOTEL OCCUPANCY */}
+        <div className="gov-kpi-card">
+          <div className="kpi-header">
+            <span className="kpi-label">HOTEL OCCUPANCY</span>
+            <span className="kpi-icon">🏨</span>
+          </div>
+          <div className="kpi-number">
+            {hotelReport?.overall_occupancy_percentage || 30}%
+          </div>
+          <div className="kpi-context">
+            <span className="kpi-context-text">
+              {hotelReport?.total_available_rooms || 51} rooms available
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 4. MAIN COMMAND CENTER (2-COLUMN OPERATIONAL LAYOUT)                   */}
+      {/* ===================================================================== */}
+      <div className="gov-two-col-command">
+        {/* LEFT COLUMN: LIVE CROWD MONITORING */}
+        <div className="gov-col-left">
+          <div className="gov-panel">
+            <div className="gov-panel-header">
+              <div className="gov-panel-title">
+                <span>LIVE CROWD MONITORING</span>
+                <span className="gov-panel-badge">Priority Corridors</span>
+              </div>
+              <span className="gov-panel-sub">Real-time CCTV &amp; RFID gate sensor telemetry</span>
+            </div>
+
+            <div className="gov-table-container">
+              <table className="gov-compact-table">
+                <thead>
+                  <tr>
+                    <th>LOCATION</th>
+                    <th>CURRENT CROWD</th>
+                    <th>CAPACITY</th>
+                    <th>OCCUPANCY</th>
+                    <th>STATUS</th>
+                    <th>TREND</th>
+                    <th>ACTION</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Priority High-Volume Shrines */}
+                  {[
+                    {
+                      id: 'HAR-01',
+                      name: 'Haridwar Corridor (Zone A)',
+                      crowd: isRerouteActive ? 8700 : 13800,
+                      capacity: 15000,
+                      occ: isRerouteActive ? 58 : 92,
+                      status: isRerouteActive ? 'MODERATE' : 'CRITICAL',
+                      trend: isRerouteActive ? '↓' : '↑'
+                    },
+                    ...siteTelemetryList.slice(0, 5).map((s) => ({
+                      id: s.id,
+                      name: s.name,
+                      crowd: s.people_count,
+                      capacity: s.capacity || 10000,
+                      occ: s.occupancy_percentage,
+                      status: s.status,
+                      trend: s.trend,
+                      rawSite: s
+                    }))
+                  ].map((item, idx) => (
+                    <tr key={item.id || idx}>
+                      <td className="font-semibold text-navy">{item.name}</td>
+                      <td className="font-mono">{item.crowd.toLocaleString()}</td>
+                      <td className="font-mono text-muted">{item.capacity.toLocaleString()}</td>
+                      <td>
+                        <div className="gov-cell-progress">
+                          <div className="gov-cell-progress-bar">
+                            <div
+                              className={`gov-cell-progress-fill status-${item.status.toLowerCase()}`}
+                              style={{ width: `${Math.min(100, item.occ)}%` }}
+                            ></div>
+                          </div>
+                          <span className="font-mono text-xs">{item.occ}%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`gov-status-badge status-${item.status.toLowerCase()}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="font-bold text-center">
+                        <span className={`trend-symbol ${item.trend === '↑' ? 'trend-up' : item.trend === '↓' ? 'trend-down' : 'trend-steady'}`}>
+                          {item.trend}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleInspect(item.rawSite || sites.find((s) => s.id === updateSiteId) || sites[0])}
+                          className="btn-compact-inspect"
+                        >
+                          Inspect
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Quick Headcount Broadcast Form inside Panel */}
+            <div className="gov-telemetry-form-strip">
+              <div className="telemetry-strip-header">
+                <span className="font-bold text-xs uppercase tracking-wider text-navy">
+                  Broadcast Verified Crowd Update (POST /crowd/update)
+                </span>
+                <div className="demo-preset-links">
+                  <button
+                    type="button"
+                    onClick={handleApplySurgePreset}
+                    className="link-btn text-danger"
+                  >
+                    Simulate Surge (Kedarnath)
+                  </button>
+                  <span className="text-muted">|</span>
+                  <button
+                    type="button"
+                    onClick={handleApplyNormalPreset}
+                    className="link-btn text-success"
+                  >
+                    Reset Normal
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleCrowdUpdateSubmit} className="telemetry-inputs-row">
                 <select
                   value={updateSiteId}
                   onChange={(e) => {
@@ -1263,186 +667,479 @@ export default function GovernmentDashboard({
                       setUpdatePeopleCount(d.people_count);
                     }
                   }}
-                  className="gov-select"
+                  className="gov-select compact"
                 >
                   {sites.map((s) => (
                     <option key={s.id} value={s.id}>
-                      [{s.id}] {s.name} ({s.state})
+                      [{s.id}] {s.name}
                     </option>
                   ))}
                 </select>
-              </div>
 
-              <div className="form-group flex-1">
-                <label>Live Headcount (Devotees) *</label>
                 <input
                   type="number"
                   min="0"
                   max="300000"
                   value={updatePeopleCount}
                   onChange={(e) => setUpdatePeopleCount(Number(e.target.value))}
-                  required
-                  className="gov-input"
+                  placeholder="Headcount"
+                  className="gov-input compact"
+                  title="Devotee Headcount"
                 />
-              </div>
-            </div>
 
-            <div className="form-group-row">
-              <div className="form-group flex-1">
-                <label>Queue Corridor Length (Meters)</label>
                 <input
                   type="number"
                   min="0"
                   value={updateQueueLength}
                   onChange={(e) => setUpdateQueueLength(Number(e.target.value))}
-                  className="gov-input"
+                  placeholder="Queue (m)"
+                  className="gov-input compact"
+                  title="Queue Length (Meters)"
                 />
-              </div>
 
-              <div className="form-group flex-1">
-                <label>Estimated Wait Time (Minutes)</label>
                 <input
                   type="number"
                   min="0"
                   value={updateWaitTime}
                   onChange={(e) => setUpdateWaitTime(Number(e.target.value))}
-                  className="gov-input"
+                  placeholder="Wait (min)"
+                  className="gov-input compact"
+                  title="Estimated Wait (Minutes)"
                 />
-              </div>
-            </div>
 
-            {/* Quick Demo Buttons for Hackathon Presentation */}
-            <div className="demo-preset-box">
-              <span className="demo-preset-label">SIH Hackathon 1-Click Simulation Scenarios:</span>
-              <div className="demo-preset-buttons">
                 <button
-                  type="button"
-                  onClick={handleApplySurgePreset}
-                  className="preset-btn surge"
-                  title="Sets Kedarnath (TS001) to 12,350 devotees (95% CRITICAL)"
+                  type="submit"
+                  disabled={isUpdating}
+                  className="btn-telemetry-submit"
                 >
-                  🚨 1. Simulate Kedarnath Peak Surge (12,350 Devotees / 95% CRITICAL)
+                  {isUpdating ? 'BROADCASTING...' : 'BROADCAST'}
                 </button>
-                <button
-                  type="button"
-                  onClick={handleApplyNormalPreset}
-                  className="preset-btn normal"
-                  title="Resets Kedarnath (TS001) to 1,200 devotees (48% NORMAL)"
-                >
-                  ✅ 2. Reset Kedarnath to Normal Flow (1,200 Devotees / 48% NORMAL)
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isUpdating}
-              className="gov-submit-btn"
-            >
-              {isUpdating ? 'Broadcasting Telemetry...' : '🚀 Broadcast Official Crowd Update (POST /crowd/update)'}
-            </button>
-          </form>
-        </div>
-
-        {/* Right Column: Real-Time SOS Distress Alerts Feed */}
-        <div className="gov-card-panel sos-feed-panel" id="gov-sos">
-          <div className="panel-header">
-            <div className="panel-title-box">
-              <span className="panel-icon">🚨</span>
-              <div>
-                <h3 className="panel-title">Real-Time Distress Beacon Feed</h3>
-                <p className="panel-desc">
-                  Live emergency signals broadcasted via <code>POST /sos</code> and polled from <code>GET /sos/active</code>.
-                </p>
-              </div>
-            </div>
-            <div className="active-pill-counter">
-              {activeSOSCount} Active
+              </form>
             </div>
           </div>
+        </div>
 
-          <div className="sos-alerts-list">
-            {isLoadingSOS && sosAlerts.length === 0 ? (
-              <div className="sos-empty-state">Loading emergency beacons...</div>
-            ) : sosAlerts.length === 0 ? (
-              <div className="sos-empty-state">
-                <span className="empty-icon">🛡️</span>
-                <p>No active distress beacons. All sacred corridors operating safely.</p>
+        {/* RIGHT COLUMN: EMERGENCY OPERATIONS */}
+        <div className="gov-col-right">
+          <div className="gov-panel">
+            <div className="gov-panel-header">
+              <div className="gov-panel-title">
+                <span>EMERGENCY OPERATIONS</span>
+                <span className={`gov-panel-badge ${activeSOSCount > 0 ? 'badge-danger' : 'badge-normal'}`}>
+                  {activeSOSCount} Active Beacon{activeSOSCount === 1 ? '' : 's'}
+                </span>
               </div>
-            ) : (
-              sosAlerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className={`sos-alert-item ${alert.status === 'ACTIVE' ? 'active-distress' : 'dispatched'}`}
-                >
-                  <div className="sos-item-top">
-                    <span className="sos-type-tag">⚠️ {alert.emergency_type}</span>
-                    <span className={`sos-status-chip ${alert.status.toLowerCase()}`}>
-                      {alert.status}
-                    </span>
-                  </div>
+              <span className="gov-panel-sub">Disaster Management &amp; Police Dispatch Desk</span>
+            </div>
 
-                  <div className="sos-item-body">
-                    <div className="sos-victim-info">
-                      <strong>{alert.user_name || alert.user_id}</strong>
-                      {alert.phone && <span> • 📞 {alert.phone}</span>}
-                    </div>
-                    <div className="sos-location-info">
-                      <span>📍 {alert.site_name || 'Near Sacred Pilgrimage Sector'}</span>
-                      <span className="coords">
-                        ({alert.latitude?.toFixed(4)}, {alert.longitude?.toFixed(4)})
-                      </span>
-                    </div>
-                    <div className="sos-time-info">
-                      <span>🕒 {alert.timestamp || 'Just now'}</span>
-                      <span>Source: {alert.location_source || 'GPS'}</span>
-                    </div>
-                  </div>
-
-                  {alert.status === 'ACTIVE' && (
-                    <button
-                      type="button"
-                      onClick={() => handleDispatchRescue(alert.id)}
-                      className="sos-dispatch-btn"
-                    >
-                      🚨 Dispatch Rescue Team (112 / SDRF)
-                    </button>
-                  )}
+            <div className="gov-sos-feed">
+              {isLoadingSOS && sosAlerts.length === 0 ? (
+                <div className="gov-empty-feed">Loading emergency distress beacons...</div>
+              ) : sosAlerts.length === 0 ? (
+                <div className="gov-empty-feed">
+                  <span className="empty-shield">🛡️</span>
+                  <span>No active SOS distress calls. All sacred corridors secure.</span>
                 </div>
-              ))
-            )}
+              ) : (
+                <div className="gov-sos-list">
+                  {sosAlerts.map((alert) => {
+                    const isDispatched = alert.status === 'DISPATCHED';
+                    const severity = alert.severity || (alert.status === 'ACTIVE' ? 'CRITICAL' : 'MODERATE');
+                    const responseUnit = alert.response_unit || (isDispatched ? 'Police Unit P-12 / SDRF 4' : 'Awaiting Assignment');
+
+                    return (
+                      <div key={alert.id} className={`gov-sos-card ${isDispatched ? 'is-dispatched' : 'is-active'}`}>
+                        <div className="sos-card-top">
+                          <div className="sos-card-id-row">
+                            <span className="sos-id font-mono font-bold">{alert.id}</span>
+                            <span className={`gov-status-badge status-${severity.toLowerCase()}`}>
+                              {severity}
+                            </span>
+                          </div>
+                          <span className={`sos-state-pill ${isDispatched ? 'dispatched' : 'active'}`}>
+                            {alert.status}
+                          </span>
+                        </div>
+
+                        <div className="sos-card-body">
+                          <div className="sos-detail-row">
+                            <span className="sos-lbl">Location:</span>
+                            <span className="sos-val">
+                              {alert.site_name || 'Sacred Pilgrimage Sector'}
+                              {alert.latitude && (
+                                <span className="sos-coords">
+                                  ({alert.latitude.toFixed(3)}, {alert.longitude.toFixed(3)})
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="sos-detail-row">
+                            <span className="sos-lbl">Time:</span>
+                            <span className="sos-val font-mono">{alert.timestamp || '12:42 PM'}</span>
+                          </div>
+                          <div className="sos-detail-row">
+                            <span className="sos-lbl">Pilgrim:</span>
+                            <span className="sos-val">{alert.user_name || alert.user_id || 'Devotee'} {alert.phone && `(${alert.phone})`}</span>
+                          </div>
+                          <div className="sos-detail-row">
+                            <span className="sos-lbl">Unit:</span>
+                            <span className="sos-val font-semibold">{responseUnit}</span>
+                          </div>
+                        </div>
+
+                        <div className="sos-card-actions">
+                          {alert.status === 'ACTIVE' && (
+                            <button
+                              type="button"
+                              onClick={() => handleDispatchRescue(alert.id)}
+                              className="btn-sos-dispatch"
+                            >
+                              DISPATCH
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleViewAlert(alert)}
+                            className="btn-sos-view"
+                          >
+                            VIEW
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 8. FULL-WIDTH SECTION: ALL 25 SHIRNES MONITORING TABLE (PRESERVED) */}
-      <div className="gov-card-panel monitoring-table-panel" id="gov-sites">
-        <div className="panel-header table-header-flex">
-          <div className="panel-title-box">
-            <span className="panel-icon">📊</span>
-            <div>
-              <h3 className="panel-title">National Shrine Density &amp; Queue Corridor Monitoring (25 Sites)</h3>
-              <p className="panel-desc">
-                Comprehensive multi-shrine surveillance matrix across Uttarakhand, Uttar Pradesh, Jammu &amp; Kashmir, Andhra Pradesh, Gujarat, Odisha, and more.
-              </p>
+      {/* ===================================================================== */}
+      {/* 5. ZONE MONITORING: ZONE RISK MONITORING                               */}
+      {/* ===================================================================== */}
+      <section className="gov-panel" id="gov-zone-monitoring">
+        <div className="gov-panel-header">
+          <div className="gov-panel-title">
+            <span>ZONE RISK MONITORING</span>
+            <span className="gov-panel-badge">Arterial Chokepoints</span>
+          </div>
+          <span className="gov-panel-sub">Haridwar Gateway Corridor AI Capacity &amp; Stampede Risk Matrix</span>
+        </div>
+
+        <div className="gov-zones-grid">
+          {/* ZONE A */}
+          <div className={`gov-zone-box ${isRerouteActive ? 'zone-safe' : 'zone-critical'}`}>
+            <div className="zone-box-header">
+              <div>
+                <div className="zone-code">ZONE A</div>
+                <div className="zone-title">Haridwar Main Sanctum Corridor</div>
+              </div>
+              <span className={`gov-status-badge ${isRerouteActive ? 'status-moderate' : 'status-critical'}`}>
+                {isRerouteActive ? 'MODERATE (58%)' : 'CRITICAL (92%)'}
+              </span>
+            </div>
+            <div className="zone-metrics-row">
+              <div className="zone-metric">
+                <span className="zm-lbl">Crowd</span>
+                <span className="zm-val font-mono">{isRerouteActive ? '8,700' : '13,800'}</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Capacity</span>
+                <span className="zm-val font-mono">15,000</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Risk Level</span>
+                <span className={`zm-val font-bold ${isRerouteActive ? 'text-amber' : 'text-danger'}`}>
+                  {isRerouteActive ? 'CONTROLLED' : 'STAMPEDE HAZARD'}
+                </span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Trend</span>
+                <span className="zm-val font-bold">{isRerouteActive ? '↓ Decreasing' : '↑ Surging (+840/hr)'}</span>
+              </div>
+            </div>
+            <div className="zone-action-box">
+              <span className="za-lbl">Recommended action:</span>
+              <span className="za-text">
+                {isRerouteActive
+                  ? 'Traffic successfully deflected via Zone C bypass artery'
+                  : 'Immediate emergency corridor rerouting required to avert surge bottleneck'}
+              </span>
             </div>
           </div>
 
-          <div className="table-controls">
-            {/* Search Input */}
+          {/* ZONE B */}
+          <div className="gov-zone-box zone-moderate">
+            <div className="zone-box-header">
+              <div>
+                <div className="zone-code">ZONE B</div>
+                <div className="zone-title">Neelkanth Mountain Pass</div>
+              </div>
+              <span className="gov-status-badge status-moderate">
+                HIGH (55%)
+              </span>
+            </div>
+            <div className="zone-metrics-row">
+              <div className="zone-metric">
+                <span className="zm-lbl">Crowd</span>
+                <span className="zm-val font-mono">4,400</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Capacity</span>
+                <span className="zm-val font-mono">8,000</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Risk Level</span>
+                <span className="zm-val font-bold text-amber">MODERATE FLOW</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Trend</span>
+                <span className="zm-val font-bold">→ Steady</span>
+              </div>
+            </div>
+            <div className="zone-action-box">
+              <span className="za-lbl">Recommended action:</span>
+              <span className="za-text">Maintain rapid barricades; staggered holding gates active at transit checkpoint 2</span>
+            </div>
+          </div>
+
+          {/* ZONE C */}
+          <div className="gov-zone-box zone-normal">
+            <div className="zone-box-header">
+              <div>
+                <div className="zone-code">ZONE C</div>
+                <div className="zone-title">Rishikesh Bypass Corridor</div>
+              </div>
+              <span className="gov-status-badge status-normal">
+                {isRerouteActive ? 'NORMAL (39%)' : 'NORMAL (22%)'}
+              </span>
+            </div>
+            <div className="zone-metrics-row">
+              <div className="zone-metric">
+                <span className="zm-lbl">Crowd</span>
+                <span className="zm-val font-mono">{isRerouteActive ? '4,740' : '2,640'}</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Capacity</span>
+                <span className="zm-val font-mono">12,000</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Risk Level</span>
+                <span className="zm-val font-bold text-success">OPTIMAL FLOW</span>
+              </div>
+              <div className="zone-metric">
+                <span className="zm-lbl">Trend</span>
+                <span className="zm-val font-bold">{isRerouteActive ? '↑ Absorbing load' : '→ Clear flow'}</span>
+              </div>
+            </div>
+            <div className="zone-action-box">
+              <span className="za-lbl">Recommended action:</span>
+              <span className="za-text">Designated relief artery receiving diverted traffic from Haridwar Highway</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 6. EMERGENCY REROUTE CONTROL                                          */}
+      {/* ===================================================================== */}
+      <section className={`gov-panel ${isRerouteActive ? 'panel-emergency-active' : ''}`} id="gov-reroute-control">
+        <div className="gov-panel-header">
+          <div className="gov-panel-title">
+            <span>EMERGENCY REROUTE CONTROL</span>
+            <span className={`gov-panel-badge ${isRerouteActive ? 'badge-danger' : 'badge-normal'}`}>
+              Status: {isRerouteActive ? 'ACTIVE' : 'STANDBY'}
+            </span>
+          </div>
+          <span className="gov-panel-sub">District Administration Corridor Override Protocol</span>
+        </div>
+
+        <div className="gov-reroute-details-grid">
+          <div className="reroute-detail-card">
+            <span className="rd-lbl">Current Status</span>
+            <span className={`rd-val font-bold ${isRerouteActive ? 'text-danger' : 'text-muted'}`}>
+              {isRerouteActive ? '🚨 CORRIDOR OVERRIDE ENFORCED' : '✓ STANDBY (NOMINAL)'}
+            </span>
+          </div>
+
+          <div className="reroute-detail-card">
+            <span className="rd-lbl">Affected Locations</span>
+            <span className="rd-val">Har Ki Pauri, Haridwar City Center, Zone A</span>
+          </div>
+
+          <div className="reroute-detail-card">
+            <span className="rd-lbl">Routes Affected</span>
+            <span className="rd-val">NH-334 Arterial Highway &amp; Ganga Canal Approach</span>
+          </div>
+
+          <div className="reroute-detail-card">
+            <span className="rd-lbl">Buses Redirected</span>
+            <span className="rd-val font-bold text-navy">14 Partner Buses (420 Seats)</span>
+          </div>
+
+          <div className="reroute-detail-card">
+            <span className="rd-lbl">Activation Time</span>
+            <span className="rd-val font-mono">{emergencyTimestamp || 'Not Active'}</span>
+          </div>
+        </div>
+
+        <div className="gov-reroute-actions-bar">
+          <div className="reroute-explanation">
+            {isRerouteActive ? (
+              <span className="text-danger font-semibold">
+                ⚠ All connected tourist, travel operator, and hotel dashboards are currently receiving real-time emergency diversion instructions via Supabase Realtime.
+              </span>
+            ) : (
+              <span className="text-slate font-normal">
+                Triggering emergency corridor diversion re-routes all incoming highway traffic from Haridwar City Center to peripheral satellite parking (BHEL Ground / Rishikesh Bypass).
+              </span>
+            )}
+          </div>
+
+          <div className="reroute-buttons-group">
+            {isRerouteActive ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleLiftEmergency}
+                  disabled={isRecalculating}
+                  className="btn-gov-primary de-escalate"
+                >
+                  {isRecalculating ? 'PROCESSING...' : 'DEACTIVATE REROUTE'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetSimulation}
+                  className="btn-gov-secondary"
+                >
+                  ↺ Reset Simulation
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleActivateEmergency}
+                disabled={isRecalculating}
+                className="btn-gov-primary activate"
+              >
+                {isRecalculating ? 'ACTIVATING...' : 'ACTIVATE REROUTE'}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 7. BEFORE / AFTER IMPACT (Analytical Assessment)                      */}
+      {/* ===================================================================== */}
+      <section className="gov-panel" id="gov-impact-analysis">
+        <div className="gov-panel-header">
+          <div className="gov-panel-title">
+            <span>BEFORE / AFTER IMPACT</span>
+            <span className="gov-panel-badge">Corridor Telemetry Assessment</span>
+          </div>
+          <span className="gov-panel-sub">Comparative metrics of algorithmic crowd deflection and load shedding</span>
+        </div>
+
+        <div className="gov-impact-matrix">
+          <table className="gov-impact-table">
+            <thead>
+              <tr>
+                <th>METRIC</th>
+                <th>BEFORE REROUTE</th>
+                <th>AFTER REROUTE</th>
+                <th>NET REDUCTION</th>
+                <th>EVALUATION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="font-semibold text-navy">Crowd Headcount (Zone A)</td>
+                <td className="font-mono text-danger font-bold">18,420</td>
+                <td className="font-mono text-success font-bold">11,240</td>
+                <td className="font-mono font-bold">-7,180 Pilgrims</td>
+                <td><span className="gov-status-badge status-normal">Stabilized</span></td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-navy">Corridor Occupancy</td>
+                <td className="font-mono text-danger font-bold">91%</td>
+                <td className="font-mono text-success font-bold">62%</td>
+                <td className="font-mono font-bold">-29% Points</td>
+                <td><span className="gov-status-badge status-normal">Safe Margin</span></td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-navy">Estimated Wait Time</td>
+                <td className="font-mono text-danger font-bold">48 min</td>
+                <td className="font-mono text-success font-bold">21 min</td>
+                <td className="font-mono font-bold">-27 min (-56%)</td>
+                <td><span className="gov-status-badge status-normal">Optimal Flow</span></td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-navy">Stampede Risk Profile</td>
+                <td className="font-bold text-danger">CRITICAL</td>
+                <td className="font-bold text-amber">MODERATE</td>
+                <td className="font-bold text-success">Hazard Averted</td>
+                <td><span className="gov-status-badge status-normal">0 Incident Risk</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="gov-impact-kpis">
+          <div className="impact-kpi-item">
+            <span className="ik-lbl">Congestion Reduction</span>
+            <span className="ik-num text-success">-29% to -34%</span>
+            <span className="ik-sub">Peak corridor relief</span>
+          </div>
+          <div className="impact-kpi-item">
+            <span className="ik-lbl">Tourists Diverted</span>
+            <span className="ik-num text-navy">350</span>
+            <span className="ik-sub">Pilgrims safely rerouted</span>
+          </div>
+          <div className="impact-kpi-item">
+            <span className="ik-lbl">Partner Buses Deployed</span>
+            <span className="ik-num text-navy">14</span>
+            <span className="ik-sub">Active transit shuttles</span>
+          </div>
+          <div className="impact-kpi-item">
+            <span className="ik-lbl">Shelter Properties</span>
+            <span className="ik-num text-navy">22</span>
+            <span className="ik-sub">Partner hotels allocated</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 8. PILGRIMAGE SITE MONITORING (ALL 25 SITES)                          */}
+      {/* ===================================================================== */}
+      <section className="gov-panel" id="gov-shrine-table">
+        <div className="gov-panel-header">
+          <div className="gov-panel-title">
+            <span>PILGRIMAGE SITE MONITORING</span>
+            <span className="gov-panel-badge">25 Sacred Sites (TS001–TS025)</span>
+          </div>
+          <span className="gov-panel-sub">National multi-state pilgrimage corridor surveillance matrix</span>
+        </div>
+
+        {/* Filter Controls Bar */}
+        <div className="gov-filter-bar">
+          <div className="filter-search-box">
+            <span className="search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search shrine, city, state..."
+              placeholder="Search by site ID, shrine name, district, state..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="table-search-input"
+              className="gov-search-input"
             />
+          </div>
 
-            {/* State Filter */}
+          <div className="filter-dropdown-group">
             <select
               value={stateFilter}
               onChange={(e) => setStateFilter(e.target.value)}
-              className="table-filter-select"
+              className="gov-filter-select"
             >
               {uniqueStates.map((st) => (
                 <option key={st} value={st}>
@@ -1451,14 +1148,13 @@ export default function GovernmentDashboard({
               ))}
             </select>
 
-            {/* Status Filter Buttons */}
-            <div className="status-filter-pills">
+            <div className="filter-status-pills">
               {['ALL', 'NORMAL', 'MODERATE', 'HIGH', 'CRITICAL'].map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => setStatusFilter(s)}
-                  className={`filter-pill ${statusFilter === s ? 'active' : ''} ${s.toLowerCase()}`}
+                  className={`btn-filter-pill ${statusFilter === s ? 'active' : ''}`}
                 >
                   {s}
                 </button>
@@ -1467,63 +1163,68 @@ export default function GovernmentDashboard({
           </div>
         </div>
 
-        <div className="table-wrapper">
-          <table className="gov-telemetry-table">
+        {/* Dense Shrine Table */}
+        <div className="gov-table-container">
+          <table className="gov-shrine-dense-table">
             <thead>
               <tr>
-                <th>Site ID</th>
-                <th>Shrine Name</th>
-                <th>State / Region</th>
-                <th>Live Headcount</th>
-                <th>Capacity</th>
-                <th>Occupancy %</th>
-                <th>Status</th>
-                <th>Est. Wait</th>
-                <th>Action</th>
+                <th>SITE</th>
+                <th>DISTRICT</th>
+                <th>CURRENT CROWD</th>
+                <th>CAPACITY</th>
+                <th>OCCUPANCY</th>
+                <th>STATUS</th>
+                <th>LAST UPDATE</th>
+                <th>ACTION</th>
               </tr>
             </thead>
             <tbody>
               {filteredSites.map((s) => {
                 const isSelected = s.id === updateSiteId;
                 return (
-                  <tr key={s.id} className={isSelected ? 'row-selected' : ''}>
-                    <td className="font-mono font-bold">{s.id}</td>
-                    <td className="font-semibold text-primary">
-                      {s.name}
-                      <span className="shrine-city-sub">{s.city}</span>
-                    </td>
-                    <td>{s.state}</td>
-                    <td className="font-mono font-bold text-dark">
-                      {s.people_count.toLocaleString()}
-                    </td>
-                    <td className="font-mono text-muted">{s.capacity?.toLocaleString() || '10,000'}</td>
+                  <tr key={s.id} className={isSelected ? 'is-selected-row' : ''}>
                     <td>
-                      <div className="table-occupancy-bar-wrapper">
-                        <div className="table-bar-bg">
-                          <div
-                            className={`table-bar-fill ${s.status.toLowerCase()}`}
-                            style={{ width: `${Math.min(100, s.occupancy_percentage)}%` }}
-                          ></div>
-                        </div>
-                        <span className="table-bar-text">{s.occupancy_percentage}%</span>
+                      <div className="site-identity">
+                        <span className="site-id-badge font-mono">{s.id}</span>
+                        <span className="site-name-text">{s.name}</span>
                       </div>
                     </td>
                     <td>
-                      <span className={`gov-status-badge ${s.status.toLowerCase()}`}>
+                      <span className="district-text">{s.city || s.state}</span>
+                      <span className="state-sub">({s.state})</span>
+                    </td>
+                    <td className="font-mono font-bold text-navy">
+                      {s.people_count.toLocaleString()}
+                    </td>
+                    <td className="font-mono text-muted">
+                      {(s.capacity || 10000).toLocaleString()}
+                    </td>
+                    <td>
+                      <div className="shrine-occ-cell">
+                        <div className="shrine-occ-bar-track">
+                          <div
+                            className={`shrine-occ-bar-fill status-${s.status.toLowerCase()}`}
+                            style={{ width: `${Math.min(100, s.occupancy_percentage)}%` }}
+                          ></div>
+                        </div>
+                        <span className="shrine-occ-pct font-mono">{s.occupancy_percentage}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`gov-status-badge status-${s.status.toLowerCase()}`}>
                         {s.status}
                       </span>
                     </td>
-                    <td className="font-bold">
-                      ⏱️ {s.estimated_wait_mins} min
+                    <td className="text-muted font-mono text-xs">
+                      Live (2s ago)
                     </td>
                     <td>
                       <button
                         type="button"
                         onClick={() => handleInspect(s)}
-                        className="table-action-btn"
-                        title="Load into Telemetry Update form"
+                        className="btn-shrine-inspect"
                       >
-                        Inspect &amp; Update ➔
+                        Inspect
                       </button>
                     </td>
                   </tr>
@@ -1532,124 +1233,450 @@ export default function GovernmentDashboard({
             </tbody>
           </table>
         </div>
-      </div>
+      </section>
 
-      {/* 9. BOTTOM SECTION: PILGRIMAGE HOSPITALITY & HOTEL CAPACITY REPORT (PRESERVED) */}
-      {hotelReport && (
-        <div className="gov-card-panel hospitality-report-panel" id="gov-hotels">
-          <div className="panel-header">
-            <div className="panel-title-box">
-              <span className="panel-icon">🏨</span>
-              <div>
-                <h3 className="panel-title">City-Wide Pilgrimage Hospitality &amp; Lodge Capacity Report</h3>
-                <p className="panel-desc">
-                  Telemetry from registered temple ashrams, guest houses, and hotels (via <code>GET /hotels/government/occupancy-report</code>).
-                </p>
-              </div>
-            </div>
-            <div className="hospitality-occupancy-pill">
-              Overall Lodging Occupancy: <strong>{hotelReport.overall_occupancy_percentage}%</strong>
-            </div>
+      {/* ===================================================================== */}
+      {/* 9. MULTI-AGENCY OPERATIONS                                            */}
+      {/* ===================================================================== */}
+      <section className="gov-panel" id="gov-multi-agency">
+        <div className="gov-panel-header">
+          <div className="gov-panel-title">
+            <span>MULTI-AGENCY OPERATIONS</span>
+            <span className="gov-panel-badge">Inter-Departmental Command</span>
           </div>
-
-          <div className="hotel-report-stats-grid">
-            <div className="report-stat-item">
-              <span className="stat-label">Total Verified Lodges</span>
-              <span className="stat-num">{hotelReport.total_hotels} Properties</span>
-            </div>
-            <div className="report-stat-item">
-              <span className="stat-label">Total City Room Inventory</span>
-              <span className="stat-num">{hotelReport.total_capacity_rooms} Rooms</span>
-            </div>
-            <div className="report-stat-item">
-              <span className="stat-label">Available Vacancies</span>
-              <span className="stat-num text-success">{hotelReport.total_available_rooms} Rooms</span>
-            </div>
-            <div className="report-stat-item">
-              <span className="stat-label">Occupied / Booked</span>
-              <span className="stat-num text-warning">{hotelReport.total_booked_rooms} Rooms</span>
-            </div>
-          </div>
-
-          <div className="hotels-mini-grid">
-            {hotelReport.hotels?.slice(0, 4).map((h) => {
-              const total = h.rooms?.reduce((acc, r) => acc + r.total_rooms, 0) || 0;
-              const avail = h.rooms?.reduce((acc, r) => acc + r.available_rooms, 0) || 0;
-              const occ = total > 0 ? Math.round(((total - avail) / total) * 100) : 0;
-              return (
-                <div key={h.id} className="hotel-mini-card">
-                  <div className="hotel-mini-title-row">
-                    <span className="hotel-name">{h.name}</span>
-                    <span className="hotel-verified-tag">✓ VERIFIED</span>
-                  </div>
-                  <p className="hotel-addr">{h.address}</p>
-                  <div className="hotel-stat-row">
-                    <span>Rooms: {avail} / {total} Avail</span>
-                    <span className={`hotel-occ-tag ${occ > 80 ? 'high' : 'normal'}`}>{occ}% Occ</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <span className="gov-panel-sub">Integrated dispatch and logistics telemetry for unified administration</span>
         </div>
-      )}
 
-      {/* 10. INSPECT SITE MODAL DRAWER (PRESERVED) */}
-      {inspectSite && (
-        <div className="modal-backdrop" onClick={() => setInspectSite(null)}>
-          <div className="modal-content gov-inspect-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span style={{ fontSize: '1.4rem' }}>🏛️</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '700', color: '#0F172A' }}>
-                    {inspectSite.name} Telemetry &amp; Buffer Governance
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '0.8rem', color: '#64748B' }}>
-                    Site ID: {inspectSite.id} • {inspectSite.city}, {inspectSite.state}
-                  </p>
+        {/* Agency Navigation Tabs */}
+        <div className="agency-tabs-nav">
+          <button
+            type="button"
+            onClick={() => setActiveAgencyTab('police')}
+            className={`agency-tab-btn ${activeAgencyTab === 'police' ? 'active' : ''}`}
+          >
+            POLICE
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveAgencyTab('transport')}
+            className={`agency-tab-btn ${activeAgencyTab === 'transport' ? 'active' : ''}`}
+          >
+            TRANSPORT
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveAgencyTab('health')}
+            className={`agency-tab-btn ${activeAgencyTab === 'health' ? 'active' : ''}`}
+          >
+            HEALTH
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveAgencyTab('disaster')}
+            className={`agency-tab-btn ${activeAgencyTab === 'disaster' ? 'active' : ''}`}
+          >
+            DISASTER MANAGEMENT
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveAgencyTab('municipal')}
+            className={`agency-tab-btn ${activeAgencyTab === 'municipal' ? 'active' : ''}`}
+          >
+            MUNICIPAL
+          </button>
+        </div>
+
+        <div className="agency-tab-content">
+          {/* 1. POLICE TAB */}
+          {activeAgencyTab === 'police' && (
+            <div className="agency-cards-grid">
+              <div className="agency-card">
+                <div className="agency-card-title">Police Deployment &amp; Platoons</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">PAC Platoons Stationed</span>
+                    <span className="ak-val font-semibold">4 Platoons (120 Officers)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Traffic Constabulary</span>
+                    <span className="ak-val font-semibold">48 Traffic Personnel</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">AI Drone Surveillance</span>
+                    <span className="ak-val font-semibold">6 Aerial Drones Active</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Rapid Barricades</span>
+                    <span className="ak-val font-semibold">12 Active Checkpoints</span>
+                  </div>
                 </div>
               </div>
-              <button className="close-btn" onClick={() => setInspectSite(null)}>✕</button>
-            </div>
 
-            <div className="inspect-body-grid">
-              <div className="inspect-stat-box">
-                <span className="lbl">Maximum Safe Capacity</span>
-                <span className="val">{inspectSite.capacity?.toLocaleString()} devotees</span>
+              <div className="agency-card">
+                <div className="agency-card-title">Chokepoint Security Telemetry</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Zone A Influx Rate</span>
+                    <span className="ak-val font-bold text-danger">{isRerouteActive ? 'Controlled' : '+840 Yatris/hr'}</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Average PCR Response Time</span>
+                    <span className="ak-val font-semibold font-mono">4.2 Minutes</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Active 112 Mobile Patrols</span>
+                    <span className="ak-val font-semibold">8 PCR Vans on Route</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">CCTV Face Recognition</span>
+                    <span className="ak-val font-semibold text-success">Online &amp; Logging</span>
+                  </div>
+                </div>
               </div>
-              <div className="inspect-stat-box">
-                <span className="lbl">Current Headcount</span>
-                <span className="val font-mono">{inspectSite.people_count?.toLocaleString()}</span>
-              </div>
-              <div className="inspect-stat-box">
-                <span className="lbl">Occupancy Level</span>
-                <span className={`val ${inspectSite.status.toLowerCase()}`}>
-                  {inspectSite.occupancy_percentage}% ({inspectSite.status})
-                </span>
-              </div>
-              <div className="inspect-stat-box">
-                <span className="lbl">Estimated Queue Time</span>
-                <span className="val">⏱️ {inspectSite.estimated_wait_mins} mins</span>
+
+              <div className="agency-card">
+                <div className="agency-card-title">Active Distress Signals</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Total Logged Beacons</span>
+                    <span className="ak-val font-bold">{sosAlerts.length}</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Pending Rescue Dispatch</span>
+                    <span className="ak-val font-bold text-danger">{activeSOSCount}</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Emergency Band Link</span>
+                    <span className="ak-val font-semibold text-success">112 Dispatch Interlinked</span>
+                  </div>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="inspect-actions">
+          {/* 2. TRANSPORT TAB */}
+          {activeAgencyTab === 'transport' && (
+            <div className="agency-cards-grid">
+              <div className="agency-card">
+                <div className="agency-card-title">Fleet Allocation (Buses)</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Partner Fleet Total</span>
+                    <span className="ak-val font-bold font-mono">14 Partner Buses</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Total Seat Capacity</span>
+                    <span className="ak-val font-mono">420 Passengers</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Current Passenger Load</span>
+                    <span className="ak-val font-bold text-navy">{isRerouteActive ? '350 Diverted Yatris' : '0 (Standby)'}</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Deployment State</span>
+                    <span className={`ak-val font-semibold ${isRerouteActive ? 'text-success' : 'text-muted'}`}>
+                      {isRerouteActive ? '14 / 14 En Route to BHEL Hub' : 'Standby at Rishikesh Depots'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="agency-card">
+                <div className="agency-card-title">Corridor Transit Efficiency</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Bypass Artery Transit Time</span>
+                    <span className="ak-val font-mono">38 Minutes (Zone C)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Choked Main Highway Time</span>
+                    <span className="ak-val font-mono text-danger">145 Minutes (Congested)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Net Travel Time Saved</span>
+                    <span className="ak-val font-bold text-success font-mono">107 Minutes / Yatri</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">FASTag Emergency Override</span>
+                    <span className="ak-val font-semibold text-success">Active at 4 Toll Plazas</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. HEALTH TAB */}
+          {activeAgencyTab === 'health' && (
+            <div className="agency-cards-grid">
+              <div className="agency-card">
+                <div className="agency-card-title">Medical Relief Camps &amp; Oxygen Posts</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">High-Altitude Triage Posts</span>
+                    <span className="ak-val font-bold">5 Active Centers</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Available Oxygen Cylinders</span>
+                    <span className="ak-val font-bold font-mono">120 Beds Ready</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Mobile Trauma Stretchers</span>
+                    <span className="ak-val font-mono">18 Units Deployed</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">First Aid Health Marshals</span>
+                    <span className="ak-val font-semibold">32 Registered Personnel</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="agency-card">
+                <div className="agency-card-title">Emergency Ambulances &amp; Hospital Link</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">108 Ambulances on Standby</span>
+                    <span className="ak-val font-bold">8 Ambulances (Sector 4)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">AIIMS Rishikesh Green Corridor</span>
+                    <span className="ak-val font-semibold text-success">Operational &amp; Clear</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Helipad Evacuation Readiness</span>
+                    <span className="ak-val font-semibold text-success">100% Ready</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 4. DISASTER MANAGEMENT TAB */}
+          {activeAgencyTab === 'disaster' && (
+            <div className="agency-cards-grid">
+              <div className="agency-card">
+                <div className="agency-card-title">NDRF / SDRF Rapid Units</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">NDRF Quick Reaction Teams</span>
+                    <span className="ak-val font-bold">3 Teams (45 Personnel)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">SDRF River Patrol Motorboats</span>
+                    <span className="ak-val font-bold">8 Inflatable Boats</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">High-Angle Rope Rescue</span>
+                    <span className="ak-val font-semibold">2 Squads on Standby</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="agency-card">
+                <div className="agency-card-title">Hydrological &amp; Weather Sensors</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Alaknanda Water Flow</span>
+                    <span className="ak-val font-mono">18,200 cusecs (Safe)</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Mandakini Flood Gauges</span>
+                    <span className="ak-val font-semibold text-success">Green Baseline Level</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Landslide Risk (Rudraprayag)</span>
+                    <span className="ak-val font-semibold text-amber">Sensor Level 2 (Moderate)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 5. MUNICIPAL TAB */}
+          {activeAgencyTab === 'municipal' && (
+            <div className="agency-cards-grid">
+              <div className="agency-card">
+                <div className="agency-card-title">Pilgrimage Lodging &amp; Hospitality (Real API)</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Total Registered Lodges</span>
+                    <span className="ak-val font-bold">{hotelReport?.total_hotels || 11} Properties</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Total City Room Inventory</span>
+                    <span className="ak-val font-mono">{hotelReport?.total_capacity_rooms || 73} Rooms</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Available Room Vacancies</span>
+                    <span className="ak-val font-bold text-success font-mono">
+                      {hotelReport?.total_available_rooms || 51} Rooms
+                    </span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Overall Lodging Occupancy</span>
+                    <span className="ak-val font-bold font-mono">
+                      {hotelReport?.overall_occupancy_percentage || 30}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="agency-card">
+                <div className="agency-card-title">Water, Food &amp; Sanitation Infrastructure</div>
+                <div className="agency-key-vals">
+                  <div className="ak-row">
+                    <span className="ak-lbl">Free Temple Water ATMs</span>
+                    <span className="ak-val font-semibold font-mono">48 Units Operating</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Subsidized Bhojanalayas</span>
+                    <span className="ak-val font-semibold font-mono">16 Feeding Centers</span>
+                  </div>
+                  <div className="ak-row">
+                    <span className="ak-lbl">Waste Management Teams</span>
+                    <span className="ak-val font-semibold">24/7 Sweep Active</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ===================================================================== */}
+      {/* 10. INSPECTION MODAL DOSSIER                                          */}
+      {/* ===================================================================== */}
+      {inspectSite && (
+        <div className="gov-modal-backdrop" onClick={() => setInspectSite(null)}>
+          <div className="gov-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="gov-modal-header">
+              <div className="modal-title-wrap">
+                <span className="modal-icon">🏛️</span>
+                <div>
+                  <h3 className="modal-heading">
+                    {inspectSite.name}
+                  </h3>
+                  <div className="modal-sub">
+                    Site ID: {inspectSite.id} • {inspectSite.city}, {inspectSite.state}
+                  </div>
+                </div>
+              </div>
               <button
                 type="button"
-                className="inspect-primary-btn"
+                className="gov-modal-close"
+                onClick={() => setInspectSite(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="gov-modal-body">
+              <div className="modal-stats-grid">
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Safe Holding Capacity</span>
+                  <span className="ms-val font-mono">{(inspectSite.capacity || 10000).toLocaleString()} devotees</span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Live Devotee Headcount</span>
+                  <span className="ms-val font-mono font-bold text-navy">{inspectSite.people_count?.toLocaleString()}</span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Current Occupancy</span>
+                  <span className={`ms-val font-bold status-${inspectSite.status.toLowerCase()}`}>
+                    {inspectSite.occupancy_percentage}% ({inspectSite.status})
+                  </span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Estimated Queue Time</span>
+                  <span className="ms-val font-mono">⏱️ {inspectSite.estimated_wait_mins} mins</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="gov-modal-footer">
+              <button
+                type="button"
+                className="btn-modal-action"
                 onClick={() => {
                   onSelectSite && onSelectSite(inspectSite.id);
                   setInspectSite(null);
-                  window.scrollTo({ top: 120, behavior: 'smooth' });
+                  window.scrollTo({ top: 180, behavior: 'smooth' });
                 }}
               >
-                Focus in Telemetry Form ➔
+                Load into Telemetry Broadcast Form ➔
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* ===================================================================== */}
+      {/* 11. SOS BEACON VIEW MODAL                                             */}
+      {/* ===================================================================== */}
+      {viewingAlert && (
+        <div className="gov-modal-backdrop" onClick={() => setViewingAlert(null)}>
+          <div className="gov-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="gov-modal-header">
+              <div className="modal-title-wrap">
+                <span className="modal-icon text-danger">🚨</span>
+                <div>
+                  <h3 className="modal-heading">Distress Beacon {viewingAlert.id}</h3>
+                  <div className="modal-sub">
+                    Emergency Signal • {viewingAlert.emergency_type}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="gov-modal-close"
+                onClick={() => setViewingAlert(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="gov-modal-body">
+              <div className="modal-stats-grid">
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Pilgrim Name / ID</span>
+                  <span className="ms-val font-semibold">{viewingAlert.user_name || viewingAlert.user_id}</span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Phone Contact</span>
+                  <span className="ms-val font-mono">{viewingAlert.phone || 'Emergency Band'}</span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Location Coordinates</span>
+                  <span className="ms-val font-mono">
+                    {viewingAlert.latitude?.toFixed(4)}, {viewingAlert.longitude?.toFixed(4)}
+                  </span>
+                </div>
+                <div className="m-stat-box">
+                  <span className="ms-lbl">Current Status</span>
+                  <span className={`ms-val font-bold ${viewingAlert.status === 'ACTIVE' ? 'text-danger' : 'text-success'}`}>
+                    {viewingAlert.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="gov-modal-footer">
+              {viewingAlert.status === 'ACTIVE' && (
+                <button
+                  type="button"
+                  className="btn-modal-action dispatch"
+                  onClick={() => {
+                    handleDispatchRescue(viewingAlert.id);
+                    setViewingAlert(null);
+                  }}
+                >
+                  Dispatch Rescue Team (112 / SDRF)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
