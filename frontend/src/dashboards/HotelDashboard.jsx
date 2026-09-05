@@ -82,6 +82,37 @@ const BASELINE_STATE = {
   category: 'Rerouted Transit'
 };
 
+
+// Formatting & Duration Calculation Helpers for Dynamic Hourly Pricing
+const formatDateTimeDisplay = (isoStr) => {
+  if (!isoStr) return '';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year}, ${hours}:${mins}`;
+  } catch {
+    return isoStr;
+  }
+};
+
+const calculateHoursBetween = (inStr, outStr) => {
+  try {
+    const dIn = new Date(inStr);
+    const dOut = new Date(outStr);
+    const diffSec = Math.max(0, (dOut - dIn) / 1000);
+    const h = Math.round((diffSec / 3600) * 10) / 10;
+    return h > 0 ? (h % 1 === 0 ? Math.round(h) : h) : 21;
+  } catch {
+    return 21;
+  }
+};
+
 export default function HotelDashboard({ currentUser, showToast }) {
   const [state, setState] = useState(BASELINE_STATE);
 
@@ -816,112 +847,206 @@ export default function HotelDashboard({ currentUser, showToast }) {
             </div>
           )}
 
-          {/* Requests List */}
+          {/* Requests List: Redesigned with Dynamic Hourly Pricing & Crowd Insights (Section 6) */}
           {filteredRequests.length === 0 ? (
             <div className="no-requests-message">
               No booking requests found in this category.
             </div>
           ) : (
             <div className="requests-grid">
-              {filteredRequests.map((req) => (
-                <div key={req.id} className={`owner-req-card ${req.status}`}>
-                  <div className="req-card-top">
-                    <div>
+              {filteredRequests.map((req) => {
+                const durationHours = req.duration_hours || calculateHoursBetween(req.check_in, req.check_out);
+                const rType = req.room_type || 'Deluxe';
+                const baseRate = req.base_hourly_rate || (rType.toLowerCase().includes('standard') ? 40 : (rType.toLowerCase().includes('family') ? 70 : 50));
+                const multiplier = req.pricing_multiplier || (state.isRerouteSpikeActive ? 1.5 : 1.5);
+                const currentHourlyRate = req.final_hourly_rate || req.dynamic_hourly_rate || Math.round(baseRate * multiplier);
+                const totalAmount = req.total_amount || req.price || Math.round(durationHours * currentHourlyRate);
+                const siteName = req.site_name || 'Kashi Vishwanath';
+                const crowdPct = req.crowd_density_at_booking ? Math.round(req.crowd_density_at_booking * 100) : 87;
+                const demandLevel = req.crowd_level_at_booking || (crowdPct >= 85 ? 'HIGH' : (crowdPct >= 50 ? 'MODERATE' : 'NORMAL'));
+
+                return (
+                  <div key={req.id} className={`owner-req-card ${req.status}`}>
+                    {/* Top Section */}
+                    <div className="req-card-header-block">
+                      <div className="req-card-meta-top">
+                        <span className="req-card-title-tag">INCOMING BOOKING REQUEST</span>
+                        <div className="req-status-pill-wrap">
+                          {req.status === 'pending' && (
+                            <span className="status-badge pending">
+                              <span className="dot animate-pulse"></span> PENDING REVIEW
+                            </span>
+                          )}
+                          {req.status === 'confirmed' && (
+                            <span className="status-badge confirmed">
+                              ✓ CONFIRMED &amp; BOOKED
+                            </span>
+                          )}
+                          {req.status === 'declined' && (
+                            <span className="status-badge declined">
+                              ✕ DECLINED
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
                       <div className="req-refs-row">
                         <span className="badge-req-id">{req.id}</span>
-                        <span className="badge-booking-id">{req.booking_id}</span>
+                        <span className="badge-booking-id">REF: {req.booking_id}</span>
                       </div>
+
                       <h4 className="req-guest-title">
                         {req.guest_name}
                         <span className="req-party-sub">({req.guest_count} Guests)</span>
                       </h4>
+
                       <div className="req-room-pill">
-                        Requested: <strong>Room #{req.room_number} ({req.room_type})</strong>
+                        Requested: <strong>Room #{req.room_number} ({rType})</strong>
+                      </div>
+
+                      {req.special_request && (
+                        <div className="req-special-note-owner">
+                          Special Request: <strong>"{req.special_request}"</strong>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="req-card-divider"></div>
+
+                    {/* SECTION 1: TIME WINDOW */}
+                    <div className="req-card-section">
+                      <div className="section-label-header">
+                        <span className="section-dot"></span> TIME WINDOW
+                      </div>
+                      <div className="time-window-display">
+                        <div className="time-endpoint">
+                          <span className="time-point-label">Check-in</span>
+                          <strong className="time-point-val">{formatDateTimeDisplay(req.check_in)}</strong>
+                        </div>
+                        <div className="time-arrow-divider">→</div>
+                        <div className="time-endpoint">
+                          <span className="time-point-label">Check-out</span>
+                          <strong className="time-point-val">{formatDateTimeDisplay(req.check_out)}</strong>
+                        </div>
+                      </div>
+                      <div className="duration-pill-row">
+                        <span className="duration-label">Duration:</span>
+                        <strong className="duration-value">{durationHours} hours</strong>
                       </div>
                     </div>
 
-                    <div className="req-status-box">
-                      {req.status === 'pending' && (
-                        <span className="status-badge pending">
-                          <span className="dot animate-pulse"></span> Pending Review
-                        </span>
-                      )}
-                      {req.status === 'confirmed' && (
-                        <span className="status-badge confirmed">
-                          ✓ Confirmed &amp; Booked
-                        </span>
-                      )}
-                      {req.status === 'declined' && (
-                        <span className="status-badge declined">
-                          ✕ Declined
-                        </span>
-                      )}
-                      <div className="req-amount">₹{req.price?.toLocaleString('en-IN')}</div>
+                    <div className="req-card-divider"></div>
+
+                    {/* SECTION 2: DYNAMIC PRICING */}
+                    <div className="req-card-section pricing-section">
+                      <div className="section-label-header">
+                        <span className="section-dot"></span> DYNAMIC PRICING
+                      </div>
+                      <div className="pricing-grid-breakdown">
+                        <div className="price-item-row">
+                          <span className="price-label">Base Rate:</span>
+                          <span className="price-val">₹{baseRate} / hour</span>
+                        </div>
+                        <div className="price-item-row">
+                          <span className="price-label">Crowd Multiplier:</span>
+                          <span className="price-val multiplier-val">{multiplier}×</span>
+                        </div>
+                        <div className="price-item-row">
+                          <span className="price-label">Current Rate:</span>
+                          <span className="price-val highlight-rate">₹{currentHourlyRate} / hour</span>
+                        </div>
+                        <div className="price-item-row">
+                          <span className="price-label">Total Duration:</span>
+                          <span className="price-val">{durationHours} hours</span>
+                        </div>
+                        <div className="price-total-highlight-row">
+                          <span className="total-label">TOTAL AMOUNT:</span>
+                          <span className="total-amount-val">₹{totalAmount.toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
                     </div>
+
+                    <div className="req-card-divider"></div>
+
+                    {/* SECTION 3: CROWD & DEMAND INSIGHTS */}
+                    <div className="req-card-section crowd-insights-section">
+                      <div className="section-label-header">
+                        <span className="section-dot"></span> CROWD &amp; DEMAND INSIGHTS
+                      </div>
+                      <div className="crowd-insights-grid">
+                        <div className="crowd-item-row">
+                          <span className="crowd-label">Nearby Pilgrimage Site:</span>
+                          <strong className="crowd-val-bold">{siteName}</strong>
+                        </div>
+                        <div className="crowd-item-row">
+                          <span className="crowd-label">Current Crowd:</span>
+                          <span className="crowd-val-pill">
+                            <span className="crowd-val-num">{crowdPct}% capacity</span>
+                          </span>
+                        </div>
+                        <div className="crowd-item-row">
+                          <span className="crowd-label">Demand:</span>
+                          <span className={`demand-level-pill ${demandLevel.toLowerCase()}`}>
+                            {demandLevel}
+                          </span>
+                        </div>
+                        <div className="crowd-item-row">
+                          <span className="crowd-label">Pricing Multiplier:</span>
+                          <span className="multiplier-badge-tag">{multiplier}×</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {req.decline_reason && (
+                      <div className="req-reason-row">
+                        Reason: <em>{req.decline_reason}</em>
+                      </div>
+                    )}
+
+                    {/* Owner Action Buttons */}
+                    {req.status === 'pending' && (
+                      <div className="req-owner-actions">
+                        <button
+                          type="button"
+                          onClick={() => handleAcceptRequest(req)}
+                          className="btn-owner-accept"
+                        >
+                          ✓ ACCEPT &amp; ASSIGN ROOM
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeclineDialogReqId(req.id)}
+                          className="btn-owner-decline"
+                        >
+                          ✕ DECLINE
+                        </button>
+                      </div>
+                    )}
+
+                    {req.status === 'confirmed' && (
+                      <div className="req-confirmed-footer">
+                        <span>Room #{req.room_number} assigned. Rate: ₹{currentHourlyRate}/h (Total: ₹{totalAmount.toLocaleString('en-IN')}).</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setState(prev => ({
+                              ...prev,
+                              bookingRef: req.booking_id,
+                              guestName: req.guest_name,
+                              partySize: req.guest_count,
+                              roomAssigned: `#${req.room_number} ${rType} Ganga View`
+                            }));
+                            if (showToast) showToast(`Loaded ${req.booking_id} in QR Terminal.`);
+                          }}
+                          className="btn-load-terminal"
+                        >
+                          Load in QR Desk ➔
+                        </button>
+                      </div>
+                    )}
                   </div>
-
-                  <div className="req-time-row">
-                    <span className="time-icon">🕒</span>
-                    <span>
-                      Window: <strong>{req.check_in.replace('T', ' ').slice(0, 16)}</strong> → <strong>{req.check_out.replace('T', ' ').slice(0, 16)}</strong>
-                    </span>
-                  </div>
-
-                  {req.special_request && (
-                    <div className="req-special-note-owner" style={{ marginTop: '6px', fontSize: '12.5px', color: '#4338ca', background: '#eef2ff', padding: '5px 10px', borderRadius: '6px', borderLeft: '3px solid #6366f1' }}>
-                      Special Request: <strong>"{req.special_request}"</strong>
-                    </div>
-                  )}
-
-                  {req.decline_reason && (
-                    <div className="req-reason-row">
-                      Reason: <em>{req.decline_reason}</em>
-                    </div>
-                  )}
-
-                  {/* Owner Action Buttons */}
-                  {req.status === 'pending' && (
-                    <div className="req-owner-actions">
-                      <button
-                        type="button"
-                        onClick={() => handleAcceptRequest(req)}
-                        className="btn-owner-accept"
-                      >
-                        ✓ ACCEPT &amp; ASSIGN ROOM
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeclineDialogReqId(req.id)}
-                        className="btn-owner-decline"
-                      >
-                        ✕ DECLINE
-                      </button>
-                    </div>
-                  )}
-
-                  {req.status === 'confirmed' && (
-                    <div className="req-confirmed-footer">
-                      <span>Room #{req.room_number} assigned. Room slot updated to BOOKED.</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setState(prev => ({
-                            ...prev,
-                            bookingRef: req.booking_id,
-                            guestName: req.guest_name,
-                            partySize: req.guest_count,
-                            roomAssigned: `#${req.room_number} ${req.room_type} Ganga View`
-                          }));
-                          if (showToast) showToast(`Loaded ${req.booking_id} in QR Terminal.`);
-                        }}
-                        className="btn-load-terminal"
-                      >
-                        Load in QR Desk ➔
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

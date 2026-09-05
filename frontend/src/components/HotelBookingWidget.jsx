@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   fetchHotelRooms,
+  calculateDynamicPrice,
   checkHotelRoomAvailability,
   createBookingRequest,
   fetchUserBookingRequests,
@@ -23,6 +24,18 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
   const [checkInTime, setCheckInTime] = useState('14:00');
   const [checkOutDate, setCheckOutDate] = useState('2026-09-07');
   const [checkOutTime, setCheckOutTime] = useState('11:00');
+
+  // 2B. Dynamic Hourly Pricing state
+  const [livePricing, setLivePricing] = useState({
+    duration_hours: 21,
+    base_hourly_rate: 50,
+    pricing_multiplier: 1.5,
+    dynamic_hourly_rate: 75,
+    total_amount: 1575,
+    crowd_percentage: 87,
+    crowd_level: 'HIGH',
+    price_adjustment_pct: '+50%'
+  });
 
   // 3. Availability verification state
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
@@ -149,10 +162,26 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
     }
   }, [hotelId, checkInDate, checkInTime, checkOutDate, checkOutTime, guests, categoryFilter, selectedRoomNumber]);
 
-  // Auto-check availability on parameters change
+  // Auto-check availability and calculate live dynamic hourly pricing
   useEffect(() => {
     checkCurrentRoomAvailability();
-  }, [checkCurrentRoomAvailability]);
+
+    let isMounted = true;
+    const { inIso, outIso } = getIsoTimestamps();
+    if (new Date(inIso) < new Date(outIso)) {
+      calculateDynamicPrice({
+        hotelId,
+        checkIn: inIso,
+        checkOut: outIso,
+        roomType: selectedRoomObj.room_type || 'Deluxe',
+        roomNumber: selectedRoomNumber
+      }).then(p => {
+        if (isMounted && p) setLivePricing(p);
+      }).catch(() => {});
+    }
+
+    return () => { isMounted = false; };
+  }, [checkCurrentRoomAvailability, hotelId, checkInDate, checkInTime, checkOutDate, checkOutTime, selectedRoomObj.room_type, selectedRoomNumber]);
 
   // Find selected room metadata
   const selectedRoomObj = allRooms.find(r => String(r.room_number) === String(selectedRoomNumber)) || {
@@ -194,7 +223,8 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
         check_in: inIso,
         check_out: outIso,
         special_request: specialRequest.trim(),
-        price: selectedRoomObj.price_per_night || 1300.0
+        price: livePricing.total_amount || 1575.0,
+        pricing_multiplier: livePricing.pricing_multiplier || 1.5
       };
 
       const result = await createBookingRequest(payload);
@@ -459,18 +489,25 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
               <div className="status-detail-item">
                 <span className="detail-label">Requested Time Range:</span>
                 <strong className="detail-val">
-                  {checkInDate} {checkInTime} → {checkOutDate} {checkOutTime}
+                  {checkInDate} {checkInTime} → {checkOutDate} {checkOutTime} ({livePricing.duration_hours}h)
                 </strong>
               </div>
               <div className="status-detail-item">
-                <span className="detail-label">Nightly Rate:</span>
+                <span className="detail-label">Dynamic Hourly Rate:</span>
                 <strong className="detail-val price-val">
-                  ₹{selectedRoomObj.price_per_night || 1300} / night
+                  ₹{livePricing.dynamic_hourly_rate} / hour
+                  {livePricing.pricing_multiplier > 1.0 && (
+                    <span style={{ fontSize: '11px', color: '#d97706', marginLeft: '4px' }}>
+                      ({livePricing.pricing_multiplier}× demand)
+                    </span>
+                  )}
                 </strong>
               </div>
               <div className="status-detail-item">
-                <span className="detail-label">Max Capacity:</span>
-                <strong className="detail-val">{selectedRoomObj.capacity || 3} Devotees</strong>
+                <span className="detail-label">Total Booking Price:</span>
+                <strong className="detail-val price-val" style={{ color: '#059669', fontSize: '15px' }}>
+                  ₹{livePricing.total_amount?.toLocaleString('en-IN')}
+                </strong>
               </div>
             </div>
 
@@ -607,7 +644,12 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
                     )}
 
                     <div className="req-price-display">
-                      ₹{req.price?.toLocaleString('en-IN')}
+                      <div style={{ fontSize: '15px', fontWeight: 800, color: '#059669' }}>
+                        ₹{(req.total_amount || req.price)?.toLocaleString('en-IN')}
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>
+                        ₹{req.final_hourly_rate || req.dynamic_hourly_rate || 75}/hr · {req.duration_hours || 21}h
+                      </div>
                     </div>
                   </div>
                 </div>

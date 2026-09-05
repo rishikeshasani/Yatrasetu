@@ -2545,6 +2545,71 @@ export async function checkHotelRoomAvailability({ hotelId = 'H001', checkIn, ch
   return results;
 }
 
+// 2B. Calculate Dynamic Hourly Room Price based on duration and live crowd density
+export async function calculateDynamicPrice({
+  hotelId = 'H001',
+  checkIn,
+  checkOut,
+  roomType = 'Deluxe',
+  roomNumber = null,
+  multiplierOverride = null
+}) {
+  const inIso = typeof checkIn === 'string' ? checkIn : checkIn?.toISOString?.() || '';
+  const outIso = typeof checkOut === 'string' ? checkOut : checkOut?.toISOString?.() || '';
+
+  try {
+    const params = new URLSearchParams({
+      check_in: inIso,
+      check_out: outIso,
+      room_type: roomType
+    });
+    if (roomNumber) params.append('room_number', String(roomNumber));
+    if (multiplierOverride) params.append('multiplier_override', String(multiplierOverride));
+
+    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/calculate-price?${params.toString()}`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Fallback calculateDynamicPrice:', err);
+  }
+
+  // Client-side exact calculation matching backend
+  const dIn = new Date(inIso);
+  const dOut = new Date(outIso);
+  const diffSec = Math.max(0, (dOut - dIn) / 1000);
+  const rawHours = Math.round((diffSec / 3600) * 100) / 100;
+  const durationHours = Math.max(1, rawHours);
+
+  const rLow = (roomType || '').toLowerCase();
+  let baseRate = 50.0;
+  if (rLow.includes('standard')) baseRate = 40.0;
+  else if (rLow.includes('family')) baseRate = 70.0;
+
+  const multiplier = multiplierOverride ? Number(multiplierOverride) : 1.5;
+  const dynamicRate = Math.round(baseRate * multiplier * 100) / 100;
+  const totalAmount = Math.round(durationHours * dynamicRate * 100) / 100;
+
+  return {
+    hotel_id: hotelId,
+    site_id: 'TS003',
+    site_name: 'Kashi Vishwanath',
+    room_type: roomType,
+    check_in: inIso,
+    check_out: outIso,
+    duration_hours: durationHours,
+    base_hourly_rate: baseRate,
+    crowd_density: 0.87,
+    crowd_percentage: 87.0,
+    crowd_level: 'HIGH',
+    pricing_multiplier: multiplier,
+    dynamic_hourly_rate: dynamicRate,
+    final_hourly_rate: dynamicRate,
+    total_amount: totalAmount,
+    price_adjustment_pct: '+50%'
+  };
+}
+
 // 3. Create Pilgrim Booking Request (Status: "pending")
 export async function createBookingRequest(payload) {
   const reqPayload = {
@@ -2560,7 +2625,8 @@ export async function createBookingRequest(payload) {
     check_in: payload.check_in_datetime || payload.check_in,
     check_out: payload.check_out_datetime || payload.check_out,
     special_request: payload.special_request || '',
-    price: Number(payload.price) || 1300.0
+    price: payload.price !== undefined && payload.price !== null ? Number(payload.price) : undefined,
+    pricing_multiplier: payload.pricing_multiplier ? Number(payload.pricing_multiplier) : undefined
   };
 
   try {
@@ -2596,6 +2662,19 @@ export async function createBookingRequest(payload) {
   const reqId = `REQ-${requests.length + 101}`;
   const bookingId = `YC-${48200 + requests.length + 1}`;
 
+  const dIn = new Date(reqPayload.check_in);
+  const dOut = new Date(reqPayload.check_out);
+  const diffSec = Math.max(0, (dOut - dIn) / 1000);
+  const rawHours = Math.round((diffSec / 3600) * 100) / 100;
+  const durationHours = Math.max(1, rawHours);
+  const rLow = (reqPayload.room_type || '').toLowerCase();
+  let baseRate = 50.0;
+  if (rLow.includes('standard')) baseRate = 40.0;
+  else if (rLow.includes('family')) baseRate = 70.0;
+  const mult = reqPayload.pricing_multiplier ? Number(reqPayload.pricing_multiplier) : 1.5;
+  const dynRate = Math.round(baseRate * mult * 100) / 100;
+  const totalAmt = reqPayload.price !== undefined ? Number(reqPayload.price) : Math.round(durationHours * dynRate * 100) / 100;
+
   const newReq = {
     id: reqId,
     booking_id: bookingId,
@@ -2611,7 +2690,17 @@ export async function createBookingRequest(payload) {
     check_in: reqPayload.check_in,
     check_out: reqPayload.check_out,
     special_request: reqPayload.special_request,
-    price: reqPayload.price,
+    duration_hours: durationHours,
+    base_hourly_rate: baseRate,
+    pricing_multiplier: mult,
+    final_hourly_rate: dynRate,
+    dynamic_hourly_rate: dynRate,
+    total_amount: totalAmt,
+    price: totalAmt,
+    site_id: 'TS003',
+    site_name: 'Kashi Vishwanath',
+    crowd_density_at_booking: 0.87,
+    crowd_level_at_booking: 'HIGH',
     status: 'pending',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

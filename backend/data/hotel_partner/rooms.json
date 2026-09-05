@@ -260,8 +260,8 @@
     "floor": 2,
     "capacity": 3,
     "status": "available",
-    "current_booking_id": "YC-48204",
-    "next_available_time": "2026-09-09T14:00:00"
+    "current_booking_id": "YC-48217",
+    "next_available_time": "2026-09-10T11:00:00"
   },
   {
     "room_id": "R205",

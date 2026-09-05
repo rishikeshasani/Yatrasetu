@@ -7999,5 +7999,38 @@
       "recommended_action": "Synchronize intake with Sunday pilgrimage morning departures",
       "status": "scheduled"
     }
+  ],
+  "booking_requests": [
+    {
+      "id": "REQ-101",
+      "booking_id": "YC-48217",
+      "tourist_id": "T002",
+      "hotel_id": "H001",
+      "room_id": "R204",
+      "room_number": "204",
+      "guest_name": "Rahul Sharma",
+      "guest_count": 2,
+      "room_type": "Deluxe",
+      "check_in_datetime": "2026-09-09T14:00:00",
+      "check_out_datetime": "2026-09-10T11:00:00",
+      "check_in": "2026-09-09T14:00:00",
+      "check_out": "2026-09-10T11:00:00",
+      "special_request": "Near elevator",
+      "duration_hours": 21.0,
+      "base_hourly_rate": 50.0,
+      "pricing_multiplier": 1.5,
+      "final_hourly_rate": 75.0,
+      "dynamic_hourly_rate": 75.0,
+      "total_amount": 1575.0,
+      "price": 1575.0,
+      "crowd_level_at_booking": "HIGH",
+      "crowd_density_at_booking": 0.87,
+      "site_id": "TS003",
+      "site_name": "Kashi Vishwanath",
+      "status": "pending",
+      "created_at": "2026-09-08T18:00:00",
+      "updated_at": "2026-09-08T18:00:00",
+      "decline_reason": null
+    }
   ]
 }

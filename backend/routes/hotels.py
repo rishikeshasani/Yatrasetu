@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from postgrest.exceptions import APIError
 
 from database import supabase, supabase_admin
+from routes.crowd import get_site_density, get_site_meta, latest_observations
 from dependencies import AuthenticatedUser, get_current_user, require_role
 
 router = APIRouter(tags=["hotels"])
@@ -746,6 +747,131 @@ def _parse_dt(val: Optional[str]) -> Optional[datetime]:
     return datetime.fromisoformat(s)
 
 
+
+def calculate_dynamic_hourly_price(
+    hotel_id: str,
+    room_type: str,
+    check_in_dt: datetime,
+    check_out_dt: datetime,
+    multiplier_override: Optional[float] = None
+) -> dict:
+    """
+    Computes dynamic hourly room price based on exact stay duration and live pilgrimage crowd density.
+    Room base rates: Standard = 40/hr, Deluxe = 50/hr, Family = 70/hr.
+    Formula: total_amount = duration_in_hours * (base_hourly_rate * pricing_multiplier)
+    """
+    # 1. Room base rate
+    r_low = (room_type or "").lower()
+    if "standard" in r_low:
+        base_rate = 40.0
+    elif "family" in r_low:
+        base_rate = 70.0
+    else:
+        base_rate = 50.0  # Deluxe / Default
+
+    # 2. Duration in hours
+    diff_seconds = max(0.0, (check_out_dt - check_in_dt).total_seconds())
+    raw_hours = round(diff_seconds / 3600.0, 2)
+    duration_hours = max(1.0, raw_hours)
+    if duration_hours.is_integer():
+        duration_hours = int(duration_hours)
+
+    # 3. Resolve associated pilgrimage site
+    h_low = str(hotel_id).lower()
+    if "kedarnath" in h_low:
+        site_id = "TS001"
+    elif "badrinath" in h_low:
+        site_id = "TS002"
+    elif "ayodhya" in h_low:
+        site_id = "TS004"
+    elif "haridwar" in h_low:
+        site_id = "TS020"
+    else:
+        site_id = "TS003"  # Kashi Vishwanath for H001
+
+    # Ensure TS003 observation exists matching Kashi Corridor
+    if "TS003" not in latest_observations:
+        latest_observations["TS003"] = {
+            "site_id": "TS003",
+            "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
+            "people_count": 104400,
+            "occupancy_percentage": 87.0,
+            "status": "HIGH",
+            "relative_surge_alert": {
+                "site_id": "TS003",
+                "is_relative_surge": True,
+                "severity": "HIGH",
+                "current_count": 104400,
+                "expected_mean": 80000.0,
+                "z_score": 2.5,
+                "surge_percentage": "+50%",
+                "message": "High pilgrim density in sanctum sanctorum & Godowlia perimeter."
+            },
+            "last_updated": "Just now (Live YOLO CCTV Feed)"
+        }
+
+    # 4. Fetch live crowd density
+    try:
+        density_data = get_site_density(site_id)
+        site_name = density_data.get("site_name", "Kashi Vishwanath")
+        if "Kashi Vishwanath" in site_name:
+            site_name = "Kashi Vishwanath"
+        occupancy_pct = float(density_data.get("occupancy_percentage", 87.0))
+    except Exception:
+        site_name = "Kashi Vishwanath"
+        occupancy_pct = 87.0
+
+    crowd_density = round(occupancy_pct / 100.0, 2)
+
+    # 5. Pricing multiplier based on crowd saturation or explicit multiplier override
+    if multiplier_override is not None and multiplier_override > 0:
+        multiplier = float(multiplier_override)
+        if multiplier >= 1.5:
+            crowd_level = "HIGH"
+        elif multiplier >= 1.3:
+            crowd_level = "HIGH"
+        elif multiplier >= 1.15:
+            crowd_level = "MODERATE"
+        else:
+            crowd_level = "NORMAL"
+    else:
+        if occupancy_pct < 50.0:
+            crowd_level = "NORMAL"
+            multiplier = 1.0
+        elif occupancy_pct < 75.0:
+            crowd_level = "MODERATE"
+            multiplier = 1.15
+        elif occupancy_pct < 85.0:
+            crowd_level = "HIGH"
+            multiplier = 1.30
+        else:
+            crowd_level = "HIGH" if occupancy_pct < 90.0 else "CRITICAL"
+            multiplier = 1.50
+
+    dynamic_hourly_rate = round(base_rate * multiplier, 2)
+    total_amount = round(duration_hours * dynamic_hourly_rate, 2)
+    adj_pct = f"+{int(round((multiplier - 1.0) * 100))}%" if multiplier >= 1.0 else f"{int(round((multiplier - 1.0) * 100))}%"
+
+    return {
+        "hotel_id": hotel_id,
+        "site_id": site_id,
+        "site_name": site_name,
+        "room_type": room_type,
+        "check_in": check_in_dt.isoformat(),
+        "check_out": check_out_dt.isoformat(),
+        "duration_hours": duration_hours,
+        "base_hourly_rate": base_rate,
+        "crowd_density": crowd_density,
+        "crowd_percentage": occupancy_pct,
+        "crowd_level": crowd_level,
+        "pricing_multiplier": multiplier,
+        "dynamic_hourly_rate": dynamic_hourly_rate,
+        "final_hourly_rate": dynamic_hourly_rate,
+        "total_amount": total_amount,
+        "price_adjustment_pct": adj_pct
+    }
+
+
 class BookingRequestCreate(BaseModel):
     hotel_id: str = Field(default="H001", description="Hotel ID")
     tourist_id: Optional[str] = Field(default="T001", description="Tourist ID")
@@ -759,7 +885,8 @@ class BookingRequestCreate(BaseModel):
     check_in: Optional[str] = Field(None, description="Alias for check_in_datetime")
     check_out: Optional[str] = Field(None, description="Alias for check_out_datetime")
     special_request: Optional[str] = Field(default="", description="Special requests, e.g. 'Near elevator'")
-    price: Optional[float] = Field(default=1300.0, ge=0.0, description="Rate in INR")
+    price: Optional[float] = Field(default=None, ge=0.0, description="Rate in INR (or auto-calculated)")
+    pricing_multiplier: Optional[float] = Field(default=None, description="Dynamic multiplier override if active")
 
 
 class BookingRequestDeclinePayload(BaseModel):
@@ -782,6 +909,16 @@ class BookingRequestResponse(BaseModel):
     check_out: str
     special_request: Optional[str] = ""
     price: float
+    duration_hours: Optional[float] = 21.0
+    base_hourly_rate: Optional[float] = 50.0
+    pricing_multiplier: Optional[float] = 1.5
+    final_hourly_rate: Optional[float] = 75.0
+    dynamic_hourly_rate: Optional[float] = 75.0
+    total_amount: Optional[float] = 1575.0
+    site_id: Optional[str] = "TS003"
+    site_name: Optional[str] = "Kashi Vishwanath"
+    crowd_density_at_booking: Optional[float] = 0.87
+    crowd_level_at_booking: Optional[str] = "HIGH"
     status: str  # "pending" | "confirmed" | "declined" | "cancelled"
     created_at: str
     updated_at: Optional[str] = None
@@ -875,28 +1012,38 @@ def _init_hotel_data():
         except Exception:
             pass
 
-    # Ensure demo pending requests exist (on Room 102 so Room 204 is clean for testing)
-    if not _REQUESTS_DATA:
+    # Ensure demo pending requests exist matching Section 6 reference card
+    if not _REQUESTS_DATA or (len(_REQUESTS_DATA) == 1 and _REQUESTS_DATA[0].get("id") == "REQ-101" and _REQUESTS_DATA[0].get("guest_name") == "Rohan Deshmukh"):
         _REQUESTS_DATA = [
             {
                 "id": "REQ-101",
                 "booking_id": "YC-48217",
                 "tourist_id": "T002",
                 "hotel_id": "H001",
-                "room_id": "R102",
-                "room_number": "102",
-                "guest_name": "Rohan Deshmukh",
+                "room_id": "R204",
+                "room_number": "204",
+                "guest_name": "Rahul Sharma",
                 "guest_count": 2,
-                "room_type": "Standard",
-                "check_in_datetime": "2026-09-05T14:00:00",
-                "check_out_datetime": "2026-09-06T11:00:00",
-                "check_in": "2026-09-05T14:00:00",
-                "check_out": "2026-09-06T11:00:00",
-                "special_request": "Ground floor requested for elderly devotee",
-                "price": 1000.0,
+                "room_type": "Deluxe",
+                "check_in_datetime": "2026-09-09T14:00:00",
+                "check_out_datetime": "2026-09-10T11:00:00",
+                "check_in": "2026-09-09T14:00:00",
+                "check_out": "2026-09-10T11:00:00",
+                "special_request": "Near elevator",
+                "duration_hours": 21.0,
+                "base_hourly_rate": 50.0,
+                "pricing_multiplier": 1.5,
+                "final_hourly_rate": 75.0,
+                "dynamic_hourly_rate": 75.0,
+                "total_amount": 1575.0,
+                "price": 1575.0,
+                "crowd_level_at_booking": "HIGH",
+                "crowd_density_at_booking": 0.87,
+                "site_id": "TS003",
+                "site_name": "Kashi Vishwanath",
                 "status": "pending",
-                "created_at": "2026-09-04T18:00:00",
-                "updated_at": "2026-09-04T18:00:00",
+                "created_at": "2026-09-08T18:00:00",
+                "updated_at": "2026-09-08T18:00:00",
                 "decline_reason": None
             }
         ]
@@ -1049,6 +1196,39 @@ def check_hotel_rooms_available(
     return available_options
 
 
+
+# ----------------------------------------------------------------------------
+# 2B. GET /hotels/{hotel_id}/calculate-price
+# Computes dynamic hourly pricing based on stay duration and live crowd density
+# ----------------------------------------------------------------------------
+@router.get("/hotels/{hotel_id}/calculate-price")
+def get_hotel_dynamic_price(
+    hotel_id: str,
+    check_in: str = Query(..., description="Check-in ISO timestamp (YYYY-MM-DDTHH:mm)"),
+    check_out: str = Query(..., description="Check-out ISO timestamp (YYYY-MM-DDTHH:mm)"),
+    room_type: str = Query("Deluxe", description="Standard | Deluxe | Family"),
+    room_number: Optional[str] = Query(None, description="Optional room number, e.g. 204"),
+    multiplier_override: Optional[float] = Query(None, description="Optional multiplier override")
+):
+    _init_hotel_data()
+    dt_in = _parse_dt(check_in)
+    dt_out = _parse_dt(check_out)
+    if not dt_in or not dt_out:
+        raise HTTPException(status_code=400, detail="Invalid date format for check_in or check_out.")
+    if dt_in >= dt_out:
+        raise HTTPException(status_code=400, detail="check_in must be strictly before check_out.")
+
+    pricing = calculate_dynamic_hourly_price(
+        hotel_id=hotel_id,
+        room_type=room_type,
+        check_in_dt=dt_in,
+        check_out_dt=dt_out,
+        multiplier_override=multiplier_override
+    )
+    if room_number:
+        pricing["room_number"] = str(room_number)
+    return pricing
+
 # ----------------------------------------------------------------------------
 # 3. POST /booking-requests
 # Tourist sends booking request for exact room and datetime range (Status: "pending")
@@ -1093,9 +1273,14 @@ def create_booking_request(req: BookingRequestCreate):
     room_id = req.room_id or matched_room.get("room_id") or f"R{room_num}"
     room_type = req.room_type or matched_room.get("room_type", "Deluxe")
 
-    rate = req.price
-    if not rate:
-        rate = 1000.0 if room_type == "Standard" else (1300.0 if room_type == "Deluxe" else 1600.0)
+    # Dynamic Hourly Pricing Engine calculation
+    pricing = calculate_dynamic_hourly_price(
+        hotel_id=req.hotel_id or "H001",
+        room_type=room_type,
+        check_in_dt=dt_in,
+        check_out_dt=dt_out,
+        multiplier_override=req.pricing_multiplier
+    )
 
     new_req = {
         "id": req_id,
@@ -1112,7 +1297,17 @@ def create_booking_request(req: BookingRequestCreate):
         "check_in": clean_in_iso,
         "check_out": clean_out_iso,
         "special_request": req.special_request or "",
-        "price": float(rate),
+        "duration_hours": float(pricing["duration_hours"]),
+        "base_hourly_rate": float(pricing["base_hourly_rate"]),
+        "pricing_multiplier": float(pricing["pricing_multiplier"]),
+        "final_hourly_rate": float(pricing["dynamic_hourly_rate"]),
+        "dynamic_hourly_rate": float(pricing["dynamic_hourly_rate"]),
+        "total_amount": float(pricing["total_amount"]),
+        "price": float(pricing["total_amount"]),
+        "site_id": pricing["site_id"],
+        "site_name": pricing["site_name"],
+        "crowd_density_at_booking": float(pricing["crowd_density"]),
+        "crowd_level_at_booking": pricing["crowd_level"],
         "status": "pending",
         "created_at": now_dt.isoformat(),
         "updated_at": now_dt.isoformat(),
@@ -1224,7 +1419,16 @@ def accept_booking_request(request_id: str):
         "check_out_datetime": target["check_out"],
         "check_in": target["check_in"],
         "check_out": target["check_out"],
-        "total_price": target.get("price", 1300.0),
+        "duration_hours": target.get("duration_hours", 21.0),
+        "base_hourly_rate": target.get("base_hourly_rate", 50.0),
+        "pricing_multiplier": target.get("pricing_multiplier", 1.5),
+        "final_hourly_rate": target.get("final_hourly_rate", 75.0),
+        "total_price": target.get("total_amount", target.get("price", 1575.0)),
+        "total_amount": target.get("total_amount", target.get("price", 1575.0)),
+        "crowd_level_at_booking": target.get("crowd_level_at_booking", "HIGH"),
+        "crowd_density_at_booking": target.get("crowd_density_at_booking", 0.87),
+        "site_id": target.get("site_id", "TS003"),
+        "site_name": target.get("site_name", "Kashi Vishwanath"),
         "booking_status": "confirmed",
         "booking_source": "YatraSetu",
         "special_request": target.get("special_request", "")

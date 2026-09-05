@@ -596,5 +596,18 @@
     "booking_status": "confirmed",
     "booking_source": "YatraSetu",
     "special_request": "Consecutive pilgrim slot"
+  },
+  {
+    "booking_id": "TEST-BK-204",
+    "hotel_id": "H001",
+    "room_id": "R204",
+    "room_number": "204",
+    "room_type": "Deluxe",
+    "check_in": "2026-09-09T14:00:00",
+    "check_out": "2026-09-10T11:00:00",
+    "check_in_datetime": "2026-09-09T14:00:00",
+    "check_out_datetime": "2026-09-10T11:00:00",
+    "booking_status": "confirmed",
+    "total_amount": 1575.0
   }
 ]
