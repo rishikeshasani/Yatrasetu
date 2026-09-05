@@ -620,22 +620,37 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
 
                   <div className="req-item-status-col">
                     {req.status === 'pending' && (
-                      <span className="status-pill status-pending">
-                        <span className="status-dot animate-pulse"></span>
-                        WAITING FOR HOTEL CONFIRMATION
-                      </span>
+                      <div className="status-pill status-pending" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', textAlign: 'right' }}>
+                        <span style={{ fontWeight: 800, fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="status-dot animate-pulse"></span>
+                          BOOKING REQUEST SENT
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#d97706' }}>
+                          Status: PENDING HOTEL APPROVAL
+                        </span>
+                      </div>
                     )}
                     {req.status === 'confirmed' && (
-                      <span className="status-pill status-confirmed">
-                        <span className="status-dot"></span>
-                        BOOKING CONFIRMED ✓
-                      </span>
+                      <div className="status-pill status-confirmed" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', textAlign: 'right' }}>
+                        <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#15803d', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="status-dot"></span>
+                          ROOM BOOKING CONFIRMED ✓
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#166534' }}>
+                          Status: CONFIRMED
+                        </span>
+                      </div>
                     )}
                     {req.status === 'declined' && (
-                      <span className="status-pill status-declined">
-                        <span className="status-dot"></span>
-                        BOOKING DECLINED ✕
-                      </span>
+                      <div className="status-pill status-declined" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px', textAlign: 'right' }}>
+                        <span style={{ fontWeight: 800, fontSize: '12.5px', color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span className="status-dot"></span>
+                          ROOM BOOKING DECLINED ✕
+                        </span>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#991b1b' }}>
+                          Status: DECLINED
+                        </span>
+                      </div>
                     )}
                     {req.status === 'cancelled' && (
                       <span className="status-pill status-cancelled">
@@ -643,12 +658,12 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
                       </span>
                     )}
 
-                    <div className="req-price-display">
+                    <div className="req-price-display" style={{ marginTop: '4px' }}>
                       <div style={{ fontSize: '15px', fontWeight: 800, color: '#059669' }}>
-                        ₹{(req.total_amount || req.price)?.toLocaleString('en-IN')}
+                        ₹{(req.total_price || req.total_amount || req.price)?.toLocaleString('en-IN')} total
                       </div>
                       <div style={{ fontSize: '11.5px', color: '#64748b', fontWeight: 600 }}>
-                        ₹{req.final_hourly_rate || req.dynamic_hourly_rate || 75}/hr · {req.duration_hours || 21}h
+                        ₹{req.final_hourly_rate || req.dynamic_hourly_rate || 75}/hour · {req.duration_hours || 21} hours
                       </div>
                     </div>
                   </div>
@@ -656,9 +671,9 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
 
                 <div className="req-item-details-row">
                   <div className="req-time-range">
-                    <span className="time-label">Reserved Window:</span>
+                    <span className="time-label">Stay Window:</span>
                     <strong className="time-val">
-                      {req.check_in?.replace('T', ' ').slice(0, 16)} → {req.check_out?.replace('T', ' ').slice(0, 16)}
+                      {req.check_in?.replace('T', ' ').slice(0, 16)} → {req.check_out?.replace('T', ' ').slice(0, 16)} ({req.duration_hours || 21} hours)
                     </strong>
                   </div>
 

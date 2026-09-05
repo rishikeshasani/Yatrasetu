@@ -935,14 +935,19 @@ def calculate_dynamic_hourly_price(
     crowd_density = round(occupancy_pct / 100.0, 2)
 
     # 5. Pricing multiplier based on crowd saturation or explicit multiplier override
+    # Standardized crowd demand levels per specification:
+    # NORMAL       -> 1.0x (occupancy < 50%)
+    # RISING       -> 1.1x (occupancy 50% - 74%)
+    # HIGH_SURGE   -> 1.3x (occupancy 75% - 89%)
+    # CRITICAL_SURGE -> 1.5x (occupancy >= 90%)
     if multiplier_override is not None and multiplier_override > 0:
         multiplier = float(multiplier_override)
         if multiplier >= 1.5:
-            crowd_level = "HIGH"
+            crowd_level = "CRITICAL_SURGE"
         elif multiplier >= 1.3:
-            crowd_level = "HIGH"
-        elif multiplier >= 1.15:
-            crowd_level = "MODERATE"
+            crowd_level = "HIGH_SURGE"
+        elif multiplier >= 1.1:
+            crowd_level = "RISING"
         else:
             crowd_level = "NORMAL"
     else:
@@ -950,13 +955,13 @@ def calculate_dynamic_hourly_price(
             crowd_level = "NORMAL"
             multiplier = 1.0
         elif occupancy_pct < 75.0:
-            crowd_level = "MODERATE"
-            multiplier = 1.15
-        elif occupancy_pct < 85.0:
-            crowd_level = "HIGH"
+            crowd_level = "RISING"
+            multiplier = 1.10
+        elif occupancy_pct < 90.0:
+            crowd_level = "HIGH_SURGE"
             multiplier = 1.30
         else:
-            crowd_level = "HIGH" if occupancy_pct < 90.0 else "CRITICAL"
+            crowd_level = "CRITICAL_SURGE"
             multiplier = 1.50
 
     dynamic_hourly_rate = round(base_rate * multiplier, 2)
@@ -976,9 +981,11 @@ def calculate_dynamic_hourly_price(
         "crowd_percentage": occupancy_pct,
         "crowd_level": crowd_level,
         "pricing_multiplier": multiplier,
+        "crowd_multiplier": multiplier,
         "dynamic_hourly_rate": dynamic_hourly_rate,
         "final_hourly_rate": dynamic_hourly_rate,
         "total_amount": total_amount,
+        "total_price": total_amount,
         "price_adjustment_pct": adj_pct
     }
 
@@ -1023,9 +1030,11 @@ class BookingRequestResponse(BaseModel):
     duration_hours: Optional[float] = 21.0
     base_hourly_rate: Optional[float] = 50.0
     pricing_multiplier: Optional[float] = 1.5
+    crowd_multiplier: Optional[float] = 1.5
     final_hourly_rate: Optional[float] = 75.0
     dynamic_hourly_rate: Optional[float] = 75.0
     total_amount: Optional[float] = 1575.0
+    total_price: Optional[float] = 1575.0
     site_id: Optional[str] = "TS003"
     site_name: Optional[str] = "Kashi Vishwanath"
     crowd_density_at_booking: Optional[float] = 0.87
@@ -1372,7 +1381,7 @@ def create_booking_request(req: BookingRequestCreate):
     if _check_room_conflict(room_num, dt_in, dt_out):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Room {room_num} is already booked for the requested period."
+            detail=f"Room {room_num} is unavailable for the selected time slot."
         )
 
     clean_in_iso = dt_in.isoformat()
@@ -1411,9 +1420,11 @@ def create_booking_request(req: BookingRequestCreate):
         "duration_hours": float(pricing["duration_hours"]),
         "base_hourly_rate": float(pricing["base_hourly_rate"]),
         "pricing_multiplier": float(pricing["pricing_multiplier"]),
+        "crowd_multiplier": float(pricing["pricing_multiplier"]),
         "final_hourly_rate": float(pricing["dynamic_hourly_rate"]),
         "dynamic_hourly_rate": float(pricing["dynamic_hourly_rate"]),
         "total_amount": float(pricing["total_amount"]),
+        "total_price": float(pricing["total_amount"]),
         "price": float(pricing["total_amount"]),
         "site_id": pricing["site_id"],
         "site_name": pricing["site_name"],
@@ -1510,14 +1521,21 @@ def accept_booking_request(request_id: str):
     if _check_room_conflict(room_num, dt_in, dt_out, exclude_booking_id=target["booking_id"]):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="ROOM NO LONGER AVAILABLE. The requested room has been booked by another guest."
+            detail=f"Room {room_num} is unavailable for the selected time slot."
         )
 
     # Accept & mark confirmed
     target["status"] = "confirmed"
     target["updated_at"] = datetime.now().isoformat()
 
-    # Add to confirmed bookings list
+    # Add to confirmed bookings list (Preserving exact calculated pricing snapshot)
+    mult = target.get("crowd_multiplier") or target.get("pricing_multiplier", 1.3)
+    tot = target.get("total_price") or target.get("total_amount") or target.get("price", 1365.0)
+    target["crowd_multiplier"] = mult
+    target["pricing_multiplier"] = mult
+    target["total_price"] = tot
+    target["total_amount"] = tot
+
     new_booking = {
         "booking_id": target["booking_id"],
         "guest_name": target["guest_name"],
@@ -1532,11 +1550,13 @@ def accept_booking_request(request_id: str):
         "check_out": target["check_out"],
         "duration_hours": target.get("duration_hours", 21.0),
         "base_hourly_rate": target.get("base_hourly_rate", 50.0),
-        "pricing_multiplier": target.get("pricing_multiplier", 1.5),
-        "final_hourly_rate": target.get("final_hourly_rate", 75.0),
-        "total_price": target.get("total_amount", target.get("price", 1575.0)),
-        "total_amount": target.get("total_amount", target.get("price", 1575.0)),
-        "crowd_level_at_booking": target.get("crowd_level_at_booking", "HIGH"),
+        "pricing_multiplier": mult,
+        "crowd_multiplier": mult,
+        "final_hourly_rate": target.get("final_hourly_rate", 65.0),
+        "dynamic_hourly_rate": target.get("dynamic_hourly_rate", target.get("final_hourly_rate", 65.0)),
+        "total_price": tot,
+        "total_amount": tot,
+        "crowd_level_at_booking": target.get("crowd_level_at_booking", "HIGH_SURGE"),
         "crowd_density_at_booking": target.get("crowd_density_at_booking", 0.87),
         "site_id": target.get("site_id", "TS003"),
         "site_name": target.get("site_name", "Kashi Vishwanath"),

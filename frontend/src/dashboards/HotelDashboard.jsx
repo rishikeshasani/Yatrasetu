@@ -191,6 +191,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
   const [requestFilter, setRequestFilter] = useState('ALL'); // 'ALL' | 'PENDING' | 'CONFIRMED' | 'DECLINED'
   const [declineDialogReqId, setDeclineDialogReqId] = useState(null);
   const [declineReason, setDeclineReason] = useState('Room unavailable for requested time window');
+  const [confirmedResultModal, setConfirmedResultModal] = useState(null);
 
   // ROOM SLOTS MATRIX STATE
   const [selectedSlotDay, setSelectedSlotDay] = useState('tomorrow'); // 'today' (4 Sep) | 'tomorrow' (5 Sep) | 'nextDay' (6 Sep) | 'sep7'
@@ -464,8 +465,22 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
       await loadBookingRequests();
       await loadRoomSlots();
 
+      // Explicit Confirmation Result Modal (Section 6: only after backend response)
+      setConfirmedResultModal({
+        room_number: updated.room_number,
+        hotel_name: backendHotel?.name || 'Hotel Ganga Heritage',
+        booking_id: updated.booking_id,
+        guest_name: updated.guest_name,
+        check_in: updated.check_in,
+        check_out: updated.check_out,
+        duration_hours: updated.duration_hours || 21,
+        final_hourly_rate: updated.final_hourly_rate || updated.dynamic_hourly_rate || 75,
+        total_price: updated.total_price || updated.total_amount || updated.price || 1575,
+        status: 'CONFIRMED'
+      });
+
       if (showToast) {
-        showToast(`✅ Request ${updated.id} Accepted! Room #${updated.room_number} allocated to ${updated.guest_name}.`);
+        showToast(`✅ Room Booking Confirmed! Room #${updated.room_number} allocated to ${updated.guest_name}.`);
       }
     } catch (err) {
       alert(err.message || 'Failed to accept booking request.');
@@ -600,24 +615,71 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
             )}
           </div>
 
-          <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-              <span>📈</span> Dynamic Pricing Engine
-            </h3>
-            <p style={{ margin: '0 0 1rem', color: '#1D4ED8', fontSize: '0.95rem' }}>
-              YatraSetu AI has automatically adjusted rates based on the inbound bus volume and Somvati Amavasya demand.
+          <div className="dynamic-pricing-engine-card" style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ margin: 0, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
+                <span>📈</span> Dynamic Pricing Engine
+              </h3>
+              <span style={{ backgroundColor: state.isRerouteSpikeActive ? '#FEE2E2' : '#DBEAFE', color: state.isRerouteSpikeActive ? '#DC2626' : '#1E40AF', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                {state.isRerouteSpikeActive ? '⚡ HIGH SURGE ACTIVE' : '● HOURLY BASE'}
+              </span>
+            </div>
+            <p style={{ margin: '0 0 1rem', color: '#1D4ED8', fontSize: '0.88rem' }}>
+              Authoritative dynamic hourly rates computed from Somvati Amavasya crowd density and inbound pilgrimage demand.
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
-              <div>
-                <span style={{ display: 'block', fontSize: '0.85rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Friday Night Rate (Oct 12)</span>
-                <span style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1E3A8A' }}>₹4,500</span>
-                <span style={{ textDecoration: 'line-through', color: '#94A3B8', marginLeft: '0.75rem', fontSize: '1.2rem' }}>₹3,330</span>
+
+            {/* Core Metrics Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.55rem', marginBottom: '0.85rem' }}>
+              <div style={{ backgroundColor: '#FFF', padding: '0.6rem 0.7rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Current Demand</span>
+                <strong style={{ fontSize: '0.92rem', color: state.isRerouteSpikeActive ? '#DC2626' : '#D97706' }}>
+                  {state.isRerouteSpikeActive ? 'CRITICAL SURGE' : 'HIGH SURGE'}
+                </strong>
               </div>
-              <div style={{ backgroundColor: '#DC2626', color: '#FFF', padding: '0.75rem 1rem', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                +35% Surge
+              <div style={{ backgroundColor: '#FFF', padding: '0.6rem 0.7rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Base Rate</span>
+                <strong style={{ fontSize: '0.98rem', color: '#1E3A8A' }}>₹50/hour</strong>
+              </div>
+              <div style={{ backgroundColor: '#FFF', padding: '0.6rem 0.7rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Crowd Multiplier</span>
+                <strong style={{ fontSize: '0.98rem', color: '#7C3AED' }}>{state.isRerouteSpikeActive ? '1.5x' : '1.3x'}</strong>
+              </div>
+              <div style={{ backgroundColor: '#FFF', padding: '0.6rem 0.7rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE' }}>
+                <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Dynamic Rate</span>
+                <strong style={{ fontSize: '1.02rem', color: '#059669' }}>
+                  ₹{state.isRerouteSpikeActive ? '75' : '65'}/hour
+                </strong>
               </div>
             </div>
-            <button style={{ width: '100%', marginTop: '1.25rem', padding: '0.75rem', backgroundColor: '#2563EB', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}>Lock Dynamic Rate</button>
+
+            {/* Visual Formula Calculation Box */}
+            <div style={{ backgroundColor: '#FFF', padding: '0.75rem 0.9rem', borderRadius: '0.5rem', border: '1px solid #BFDBFE', marginBottom: '0.85rem' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1E40AF', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Step-by-Step Calculation Formula
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#1E293B', display: 'flex', flexDirection: 'column', gap: '0.3rem', fontFamily: 'monospace' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                  <span>Base rate (₹50) × Crowd multiplier ({state.isRerouteSpikeActive ? '1.5x' : '1.3x'})</span>
+                  <strong style={{ color: '#059669' }}>= Dynamic rate (₹{state.isRerouteSpikeActive ? '75' : '65'}/hour)</strong>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8FAFC', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                  <span>Dynamic rate (₹{state.isRerouteSpikeActive ? '75' : '65'}) × Duration (21 hours)</span>
+                  <strong style={{ color: '#1E40AF' }}>= Total price (₹{state.isRerouteSpikeActive ? '1,575' : '1,365'})</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Example Booking Banner */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#E0F2FE', padding: '0.65rem 0.85rem', borderRadius: '0.5rem', border: '1px solid #BAE6FD', fontSize: '0.82rem' }}>
+              <div>
+                <span style={{ color: '#0369A1', fontWeight: 700 }}>Example Booking (Room 204):</span>{' '}
+                <span style={{ color: '#0C4A6E' }}>Check-in: 2:00 PM → Check-out: 11:00 AM next day (21 hours)</span>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <strong style={{ fontSize: '1rem', color: '#0369A1' }}>₹{state.isRerouteSpikeActive ? '1,575' : '1,365'}</strong>
+                <span style={{ display: 'block', fontSize: '0.72rem', color: '#0284C7' }}>(₹{state.isRerouteSpikeActive ? '75' : '65'}/hour)</span>
+              </div>
+            </div>
           </div>
         </div>
       {/* 1. HEADER & TOP NAVIGATION BAR */}
@@ -957,6 +1019,70 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
                     className="dialog-confirm-decline-btn"
                   >
                     Confirm Decline
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 6: VERY IMPORTANT — BOOKING CONFIRMATION RESULT MODAL */}
+          {confirmedResultModal && (
+            <div className="booking-modal-overlay" onClick={() => setConfirmedResultModal(null)}>
+              <div className="booking-modal-card" onClick={(e) => e.stopPropagation()}>
+                <div className="booking-modal-header">
+                  <div className="booking-modal-badge-icon">✓</div>
+                  <h3 className="booking-modal-title">Room Booking Confirmed</h3>
+                  <p className="booking-modal-sub">
+                    Booking request confirmed and verified on backend. Exact room inventory locked.
+                  </p>
+                </div>
+
+                <div className="booking-modal-grid">
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Room:</span>
+                    <strong className="modal-field-val room-highlight">Room {confirmedResultModal.room_number}</strong>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Hotel:</span>
+                    <strong className="modal-field-val">{confirmedResultModal.hotel_name}</strong>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Booking Reference:</span>
+                    <strong className="modal-field-val ref-badge">{confirmedResultModal.booking_id}</strong>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Status:</span>
+                    <span className="modal-status-tag status-confirmed">CONFIRMED</span>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Check-in:</span>
+                    <span className="modal-field-val">{formatDateTimeDisplay(confirmedResultModal.check_in)}</span>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Check-out:</span>
+                    <span className="modal-field-val">{formatDateTimeDisplay(confirmedResultModal.check_out)}</span>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Duration:</span>
+                    <strong className="modal-field-val">{confirmedResultModal.duration_hours} hours</strong>
+                  </div>
+                  <div className="modal-field-item">
+                    <span className="modal-field-label">Rate:</span>
+                    <strong className="modal-field-val">₹{confirmedResultModal.final_hourly_rate}/hour</strong>
+                  </div>
+                  <div className="modal-field-item full-width total-price-card">
+                    <span className="modal-field-label">Total Booking Price:</span>
+                    <strong className="modal-total-val">₹{Number(confirmedResultModal.total_price).toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+
+                <div className="booking-modal-actions">
+                  <button
+                    type="button"
+                    className="booking-modal-done-btn"
+                    onClick={() => setConfirmedResultModal(null)}
+                  >
+                    Done &amp; View Updated Inventory
                   </button>
                 </div>
               </div>

@@ -2986,3 +2986,180 @@
   border-radius: 8px;
   margin-top: 12px;
 }
+
+/* ==========================================================================
+   Section 6: Explicit Room Booking Confirmation Result Modal
+   ========================================================================== */
+.booking-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  padding: 16px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.booking-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.booking-modal-header {
+  text-align: center;
+  padding: 28px 24px 20px;
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+  border-bottom: 1px solid #dcfce7;
+}
+
+.booking-modal-badge-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 900;
+  margin-bottom: 12px;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.booking-modal-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #065f46;
+  letter-spacing: -0.02em;
+}
+
+.booking-modal-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #047857;
+  line-height: 1.4;
+}
+
+.booking-modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 22px 24px;
+  background: #ffffff;
+}
+
+.modal-field-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-field-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.modal-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modal-field-val {
+  font-size: 13.5px;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.modal-field-val.room-highlight {
+  color: #0284c7;
+  font-weight: 800;
+  font-size: 14.5px;
+}
+
+.modal-field-val.ref-badge {
+  font-family: monospace;
+  background: #ede9fe;
+  color: #6d28d9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 13px;
+}
+
+.modal-status-tag.status-confirmed {
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  letter-spacing: 0.04em;
+}
+
+.total-price-card {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.total-price-card .modal-field-label {
+  color: #047857;
+  font-size: 13px;
+}
+
+.modal-total-val {
+  font-size: 22px;
+  font-weight: 900;
+  color: #047857;
+}
+
+.booking-modal-actions {
+  padding: 16px 24px 24px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+}
+
+.booking-modal-done-btn {
+  width: 100%;
+  padding: 12px 16px;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.25);
+}
+
+.booking-modal-done-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(5, 150, 105, 0.35);
+}
