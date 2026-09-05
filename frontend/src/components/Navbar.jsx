@@ -101,34 +101,51 @@ export default function Navbar({
   const navItems = getRoleNavItems();
   const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole);
 
+  const scrollToTargetElement = (element) => {
+    if (!element) return false;
+    const navHeader = document.querySelector('.navbar-header') || document.querySelector('.app-header');
+    const navHeight = navHeader ? navHeader.getBoundingClientRect().height + 15 : 90;
+    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+    const offsetPosition = elementPosition - navHeight;
+
+    window.scrollTo({
+      top: Math.max(0, offsetPosition),
+      behavior: 'smooth'
+    });
+    return true;
+  };
+
   const handleNavClick = (sectionId) => {
     setMobileMenuOpen(false);
-    if (onNavigateSection) {
-      onNavigateSection(sectionId);
+
+    if (sectionId === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
+    if (onNavigateSection) {
+      onNavigateSection(sectionId);
+    }
+
     const targetMap = {
-      'top': ['top', 'tourist-home', 'yatrasetu-app'],
-      'smart-destinations': ['smart-destinations', 'tourist-destinations', 'destinations'],
-      'crowd-intelligence': ['crowd-intelligence', 'tourist-crowd-status', 'tourist-forecast', 'live-crowd-card'],
-      'how-it-works': ['how-it-works', 'tourist-alternatives', 'pilgrim-advisory'],
-      'safety': ['safety', 'tourist-safety', 'safety-section'],
-      'impact': ['impact', 'tourist-hotels', 'yatrasetu-footer']
+      'smart-destinations': ['tourist-destinations', 'smart-destinations', 'destinations'],
+      'crowd-intelligence': ['tourist-crowd-status', 'crowd-intelligence', 'tourist-forecast', 'live-crowd-card'],
+      'how-it-works': ['tourist-alternatives', 'how-it-works', 'pilgrim-advisory'],
+      'safety': ['tourist-safety', 'safety', 'safety-section'],
+      'impact': ['tourist-hotels', 'impact', 'yatrasetu-footer']
     };
 
     const candidateIds = targetMap[sectionId] || [sectionId];
     for (const id of candidateIds) {
       const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
+      if (el && scrollToTargetElement(el)) {
+        if (sectionId === 'safety' && onOpenSOS) onOpenSOS();
+        if (sectionId === 'impact' && onOpenWallet) onOpenWallet();
         return;
       }
     }
 
-    if (sectionId === 'top') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (sectionId === 'safety' && onOpenSOS) {
+    if (sectionId === 'safety' && onOpenSOS) {
       onOpenSOS();
     } else if (sectionId === 'impact' && onOpenWallet) {
       onOpenWallet();
@@ -156,8 +173,7 @@ export default function Navbar({
 
     for (const id of candidateIds) {
       const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
+      if (el && scrollToTargetElement(el)) {
         return;
       }
     }
