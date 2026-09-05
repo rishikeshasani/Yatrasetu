@@ -157,23 +157,43 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
-      {/* 3. DYNAMIC CROWD CONDITION ADVISORY */}
-      <div className={`surge-monitor-banner ${isSurgeActive ? 'surge-active' : 'surge-normal'}`}>
-        <div className="surge-banner-left">
-          <span className="surge-icon">{isSurgeActive ? '⚠️' : '✨'}</span>
+      {/* 3. DYNAMIC CROWD CONDITION ADVISORY & SIMULATION CONTROL */}
+      <div className={`surge-monitor-banner ${isSurgeActive ? 'surge-active' : 'surge-normal'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div className="surge-banner-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+          <span className="surge-icon">{isSurgeActive ? '🚨' : '🛡️'}</span>
           <div className="surge-text">
             <div className="surge-title">
               {isSurgeActive
-                ? 'High Visitor Congestion Advisory'
+                ? 'Dynamic Surge Anomaly: CRITICAL SURGE DETECTED'
                 : 'Darshan Queue Flow: Smooth & Manageable'}
             </div>
             <div className="surge-sub">
               {isSurgeActive
-                ? (relativeSurge?.message || 'Heavy pilgrim influx detected at sanctum gates. Consider visiting during off-peak hours or exploring an alternate sister shrine.')
+                ? (relativeSurge?.message || 'Unscheduled spike: High visitor influx above historical baseline for this hour.')
                 : 'Queues are moving at steady pace. Ideal window for peaceful darshan and rituals.'}
             </div>
           </div>
         </div>
+        <button
+          type="button"
+          className={`surge-simulate-btn ${simulatedSurge ? 'sim-active' : ''}`}
+          onClick={() => setSimulatedSurge(!simulatedSurge)}
+          style={{
+            marginLeft: 'auto',
+            padding: '0.5rem 1rem',
+            background: simulatedSurge ? '#DC2626' : '#2563EB',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '0.5rem',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {simulatedSurge ? '🔄 Reset to Normal' : '⚡ Simulate Spike Alert'}
+        </button>
       </div>
 
       {/* 4. DUAL HERO METRICS: CROWD STATUS & WAIT TIME */}
