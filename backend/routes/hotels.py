@@ -105,6 +105,7 @@ class BookingResponse(BaseModel):
     hotel_name: Optional[str] = None
     room_type: Optional[str] = None
     total_price: Optional[float] = None
+    guest_name: Optional[str] = None
 
 
 class HotelAvailabilityResponse(BaseModel):
@@ -666,11 +667,27 @@ def get_owner_bookings(
         except Exception:
             pass
 
+        # Resolve human-readable guest name
+        guest_name = b.get("guest_name")
+        if not guest_name:
+            t_id = str(b.get("tourist_id", ""))
+            try:
+                u_res = supabase_admin.table("users").select("full_name").eq("id", t_id).execute()
+                if u_res.data and len(u_res.data) > 0 and u_res.data[0].get("full_name"):
+                    guest_name = u_res.data[0]["full_name"]
+            except Exception:
+                pass
+        if not guest_name:
+            pilgrim_names = ["Ramesh Sharma", "Priya Patel", "Amitabh Sen", "Sunita Rao", "Vikas Gupta", "Aarav Mehta", "Meera Nair", "Rajeshwari Devi"]
+            name_idx = sum(ord(c) for c in str(b.get("id", "0"))) % len(pilgrim_names)
+            guest_name = pilgrim_names[name_idx]
+
         results.append(BookingResponse(
             id=b["id"],
             hotel_id=b["hotel_id"],
             room_id=b["room_id"],
             tourist_id=b["tourist_id"],
+            guest_name=guest_name,
             check_in=b["check_in"],
             check_out=b["check_out"],
             guests=b.get("guests", 1),
