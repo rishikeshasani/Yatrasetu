@@ -3190,3 +3190,24 @@ export async function fetchInboundBuses() {
   const all = await fetchFleetSchedules();
   return all.filter((r) => r.direction === "forward");
 }
+
+/**
+ * Fetch Travel Agency Profile & Surge Window Deployment Calculator Dataset.
+ * Used by TravelCompanyDashboard partner console.
+ */
+import defaultAgencyProfile from '../data/travel_agency/travel_agency_profile.json';
+
+export async function fetchTravelAgencyProfile() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/agency-profile`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.data) return data.data;
+    }
+  } catch (err) {
+    console.warn("[Fleet] Agency profile endpoint fallback:", err);
+  }
+  return defaultAgencyProfile;
+}

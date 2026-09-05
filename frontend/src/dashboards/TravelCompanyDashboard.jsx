@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SITE_ID_ALIASES, saveFleetSchedules, fetchFleetSchedules } from '../api/api';
 import CorridorRouteMap from '../components/CorridorRouteMap';
+import TravelAgencyConsole from '../components/TravelAgencyConsole';
 
 export default function TravelCompanyDashboard({
   sites = [],
@@ -170,6 +171,9 @@ export default function TravelCompanyDashboard({
 
   return (
     <div className="travel-dashboard-root" id="travel-dashboard">
+
+      {/* HIMALAYA YATRA TRAVELS: PARTNER CONSOLE & DEMAND CALCULATOR */}
+      <TravelAgencyConsole />
 
       {/* SHARMA TRAVELS: HARIDWAR PREDICTIVE WARNING */}
       <div style={{ backgroundColor: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: '0.75rem', margin: '1.5rem 1.5rem 0', overflow: 'hidden' }}>

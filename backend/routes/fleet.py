@@ -179,3 +179,57 @@ def get_inbound_buses():
 
     inbound = [r for r in _fleet_cache if r.get("direction") == "forward"]
     return {"status": "success", "source": "cache", "routes": inbound}
+
+
+# ---------------------------------------------------------------------------
+# GET /fleet/agency-profile  — travel agency profile & deployment calculator
+# ---------------------------------------------------------------------------
+@router.get("/agency-profile")
+def get_agency_profile():
+    """
+    Returns sample dataset for Himalaya Yatra Travels:
+    - Agency details & total fleet capacity
+    - Active surge windows with bus demand calculations & fare suggestions
+    """
+    import os, json
+    data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "travel_agency", "travel_agency_profile.json"))
+    if os.path.exists(data_path):
+        try:
+            with open(data_path, "r", encoding="utf-8") as f:
+                profile_data = json.load(f)
+                return {"status": "success", "data": profile_data}
+        except Exception as e:
+            print(f"Error reading agency profile file: {e}")
+
+    # Fallback inline dictionary
+    return {
+        "status": "success",
+        "data": {
+            "agency_id": "TA_HIMALAYA_01",
+            "agency_name": "Himalaya Yatra Travels",
+            "partner_tier": "Verified Yatra Partner",
+            "total_fleet_capacity": 350,
+            "base_fare_per_seat": 850,
+            "hubs": ["Delhi ISBT Kashmiri Gate", "Dehradun Bus Stand", "Haridwar Har Ki Pauri", "Rishikesh Triveni Ghat"],
+            "surge_windows": [
+                {
+                    "id": "somvati_amavasya",
+                    "name": "Oct 12-13 · Somvati Amavasya",
+                    "corridor": "Delhi ⇄ Haridwar / Rishikesh",
+                    "total_demand_buses": 370,
+                    "demand_range_min": 340,
+                    "demand_range_max": 400,
+                    "default_deploy_buses": 255,
+                    "forward_occupancy_low": 90,
+                    "forward_occupancy_high": 97,
+                    "return_occupancy_low": 15,
+                    "return_occupancy_high": 28,
+                    "suggested_forward_fare": 1150,
+                    "forward_surge_pct": "+35%",
+                    "suggested_return_fare": 680,
+                    "return_discount_pct": "-20%",
+                    "insight": "Return leg is significantly underfilled. Consider a return fare discount or shifting the return pickup hub to reduce empty seats."
+                }
+            ]
+        }
+    }
