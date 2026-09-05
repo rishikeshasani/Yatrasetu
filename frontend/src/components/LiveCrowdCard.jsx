@@ -20,12 +20,16 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
     }
   }, [site?.id]);
 
-  const peopleCount = density?.people_count ?? 0;
-  const capacity = site.capacity || 3000;
-  const occupancy = density?.occupancy_percentage ?? Math.round((peopleCount / capacity) * 100);
-  const status = density?.status || (occupancy < 50 ? 'NORMAL' : occupancy < 75 ? 'MODERATE' : occupancy < 90 ? 'HIGH' : 'CRITICAL');
+  const basePeopleCount = density?.people_count ?? 0;
+  const capacity = site?.capacity || 3000;
+  const rawOccupancy = density?.occupancy_percentage ?? (capacity > 0 ? Math.round((basePeopleCount / capacity) * 100) : 0);
 
-  const waitMins = forecast?.queue_forecast?.estimated_current_wait_mins ?? 35;
+  const occupancy = simulatedSurge ? 94 : rawOccupancy;
+  const peopleCount = simulatedSurge ? Math.max(Math.round(capacity * 0.94), 2820) : basePeopleCount;
+  const rawStatus = density?.status || (occupancy < 50 ? 'NORMAL' : occupancy < 75 ? 'MODERATE' : occupancy < 90 ? 'HIGH' : 'CRITICAL');
+  const status = simulatedSurge ? 'CRITICAL' : rawStatus;
+
+  const waitMins = simulatedSurge ? 120 : (forecast?.queue_forecast?.estimated_current_wait_mins ?? 35);
   const normalWait = forecast?.queue_forecast?.normal_wait_mins ?? 25;
   const peakWait = forecast?.queue_forecast?.peak_wait_mins ?? 120;
   const queueSys = forecast?.queue_forecast?.queue_management_system || 'Automated Queue Corridors';
