@@ -1,6 +1,9 @@
 // YatraSetu API Client Service
-// Backend Base URL
-export const API_BASE_URL = "http://127.0.0.1:8000";
+import { getShrineImage, CANONICAL_25_SHRINES } from '../utils/shrineImages';
+
+// Backend Base URL and DEMO_MODE switch
+import { API_BASE_URL, DEMO_MODE } from './api_config';
+export { API_BASE_URL, DEMO_MODE };
 
 // Mock Fallback Data for resilient hackathon demos
 export const MOCK_DENSITY = {
@@ -1276,7 +1279,8 @@ export async function fetchSites() {
             state: site.state || meta.state || 'India',
             description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
             altitude: site.altitude || meta.altitude || '',
-            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours'
+            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours',
+            image: getShrineImage(site.id)
           };
         });
       }
@@ -2138,10 +2142,14 @@ export async function fetchHotels(params = {}) {
     if (params.max_price != null) query.append("max_price", params.max_price);
     if (params.verified_only) query.append("verified_only", "true");
 
-    const res = await fetch(`${API_BASE_URL}/hotels?${query.toString()}`);
+    const qs = query.toString();
+    const url = qs ? `${API_BASE_URL}/hotels?${qs}` : `${API_BASE_URL}/hotels`;
+    const headers = typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" };
+
+    const res = await fetch(url, { headers });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     }
   } catch (err) {
     console.warn("Fallback hotels:", err);
@@ -2290,10 +2298,42 @@ export async function fetchActiveSOSAlerts() {
       const data = await res.json();
       if (Array.isArray(data?.alerts)) return data.alerts;
     }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch SOS alerts: HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("Fallback active SOS alerts:", err);
+    console.warn("[SOS] Error fetching active alerts:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
   return MOCK_ACTIVE_SOS_ALERTS;
+}
+
+/**
+ * Dispatch / Acknowledge an Emergency SOS Distress Alert.
+ * Authenticated Government / SDRF responder endpoint.
+ * Persists status="ACKNOWLEDGED" to Supabase public.sos_alerts table.
+ */
+export async function dispatchSOSAlert(alertId, notes = null) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const res = await fetch(`${API_BASE_URL}/sos/${encodeURIComponent(alertId)}/dispatch`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ status: "ACKNOWLEDGED", notes })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
+    }
+    return data;
+  }
+  const errData = await res.json().catch(() => ({}));
+  throw new Error(errData.detail || `SOS Dispatch failed with HTTP ${res.status}`);
 }
 
 // ==========================================================================
@@ -2302,18 +2342,19 @@ export async function fetchActiveSOSAlerts() {
 
 export async function activateEmergencyReroute(siteId, extraData = {}) {
   const targetSiteId = siteId || "TS001";
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const payload = {
+    site_id: targetSiteId,
+    diverted_tourists: extraData.diverted_tourists || 350,
+    partner_buses: extraData.partner_buses || 14,
+    partner_hotels: extraData.partner_hotels || 22,
+    notes: extraData.notes || null
+  };
+
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders()
-    };
-    const payload = {
-      site_id: targetSiteId,
-      diverted_tourists: extraData.diverted_tourists || 350,
-      partner_buses: extraData.partner_buses || 14,
-      partner_hotels: extraData.partner_hotels || 22,
-      notes: extraData.notes || null
-    };
     const res = await fetch(`${API_BASE_URL}/alerts/reroute/activate`, {
       method: "POST",
       headers,
@@ -2327,9 +2368,14 @@ export async function activateEmergencyReroute(siteId, extraData = {}) {
       return data;
     }
     const errData = await res.json().catch(() => ({}));
-    return { status: "error", detail: errData.detail || "Activation failed" };
+    if (!DEMO_MODE) {
+      throw new Error(errData.detail || `Activation failed with HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("Fallback simulated activateEmergencyReroute:", err);
+    console.warn("activateEmergencyReroute notice:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
     const fallbackData = {
       status: "success",
       is_active: true,
@@ -2356,11 +2402,11 @@ export async function activateEmergencyReroute(siteId, extraData = {}) {
 }
 
 export async function deactivateEmergencyReroute(siteId = null, reason = "Situation normalized") {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders()
-    };
     const res = await fetch(`${API_BASE_URL}/alerts/reroute/deactivate`, {
       method: "POST",
       headers,
@@ -2373,8 +2419,15 @@ export async function deactivateEmergencyReroute(siteId = null, reason = "Situat
       }
       return data;
     }
+    const errData = await res.json().catch(() => ({}));
+    if (!DEMO_MODE) {
+      throw new Error(errData.detail || `Deactivation failed with HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("Fallback deactivateEmergencyReroute:", err);
+    console.warn("deactivateEmergencyReroute notice:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
   const fallback = { status: "success", is_active: false, message: "Emergency reroute deactivated." };
   if (typeof window !== 'undefined') {
@@ -2394,12 +2447,10 @@ export async function fetchActiveRerouteAlert(siteId = null) {
       return data;
     }
   } catch (err) {
-    console.warn("Fallback fetchActiveRerouteAlert:", err);
+    console.warn("fetchActiveRerouteAlert notice:", err);
   }
   return { is_active: false, alert: null };
 }
-
-
 
 // ============================================================
 // FLEET SCHEDULE API — Real-time bus schedule management
@@ -2407,8 +2458,7 @@ export async function fetchActiveRerouteAlert(siteId = null) {
 
 /**
  * Fetch the live fleet schedule from the backend.
- * Used by HotelDashboard to show inbound bus arrivals.
- * Falls back to local defaults if backend is unreachable.
+ * Used by HotelDashboard and TravelCompanyDashboard to show fleet schedules.
  */
 export async function fetchFleetSchedules() {
   try {
@@ -2419,10 +2469,16 @@ export async function fetchFleetSchedules() {
       const data = await res.json();
       if (data?.routes) return data.routes;
     }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch fleet schedules: HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("[Fleet] Backend unreachable, using default schedule:", err);
+    console.warn("[Fleet] Backend fetch error:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
-  // Local fallback so dashboard never breaks
+  // Local fallback only when DEMO_MODE=true
   return [
     { id: "HR-01", from_location: "Delhi (ISBT Kashmiri Gate)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "06:00 AM", arrival_time: "11:00 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 3, capacity: 42, occupancy: 94, bus_type: "Volvo A/C", status: "HIGH DEMAND", operator: "Sharma Travels" },
     { id: "HR-02", from_location: "Dehradun (Bus Stand)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "08:30 AM", arrival_time: "10:30 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 2, capacity: 38, occupancy: 100, bus_type: "Sleeper", status: "FULL", operator: "Sharma Travels" },
@@ -2433,26 +2489,29 @@ export async function fetchFleetSchedules() {
 
 /**
  * Save an updated fleet schedule to the backend.
- * Called when travel operator clicks "Confirm & Notify Drivers".
- * @param {Array} routes - Array of { id, buses } objects
+ * Called when travel operator or government updates bus allocations.
+ * @param {Array} routes - Array of { id, buses, operator } objects
  * @returns {Object} API response
  */
 export async function saveFleetSchedules(routes) {
-  try {
-    const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ routes }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data;
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ routes }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:fleet_updated', { detail: data }));
     }
-    throw new Error(`HTTP ${res.status}`);
-  } catch (err) {
-    console.error("[Fleet] Failed to save fleet schedule:", err);
-    return { status: "error", message: err.message };
+    return data;
   }
+  const errData = await res.json().catch(() => ({}));
+  throw new Error(errData.detail || `Failed to save fleet schedule: HTTP ${res.status}`);
 }
 
 /**
@@ -2468,9 +2527,16 @@ export async function fetchInboundBuses() {
       const data = await res.json();
       if (data?.routes) return data.routes;
     }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch inbound buses: HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("[Fleet] Inbound fetch failed, using defaults:", err);
+    console.warn("[Fleet] Inbound fetch error:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
+  // Local fallback only when DEMO_MODE=true
   const all = await fetchFleetSchedules();
   return all.filter((r) => r.direction === "forward");
 }

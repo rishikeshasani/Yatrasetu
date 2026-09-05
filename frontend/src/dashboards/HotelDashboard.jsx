@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   fetchHotels,
-  fetchHotelOwnerBookings
+  fetchHotelOwnerBookings,
+  fetchInboundBuses,
+  saveFleetSchedules
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -139,6 +141,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
   // Real Backend Data
   const [backendHotel, setBackendHotel] = useState(null);
   const [backendBookings, setBackendBookings] = useState([]);
+  const [inboundBuses, setInboundBuses] = useState([]);
   const [isLoadingBackend, setIsLoadingBackend] = useState(false);
 
   // Animate counter
@@ -160,15 +163,16 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
   // Room Slot Availability state (Simulated 24h Transit Matrix)
   const [selectedSlotDay, setSelectedSlotDay] = useState('today');
 
-  // Fetch real hotel data on mount & listen to live booking events
+  // Fetch real hotel data & inbound fleet on mount & listen to live events
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
       setIsLoadingBackend(true);
       try {
-        const [hotelsList, ownerBookings] = await Promise.all([
+        const [hotelsList, ownerBookings, inboundRoutes] = await Promise.all([
           fetchHotels(),
-          fetchHotelOwnerBookings()
+          fetchHotelOwnerBookings(),
+          fetchInboundBuses()
         ]);
         if (!isMounted) return;
 
@@ -183,8 +187,23 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
         if (Array.isArray(ownerBookings)) {
           setBackendBookings(ownerBookings);
         }
+        if (Array.isArray(inboundRoutes)) {
+          setInboundBuses(inboundRoutes);
+          const totalInboundDevotees = inboundRoutes.reduce((acc, r) => {
+            const bCount = r.buses || 1;
+            const bCap = r.capacity || 40;
+            const bOcc = (r.occupancy || 80) / 100;
+            return acc + Math.round(bCount * bCap * bOcc);
+          }, 0);
+          if (totalInboundDevotees > 0) {
+            setState(prev => ({
+              ...prev,
+              incomingTourists: totalInboundDevotees
+            }));
+          }
+        }
       } catch {
-        console.warn('Fallback hotel data loaded');
+        console.warn('Fallback hotel & fleet data loaded');
       } finally {
         if (isMounted) setIsLoadingBackend(false);
       }
@@ -192,15 +211,19 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
     loadData();
 
     // Auto-refresh when tourist books room or on 6-second heartbeat
-    const handleHotelBooked = () => {
+    const handleRefresh = () => {
       loadData();
     };
-    window.addEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+    window.addEventListener('yatrasetu:hotel_booked', handleRefresh);
+    window.addEventListener('yatrasetu:fleet_updated', handleRefresh);
+    window.addEventListener('yatrasetu:emergency_reroute', handleRefresh);
     const pollInterval = setInterval(loadData, 6000);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+      window.removeEventListener('yatrasetu:hotel_booked', handleRefresh);
+      window.removeEventListener('yatrasetu:fleet_updated', handleRefresh);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRefresh);
       clearInterval(pollInterval);
     };
   }, [currentUser]);
@@ -238,20 +261,55 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
   const occupiedRoomsCount = totalRoomsCount - availableRooms;
   const occupancyPercent = totalRoomsCount > 0 ? Math.round((occupiedRoomsCount / totalRoomsCount) * 100) : 0;
 
-  // FLOW 1: Rerouting Spike Simulation
-  const triggerReroutingSpike = () => {
+  // FLOW 1: Rerouting Spike Simulation (Synchronized with Fleet Backend)
+  const triggerReroutingSpike = async () => {
     if (state.isRerouteSpikeActive) return;
 
-    setState((prev) => ({
-      ...prev,
-      isRerouteSpikeActive: true,
-      demandLevel: 'HIGH_SURGE',
-      incomingTourists: 180,
-      suggestedRate: 1300
-    }));
+    try {
+      await saveFleetSchedules([
+        { id: "HR-01", buses: 5, operator: "Sharma Travels" },
+        { id: "HR-02", buses: 4, operator: "Sharma Travels" },
+        { id: "HR-04", buses: 5, operator: "Sharma Travels" }
+      ]);
+      const freshInbound = await fetchInboundBuses();
+      if (Array.isArray(freshInbound) && freshInbound.length > 0) {
+        setInboundBuses(freshInbound);
+        const totalInboundDevotees = freshInbound.reduce((acc, r) => {
+          const bCount = r.buses || 1;
+          const bCap = r.capacity || 40;
+          const bOcc = (r.occupancy || 80) / 100;
+          return acc + Math.round(bCount * bCap * bOcc);
+        }, 0);
+        setState((prev) => ({
+          ...prev,
+          isRerouteSpikeActive: true,
+          demandLevel: 'HIGH_SURGE',
+          incomingTourists: totalInboundDevotees || 180,
+          suggestedRate: 1300
+        }));
+      } else {
+        setState((prev) => ({
+          ...prev,
+          isRerouteSpikeActive: true,
+          demandLevel: 'HIGH_SURGE',
+          incomingTourists: 180,
+          suggestedRate: 1300
+        }));
+      }
+    } catch (err) {
+      console.warn("Fleet spike sync notice:", err);
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: true,
+        demandLevel: 'HIGH_SURGE',
+        incomingTourists: 180,
+        suggestedRate: 1300
+      }));
+    }
+
     setFraudAlert(null);
     if (showToast) {
-      showToast('🚨 High Surge Alert: 60 additional pilgrims rerouted to hotel partner!');
+      showToast('🚨 High Surge Alert: Additional transit fleet units deployed to hotel partner!');
     }
   };
 
@@ -935,8 +993,8 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
                 <p className="hd-reroute-desc">
                   {state.isRerouteSpikeActive
-                    ? '🚨 High Surge Active! 60 additional pilgrims redirected from congested sanctum. Incoming demand: 180 pilgrims.'
-                    : 'Baseline crowd state. Automated district balancers are monitoring temple queue saturation. Click below to simulate an active shrine rerouting surge.'}
+                    ? `🚨 High Surge Active! Additional pilgrims redirected from congested sanctum. Live Inbound Fleet: ${inboundBuses.length > 0 ? inboundBuses.length : 3} active routes (${inboundBuses.reduce((acc, r) => acc + (r.buses || 1), 0) || 14} buses arriving via Delhi, Dehradun & Rishikesh).`
+                    : `Baseline crowd state. Live Inbound Fleet: ${inboundBuses.length > 0 ? inboundBuses.length : 3} active routes (${inboundBuses.reduce((acc, r) => acc + (r.buses || 1), 0) || 6} buses scheduled). Click below to trigger emergency fleet reroute.`}
                 </p>
               </div>
 

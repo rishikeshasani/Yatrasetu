@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   updateCrowdObservation,
   fetchActiveSOSAlerts,
+  dispatchSOSAlert,
   fetchGovernmentOccupancyReport,
   activateEmergencyReroute,
   deactivateEmergencyReroute,
-  fetchActiveRerouteAlert
+  fetchActiveRerouteAlert,
+  saveFleetSchedules
 } from '../api/api';
 import './GovernmentDashboard.css';
 
@@ -239,12 +241,21 @@ export default function GovernmentDashboard({
     setUpdateWaitTime(site.estimated_wait_mins);
   };
 
-  const handleDispatchRescue = (alertId) => {
-    setSosAlerts((prev) =>
-      prev.map((a) => (a.id === alertId ? { ...a, status: 'DISPATCHED' } : a))
-    );
-    if (showToast) {
-      showToast(`🚨 SDRF Unit & Emergency Ambulance 108 dispatched to ${alertId}.`);
+  const handleDispatchRescue = async (alertId) => {
+    try {
+      await dispatchSOSAlert(alertId);
+      const freshAlerts = await fetchActiveSOSAlerts();
+      if (Array.isArray(freshAlerts)) {
+        setSosAlerts(freshAlerts);
+      }
+      if (showToast) {
+        showToast(`🚨 [SDRF Dispatched] Emergency response team dispatched to beacon ${alertId}. Status: ACKNOWLEDGED.`);
+      }
+    } catch (err) {
+      console.error('Failed to dispatch rescue team:', err);
+      if (showToast) {
+        showToast(`⚠️ SOS dispatch failed: ${err.message || err}`);
+      }
     }
   };
 
@@ -258,6 +269,15 @@ export default function GovernmentDashboard({
       setIsRecalculating(true);
       try {
         await deactivateEmergencyReroute(targetSiteId, 'Government Command manual deactivation');
+        try {
+          await saveFleetSchedules([
+            { id: "HR-01", buses: 3, operator: "Sharma Travels" },
+            { id: "HR-02", buses: 2, operator: "Sharma Travels" },
+            { id: "HR-04", buses: 1, operator: "Sharma Travels" }
+          ]);
+        } catch (fErr) {
+          console.warn("Fleet schedule deactivation sync notice:", fErr);
+        }
         setIsRerouteActive(false);
         if (onRerouteChanged) onRerouteChanged(null);
         if (showToast) {
@@ -283,6 +303,18 @@ export default function GovernmentDashboard({
         partner_hotels: 22,
         diverted_devotees: 350
       });
+
+      // Synchronize fleet schedule with backend (deploying bypass fleet units)
+      try {
+        await saveFleetSchedules([
+          { id: "HR-01", buses: 5, operator: "Sharma Travels" },
+          { id: "HR-02", buses: 4, operator: "Sharma Travels" },
+          { id: "HR-04", buses: 5, operator: "Sharma Travels" }
+        ]);
+      } catch (fErr) {
+        console.warn("Fleet schedule activation sync notice:", fErr);
+      }
+
       setIsRerouteActive(true);
       const alertData = res?.alert || res;
       if (onRerouteChanged) onRerouteChanged(alertData);
@@ -305,6 +337,15 @@ export default function GovernmentDashboard({
     try {
       if (isRerouteActive) {
         await deactivateEmergencyReroute(targetSiteId, 'Demonstration zones reset to baseline');
+      }
+      try {
+        await saveFleetSchedules([
+          { id: "HR-01", buses: 3, operator: "Sharma Travels" },
+          { id: "HR-02", buses: 2, operator: "Sharma Travels" },
+          { id: "HR-04", buses: 1, operator: "Sharma Travels" }
+        ]);
+      } catch (fErr) {
+        console.warn("Fleet schedule reset sync notice:", fErr);
       }
       setIsRerouteActive(false);
       if (onRerouteChanged) onRerouteChanged(null);
@@ -346,14 +387,16 @@ export default function GovernmentDashboard({
             <p style={{ margin: 0, fontSize: '0.95rem', color: '#475569', lineHeight: '1.4' }}>Divert all incoming highway traffic from Haridwar City Center (Har Ki Pauri corridor) to the peripheral satellite parking zones (Rishikesh Bypass / BHEL Ground).</p>
           </div>
           <button 
-            onClick={() => {
+            type="button"
+            onClick={async () => {
               if (window.confirm("Are you sure you want to enforce a mandatory Highway Reroute to Satellite Parking?")) {
-                alert("Overtourism Reroute ACTIVATED.");
+                await handleActivateEmergencyReroute();
               }
             }}
-            style={{ padding: '0.85rem 1.75rem', backgroundColor: '#DC2626', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.3)' }}
+            disabled={isRecalculating}
+            style={{ padding: '0.85rem 1.75rem', backgroundColor: isRerouteActive ? '#059669' : '#DC2626', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.3)' }}
           >
-            ACTIVATE SATELLITE REROUTE
+            {isRerouteActive ? '✓ SATELLITE REROUTE ACTIVE' : 'ACTIVATE SATELLITE REROUTE'}
           </button>
         </div>
       </div>

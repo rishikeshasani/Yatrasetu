@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SITE_ID_ALIASES, MOCK_SITES } from '../api/api';
+import { SITE_ID_ALIASES, MOCK_SITES, saveFleetSchedules, fetchFleetSchedules } from '../api/api';
 import TeamTracker from '../components/TeamTracker';
 
 export default function TravelCompanyDashboard({
@@ -274,9 +274,20 @@ export default function TravelCompanyDashboard({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '180px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  if (showToast) {
-                    showToast('✅ Fleet dispatch synchronized! 14 Volvo buses rerouted to Sister Shrine corridors.');
+                onClick={async () => {
+                  try {
+                    await saveFleetSchedules([
+                      { id: "HR-01", buses: 5, operator: "Sharma Travels" },
+                      { id: "HR-02", buses: 4, operator: "Sharma Travels" },
+                      { id: "HR-04", buses: 5, operator: "Sharma Travels" }
+                    ]);
+                    if (showToast) {
+                      showToast('✅ Fleet dispatch synchronized with backend! 14 Volvo buses rerouted to Sister Shrine corridors.');
+                    }
+                  } catch (err) {
+                    if (showToast) {
+                      showToast(`⚠️ Fleet reroute update failed: ${err.message || err}`);
+                    }
                   }
                 }}
                 style={{

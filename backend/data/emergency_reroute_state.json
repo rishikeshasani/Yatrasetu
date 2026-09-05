@@ -1,5 +1,5 @@
 {
-  "id": "632851a6-0371-430f-b6df-8619b634dc9c",
+  "id": "d7991fd7-57d1-4d24-9af0-dcca4a9f5dc2",
   "site_id": "TS001",
   "site_name": "Kedarnath Temple",
   "crowd_status": "NORMAL",
@@ -15,6 +15,8 @@
       "alternative_id": "ALT001",
       "name": "Madhyamaheshwar Temple (Second Kedar)",
       "type": "Pristine High-Altitude Alpine Shrine & Trek",
+      "latitude": 30.638,
+      "longitude": 79.2198,
       "distance_km": 42.0,
       "travel_time_mins": 360,
       "relative_crowd_percentage": 5,
@@ -26,6 +28,8 @@
       "alternative_id": "ALT002",
       "name": "Triyuginarayan Temple",
       "type": "Ancient Mythological Himalayan Stone Temple",
+      "latitude": 30.5983,
+      "longitude": 78.9839,
       "distance_km": 25.0,
       "travel_time_mins": 90,
       "relative_crowd_percentage": 12,
@@ -36,6 +40,6 @@
   ],
   "notes": "Emergency diversion active for Kedarnath corridor.",
   "activated_by": "usr_govt_command",
-  "activated_at": "2026-09-04T19:29:44.202970+00:00",
-  "resolved_at": "2026-09-04T19:29:45.479833+00:00"
+  "activated_at": "2026-09-05T01:55:10.758349+00:00",
+  "resolved_at": "2026-09-05T01:55:11.800948+00:00"
 }

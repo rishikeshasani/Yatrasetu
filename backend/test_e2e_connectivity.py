@@ -1,8 +1,9 @@
+import os
 import httpx
 import json
 import sys
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8001")
 
 def log(msg, status="INFO"):
     print(f"[{status}] {msg}")
@@ -133,13 +134,18 @@ def test_connectivity():
     tourist_token = login_res.json().get("access_token") or login_res.json().get("token")
     tourist_headers = {"Authorization": f"Bearer {tourist_token}"}
 
+    from datetime import date, timedelta
+    import random
+    stay_start = str(date.today() + timedelta(days=random.randint(60, 360)))
+    stay_end = str(date.today() + timedelta(days=random.randint(365, 370)))
+
     # Requirement 4: Books room and verifies booking succeeds
     book_res = client.post(
         f"/hotels/{hotel_id}/book",
         json={
             "room_id": room_id,
-            "check_in": "2026-09-10",
-            "check_out": "2026-09-12",
+            "check_in": stay_start,
+            "check_out": stay_end,
             "guests": 2
         },
         headers=tourist_headers

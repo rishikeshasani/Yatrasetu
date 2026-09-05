@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from database import supabase
+from database import supabase, supabase_admin
 from datetime import datetime
 
 router = APIRouter(prefix="/fleet", tags=["fleet"])
@@ -95,12 +95,12 @@ class FleetSchedulePayload(BaseModel):
 def get_fleet_schedules():
     """
     Returns the current live fleet schedule.
-    Used by: HotelDashboard to show inbound bus arrivals.
+    Used by: HotelDashboard and TravelCompanyDashboard to show inbound/outbound bus schedules.
     """
     # Try to read from Supabase first; fall back to in-memory cache
     try:
-        resp = supabase.table("fleet_schedules").select("*").order("departure_time").execute()
-        if resp.data:
+        resp = supabase_admin.table("fleet_schedules").select("*").order("departure_time").execute()
+        if resp.data and len(resp.data) > 0:
             return {"status": "success", "source": "supabase", "routes": resp.data}
     except Exception:
         pass
@@ -110,12 +110,12 @@ def get_fleet_schedules():
 
 
 # ---------------------------------------------------------------------------
-# POST /fleet/schedules  — travel operator saves adjusted schedule
+# POST /fleet/schedules  — travel operator or government saves adjusted schedule
 # ---------------------------------------------------------------------------
 @router.post("/schedules")
 def save_fleet_schedules(payload: FleetSchedulePayload):
     """
-    Travel operator submits their adjusted bus counts.
+    Travel operator or Government submits adjusted bus counts.
     1. Updates the in-memory cache instantly (Hotel dashboard sees it immediately).
     2. Upserts each route into Supabase fleet_schedules table.
     """
@@ -123,29 +123,41 @@ def save_fleet_schedules(payload: FleetSchedulePayload):
 
     for update in payload.routes:
         # 1. Update in-memory cache
+        matched_cache = None
         for route in _fleet_cache:
             if route["id"] == update.id:
                 route["buses"] = update.buses
                 route["updated_at"] = datetime.utcnow().isoformat()
+                matched_cache = route
                 break
 
-        # 2. Upsert into Supabase (gracefully skips if table doesn't exist yet)
+        # 2. Update Supabase (updates existing route fields, or upserts full cache row if new)
         try:
-            supabase.table("fleet_schedules").upsert({
-                "id": update.id,
+            res = supabase_admin.table("fleet_schedules").update({
                 "buses": update.buses,
-                "operator": update.operator,
                 "updated_at": datetime.utcnow().isoformat(),
-            }).execute()
-        except Exception:
-            pass  # Table may not exist yet; cache still updated
+            }).eq("id", update.id).execute()
+            if not res.data and matched_cache:
+                supabase_admin.table("fleet_schedules").upsert(matched_cache).execute()
+        except Exception as e:
+            print(f"Notice: Supabase fleet_schedules update for {update.id}: {e}")
 
         updated_ids.append(update.id)
 
+    # Read current state after update
+    current_routes = _fleet_cache
+    try:
+        resp = supabase_admin.table("fleet_schedules").select("*").order("departure_time").execute()
+        if resp.data and len(resp.data) > 0:
+            current_routes = resp.data
+    except Exception:
+        pass
+
     return {
         "status": "success",
-        "message": f"Fleet schedule updated for {len(updated_ids)} route(s). Hotel dashboard will reflect changes within 30s.",
+        "message": f"Fleet schedule updated for {len(updated_ids)} route(s). Dashboards synchronized.",
         "updated_routes": updated_ids,
+        "routes": current_routes,
     }
 
 
@@ -159,11 +171,11 @@ def get_inbound_buses():
     Returns only forward/inbound routes headed to Haridwar.
     """
     try:
-        resp = supabase.table("fleet_schedules").select("*").eq("direction", "forward").execute()
-        if resp.data:
+        resp = supabase_admin.table("fleet_schedules").select("*").eq("direction", "forward").execute()
+        if resp.data and len(resp.data) > 0:
             return {"status": "success", "source": "supabase", "routes": resp.data}
     except Exception:
         pass
 
-    inbound = [r for r in _fleet_cache if r["direction"] == "forward"]
+    inbound = [r for r in _fleet_cache if r.get("direction") == "forward"]
     return {"status": "success", "source": "cache", "routes": inbound}

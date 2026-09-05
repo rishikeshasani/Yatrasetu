@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import SiteSelector from '../components/SiteSelector';
 import LiveCrowdCard from '../components/LiveCrowdCard';
 import PilgrimAdvisory from '../components/PilgrimAdvisory';
@@ -32,6 +32,65 @@ export default function TouristDashboard({
   const [hotels, setHotels] = useState([]);
   const [bookingHotelId, setBookingHotelId] = useState(null);
   const [bookingSuccess, setBookingSuccess] = useState(null);
+
+  // Match real hotel records to the selected pilgrimage site using the preferred hierarchy:
+  // 1. Existing site_id relationship
+  // 2. Geographic coordinate proximity
+  // 3. Carefully normalized distinctive token matching (name / address)
+  // 4. Fallback to real verified hotels from the database
+  const displayedHotels = useMemo(() => {
+    if (!hotels || hotels.length === 0) return [];
+    if (!selectedSite) return hotels.slice(0, 6);
+
+    const sId = selectedSite.id || selectedSite.site_id;
+    const sLat = selectedSite.latitude;
+    const sLon = selectedSite.longitude;
+
+    const STOP_WORDS = new Set(['temple', 'mandir', 'shrine', 'the', 'and', 'ghat', 'sansthan', 'parisar', 'corridor', 'path', 'main', 'zone']);
+    const clean = (str) => (str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+    const siteTokens = clean(selectedSite.name)
+      .split(/\s+/)
+      .filter((t) => t.length > 3 && !STOP_WORDS.has(t));
+
+    const getDistKm = (lat1, lon1, lat2, lon2) => {
+      const R = 6371.0;
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // 1. Direct site_id relationship
+    const idMatched = hotels.filter((h) => h.site_id && (h.site_id === sId || h.site_id === selectedSite.id));
+    if (idMatched.length > 0) return idMatched;
+
+    // 2. Geographic proximity within 25 km
+    if (sLat != null && sLon != null) {
+      const geoMatched = hotels.filter((h) => {
+        if (h.latitude != null && h.longitude != null) {
+          return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 25.0;
+        }
+        return false;
+      });
+      if (geoMatched.length > 0) return geoMatched;
+    }
+
+    // 3. Carefully normalized distinctive token matching against hotel name or address
+    if (siteTokens.length > 0) {
+      const tokenMatched = hotels.filter((h) => {
+        const hText = `${clean(h.name)} ${clean(h.address)}`;
+        const hWords = new Set(hText.split(/\s+/));
+        return siteTokens.some((tok) => hWords.has(tok) || hText.includes(tok));
+      });
+      if (tokenMatched.length > 0) return tokenMatched;
+    }
+
+    // 4. Intended fallback with real verified hotel data
+    const verifiedHotels = hotels.filter((h) => h.verified);
+    return verifiedHotels.length > 0 ? verifiedHotels.slice(0, 6) : hotels.slice(0, 6);
+  }, [hotels, selectedSite]);
 
   useEffect(() => {
     let isMounted = true;
@@ -221,11 +280,11 @@ export default function TouristDashboard({
                 gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                 gap: '1rem'
               }}>
-                {(hotels.length > 0 ? hotels.slice(0, 3) : [
+                {(displayedHotels.length > 0 ? displayedHotels : (hotels.length > 0 ? hotels.slice(0, 6) : [
                   { id: 'h1', name: 'Kedarnath Himalayan Inn & Ashrams', address: 'Temple Path, Zone B', price_per_night: 1200, rating: 4.8 },
                   { id: 'h2', name: 'GMVN Kedarnath Tourist Rest House', address: 'Helipad Approach Road', price_per_night: 850, rating: 4.6 },
                   { id: 'h3', name: 'Badrinath Yatri Niwas & Bhavan', address: 'Main Temple Gate #2', price_per_night: 950, rating: 4.7 }
-                ]).map((h) => {
+                ])).map((h) => {
                   const firstRoom = h.rooms?.[0];
                   const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
                   const price = firstRoom?.price_per_night || h.price_per_night || 1200;

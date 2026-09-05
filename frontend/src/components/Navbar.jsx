@@ -9,6 +9,10 @@ export default function Navbar({
   onOpenAuth,
   onOpenProfile,
   activeRole = 'tourist',
+  onSelectRole,
+  currentView = 'landing',
+  onToggleView,
+  onNavigateSection,
   onLogout,
   onNavigate
 }) {
@@ -96,6 +100,16 @@ export default function Navbar({
   const navItems = getRoleNavItems();
   const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole);
 
+  const handleNavClick = (sectionId) => {
+    setMobileMenuOpen(false);
+    if (onNavigateSection) {
+      onNavigateSection(sectionId);
+    } else {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const handleItemClick = (item) => {
     setMobileMenuOpen(false);
 
@@ -128,11 +142,17 @@ export default function Navbar({
         <div
           className="brand-wrapper"
           onClick={() => {
-            const el = document.getElementById('tourist-home') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard') || document.getElementById('gov-command-center');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-            else window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (currentView === 'landing') {
+              handleNavClick('top');
+            } else {
+              const el = document.getElementById('tourist-home') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard') || document.getElementById('gov-command-center');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+              else window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
           }}
           style={{ cursor: 'pointer' }}
+          role="button"
+          tabIndex={0}
         >
           <div className="brand-icon-box">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -151,26 +171,86 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Center: Role-Specific Navigation Menu */}
-        <nav className="role-navigation-tabs role-specific-nav">
-          {navItems.map((item, idx) => (
+        {/* Center: When in Landing View, show Section Anchors; When in Dashboard View, show Role Nav Tabs */}
+        {currentView === 'landing' ? (
+          <nav className="desktop-nav-links desktop-only" aria-label="Main Navigation">
             <button
-              key={idx}
               type="button"
-              className={`role-nav-link-btn ${item.isDanger ? 'nav-link-danger' : ''}`}
-              onClick={() => handleItemClick(item)}
-              title={item.label}
+              className="nav-link-btn"
+              onClick={() => handleNavClick('top')}
             >
-              <span>{item.label}</span>
+              Home
             </button>
-          ))}
-        </nav>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('smart-destinations')}
+            >
+              Explore 25
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('crowd-intelligence')}
+            >
+              Crowd AI
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('how-it-works')}
+            >
+              How It Works
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('safety')}
+            >
+              Safety &amp; SOS
+            </button>
+            <button
+              type="button"
+              className="nav-link-btn"
+              onClick={() => handleNavClick('impact')}
+            >
+              Civic Impact
+            </button>
+          </nav>
+        ) : (
+          <nav className="role-navigation-tabs role-specific-nav desktop-only">
+            {navItems.map((item, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className={`role-nav-link-btn ${item.isDanger ? 'nav-link-danger' : ''}`}
+                onClick={() => handleItemClick(item)}
+                title={item.label}
+              >
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        )}
 
-        {/* Right Side: Current Role / User Indicator, Actions & Logout */}
+        {/* Action Controls: View Switcher, User Profile, Yatra Dal, Wallet & SOS, Logout */}
         <div className="navbar-actions">
+          {/* Main View Switcher (Landing vs Live Console) */}
+          <button
+            type="button"
+            className={`view-switcher-btn ${currentView === 'dashboard' ? 'active-dashboard' : ''}`}
+            onClick={onToggleView}
+            title={currentView === 'landing' ? 'Switch to Live Multi-Role Console' : 'Switch to Platform Overview'}
+          >
+            <span className="view-switch-icon">{currentView === 'landing' ? '⚡' : '🏠'}</span>
+            <span className="view-switch-text">
+              {currentView === 'landing' ? 'Live Console' : 'Overview'}
+            </span>
+          </button>
+
+          {/* Authenticated User / Role Indicator */}
           {currentUser ? (
             <>
-              {/* Authenticated User & Verified Role Indicator */}
               <button
                 type="button"
                 className="auth-profile-pill"
@@ -190,15 +270,6 @@ export default function Navbar({
                 }}
                 title={`Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role)})`}
               >
-                <span>
-                  {currentUser.role === 'government'
-                    ? '🏛️'
-                    : currentUser.role === 'hotel'
-                    ? '🏨'
-                    : currentUser.role === 'travel_company'
-                    ? '🚌'
-                    : '🛡️'}
-                </span>
                 <span className="user-short-name">
                   {currentUser.full_name?.split(' ')[0] || 'User'}
                 </span>
@@ -217,62 +288,40 @@ export default function Navbar({
                 </span>
               </button>
 
-              {/* Green Pilgrim Wallet (for tourist) */}
-              {(currentUser.role === 'tourist' || !currentUser.role) && (
+              {/* Logout Button */}
+              {onLogout && (
                 <button
                   type="button"
-                  className="wallet-badge-btn"
-                  onClick={onOpenWallet}
-                  title="Open Green Pilgrim Wallet"
+                  className="nav-logout-btn desktop-only"
+                  onClick={onLogout}
+                  title="Sign Out & Return to Role Selection"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: 'transparent',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '6px',
+                    color: '#EF4444',
+                    padding: '0.35rem 0.6rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
                 >
-                  <span className="coin-icon">🪙</span>
-                  <div className="wallet-btn-content">
-                    <span className="wallet-points-val">{walletPoints ?? 260}</span>
-                    <span className="wallet-points-unit">Pts</span>
-                  </div>
-                  {pendingPoints > 0 && (
-                    <span className="pending-pts-chip" title="Pending arrival at alternate route">
-                      +{pendingPoints}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* SOS Emergency Distress Beacon (for tourist) */}
-              {(currentUser.role === 'tourist' || !currentUser.role) && (
-                <button
-                  type="button"
-                  className="sos-nav-btn"
-                  onClick={onOpenSOS}
-                  title="Instant 1-Click SOS Emergency"
-                >
-                  <span className="sos-pulse-ring"></span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
-                  <span className="sos-btn-text">SOS</span>
+                  <span>Logout</span>
                 </button>
               )}
-
-              {/* Top Logout Button */}
-              <button
-                type="button"
-                className="nav-logout-btn"
-                onClick={onLogout}
-                title="Sign Out & Return to Role Selection"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                <span>Logout</span>
-              </button>
             </>
           ) : (
             <button
               type="button"
-              className="auth-login-btn"
+              className="auth-login-btn desktop-only"
               onClick={onOpenAuth}
               style={{
                 display: 'flex',
@@ -290,12 +339,44 @@ export default function Navbar({
               }}
               title="Sign In to YatraSetu"
             >
-              <span>🪪</span>
-              <span>Sign In</span>
+              <span>Sign In / Demo</span>
             </button>
           )}
 
-          {/* Mobile Menu Toggle Hamburger */}
+          {/* Green Pilgrim Wallet */}
+          <button
+            type="button"
+            className="wallet-badge-btn"
+            onClick={onOpenWallet}
+            title="Open Green Pilgrim Wallet"
+          >
+            <span className="coin-icon">🌿</span>
+            <div className="wallet-btn-content">
+              <span className="wallet-points-val">{walletPoints ?? 260}</span>
+              <span className="wallet-points-unit desktop-only">Pts</span>
+            </div>
+            {pendingPoints > 0 && (
+              <span className="pending-pts-chip desktop-only" title="Pending arrival at alternate route">
+                +{pendingPoints}
+              </span>
+            )}
+          </button>
+
+          {/* SOS Emergency Distress Beacon */}
+          <button
+            type="button"
+            className="sos-nav-btn"
+            onClick={onOpenSOS}
+            title="Instant 1-Click SOS Emergency"
+          >
+            <span className="sos-pulse-ring"></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+            </svg>
+            <span className="sos-btn-text">SOS</span>
+          </button>
+
+          {/* Mobile Menu Toggle */}
           <button
             type="button"
             className="mobile-menu-toggle"
@@ -307,37 +388,61 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Mobile Drawer Dropdown for Small Screens */}
+      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="mobile-nav-drawer">
-          <div className="mobile-user-row">
-            <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
-              Role: <strong>{getRoleDisplayName(currentUser?.role)}</strong>
-            </span>
-            <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
-              {currentUser?.full_name || 'Pilgrim Devotee'}
-            </span>
-          </div>
+          {currentUser && (
+            <div className="mobile-user-row" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
+                Role: <strong>{getRoleDisplayName(currentUser?.role)}</strong>
+              </span>
+              <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                {currentUser?.full_name || 'User'}
+              </span>
+            </div>
+          )}
 
           <div className="mobile-nav-links">
-            {navItems.map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                className={`mobile-nav-link ${item.isDanger ? 'mobile-link-danger' : ''}`}
-                onClick={() => handleItemClick(item)}
-              >
-                <span>{item.label}</span>
-              </button>
-            ))}
+            {currentView === 'landing' ? (
+              <>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>Home Overview</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('smart-destinations')}>Explore 25 Shrines</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('crowd-intelligence')}>Crowd Intelligence</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('how-it-works')}>How It Works</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('safety')}>Emergency Safety &amp; SOS</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('impact')}>Civic &amp; Economic Impact</button>
+              </>
+            ) : (
+              navItems.map((item, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  className={`mobile-nav-link ${item.isDanger ? 'mobile-link-danger' : ''}`}
+                  onClick={() => handleItemClick(item)}
+                >
+                  <span>{item.label}</span>
+                </button>
+              ))
+            )}
 
-            {currentUser && (
+            <button
+              type="button"
+              className="mobile-nav-link"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onToggleView && onToggleView();
+              }}
+            >
+              {currentView === 'landing' ? '⚡ Open Live Console' : '🏠 Switch to Overview'}
+            </button>
+
+            {currentUser && onLogout && (
               <button
                 type="button"
                 className="mobile-nav-link mobile-link-danger mobile-logout-btn"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  if (onLogout) onLogout();
+                  onLogout();
                 }}
                 style={{
                   gridColumn: 'span 2',

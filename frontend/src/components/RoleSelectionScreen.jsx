@@ -8,10 +8,17 @@ import {
 } from '../api/api';
 import './RoleSelectionScreen.css';
 
-export default function RoleSelectionScreen({ onLoginSuccess }) {
+export default function RoleSelectionScreen({
+  onLoginSuccess,
+  initialRole = null,
+  initialView = 'select',
+  onSelectRole,
+  onBackToSelect,
+  onViewLanding
+}) {
   // Screen state: 'select' (4 role cards) | 'login' (role-specific auth form)
-  const [currentView, setCurrentView] = useState('select');
-  const [selectedRole, setSelectedRole] = useState(null); // 'tourist' | 'hotel' | 'travel_company' | 'government'
+  const [currentView, setCurrentView] = useState(initialView || 'select');
+  const [selectedRole, setSelectedRole] = useState(initialRole || null); // 'government' | 'hotel' | 'travel_company' | 'tourist'
 
   // Auth Mode within login view: 'signin' | 'signup' | 'aadhaar'
   const [authMode, setAuthMode] = useState('signin');
@@ -32,71 +39,8 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
 
-  // Pre-configured role metadata
+  // Pre-configured role metadata: exactly 4 roles in specified order
   const ROLES_DATA = [
-    {
-      id: 'tourist',
-      name: 'Tourist',
-      badge: 'DEVOTEE & PILGRIM',
-      iconEmoji: '🎒',
-      iconSvg: (
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3V4a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z" />
-          <path d="M9 2v4" />
-          <path d="M15 2v4" />
-          <path d="M10 14h4" />
-        </svg>
-      ),
-      description: 'Explore destinations, crowd status, forecasts, safety and hotels.',
-      actionText: 'Continue as Tourist',
-      colorClass: 'role-tourist',
-      accentColor: '#EA580C',
-      features: ['Live 25 Shrines Telemetry', 'Punya Green Wallet & Rewards', 'Verified Lodges & 1-Click SOS']
-    },
-    {
-      id: 'hotel',
-      name: 'Hotel',
-      badge: 'SHRINE LODGING PARTNER',
-      iconEmoji: '🏨',
-      iconSvg: (
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 21h18" />
-          <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
-          <path d="M9 9h1" />
-          <path d="M9 13h1" />
-          <path d="M9 17h1" />
-          <path d="M14 9h1" />
-          <path d="M14 13h1" />
-          <path d="M14 17h1" />
-        </svg>
-      ),
-      description: 'Manage rooms, bookings and occupancy.',
-      actionText: 'Continue as Hotel',
-      colorClass: 'role-hotel',
-      accentColor: '#D97706',
-      features: ['Dynamic QR Check-In Terminal', 'Automated Surge Pricing Layer', 'Municipal Tax Credit Tracking']
-    },
-    {
-      id: 'travel_company',
-      name: 'Travel Company',
-      badge: 'FLEET & TOUR OPERATOR',
-      iconEmoji: '🚌',
-      iconSvg: (
-        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="13" rx="2" />
-          <path d="M16 2v2" />
-          <path d="M8 2v2" />
-          <circle cx="7" cy="18" r="2" />
-          <circle cx="17" cy="18" r="2" />
-          <path d="M3 11h18" />
-        </svg>
-      ),
-      description: 'Manage trips, groups, routes and crowd-aware travel planning.',
-      actionText: 'Continue as Travel Company',
-      colorClass: 'role-travel',
-      accentColor: '#7C3AED',
-      features: ['Char Dham Sacred Circuits', 'Queue vs Distance Engine', 'Multi-Shrine Fleet Intelligence']
-    },
     {
       id: 'government',
       name: 'Government',
@@ -118,10 +62,88 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
       colorClass: 'role-government',
       accentColor: '#1D4ED8',
       features: ['Centralized AI CCTV Heatmap', 'Active Emergency Rerouting', 'Multi-Agency Dispatch (Police/NDRF)']
+    },
+    {
+      id: 'hotel',
+      name: 'Hotel',
+      badge: 'SHRINE LODGING PARTNER',
+      iconEmoji: '🏨',
+      iconSvg: (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 21h18" />
+          <path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16" />
+          <path d="M9 9h1" />
+          <path d="M9 13h1" />
+          <path d="M9 17h1" />
+          <path d="M14 9h1" />
+          <path d="M14 13h1" />
+          <path d="M14 17h1" />
+        </svg>
+      ),
+      description: 'Manage rooms, bookings, occupancy and incoming fleet.',
+      actionText: 'Continue as Hotel',
+      colorClass: 'role-hotel',
+      accentColor: '#D97706',
+      features: ['Dynamic QR Check-In Terminal', 'Automated Surge Pricing Layer', 'Inbound Fleet & Highway Route Demand']
+    },
+    {
+      id: 'travel_company',
+      name: 'Travel Company',
+      badge: 'FLEET & TOUR OPERATOR',
+      iconEmoji: '🚌',
+      iconSvg: (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="13" rx="2" />
+          <path d="M16 2v2" />
+          <path d="M8 2v2" />
+          <circle cx="7" cy="18" r="2" />
+          <circle cx="17" cy="18" r="2" />
+          <path d="M3 11h18" />
+        </svg>
+      ),
+      description: 'Manage trips, fleet schedules, rerouting and travel planning.',
+      actionText: 'Continue as Travel Company',
+      colorClass: 'role-travel',
+      accentColor: '#7C3AED',
+      features: ['Char Dham Sacred Circuits', 'Fleet Rerouting & Bus Schedules', 'Multi-Shrine Fleet Intelligence']
+    },
+    {
+      id: 'tourist',
+      name: 'Tourist',
+      badge: 'DEVOTEE & PILGRIM',
+      iconEmoji: '🎒',
+      iconSvg: (
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3V4a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z" />
+          <path d="M9 2v4" />
+          <path d="M15 2v4" />
+          <path d="M10 14h4" />
+        </svg>
+      ),
+      description: 'Explore destinations, crowd status, forecasts, safety and hotels.',
+      actionText: 'Continue as Tourist',
+      colorClass: 'role-tourist',
+      accentColor: '#EA580C',
+      features: ['Live 25 Shrines Telemetry', 'Punya Green Wallet & Rewards', 'Verified Lodges & 1-Click SOS']
     }
   ];
 
   const currentRoleMeta = ROLES_DATA.find((r) => r.id === selectedRole) || ROLES_DATA[0];
+
+  // Sync external route props
+  React.useEffect(() => {
+    if (initialRole) {
+      setSelectedRole(initialRole);
+      const demo = DEMO_CREDENTIALS[initialRole];
+      if (demo) {
+        setEmail(demo.email || '');
+      }
+      setPassword('DemoPassword123!');
+    }
+    if (initialView) {
+      setCurrentView(initialView);
+    }
+  }, [initialRole, initialView]);
 
   // Open login view for a specific role
   const handleSelectRole = (roleId) => {
@@ -131,7 +153,7 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
     setErrorMsg('');
     setInfoMsg('');
 
-    // Prepopulate demo credentials for seamless testing if desired
+    // Prepopulate demo credentials for seamless testing
     const demo = DEMO_CREDENTIALS[roleId];
     if (demo) {
       setEmail(demo.email || '');
@@ -139,14 +161,23 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
       setEmail('');
     }
     setPassword('DemoPassword123!');
+
+    if (onSelectRole) {
+      onSelectRole(roleId);
+    }
   };
 
   // Return to 4-card role selector
   const handleBackToRoleSelect = () => {
     setCurrentView('select');
+    setSelectedRole(null);
     setErrorMsg('');
     setInfoMsg('');
     setPassword('');
+
+    if (onBackToSelect) {
+      onBackToSelect();
+    }
   };
 
   // 1-Click Demo Login
@@ -314,7 +345,30 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
             </div>
           </div>
 
-          <div className="role-nav-badge">
+          <div className="role-nav-badge" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            {onViewLanding && (
+              <button
+                type="button"
+                className="role-view-landing-btn"
+                onClick={onViewLanding}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#475569',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '6px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                <span>Platform Overview</span>
+                <span>→</span>
+              </button>
+            )}
             <span className="sih-dot"></span>
             <span>Smart India Hackathon 2026</span>
           </div>
@@ -327,15 +381,15 @@ export default function RoleSelectionScreen({ onLoginSuccess }) {
           {/* Hero Heading Section */}
           <div className="role-hero-section">
             <div className="role-badge-pill">
-              <span>🕉️</span>
+              <span>🏛️</span>
               <span>National Sacred Corridor Portal</span>
             </div>
-            <h1 className="role-main-title">Welcome to YatraSetu</h1>
+            <h1 className="role-main-title">Login As</h1>
             <p className="role-main-subtitle">
-              Smart, Safe &amp; Connected Pilgrimage Tourism
+              Select your role to access your authorized dashboard
             </p>
             <p className="role-intro-caption">
-              Select your role below to access authorized dashboards, AI crowd telemetry, and synchronized shrine services.
+              Government Command, Shrine Lodging Partners, Fleet Operators, and Devotee Pilgrims.
             </p>
           </div>
 
