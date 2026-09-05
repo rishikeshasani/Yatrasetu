@@ -81,7 +81,9 @@ def get_alternatives(site_id: str):
                         "longitude": lon,
                         "distance_km": dist,
                         "travel_time_mins": travel_time,
+                        "crowd_percentage": relative_crowd,
                         "relative_crowd_percentage": relative_crowd,
+                        "crowd_savings": f"{max(0, 100 - relative_crowd)}% less crowded",
                         "why_visit": row.get("why_visit_key_attraction"),
                         "best_time_to_visit": row.get("best_time_to_visit"),
                         "road_connectivity": row.get("road_connectivity_status")

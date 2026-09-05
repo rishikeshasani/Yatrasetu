@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getShrineImage } from '../utils/shrineImages';
 
 /**
  * Calculates distance in meters between two lat/lon coordinates using the Haversine formula.
@@ -388,8 +389,16 @@ export default function PilgrimAdvisory({
                 </div>
 
                 {/* Destination Title & Primary Stats */}
-                <div className="alt-card-main-header">
-                  <div>
+                <div className="alt-card-main-header" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
+                  <div className="alt-shrine-thumb-wrap" style={{ width: '100px', height: '72px', borderRadius: '0.65rem', overflow: 'hidden', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                    <img
+                      src={getShrineImage(alt.alternative_id || alt.name)}
+                      alt={alt.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
                     <h3 className="alt-destination-name">{alt.name}</h3>
                     <p className="alt-crowd-savings-note">
                       🌱 <strong>{crowdSavings}% less crowded</strong> than {siteName} sanctum queue

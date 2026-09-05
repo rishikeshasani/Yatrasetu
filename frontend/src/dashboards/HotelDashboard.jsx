@@ -9,7 +9,9 @@ import {
   subscribeToHotelUpdates,
   checkRoomConflictLocal,
   fetchInboundBuses,
-  fetchActiveRerouteAlert
+  fetchActiveRerouteAlert,
+  saveFleetSchedules,
+  updateHotelBookingStatus
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -114,9 +116,65 @@ const calculateHoursBetween = (inStr, outStr) => {
   }
 };
 
-export default function HotelDashboard({ currentUser, showToast }) {
+export default function HotelDashboard({ currentUser, showToast, activeRerouteAlert, densityMap }) {
   const [state, setState] = useState(BASELINE_STATE);
 
+  // Sync with real-time cross-dashboard Government Emergency Reroute & Crowd Telemetry
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (activeRerouteAlert && (activeRerouteAlert.status === 'ACTIVE' || activeRerouteAlert.is_active !== false)) {
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: true,
+        demandLevel: 'HIGH_SURGE',
+        incomingTourists: 180,
+        suggestedRate: 1300
+      }));
+      return;
+    }
+
+    // Connect to live crowd density at active shrine (Kedarnath TS001)
+    const kedaDensity = densityMap?.['TS001'] || densityMap?.['site_kedarnath'];
+    const occ = kedaDensity?.occupancy_percentage;
+    const crowdStatus = kedaDensity?.status;
+
+    if (occ >= 90 || crowdStatus === 'CRITICAL') {
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: true,
+        demandLevel: 'CRITICAL_SURGE',
+        incomingTourists: 240,
+        suggestedRate: 1500
+      }));
+    } else if (occ >= 75 || crowdStatus === 'HIGH') {
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: true,
+        demandLevel: 'HIGH_SURGE',
+        incomingTourists: 190,
+        suggestedRate: 1300
+      }));
+    } else if (occ >= 50 || crowdStatus === 'MODERATE') {
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: false,
+        demandLevel: 'RISING',
+        incomingTourists: 150,
+        suggestedRate: 1100
+      }));
+    } else {
+      setState((prev) => ({
+        ...prev,
+        isRerouteSpikeActive: false,
+        demandLevel: 'NORMAL',
+        incomingTourists: 120,
+        suggestedRate: 1000,
+        isSuggestedApplied: false,
+        currentRate: 1000
+      }));
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [activeRerouteAlert, densityMap]);
   // Alerts
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
@@ -220,6 +278,41 @@ export default function HotelDashboard({ currentUser, showToast }) {
         }
         if (Array.isArray(ownerBookings)) {
           setBackendBookings(ownerBookings);
+          if (ownerBookings.length > 0) {
+            const mappedRequests = ownerBookings.map((b, idx) => ({
+              id: b.id,
+              booking_id: b.id.slice(0, 8).toUpperCase(),
+              hotel_id: b.hotel_id,
+              room_id: b.room_id,
+              room_number: `20${(idx % 8) + 1}`,
+              guest_name: b.tourist_id && b.tourist_id.startsWith('0000') ? 'Ramesh Sharma (Pilgrim)' : `Yatri Pilgrim (${b.tourist_id?.slice(0, 6) || 'Devotee'})`,
+              guest_count: b.guests || 2,
+              room_type: b.room_type || 'Standard Deluxe',
+              check_in: b.check_in,
+              check_out: b.check_out,
+              price: b.total_price || 1200,
+              status: b.status || 'confirmed',
+              created_at: b.created_at || new Date().toISOString(),
+              decline_reason: null
+            }));
+            setBookingRequestsList((prev) => {
+              const existingMap = new Map(prev.map(r => [r.id, r]));
+              let hasNew = false;
+              mappedRequests.forEach(m => {
+                if (!existingMap.has(m.id)) {
+                  hasNew = true;
+                  existingMap.set(m.id, m);
+                } else {
+                  const item = existingMap.get(m.id);
+                  if (item) item.status = m.status;
+                }
+              });
+              if (hasNew && showToast) {
+                showToast(`🔔 New Pilgrim Booking: ${mappedRequests[0].guest_name} arriving for Kedarnath Yatra!`);
+              }
+              return Array.from(existingMap.values());
+            });
+          }
         }
         if (rerouteAlert && typeof rerouteAlert.is_active === 'boolean') {
           setState(prev => ({

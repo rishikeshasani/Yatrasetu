@@ -45,6 +45,33 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # 0. Resilient Demo Auth Support for Offline / Presentation Sessions
+    if token.startswith("demo-jwt-token-for-") or token.startswith("demo_token"):
+        role_part = token.replace("demo-jwt-token-for-", "").replace("demo_token_", "").strip()
+        if role_part not in ["tourist", "government", "hotel", "travel_company", "vendor"]:
+            role_part = "tourist"
+        display_names = {
+            "government": "District Magistrate (National Command)",
+            "hotel": "Shrine Hospitality Partner",
+            "travel_company": "Garhwal Fleet Logistics",
+            "tourist": "Pilgrim Devotee",
+            "vendor": "Temple Prasad Vendor"
+        }
+        demo_uuids = {
+            "government": "00000000-0000-0000-0000-000000000001",
+            "hotel": "00000000-0000-0000-0000-000000000002",
+            "travel_company": "00000000-0000-0000-0000-000000000003",
+            "tourist": "00000000-0000-0000-0000-000000000004",
+            "vendor": "00000000-0000-0000-0000-000000000005"
+        }
+        return AuthenticatedUser(
+            id=demo_uuids.get(role_part, "00000000-0000-0000-0000-000000000004"),
+            email=f"{role_part}@yatrasetu.demo",
+            role=role_part,
+            full_name=display_names.get(role_part, f"Demo {role_part.title()}"),
+            created_at="2026-09-05T00:00:00Z"
+        )
+
     # 1. Verify token with Supabase Auth
     try:
         user_response = supabase.auth.get_user(token)

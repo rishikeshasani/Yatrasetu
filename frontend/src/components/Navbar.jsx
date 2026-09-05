@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LanguageSelector from './tourist/LanguageSelector';
 
 export default function Navbar({
   walletPoints,
@@ -235,6 +236,9 @@ export default function Navbar({
 
         {/* Action Controls: View Switcher, User Profile, Yatra Dal, Wallet & SOS, Logout */}
         <div className="navbar-actions">
+          {/* Multilingual Selector */}
+          <LanguageSelector compact={true} />
+
           {/* Main View Switcher (Landing vs Live Console) */}
           <button
             type="button"

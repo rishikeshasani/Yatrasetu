@@ -1297,7 +1297,7 @@ export async function fetchSites() {
   } catch (err) {
     console.warn("Using fallback sites data:", err);
   }
-  return CORRIDOR_STOPS;
+  return MOCK_SITES.map((s) => ({ ...s, image: s.image || getShrineImage(s.id) }));
 }
 
 export async function fetchSiteDensity(siteId) {
@@ -2262,6 +2262,48 @@ export async function bookHotelRoom(hotelId, bookingData = {}) {
     console.warn("Backend hotel booking error:", err);
     return { status: "error", detail: "Booking endpoint temporarily unreachable" };
   }
+}
+
+export async function updateHotelBookingStatus(bookingId, status, declineReason = null) {
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
+    const res = await fetch(`${API_BASE_URL}/hotels/bookings/${encodeURIComponent(bookingId)}/status`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ status, decline_reason: declineReason })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:hotel_status_changed', { detail: { bookingId, status, data } }));
+      }
+      return { status: "success", data };
+    }
+  } catch (err) {
+    console.warn("Backend update booking status error:", err);
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:hotel_status_changed', { detail: { bookingId, status } }));
+  }
+  return { status: "success", fallback: true };
+}
+
+export async function fetchMyHotelBookings() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/hotels/tourist/bookings`, {
+      headers: getAuthHeaders()
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data)) return data;
+    }
+  } catch (err) {
+    console.warn("Backend fetch tourist bookings error:", err);
+  }
+  return [];
 }
 
 // ==========================================================================

@@ -362,6 +362,14 @@ export default function App() {
     setActiveAlternateRoute(alt);
     setRouteStatus('ACTIVE');
     setPendingPunyaReward(25);
+    window.dispatchEvent(new CustomEvent('yatrasetu:tourist_rerouted', {
+      detail: {
+        destination: alt.name,
+        alternativeId: alt.alternative_id || alt.id,
+        savedWaitMins: alt.saved_wait_minutes || alt.time_saved_minutes || 45,
+        timestamp: new Date().toISOString()
+      }
+    }));
     showToast(`🟡 Alternate route selected: Heading to ${alt.name}. 🎁 +25 Punya Points pending arrival.`);
   };
 
@@ -485,7 +493,9 @@ export default function App() {
                 onSelectRoute={handleSelectRoute}
                 onCompleteArrival={handleCompleteArrival}
                 onSwitchBack={handleSwitchBack}
-                onOpenSOS={() => setIsSOSModalOpen(true)}
+                onOpenWallet={() => setIsWalletOpen(true)}
+                walletPoints={wallet?.total_points || 260}
+                activeRerouteAlert={activeRerouteAlert}
                 currentUser={currentUser}
                 onShowToast={showToast}
               />
@@ -507,6 +517,9 @@ export default function App() {
               <HotelDashboard
                 currentUser={currentUser}
                 showToast={showToast}
+                activeRerouteAlert={activeRerouteAlert}
+                densityMap={densityMap}
+                onBackToLanding={() => navigateTo('/landing')}
               />
             )}
 

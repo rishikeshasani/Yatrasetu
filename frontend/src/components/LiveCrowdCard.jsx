@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSiteScheduleInsights, fetchSiteMLForecast } from '../api/api';
+import { getShrineImage } from '../utils/shrineImages';
 
 export default function LiveCrowdCard({ site, density, forecast, prediction }) {
   if (!site) return null;
@@ -85,8 +86,20 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
   return (
     <section className="live-crowd-section">
       {/* 1. DESTINATION HERO HEADER */}
-      <div className="destination-hero-header">
-        <div className="destination-meta">
+      <div className="destination-hero-header" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div className="destination-hero-media" style={{ position: 'relative', width: '160px', height: '115px', borderRadius: '0.85rem', overflow: 'hidden', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>
+          <img
+            src={getShrineImage(site.id)}
+            alt={site.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            loading="lazy"
+          />
+          <span style={{ position: 'absolute', bottom: '0.35rem', left: '0.35rem', background: 'rgba(15, 23, 42, 0.85)', color: '#10B981', fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+            <span className="blink-dot"></span> LIVE CCTV
+          </span>
+        </div>
+
+        <div className="destination-meta" style={{ flex: 1, minWidth: '260px' }}>
           <div className="telemetry-badge-row">
             <span className="live-telemetry-tag">
               <span className="blink-dot"></span> LIVE SURVEILLANCE FEED
