@@ -179,21 +179,20 @@ export default function TravelCompanyDashboard({
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: '0 0 0.2rem', color: '#92400E', fontSize: '1.1rem' }}>Sharma Travels Route Intelligence Alert</h3>
             <p style={{ margin: 0, color: '#B45309', fontSize: '0.95rem' }}>
-              Forward + Return Fill Predictor (Hybrid Calendar Pattern + YOLO v8 CCTV Spike Telemetry)
+              Somvati Amavasya Crowd Demand &amp; Bus Seat Predictor — Haridwar Corridor
             </p>
           </div>
           <button onClick={() => setShowFleetModal(true)} style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>🚌 Adjust Fleet Schedule</button>
         </div>
 
-        {/* YOLO CCTV Live Telemetry Spike Strip */}
-        <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#78350F', fontSize: '0.88rem', fontWeight: '600' }}>
-            <span>🎥 <strong>YOLO v8 CCTV Telemetry:</strong></span>
-            <span style={{ backgroundColor: '#D97706', color: '#FFF', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.78rem', fontWeight: 'bold' }}>⚡ +312% Crowd Surge Spike</span>
-            <span>Har Ki Pauri Exit (Cam #04) • 2,450 devotees/min</span>
+        {/* Simple & Clear Timestamped Spike Banner */}
+        <div style={{ padding: '0.85rem 1.5rem', backgroundColor: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#78350F', fontSize: '0.92rem', fontWeight: '600' }}>
+            <span style={{ backgroundColor: '#DC2626', color: '#FFF', padding: '0.2rem 0.6rem', borderRadius: '0.25rem', fontSize: '0.82rem', fontWeight: 'bold' }}>🚨 HUGE CROWD SPIKE AT 4:00 PM</span>
+            <span>AI Cameras detected <strong>2,450 devotees/min</strong> exiting Har Ki Pauri Ghats at <strong>4:00 PM</strong></span>
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 'bold', backgroundColor: '#FFF', padding: '0.2rem 0.6rem', borderRadius: '0.25rem', border: '1px solid #FCD34D' }}>
-            🟢 region_occupancy_pipeline.py Feed Active
+          <div style={{ fontSize: '0.8rem', color: '#B45309', fontWeight: 'bold', backgroundColor: '#FFF', padding: '0.25rem 0.6rem', borderRadius: '0.25rem', border: '1px solid #FCD34D' }}>
+            📹 Live CCTV Vision Telemetry
           </div>
         </div>
 
@@ -204,13 +203,13 @@ export default function TravelCompanyDashboard({
           <div style={{ padding: '1rem 1.5rem', borderRight: '1px solid #FDE68A' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '1.1rem' }}>➡️</span>
-              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Forward Journey · Oct 12</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Forward Trip · Friday Oct 12</span>
             </div>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1E3A8A', margin: '0.5rem 0' }}>
               {forwardLow}–{forwardHigh}% full
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              Based on Somvati Amavasya calendar pattern + YOLO CCTV live density feeds
+            <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: '0.75rem' }}>
+              Heavy morning influx heading towards Haridwar. High demand expected on morning departures.
             </div>
             <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
               <div style={{ width: `${forwardAvg}%`, backgroundColor: '#D97706', height: '100%' }}></div>
@@ -221,13 +220,13 @@ export default function TravelCompanyDashboard({
           <div style={{ padding: '1rem 1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
               <span style={{ fontSize: '1.1rem' }}>↩️</span>
-              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return Journey · Oct 13</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return Trip · Sunday Oct 13</span>
             </div>
             <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#DC2626', margin: '0.5rem 0' }}>
               {returnLow}–{returnHigh}% full
             </div>
-            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              Based on Somvati Amavasya calendar pattern + YOLO CCTV live density feeds
+            <div style={{ fontSize: '0.78rem', color: '#6B7280', marginBottom: '0.75rem' }}>
+              Buses returning empty. Action needed to capture the 4:00 PM post-pooja return crowd.
             </div>
             <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
               <div style={{ width: `${returnAvg}%`, backgroundColor: '#DC2626', height: '100%' }}></div>
@@ -235,20 +234,22 @@ export default function TravelCompanyDashboard({
           </div>
         </div>
 
-        {/* RECOMMENDATION PANEL */}
+        {/* RECOMMENDATION PANEL — SIMPLE FOR TRAVEL OPERATOR */}
         <div style={{ padding: '1rem 1.5rem', backgroundColor: '#FEF2F2', borderTop: '1px solid #FCA5A5', display: 'flex', gap: '0.75rem' }}>
           <span style={{ fontSize: '1.25rem' }}>💡</span>
           <div>
-            <h4 style={{ margin: '0 0 0.25rem', color: '#991B1B', fontSize: '0.95rem' }}>AI &amp; YOLO Vision Actionable Insights</h4>
-            {imbalance > 30 ? (
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#B91C1C', fontSize: '0.85rem' }}>
-                <li style={{ marginBottom: '0.25rem' }}><strong>Calendar &amp; Booking Imbalance:</strong> Return leg is significantly underfilled. Consider dynamic pricing — reduce return fares by 15–20% to incentivize same-day returns.</li>
-                <li style={{ marginBottom: '0.25rem' }}><strong>YOLO Vision Telemetry Spike:</strong> Real-time CCTV analysis (<code style={{ backgroundColor: '#FEE2E2', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>region_occupancy_pipeline.py</code>) detected a <strong>+312% density spike</strong> at Har Ki Pauri exit gates. 84% of exiting crowd heading towards bus terminal.</li>
-                <li><strong>Route Diversion:</strong> Shift the return pickup hub from Har Ki Pauri (congested) to BHEL Ground Satellite Parking (3km away, free highway access).</li>
-              </ul>
-            ) : (
-              <p style={{ margin: 0, color: '#B91C1C', fontSize: '0.85rem' }}>Forward and return fill are balanced. YOLO vision telemetry showing steady flow.</p>
-            )}
+            <h4 style={{ margin: '0 0 0.4rem', color: '#991B1B', fontSize: '1rem', fontWeight: 'bold' }}>Operator Action Plan (Based on 4:00 PM Spike Alert)</h4>
+            <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#B91C1C', fontSize: '0.88rem', lineHeight: '1.5' }}>
+              <li style={{ marginBottom: '0.3rem' }}>
+                <strong>⏰ 4:00 PM Peak Exit Spike:</strong> AI CCTV cameras detected a massive exit crowd at <strong>4:00 PM</strong> after the Somvati Amavasya holy dip. 85% of devotees are heading to the bus stand right now.
+              </li>
+              <li style={{ marginBottom: '0.3rem' }}>
+                <strong>🏷️ Fill Empty Return Buses:</strong> Offer a <strong>15–20% discount on 4:30 PM &amp; 5:00 PM return tickets</strong> to quickly fill your empty buses returning to Delhi.
+              </li>
+              <li>
+                <strong>🚌 Change Pickup Location:</strong> Move return pickup hub from Har Ki Pauri ghats to <strong>BHEL Satellite Parking</strong> (3 km away) to bypass city center traffic.
+              </li>
+            </ul>
           </div>
         </div>
       </div>
