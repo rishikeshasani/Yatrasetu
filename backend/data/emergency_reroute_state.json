@@ -1,0 +1,45 @@
+{
+  "id": "d7991fd7-57d1-4d24-9af0-dcca4a9f5dc2",
+  "site_id": "TS001",
+  "site_name": "Kedarnath Temple",
+  "crowd_status": "NORMAL",
+  "occupancy_percentage": 0.9,
+  "people_count": 120,
+  "alert_type": "EMERGENCY_REROUTE",
+  "status": "RESOLVED",
+  "diverted_tourists": 350,
+  "partner_buses": 14,
+  "partner_hotels": 22,
+  "alternative_routes": [
+    {
+      "alternative_id": "ALT001",
+      "name": "Madhyamaheshwar Temple (Second Kedar)",
+      "type": "Pristine High-Altitude Alpine Shrine & Trek",
+      "latitude": 30.638,
+      "longitude": 79.2198,
+      "distance_km": 42.0,
+      "travel_time_mins": 360,
+      "relative_crowd_percentage": 5,
+      "why_visit": "Serene spiritual atmosphere, untouched Bugyal (alpine meadow) views of Chaukhamba peaks, zero queue time",
+      "best_time_to_visit": "May - June, September - October",
+      "road_connectivity": "Motorable road till Ransi village + 16 km scenic mountain trek path"
+    },
+    {
+      "alternative_id": "ALT002",
+      "name": "Triyuginarayan Temple",
+      "type": "Ancient Mythological Himalayan Stone Temple",
+      "latitude": 30.5983,
+      "longitude": 78.9839,
+      "distance_km": 25.0,
+      "travel_time_mins": 90,
+      "relative_crowd_percentage": 12,
+      "why_visit": "Site of divine Shiva-Parvati wedding with perpetual sacred flame (Akhand Dhuni); peaceful darshan without long queues",
+      "best_time_to_visit": "April - June, September - November",
+      "road_connectivity": "All-weather motorable road connected from Sonprayag"
+    }
+  ],
+  "notes": "Emergency diversion active for Kedarnath corridor.",
+  "activated_by": "usr_govt_command",
+  "activated_at": "2026-09-05T01:55:10.758349+00:00",
+  "resolved_at": "2026-09-05T01:55:11.800948+00:00"
+}

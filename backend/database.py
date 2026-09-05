@@ -2,11 +2,17 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 
+# Load from backend/.env and current working directory
+_backend_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(_backend_env):
+    load_dotenv(_backend_env)
 load_dotenv()
 
 supabase_url = os.environ.get("SUPABASE_URL")
-supabase_key = os.environ.get("SUPABASE_KEY")
+supabase_key = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
 supabase_service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+if supabase_key and not os.environ.get("SUPABASE_ANON_KEY"):
+    os.environ["SUPABASE_ANON_KEY"] = supabase_key
 
 class DummyTable:
     def __init__(self, name):

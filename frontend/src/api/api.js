@@ -1,6 +1,18 @@
 // YatraSetu API Client Service
-// Backend Base URL
-export const API_BASE_URL = "http://127.0.0.1:8000";
+import { getShrineImage, CANONICAL_25_SHRINES } from '../utils/shrineImages';
+
+// Backend Base URL and DEMO_MODE switch
+import { API_BASE_URL, DEMO_MODE } from './api_config';
+export { API_BASE_URL, DEMO_MODE };
+
+// Delhi ⇄ Haridwar/Rishikesh Corridor — Somvati Amavasya Demo
+export const CORRIDOR_STOPS = [
+  { id: 'delhi_isbt', name: 'Delhi ISBT Kashmiri Gate', city: 'New Delhi', state: 'Delhi', capacity: 15000, lat: 28.6670, lng: 77.2284, type: 'origin' },
+  { id: 'meerut', name: 'Meerut Junction', city: 'Meerut', state: 'Uttar Pradesh', capacity: 5000, lat: 28.9845, lng: 77.7064, type: 'intermediate' },
+  { id: 'haridwar', name: 'Haridwar — Har Ki Pauri', city: 'Haridwar', state: 'Uttarakhand', capacity: 50000, lat: 29.9457, lng: 78.1642, type: 'destination' },
+  { id: 'rishikesh', name: 'Rishikesh — Triveni Ghat', city: 'Rishikesh', state: 'Uttarakhand', capacity: 25000, lat: 30.1087, lng: 78.2936, type: 'destination' },
+  { id: 'neelkanth', name: 'Neelkanth Mahadev Temple', city: 'Neelkanth', state: 'Uttarakhand', capacity: 8000, lat: 30.1383, lng: 78.3928, type: 'satellite' },
+];
 
 // Mock Fallback Data for resilient hackathon demos
 export const MOCK_DENSITY = {
@@ -1208,14 +1220,54 @@ export const SITE_ID_ALIASES = {
   TS001: 'site_kedarnath',
   TS002: 'site_badrinath',
   TS003: 'site_kashi',
+  TS004: 'site_ayodhya',
   TS005: 'site_vaishnodevi',
   TS006: 'site_tirupati',
+  TS010: 'site_meenakshi',
+  TS011: 'site_ts011',
+  TS015: 'site_ts015',
+  TS016: 'site_ts016',
   site_kedarnath: 'TS001',
   site_badrinath: 'TS002',
   site_kashi: 'TS003',
+  site_ayodhya: 'TS004',
   site_vaishnodevi: 'TS005',
-  site_tirupati: 'TS006'
+  site_tirupati: 'TS006',
+  site_meenakshi: 'TS010',
+  site_ts011: 'TS011',
+  site_ts015: 'TS015',
+  site_ts016: 'TS016'
 };
+
+export const MOCK_SITES = [
+  { id: "SITE001", name: "Main Temple", capacity: 1000, latitude: 20.1, longitude: 85.8, ...(SITE_METADATA.SITE001 || {}) },
+  { id: "SITE002", name: "Heritage Shrine", capacity: 500, latitude: 20.2, longitude: 85.9, ...(SITE_METADATA.SITE002 || {}) },
+  { id: "TS001", name: "Kedarnath Temple", capacity: 13000, latitude: 30.7346, longitude: 79.0669, ...(SITE_METADATA.TS001 || {}) },
+  { id: "TS002", name: "Badrinath Temple", capacity: 16000, latitude: 30.7433, longitude: 79.4938, ...(SITE_METADATA.TS002 || {}) },
+  { id: "TS003", name: "Kashi Vishwanath Temple & Dashashwamedh Ghat", capacity: 120000, latitude: 25.3109, longitude: 83.0107, ...(SITE_METADATA.TS003 || {}) },
+  { id: "TS004", name: "Shri Ram Janmabhoomi Mandir", capacity: 150000, latitude: 26.7956, longitude: 82.1943, ...(SITE_METADATA.TS004 || {}) },
+  { id: "TS005", name: "Shri Mata Vaishno Devi Shrine", capacity: 50000, latitude: 33.0308, longitude: 74.949, ...(SITE_METADATA.TS005 || {}) },
+  { id: "TS006", name: "Tirumala Venkateswara Temple", capacity: 85000, latitude: 13.6833, longitude: 79.3472, ...(SITE_METADATA.TS006 || {}) },
+  { id: "TS007", name: "Shree Jagannath Temple", capacity: 90000, latitude: 19.8049, longitude: 85.8179, ...(SITE_METADATA.TS007 || {}) },
+  { id: "TS008", name: "Mahakaleshwar Jyotirlinga Temple", capacity: 75000, latitude: 23.1827, longitude: 75.7682, ...(SITE_METADATA.TS008 || {}) },
+  { id: "TS009", name: "Golden Temple (Sri Harmandir Sahib)", capacity: 100000, latitude: 31.62, longitude: 74.8765, ...(SITE_METADATA.TS009 || {}) },
+  { id: "TS010", name: "Meenakshi Sundareswarar Temple", capacity: 45000, latitude: 9.9195, longitude: 78.1193, ...(SITE_METADATA.TS010 || {}) },
+  { id: "TS011", name: "Ramanathaswamy Temple", capacity: 50000, latitude: 9.2881, longitude: 79.3174, ...(SITE_METADATA.TS011 || {}) },
+  { id: "TS012", name: "Shree Somnath Jyotirlinga Temple", capacity: 60000, latitude: 20.888, longitude: 70.4013, ...(SITE_METADATA.TS012 || {}) },
+  { id: "TS013", name: "Shri Saibaba Sansthan Temple", capacity: 80000, latitude: 19.7667, longitude: 74.4764, ...(SITE_METADATA.TS013 || {}) },
+  { id: "TS014", name: "Sabarimala Sree Dharma Sastha Temple", capacity: 80000, latitude: 9.4402, longitude: 77.0819, ...(SITE_METADATA.TS014 || {}) },
+  { id: "TS015", name: "Har Ki Pauri Ghat & Mansa Devi", capacity: 150000, latitude: 29.9577, longitude: 78.1724, ...(SITE_METADATA.TS015 || {}) },
+  { id: "TS016", name: "Triveni Sangam & Kumbh Mela Grounds", capacity: 200000, latitude: 25.4283, longitude: 81.8847, ...(SITE_METADATA.TS016 || {}) },
+  { id: "TS017", name: "Bankey Bihari Temple & Prem Mandir", capacity: 70000, latitude: 27.5818, longitude: 77.6974, ...(SITE_METADATA.TS017 || {}) },
+  { id: "TS018", name: "Taj Mahal Monument Complex", capacity: 35000, latitude: 27.1751, longitude: 78.0421, ...(SITE_METADATA.TS018 || {}) },
+  { id: "TS019", name: "Amber Fort & Palace Complex", capacity: 25000, latitude: 26.9855, longitude: 75.8513, ...(SITE_METADATA.TS019 || {}) },
+  { id: "TS020", "name": "Qutub Minar & Mehrauli Archaeological Complex", capacity: 22000, latitude: 28.5245, longitude: 77.1855, ...(SITE_METADATA.TS020 || {}) },
+  { id: "TS021", "name": "Ajanta and Ellora Rock-Cut Caves", capacity: 18000, latitude: 20.0268, longitude: 75.178, ...(SITE_METADATA.TS021 || {}) },
+  { id: "TS022", "name": "Group of Monuments at Hampi (Virupaksha & Vijaya Vittala)", capacity: 20000, latitude: 15.335, longitude: 76.46, ...(SITE_METADATA.TS022 || {}) },
+  { id: "TS023", "name": "Pangong Tso Lake & Hemis Monastery", capacity: 6000, latitude: 33.7595, longitude: 78.6674, ...(SITE_METADATA.TS023 || {}) },
+  { id: "TS024", "name": "Rohtang Pass & Solang Valley Adventure Zone", capacity: 1200, latitude: 32.3716, longitude: 77.2466, ...(SITE_METADATA.TS024 || {}) },
+  { id: "TS025", "name": "Maa Kamakhya Devalaya", capacity: 35000, latitude: 26.1664, longitude: 91.7054, ...(SITE_METADATA.TS025 || {}) }
+];
 
 // ==========================================
 // API CLIENT IMPLEMENTATIONS WITH RESILIENT FALLBACKS
@@ -1236,7 +1288,8 @@ export async function fetchSites() {
             state: site.state || meta.state || 'India',
             description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
             altitude: site.altitude || meta.altitude || '',
-            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours'
+            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours',
+            image: getShrineImage(site.id)
           };
         });
       }
@@ -1244,7 +1297,7 @@ export async function fetchSites() {
   } catch (err) {
     console.warn("Using fallback sites data:", err);
   }
-  return MOCK_SITES;
+  return CORRIDOR_STOPS;
 }
 
 export async function fetchSiteDensity(siteId) {
@@ -1269,6 +1322,22 @@ export async function fetchSiteDensity(siteId) {
       last_updated: "Just now"
     }
   );
+}
+
+export async function fetchAllSiteDensities(sites = []) {
+  if (!Array.isArray(sites) || sites.length === 0) return {};
+  try {
+    const entries = await Promise.all(
+      sites.map(async (s) => {
+        const d = await fetchSiteDensity(s.id);
+        return [s.id, d];
+      })
+    );
+    return Object.fromEntries(entries);
+  } catch (err) {
+    console.warn("Error in fetchAllSiteDensities:", err);
+    return {};
+  }
 }
 
 export async function fetchSiteForecast(siteId) {
@@ -1407,29 +1476,39 @@ export async function triggerSOS(
   extraDetails = {}
 ) {
   try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
     const res = await fetch(`${API_BASE_URL}/sos`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
-        user_id: userId,
-        latitude,
-        longitude,
-        emergency_type: emergencyType,
-        site_id: extraDetails.site_id || null,
-        site_name: extraDetails.site_name || null,
-        location_source: extraDetails.location_source || "gps"
+        latitude: Number(latitude),
+        longitude: Number(longitude),
+        user_id: userId
       })
     });
-    if (res.ok) return await res.json();
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
+      }
+      return data;
+    }
   } catch (err) {
     console.warn("Fallback SOS:", err);
   }
-  return {
+  const fallback = {
     message: `🚨 Emergency SOS alert broadcasted for ${emergencyType}. Emergency response network notified.`,
     status: "success",
     alert_id: `SOS-${Math.floor(1000 + Math.random() * 9000)}`,
     recorded_at: new Date().toISOString()
   };
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: fallback }));
+  }
+  return fallback;
 }
 
 export async function fetchVendors(siteId) {
@@ -1847,6 +1926,9 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
       const data = await res.json();
       // Synchronize in-memory mock structures as well so fallback queries match
       syncLocalCrowdObservation(siteId, count, qLen, data.occupancy_percentage, data.status);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data } }));
+      }
       return { status: "success", data };
     }
   } catch (err) {
@@ -1898,6 +1980,10 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
   };
 
   syncLocalCrowdObservation(siteId, count, qLen, occupancy, crowdStatus, waitMins);
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data: result } }));
+  }
 
   return {
     status: "success",
@@ -2065,10 +2151,14 @@ export async function fetchHotels(params = {}) {
     if (params.max_price != null) query.append("max_price", params.max_price);
     if (params.verified_only) query.append("verified_only", "true");
 
-    const res = await fetch(`${API_BASE_URL}/hotels?${query.toString()}`);
+    const qs = query.toString();
+    const url = qs ? `${API_BASE_URL}/hotels?${qs}` : `${API_BASE_URL}/hotels`;
+    const headers = typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" };
+
+    const res = await fetch(url, { headers });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
+      if (Array.isArray(data)) return data;
     }
   } catch (err) {
     console.warn("Fallback hotels:", err);
@@ -2149,6 +2239,32 @@ export async function fetchGovernmentOccupancyReport() {
   };
 }
 
+export async function bookHotelRoom(hotelId, bookingData = {}) {
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      ...getAuthHeaders()
+    };
+    const res = await fetch(`${API_BASE_URL}/hotels/${encodeURIComponent(hotelId)}/book`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(bookingData)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:hotel_booked', { detail: { hotelId, data } }));
+      }
+      return { status: "success", data };
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { status: "error", detail: errData.detail || "Booking failed" };
+  } catch (err) {
+    console.warn("Backend hotel booking error:", err);
+    return { status: "error", detail: "Booking endpoint temporarily unreachable" };
+  }
+}
+
 // ==========================================================================
 // REAL-TIME SOS DISTRESS ALERTS CLIENT HELPERS
 // ==========================================================================
@@ -2191,8 +2307,14 @@ export async function fetchActiveSOSAlerts() {
       const data = await res.json();
       if (Array.isArray(data?.alerts)) return data.alerts;
     }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch SOS alerts: HTTP ${res.status}`);
+    }
   } catch (err) {
-    console.warn("Fallback active SOS alerts:", err);
+    console.warn("[SOS] Error fetching active alerts:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
   return MOCK_ACTIVE_SOS_ALERTS;
 }
@@ -2749,3 +2871,233 @@ export function getHotelLiveMetrics() {
   };
 }
 
+/**
+ * Dispatch / Acknowledge an Emergency SOS Distress Alert.
+ * Authenticated Government / SDRF responder endpoint.
+ * Persists status="ACKNOWLEDGED" to Supabase public.sos_alerts table.
+ */
+export async function dispatchSOSAlert(alertId, notes = null) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const res = await fetch(`${API_BASE_URL}/sos/${encodeURIComponent(alertId)}/dispatch`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ status: "ACKNOWLEDGED", notes })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
+    }
+    return data;
+  }
+  const errData = await res.json().catch(() => ({}));
+  throw new Error(errData.detail || `SOS Dispatch failed with HTTP ${res.status}`);
+}
+
+// ==========================================================================
+// EMERGENCY REROUTE PERSISTENT EVENT HELPERS (Govt -> Backend -> Travel & Hotel)
+// ==========================================================================
+
+export async function activateEmergencyReroute(siteId, extraData = {}) {
+  const targetSiteId = siteId || "TS001";
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const payload = {
+    site_id: targetSiteId,
+    diverted_tourists: extraData.diverted_tourists || 350,
+    partner_buses: extraData.partner_buses || 14,
+    partner_hotels: extraData.partner_hotels || 22,
+    notes: extraData.notes || null
+  };
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/alerts/reroute/activate`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: data }));
+      }
+      return data;
+    }
+    const errData = await res.json().catch(() => ({}));
+    if (!DEMO_MODE) {
+      throw new Error(errData.detail || `Activation failed with HTTP ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("activateEmergencyReroute notice:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
+    const fallbackData = {
+      status: "success",
+      is_active: true,
+      alert: {
+        id: `REROUTE-${targetSiteId}-${Date.now()}`,
+        site_id: targetSiteId,
+        site_name: targetSiteId === "TS001" ? "Kedarnath Temple" : targetSiteId,
+        crowd_status: "CRITICAL",
+        occupancy_percentage: 95.0,
+        people_count: 12350,
+        alert_type: "EMERGENCY_REROUTE",
+        status: "ACTIVE",
+        diverted_tourists: 350,
+        partner_buses: 14,
+        partner_hotels: 22,
+        activated_at: new Date().toISOString()
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: fallbackData }));
+    }
+    return fallbackData;
+  }
+}
+
+export async function deactivateEmergencyReroute(siteId = null, reason = "Situation normalized") {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  try {
+    const res = await fetch(`${API_BASE_URL}/alerts/reroute/deactivate`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ site_id: siteId, reason })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
+      }
+      return data;
+    }
+    const errData = await res.json().catch(() => ({}));
+    if (!DEMO_MODE) {
+      throw new Error(errData.detail || `Deactivation failed with HTTP ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("deactivateEmergencyReroute notice:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
+  }
+  const fallback = { status: "success", is_active: false, message: "Emergency reroute deactivated." };
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
+  }
+  return fallback;
+}
+
+export async function fetchActiveRerouteAlert(siteId = null) {
+  try {
+    const url = siteId
+      ? `${API_BASE_URL}/alerts/reroute?site_id=${encodeURIComponent(siteId)}`
+      : `${API_BASE_URL}/alerts/reroute`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      return data;
+    }
+  } catch (err) {
+    console.warn("fetchActiveRerouteAlert notice:", err);
+  }
+  return { is_active: false, alert: null };
+}
+
+// ============================================================
+// FLEET SCHEDULE API — Real-time bus schedule management
+// ============================================================
+
+/**
+ * Fetch the live fleet schedule from the backend.
+ * Used by HotelDashboard and TravelCompanyDashboard to show fleet schedules.
+ */
+export async function fetchFleetSchedules() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.routes) return data.routes;
+    }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch fleet schedules: HTTP ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("[Fleet] Backend fetch error:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
+  }
+  // Local fallback only when DEMO_MODE=true
+  return [
+    { id: "HR-01", from_location: "Delhi (ISBT Kashmiri Gate)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "06:00 AM", arrival_time: "11:00 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 3, capacity: 42, occupancy: 94, bus_type: "Volvo A/C", status: "HIGH DEMAND", operator: "Sharma Travels" },
+    { id: "HR-02", from_location: "Dehradun (Bus Stand)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "08:30 AM", arrival_time: "10:30 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 2, capacity: 38, occupancy: 100, bus_type: "Sleeper", status: "FULL", operator: "Sharma Travels" },
+    { id: "HR-03", from_location: "Haridwar (Har Ki Pauri)", to_location: "Delhi (ISBT Kashmiri Gate)", departure_time: "04:00 PM", arrival_time: "09:30 PM", journey_date: "Oct 13 (Sun)", direction: "return", buses: 3, capacity: 42, occupancy: 88, bus_type: "Volvo A/C", status: "RETURN", operator: "Sharma Travels" },
+    { id: "HR-04", from_location: "Rishikesh (Triveni Ghat)", to_location: "Haridwar (Har Ki Pauri)", departure_time: "10:00 AM", arrival_time: "11:00 AM", journey_date: "Oct 12 (Fri)", direction: "forward", buses: 1, capacity: 30, occupancy: 67, bus_type: "Mini Bus", status: "NORMAL", operator: "Sharma Travels" },
+  ];
+}
+
+/**
+ * Save an updated fleet schedule to the backend.
+ * Called when travel operator or government updates bus allocations.
+ * @param {Array} routes - Array of { id, buses, operator } objects
+ * @returns {Object} API response
+ */
+export async function saveFleetSchedules(routes) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...getAuthHeaders()
+  };
+  const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ routes }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:fleet_updated', { detail: data }));
+    }
+    return data;
+  }
+  const errData = await res.json().catch(() => ({}));
+  throw new Error(errData.detail || `Failed to save fleet schedule: HTTP ${res.status}`);
+}
+
+/**
+ * Fetch only inbound (forward) buses headed to Haridwar.
+ * Lightweight endpoint for the HotelDashboard arrivals panel.
+ */
+export async function fetchInboundBuses() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/fleet/schedules/inbound`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.routes) return data.routes;
+    }
+    if (!DEMO_MODE) {
+      throw new Error(`Failed to fetch inbound buses: HTTP ${res.status}`);
+    }
+  } catch (err) {
+    console.warn("[Fleet] Inbound fetch error:", err);
+    if (!DEMO_MODE) {
+      throw err;
+    }
+  }
+  // Local fallback only when DEMO_MODE=true
+  const all = await fetchFleetSchedules();
+  return all.filter((r) => r.direction === "forward");
+}

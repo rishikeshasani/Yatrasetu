@@ -862,26 +862,10 @@ export default function VendorDashboardModal({ user, isOpen, onClose, onLogout }
             backgroundColor: '#FFFFFF',
             borderTop: '1px solid #E2E8F0',
             display: 'flex',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-end',
             alignItems: 'center'
           }}
         >
-          <button
-            type="button"
-            onClick={onLogout}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#FEF2F2',
-              color: '#991B1B',
-              border: '1px solid #FECACA',
-              borderRadius: '0.5rem',
-              fontWeight: '600',
-              fontSize: '0.82rem',
-              cursor: 'pointer'
-            }}
-          >
-            Logout Vendor Account
-          </button>
           <button
             type="button"
             className="primary-btn"

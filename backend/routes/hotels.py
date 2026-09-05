@@ -503,7 +503,39 @@ def book_hotel_room(
             detail="Specified room does not belong to this hotel."
         )
 
-    # 3. Prevent Overbooking: check available inventory
+    # 3. Prevent Overbooking: Check existing bookings for overlapping stay dates
+    # Condition: requested_check_in < existing_check_out AND requested_check_out > existing_check_in
+    req_ci_str = data.check_in.isoformat()
+    req_co_str = data.check_out.isoformat()
+    total_capacity = room.get("total_rooms", 1)
+
+    try:
+        b_query = supabase_admin.table("hotel_bookings")\
+            .select("id, check_in, check_out, status")\
+            .eq("room_id", data.room_id)\
+            .neq("status", "cancelled")\
+            .execute()
+
+        overlapping_count = 0
+        for eb in (b_query.data or []):
+            eb_ci = str(eb.get("check_in", ""))
+            eb_co = str(eb.get("check_out", ""))
+            if eb_ci and eb_co:
+                # Overlap logic condition: requested_check_in < existing_check_out AND requested_check_out > existing_check_in
+                if req_ci_str < eb_co and req_co_str > eb_ci:
+                    overlapping_count += 1
+
+        if overlapping_count >= total_capacity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No rooms available for room type '{room['room_type']}' on selected dates ({data.check_in} to {data.check_out}). Overbooking prevented."
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Warning: Overlapping booking check notice: {e}")
+
+    # Check available inventory counter
     available = room.get("available_rooms", 0)
     if available <= 0:
         raise HTTPException(

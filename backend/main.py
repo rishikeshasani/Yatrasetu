@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import supabase
 from routes.auth import router as auth_router
 from routes.crowd import router as crowd_router
+from routes.fleet import router as fleet_router
 from routes.hotels import router as hotels_router
 from routes.recommendations import router as recommendations_router
 from routes.safety import router as safety_router
@@ -17,6 +18,8 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5175",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
@@ -24,6 +27,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +35,7 @@ app.add_middleware(
 
 app.include_router(auth_router)
 app.include_router(crowd_router)
+app.include_router(fleet_router)
 app.include_router(hotels_router)
 app.include_router(hotels_router, prefix="/api")
 app.include_router(recommendations_router)

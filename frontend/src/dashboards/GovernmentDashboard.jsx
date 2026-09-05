@@ -4,6 +4,7 @@ import {
   fetchActiveSOSAlerts,
   fetchGovernmentOccupancyReport
 } from '../api/api';
+import { supabase } from '../supabaseClient';
 import './GovernmentDashboard.css';
 
 export default function GovernmentDashboard({
@@ -37,10 +38,79 @@ export default function GovernmentDashboard({
   const [inspectSite, setInspectSite] = useState(null);
 
   // =========================================================================
-  // WINNING FEATURE: EMERGENCY REROUTE & DEMO HEATMAP ZONES
+  // WINNING FEATURE: EMERGENCY REROUTE — SUPABASE REALTIME
   // =========================================================================
   const [isRerouteActive, setIsRerouteActive] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [emergencyTimestamp, setEmergencyTimestamp] = useState(null);
+
+  // Check for existing active emergency on mount
+  useEffect(() => {
+    const checkExisting = async () => {
+      try {
+        const { data } = await supabase
+          .from('platform_events')
+          .select('*')
+          .in('event_type', ['emergency', 'emergency_lifted'])
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (data && data.length > 0 && data[0].event_type === 'emergency') {
+          setIsRerouteActive(true);
+          setEmergencyTimestamp(new Date(data[0].created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+        }
+      } catch (err) {
+        console.warn('[Gov] Failed to check existing emergency:', err);
+      }
+    };
+    checkExisting();
+  }, []);
+
+  // Activate emergency — inserts into platform_events (all dashboards receive via Realtime)
+  const handleActivateEmergency = async () => {
+    setIsRecalculating(true);
+    try {
+      await supabase.from('platform_events').insert({
+        event_type: 'emergency',
+        payload: {
+          corridor: 'haridwar',
+          message: 'EMERGENCY: Haridwar corridor reroute enforced by District Magistrate. All inbound buses diverted to BHEL Ground Satellite Parking.',
+          zones_affected: ['Har Ki Pauri', 'Haridwar City Center'],
+          satellite_destination: 'BHEL Ground / Rishikesh Bypass',
+        },
+        created_by: currentUser?.name || 'District Magistrate',
+      });
+      setIsRerouteActive(true);
+      setEmergencyTimestamp(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+      if (showToast) showToast('🚨 Emergency reroute ACTIVATED — all connected dashboards notified in real-time.');
+    } catch (err) {
+      console.error('[Gov] Failed to activate emergency:', err);
+      if (showToast) showToast('⚠️ Failed to activate. Check Supabase connection.');
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
+  // Deactivate emergency
+  const handleLiftEmergency = async () => {
+    setIsRecalculating(true);
+    try {
+      await supabase.from('platform_events').insert({
+        event_type: 'emergency_lifted',
+        payload: {
+          corridor: 'haridwar',
+          message: 'Emergency reroute lifted. Normal traffic flow resumed on Haridwar corridor.',
+        },
+        created_by: currentUser?.name || 'District Magistrate',
+      });
+      setIsRerouteActive(false);
+      setEmergencyTimestamp(null);
+      if (showToast) showToast('✅ Emergency reroute LIFTED — all dashboards updated.');
+    } catch (err) {
+      console.error('[Gov] Failed to lift emergency:', err);
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
 
   // Surge Prediction Alert State
   const [surgeAlertVisible, setSurgeAlertVisible] = useState(true);
@@ -78,21 +148,36 @@ export default function GovernmentDashboard({
 
     loadGovtData();
 
-    // Poll SOS alerts every 5 seconds for live distress beacon updates
-    const sosInterval = setInterval(async () => {
+    // Live sync listeners across dashboards
+    const handleSOS = async () => {
       try {
         const freshAlerts = await fetchActiveSOSAlerts();
         if (isMounted && Array.isArray(freshAlerts)) {
           setSosAlerts(freshAlerts);
         }
-      } catch (err) {
-        // silent fallback
-      }
-    }, 5000);
+      } catch (err) {}
+    };
+
+    const handleHotelBooking = async () => {
+      try {
+        const report = await fetchGovernmentOccupancyReport();
+        if (isMounted && report) {
+          setHotelReport(report);
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('yatrasetu:sos_triggered', handleSOS);
+    window.addEventListener('yatrasetu:hotel_booked', handleHotelBooking);
+
+    // Poll SOS alerts every 5 seconds for live distress beacon updates
+    const sosInterval = setInterval(handleSOS, 5000);
 
     return () => {
       isMounted = false;
       clearInterval(sosInterval);
+      window.removeEventListener('yatrasetu:sos_triggered', handleSOS);
+      window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooking);
     };
   }, []);
 
@@ -244,10 +329,61 @@ export default function GovernmentDashboard({
   };
 
   return (
-    <div className="gov-command-root">
+    <div className="gov-command-root" id="gov-dashboard">
+
+      {/* DISTRICT MAGISTRATE: HARIDWAR EMERGENCY OVERRIDE — SUPABASE REALTIME */}
+      <div style={{ backgroundColor: isRerouteActive ? '#450A0A' : '#FEF2F2', border: `2px solid ${isRerouteActive ? '#DC2626' : '#FECACA'}`, borderRadius: '0.75rem', padding: '1.5rem', margin: '1.5rem 1.5rem 0', transition: 'all 0.3s ease' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div>
+            <h3 style={{ margin: '0 0 0.25rem', color: isRerouteActive ? '#FCA5A5' : '#991B1B', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.3rem' }}>
+              <span style={{ fontSize: '1.75rem' }}>🚨</span> Haridwar District Magistrate — Emergency Override
+            </h3>
+            <p style={{ margin: 0, color: isRerouteActive ? '#FEE2E2' : '#B91C1C', fontSize: '1rem' }}>
+              {isRerouteActive ? `REROUTE ACTIVE since ${emergencyTimestamp || 'now'} — all dashboards notified via Supabase Realtime` : 'Somvati Amavasya — Crowd capacity threshold controls'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', backgroundColor: isRerouteActive ? '#7F1D1D' : '#FEE2E2', padding: '0.5rem 1rem', borderRadius: '2rem', border: `1px solid ${isRerouteActive ? '#EF4444' : '#FCA5A5'}` }}>
+            <div style={{ width: '14px', height: '14px', backgroundColor: isRerouteActive ? '#22C55E' : '#EF4444', borderRadius: '50%', animation: 'pulse 1.5s infinite' }}></div>
+            <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: isRerouteActive ? '#FCA5A5' : '#991B1B' }}>
+              {isRerouteActive ? '🟢 OVERRIDE ACTIVE' : '🔴 Live · 88,000+ in City Center'}
+            </span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', backgroundColor: isRerouteActive ? '#7F1D1D' : '#FFF', padding: '1.5rem', borderRadius: '0.5rem', border: `1px solid ${isRerouteActive ? '#991B1B' : '#FCA5A5'}` }}>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ margin: '0 0 0.5rem', color: isRerouteActive ? '#FCA5A5' : '#7F1D1D', fontSize: '1.1rem' }}>
+              {isRerouteActive ? '⚡ Emergency Reroute is ACTIVE' : 'Trigger Emergency Corridor Reroute'}
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.95rem', color: isRerouteActive ? '#FECACA' : '#475569', lineHeight: '1.4' }}>
+              {isRerouteActive
+                ? 'All inbound highway traffic diverted from Har Ki Pauri to BHEL Ground Satellite Parking. Travel operators, hotels, and tourists have been notified in real-time via Supabase Realtime.'
+                : 'Divert all incoming highway traffic from Haridwar City Center (Har Ki Pauri corridor) to the peripheral satellite parking zones (BHEL Ground / Rishikesh Bypass). This action broadcasts to ALL connected dashboards instantly.'}
+            </p>
+          </div>
+          {isRerouteActive ? (
+            <button
+              disabled={isRecalculating}
+              onClick={handleLiftEmergency}
+              style={{ padding: '0.85rem 1.75rem', backgroundColor: isRecalculating ? '#6B7280' : '#16A34A', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRecalculating ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+            >
+              {isRecalculating ? '⏳ Processing...' : '✅ LIFT EMERGENCY'}
+            </button>
+          ) : (
+            <button
+              disabled={isRecalculating}
+              onClick={handleActivateEmergency}
+              style={{ padding: '0.85rem 1.75rem', backgroundColor: isRecalculating ? '#6B7280' : '#DC2626', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1.1rem', cursor: isRecalculating ? 'not-allowed' : 'pointer', boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.3)', whiteSpace: 'nowrap' }}
+            >
+              {isRecalculating ? '⏳ Processing...' : '🚨 ACTIVATE EMERGENCY REROUTE'}
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* 1. SURGE PREDICTION ALERT CARD / BANNER (FEATURE 4) */}
       {surgeAlertVisible && (
-        <div className="gov-surge-alert-banner">
+        <div className="gov-surge-alert-banner" id="gov-forecast">
           <div className="surge-alert-content">
             <div className="surge-alert-icon">⚠️</div>
             <div>
@@ -375,7 +511,7 @@ export default function GovernmentDashboard({
       </div>
 
       {/* 4. CENTRALIZED CROWD HEATMAP & EMERGENCY REROUTE HUB (FEATURE 1 & 2) */}
-      <div className="gov-central-heatmap-hub">
+      <div className="gov-central-heatmap-hub" id="gov-crowd-monitoring">
         <div className="hub-top-header">
           <div className="hub-title-group">
             <div className="hub-icon-shield">📡</div>
@@ -391,7 +527,7 @@ export default function GovernmentDashboard({
           </div>
 
           {/* EMERGENCY REROUTE CONTROLS (WINNING FEATURE) */}
-          <div className="emergency-reroute-controls">
+          <div className="emergency-reroute-controls" id="gov-emergency-reroute">
             <button
               type="button"
               onClick={handleActivateEmergencyReroute}
@@ -695,7 +831,7 @@ export default function GovernmentDashboard({
       )}
 
       {/* 6. MULTI-DEPARTMENT VIEW CONSOLE (FEATURE 5) */}
-      <div className="gov-multidept-section">
+      <div className="gov-multidept-section" id="gov-agencies">
         <div className="multidept-header-bar">
           <div className="multidept-title-box">
             <h3>Multi-Agency Operational Command</h3>
@@ -1209,7 +1345,7 @@ export default function GovernmentDashboard({
         </div>
 
         {/* Right Column: Real-Time SOS Distress Alerts Feed */}
-        <div className="gov-card-panel sos-feed-panel">
+        <div className="gov-card-panel sos-feed-panel" id="gov-sos">
           <div className="panel-header">
             <div className="panel-title-box">
               <span className="panel-icon">🚨</span>
@@ -1280,7 +1416,7 @@ export default function GovernmentDashboard({
       </div>
 
       {/* 8. FULL-WIDTH SECTION: ALL 25 SHIRNES MONITORING TABLE (PRESERVED) */}
-      <div className="gov-card-panel monitoring-table-panel">
+      <div className="gov-card-panel monitoring-table-panel" id="gov-sites">
         <div className="panel-header table-header-flex">
           <div className="panel-title-box">
             <span className="panel-icon">📊</span>
@@ -1400,7 +1536,7 @@ export default function GovernmentDashboard({
 
       {/* 9. BOTTOM SECTION: PILGRIMAGE HOSPITALITY & HOTEL CAPACITY REPORT (PRESERVED) */}
       {hotelReport && (
-        <div className="gov-card-panel hospitality-report-panel">
+        <div className="gov-card-panel hospitality-report-panel" id="gov-hotels">
           <div className="panel-header">
             <div className="panel-title-box">
               <span className="panel-icon">🏨</span>
