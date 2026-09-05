@@ -95,17 +95,17 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
             loading="lazy"
           />
           <span style={{ position: 'absolute', bottom: '0.35rem', left: '0.35rem', background: 'rgba(15, 23, 42, 0.85)', color: '#10B981', fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <span className="blink-dot"></span> LIVE CCTV
+            <span className="blink-dot"></span> VERIFIED SHRINE
           </span>
         </div>
 
         <div className="destination-meta" style={{ flex: 1, minWidth: '260px' }}>
           <div className="telemetry-badge-row">
             <span className="live-telemetry-tag">
-              <span className="blink-dot"></span> LIVE SURVEILLANCE FEED
+              <span className="blink-dot"></span> OFFICIAL PILGRIM ADVISORY
             </span>
             <span className="live-poll-badge">
-              <span className="poll-dot"></span> 3s Live Refresh
+              <span className="poll-dot"></span> Live Crowd Advisory
             </span>
           </div>
           <h1 className="destination-heading">{site.name}</h1>
@@ -153,41 +153,33 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
-      {/* 3. DYNAMIC SURGE ANOMALY MONITOR */}
+      {/* 3. DYNAMIC CROWD CONDITION ADVISORY */}
       <div className={`surge-monitor-banner ${isSurgeActive ? 'surge-active' : 'surge-normal'}`}>
         <div className="surge-banner-left">
-          <span className="surge-icon">{isSurgeActive ? '🚨' : '🛡️'}</span>
+          <span className="surge-icon">{isSurgeActive ? '⚠️' : '✨'}</span>
           <div className="surge-text">
             <div className="surge-title">
               {isSurgeActive
-                ? 'Dynamic Surge Anomaly: CRITICAL SURGE DETECTED'
-                : 'AI Walk-in Surge Monitor: Normal Traffic Flow'}
+                ? 'High Visitor Congestion Advisory'
+                : 'Darshan Queue Flow: Smooth & Manageable'}
             </div>
             <div className="surge-sub">
               {isSurgeActive
-                ? (relativeSurge?.message || 'Unscheduled spike: High visitor influx above historical baseline for this hour.')
-                : 'Current footfall is within ±1.2σ of historical hourly baseline.'}
+                ? (relativeSurge?.message || 'Heavy pilgrim influx detected at sanctum gates. Consider visiting during off-peak hours or exploring an alternate sister shrine.')
+                : 'Queues are moving at steady pace. Ideal window for peaceful darshan and rituals.'}
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          className={`surge-simulate-btn ${simulatedSurge ? 'sim-active' : ''}`}
-          onClick={() => setSimulatedSurge(!simulatedSurge)}
-          title="Toggle surge alert simulation for SIH demonstration"
-        >
-          {simulatedSurge ? 'Reset to Normal' : 'Simulate Spike Alert'}
-        </button>
       </div>
 
-      {/* 4. DUAL HERO METRICS: CROWD DENSITY & WAIT TIME */}
+      {/* 4. DUAL HERO METRICS: CROWD STATUS & WAIT TIME */}
       <div className="metrics-grid">
-        {/* Metric 1: Real-Time Crowd Density (Hero Gauge) */}
+        {/* Metric 1: Current Crowd Status */}
         <div className="metric-card occupancy-gauge-card" style={{ borderColor: theme.border }}>
           <div className="card-top-row">
             <div className="card-title-wrap">
-              <span className="metric-header-title">Current Crowd Density</span>
-              <span className="metric-sub-label">Live camera & sensor telemetry</span>
+              <span className="metric-header-title">Current Crowd</span>
+              <span className="metric-sub-label">Live sanctum condition</span>
             </div>
             <span className={`status-pill-big ${theme.badge}`}>
               {theme.icon} {theme.label}
@@ -195,7 +187,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
           </div>
 
           <div className="occupancy-display-box">
-            {/* Radial Gauge Meter */}
+            {/* Visual Crowd Flow Meter */}
             <div className="radial-meter-container">
               <svg className="radial-meter-svg" viewBox="0 0 120 120">
                 <circle
@@ -217,36 +209,39 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
                 />
               </svg>
               <div className="radial-meter-text">
-                <span className="occupancy-pct-number" style={{ color: theme.color }}>{occupancy}%</span>
-                <span className="occupancy-pct-sub">Capacity</span>
+                <span className="occupancy-pct-number" style={{ color: theme.color }}>
+                  {status === 'NORMAL' ? 'LOW' : status === 'MODERATE' ? 'MOD' : status === 'HIGH' ? 'HIGH' : 'MAX'}
+                </span>
+                <span className="occupancy-pct-sub">{status}</span>
               </div>
             </div>
 
-            {/* Clear Headcount & Capacity Breakdown */}
+            {/* Clear, Sanitized Pilgrim Advice */}
             <div className="headcount-details">
               <div className="stat-box-highlight">
                 <span className="stat-highlight-num" style={{ color: theme.color }}>
-                  👥 {peopleCount.toLocaleString()}
+                  {theme.icon} {status === 'NORMAL' ? 'Optimal Flow' : status === 'MODERATE' ? 'Moderate Rush' : status === 'HIGH' ? 'Heavy Rush' : 'Peak Congestion'}
                 </span>
-                <span className="stat-highlight-label">Pilgrims Currently Present</span>
+                <span className="stat-highlight-label">Sanctum Footfall Condition</span>
               </div>
 
               <div className="stat-line">
-                <span className="stat-muted">Safe Maximum:</span>
-                <strong className="stat-bold">{capacity.toLocaleString()} pilgrims</strong>
+                <span className="stat-muted">Advice:</span>
+                <strong className="stat-bold">
+                  {status === 'NORMAL' && 'Good time for peaceful darshan'}
+                  {status === 'MODERATE' && 'Steady queues — moving normally'}
+                  {status === 'HIGH' && 'Heavy crowd — consider an alternate destination'}
+                  {status === 'CRITICAL' && 'Extreme rush — rerouting strongly advised'}
+                </strong>
               </div>
               <div className="stat-line">
-                <span className="stat-muted">Current Load:</span>
-                <strong className="stat-bold">{occupancy}% of safe limit</strong>
-              </div>
-              <div className="stat-line">
-                <span className="stat-muted">Status Advisory:</span>
+                <span className="stat-muted">Recommendation:</span>
                 <span className="stat-desc">{theme.desc}</span>
               </div>
 
-              {predictedCount != null && (
+              {scheduleInsights?.quietest_window_summary && (
                 <div className="ai-prediction-pill">
-                  <span className="ai-spark">✨</span> AI 30-min Trend: <strong>~{predictedCount.toLocaleString()} visitors</strong>
+                  <span className="ai-spark">✨</span> Best Window: <strong>{scheduleInsights.quietest_window_summary}</strong>
                 </div>
               )}
             </div>
@@ -372,18 +367,18 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
-      {/* 7. 24-HOUR AI CROWD FORECAST & OCCUPANCY CURVE */}
+      {/* 7. EXPECTED DAILY CROWD TREND */}
       {mlForecast && mlForecast.length > 0 && (
         <div className="ml-forecast-card">
           <div className="ml-forecast-header">
             <div className="ml-forecast-title-row">
               <span style={{ fontSize: '1.25rem' }}>📈</span>
               <h3 className="ml-forecast-title">
-                24-Hour AI Crowd Forecast & Occupancy Curve
+                Expected Daily Crowd Trend
               </h3>
             </div>
             <span className="ml-badge-tag">
-              🤖 ML Model (Random Forest)
+              📊 Today's Pattern
             </span>
           </div>
 
@@ -429,8 +424,8 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
                   <strong className="ml-pct-label" style={{ color: itemColor }}>
                     {item.occupancy_percentage}%
                   </strong>
-                  <span className="ml-count-label">
-                    ~{item.predicted_count} ppl
+                  <span className="ml-count-label" style={{ fontWeight: 600, color: itemColor }}>
+                    {item.status}
                   </span>
                 </div>
               );

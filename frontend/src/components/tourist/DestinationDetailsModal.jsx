@@ -73,7 +73,7 @@ export default function DestinationDetailsModal({
             </div>
             <h2 id="modal-shrine-title" className="modal-title">{site.name}</h2>
             <p className="modal-location-subtitle">
-              📍 {site.city || site.state || 'Sacred Destination'} • ID: <code>{site.id}</code>
+              📍 {site.city || site.state || 'Sacred Destination'}
             </p>
           </div>
         </div>
@@ -82,21 +82,21 @@ export default function DestinationDetailsModal({
         <div className="modal-body-scroll">
           {/* Key Metrics Grid */}
           <div className="modal-section">
-            <h4 className="modal-section-heading">⚡ Real-Time Darshan & Queue Telemetry</h4>
+            <h4 className="modal-section-heading">🧭 Darshan &amp; Queue Guidance</h4>
             <div className="modal-telemetry-grid">
               <div className="modal-metric-card">
                 <span className="metric-icon">👥</span>
                 <div className="metric-info">
-                  <span className="m-label">{t('details.liveHeadcount')}</span>
-                  <strong className="m-val">{peopleCount.toLocaleString()} pilgrims</strong>
+                  <span className="m-label">Crowd Condition</span>
+                  <strong className="m-val">{status === 'NORMAL' ? 'Peaceful Flow' : status === 'MODERATE' ? 'Moderate Flow' : status === 'HIGH' ? 'Heavy Rush' : 'Peak Congestion'}</strong>
                 </div>
               </div>
 
               <div className="modal-metric-card">
                 <span className="metric-icon">🏛️</span>
                 <div className="metric-info">
-                  <span className="m-label">{t('details.safeCapacity')}</span>
-                  <strong className="m-val">{capacity.toLocaleString()} safe cap</strong>
+                  <span className="m-label">Queue Flow</span>
+                  <strong className="m-val">{status === 'NORMAL' ? 'Smooth Movement' : status === 'MODERATE' ? 'Steady Token System' : 'Priority Counters Active'}</strong>
                 </div>
               </div>
 
@@ -120,10 +120,10 @@ export default function DestinationDetailsModal({
 
           {/* Darshan & Crowd Status Context */}
           <div className="modal-section">
-            <h4 className="modal-section-heading">🧭 Crowd Guidance & Best Visit Window</h4>
+            <h4 className="modal-section-heading">✨ Recommended Darshan Window</h4>
             <div className={`modal-status-callout ${statusClass}`}>
               <div className="callout-header">
-                <strong>Current Status: {status} ({occupancy}% Occupancy)</strong>
+                <strong>Current Condition: {status === 'NORMAL' ? 'Low Crowd • Ideal Time' : status === 'MODERATE' ? 'Moderate Flow' : status === 'HIGH' ? 'Heavy Rush' : 'Peak Congestion'}</strong>
               </div>
               <p className="callout-text">
                 {status === 'CRITICAL' && '⚠️ Extreme congestion alert. Queue wait exceeds peak limits. AI recommends taking the alternate route below.'}
@@ -157,10 +157,10 @@ export default function DestinationDetailsModal({
               </div>
 
               <div className="safety-item-box">
-                <span className="s-icon">🚨</span>
+                <span className="s-icon">ℹ️</span>
                 <div>
-                  <strong>{t('details.evacuationRoute')}</strong>
-                  <p>{safety?.evacuation_routes || 'Emergency exit corridor via Sector B approach path.'}</p>
+                  <strong>Pilgrim Help Desk &amp; Assembly</strong>
+                  <p>{safety?.evacuation_routes ? 'Designated pilgrim assistance center near Main Entrance Gate.' : 'Pilgrimage Assistance Booth Gate 1'}</p>
                 </div>
               </div>
             </div>

@@ -86,9 +86,11 @@ export default function DestinationCard({
 
         <div className="card-meta-row">
           <span className="meta-cap">
-            {t('grid.safeCap')}: <strong>{(site.capacity || 10000).toLocaleString()}</strong>
+            ⏱️ Wait: <strong>~{waitMins} min</strong>
           </span>
-          <span className="meta-id">{site.id}</span>
+          <span className="meta-status-hint" style={{ fontSize: '0.78rem', fontWeight: 600, color: status === 'CRITICAL' ? '#DC2626' : status === 'HIGH' ? '#EA580C' : status === 'MODERATE' ? '#D97706' : '#059669' }}>
+            {status === 'NORMAL' ? '✨ Peaceful' : status === 'MODERATE' ? '⚡ Steady Flow' : status === 'HIGH' ? '⚠️ High Rush' : '🚨 Heavy Congestion'}
+          </span>
         </div>
       </div>
 

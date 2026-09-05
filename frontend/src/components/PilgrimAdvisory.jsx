@@ -453,10 +453,10 @@ export default function PilgrimAdvisory({
 
                   {alt.latitude && alt.longitude && (
                     <div className="logistics-card">
-                      <span className="logistics-icon">🌐</span>
+                      <span className="logistics-icon">📍</span>
                       <div className="logistics-detail">
-                        <span className="logistics-label">GPS Geofence</span>
-                        <span className="logistics-val">{alt.latitude.toFixed(4)}° N, {alt.longitude.toFixed(4)}° E</span>
+                        <span className="logistics-label">Pilgrim Corridor</span>
+                        <span className="logistics-val">Dedicated Alternate Spiritual Route</span>
                       </div>
                     </div>
                   )}
