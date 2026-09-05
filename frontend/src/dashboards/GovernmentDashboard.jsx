@@ -632,7 +632,7 @@ export default function GovernmentDashboard({
                 Quantified telemetry showcasing crowd load shedding and automated diversion across the Char Dham arterial gateway.
               </p>
             </div>
-            <span style={{ fontSize: '11px', color: '#6ee7b7', fontWeight: '800' }}>
+            <span style={{ fontSize: '11px', color: '#059669', fontWeight: '800' }}>
               SIMULATION BENCHMARK
             </span>
           </div>
@@ -746,7 +746,7 @@ export default function GovernmentDashboard({
                 </div>
                 <div className="mini-sos-feed">
                   {sosAlerts.length === 0 ? (
-                    <div style={{ color: '#94a3b8', fontSize: '12px', padding: '10px 0' }}>
+                    <div style={{ color: '#64748B', fontSize: '12px', padding: '10px 0' }}>
                       No active distress beacons. Corridors secure.
                     </div>
                   ) : (
@@ -754,7 +754,7 @@ export default function GovernmentDashboard({
                       <div key={a.id} className="mini-sos-item">
                         <div className="mini-sos-title">
                           <span>{a.emergency_type}</span>
-                          <span style={{ fontSize: '10px', color: '#f87171' }}>{a.status}</span>
+                          <span style={{ fontSize: '10px', color: '#DC2626' }}>{a.status}</span>
                         </div>
                         <div className="mini-sos-victim">
                           {a.user_name || a.user_id} • 📍 {a.site_name || 'Sacred Corridor'}
@@ -809,13 +809,13 @@ export default function GovernmentDashboard({
                 <div className="dept-stat-list">
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Zone A — Haridwar Main</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#34d399' : '#f87171' }}>
+                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#DC2626' }}>
                       {isRerouteActive ? 'Controlled (58%)' : 'High Risk (92%)'}
                     </span>
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Kedarnath (TS001) Queue</span>
-                    <span className="dept-stat-val" style={{ color: '#fb923c' }}>
+                    <span className="dept-stat-val" style={{ color: '#EA580C' }}>
                       {densityMap['TS001']?.occupancy_percentage || 48}% Occupancy
                     </span>
                   </div>
@@ -844,7 +844,7 @@ export default function GovernmentDashboard({
                 <div className="dept-stat-list">
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Landslide Risk: Rudraprayag Route</span>
-                    <span className="dept-stat-val" style={{ color: '#fbbf24' }}>Moderate (Sensor Level 2)</span>
+                    <span className="dept-stat-val" style={{ color: '#D97706' }}>Moderate (Sensor Level 2)</span>
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Alaknanda Water Flow</span>
@@ -852,11 +852,11 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Mandakini Flood Gauges</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>Green Baseline</span>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>Green Baseline</span>
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Ghat Stampede Risk</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#34d399' : '#f87171' }}>
+                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#DC2626' }}>
                       {isRerouteActive ? 'Mitigated (Reroute Active)' : 'Elevated (Zone A 92%)'}
                     </span>
                   </div>
@@ -884,7 +884,7 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Helipad Air Evacuation</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>Operational / Clear</span>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>Operational / Clear</span>
                   </div>
                 </div>
                 <span className="dept-sim-note">15th Battalion NDRF Command</span>
@@ -941,7 +941,7 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Bus Fleet Status</span>
-                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#34d399' : '#94a3b8' }}>
+                    <span className="dept-stat-val" style={{ color: isRerouteActive ? '#16A34A' : '#64748B' }}>
                       {isRerouteActive ? '14 / 14 En Route' : 'Parked at Rishikesh Hub'}
                     </span>
                   </div>
@@ -965,11 +965,11 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Choked Main Route Time</span>
-                    <span className="dept-stat-val" style={{ color: '#f87171' }}>145 Minutes (Congested)</span>
+                    <span className="dept-stat-val" style={{ color: '#DC2626' }}>145 Minutes (Congested)</span>
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Time Saved Per Yatri</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>107 Minutes</span>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>107 Minutes</span>
                   </div>
                 </div>
                 <span className="dept-sim-note">NHAI &amp; Border Roads Organisation</span>
@@ -989,7 +989,7 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Tourists Diverted</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>
                       {isRerouteActive ? '350 Devotees' : '0'}
                     </span>
                   </div>
@@ -1054,7 +1054,7 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Available Vacancies</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>
                       {hotelReport?.total_available_rooms || 51} Rooms
                     </span>
                   </div>
@@ -1086,7 +1086,7 @@ export default function GovernmentDashboard({
                   </div>
                   <div className="dept-stat-row">
                     <span className="dept-stat-lbl">Punya Reward Incentive</span>
-                    <span className="dept-stat-val" style={{ color: '#34d399' }}>+25 Points / Yatri</span>
+                    <span className="dept-stat-val" style={{ color: '#16A34A' }}>+25 Points / Yatri</span>
                   </div>
                 </div>
                 <span className="dept-sim-note">Dynamic gamified crowd deflection system</span>
