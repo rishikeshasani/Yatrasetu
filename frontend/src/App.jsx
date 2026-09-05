@@ -25,7 +25,8 @@ import {
   loadUserSession,
   logoutUser,
   fetchMe,
-  getAuthToken
+  getAuthToken,
+  fetchActiveRerouteAlert
 } from './api/api';
 import './App.css';
 
@@ -43,6 +44,9 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Active Reroute Alert State
+  const [activeRerouteAlert, setActiveRerouteAlert] = useState(null);
 
   // Role Navigation State: 'tourist' | 'government' | 'hotel' | 'travel_company'
   const [activeRole, setActiveRole] = useState('tourist');
@@ -519,7 +523,7 @@ export default function App() {
                 showToast={showToast}
                 activeRerouteAlert={activeRerouteAlert}
                 densityMap={densityMap}
-                onBackToLanding={() => navigateTo('/landing')}
+                onBackToLanding={() => setActiveRole('tourist')}
               />
             )}
 
