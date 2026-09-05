@@ -5,6 +5,15 @@ import { getShrineImage, CANONICAL_25_SHRINES } from '../utils/shrineImages';
 import { API_BASE_URL, DEMO_MODE } from './api_config';
 export { API_BASE_URL, DEMO_MODE };
 
+// Delhi ⇄ Haridwar/Rishikesh Corridor — Somvati Amavasya Demo
+export const CORRIDOR_STOPS = [
+  { id: 'delhi_isbt', name: 'Delhi ISBT Kashmiri Gate', city: 'New Delhi', state: 'Delhi', capacity: 15000, lat: 28.6670, lng: 77.2284, type: 'origin' },
+  { id: 'meerut', name: 'Meerut Junction', city: 'Meerut', state: 'Uttar Pradesh', capacity: 5000, lat: 28.9845, lng: 77.7064, type: 'intermediate' },
+  { id: 'haridwar', name: 'Haridwar — Har Ki Pauri', city: 'Haridwar', state: 'Uttarakhand', capacity: 50000, lat: 29.9457, lng: 78.1642, type: 'destination' },
+  { id: 'rishikesh', name: 'Rishikesh — Triveni Ghat', city: 'Rishikesh', state: 'Uttarakhand', capacity: 25000, lat: 30.1087, lng: 78.2936, type: 'destination' },
+  { id: 'neelkanth', name: 'Neelkanth Mahadev Temple', city: 'Neelkanth', state: 'Uttarakhand', capacity: 8000, lat: 30.1383, lng: 78.3928, type: 'satellite' },
+];
+
 // Mock Fallback Data for resilient hackathon demos
 export const MOCK_DENSITY = {
   "site_kedarnath": {
@@ -1288,7 +1297,7 @@ export async function fetchSites() {
   } catch (err) {
     console.warn("Using fallback sites data:", err);
   }
-  return MOCK_SITES;
+  return CORRIDOR_STOPS;
 }
 
 export async function fetchSiteDensity(siteId) {

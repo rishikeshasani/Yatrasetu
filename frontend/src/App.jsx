@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
-import LandingPage from './components/LandingPage';
+import EmergencyAlertBanner from './components/EmergencyAlertBanner';
 import RoleSelectionScreen from './components/RoleSelectionScreen';
 import TouristDashboard from './dashboards/TouristDashboard';
-import ExplorePage from './components/ExplorePage';
 import GovernmentDashboard from './dashboards/GovernmentDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
-import HotelPartnerPortal from './components/HotelPartnerPortal';
 import TravelCompanyDashboard from './dashboards/TravelCompanyDashboard';
 import WalletModal from './components/WalletModal';
 import AuthModal from './components/AuthModal';
@@ -27,63 +25,9 @@ import {
   loadUserSession,
   logoutUser,
   fetchMe,
-  getAuthToken,
-  SITE_ID_ALIASES,
-  fetchActiveRerouteAlert
+  getAuthToken
 } from './api/api';
 import './App.css';
-
-// Helpers for role and path routing
-export const pathToRole = (path) => {
-  if (!path) return null;
-  const p = path.toLowerCase();
-  if (p === 'travel-company' || p === 'travel_company' || p === 'travel') return 'travel_company';
-  if (p === 'government' || p === 'govt') return 'government';
-  if (p === 'hotel') return 'hotel';
-  if (p === 'tourist') return 'tourist';
-  return null;
-};
-
-export const roleToPath = (role) => {
-  if (role === 'travel_company') return 'travel-company';
-  return role || 'tourist';
-};
-
-export const getInitialRoute = () => {
-  if (typeof window === 'undefined') return { view: 'role_select', role: null, path: '/' };
-  const pathname = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
-
-  if (pathname === '/' || pathname === '/login' || pathname === '') {
-    return { view: 'role_select', role: null, path: '/' };
-  }
-
-  const loginMatch = pathname.match(/^\/login\/([a-z0-9_-]+)/);
-  if (loginMatch) {
-    const role = pathToRole(loginMatch[1]);
-    if (role) {
-      return { view: 'role_login', role, path: `/login/${roleToPath(role)}` };
-    }
-    return { view: 'role_select', role: null, path: '/' };
-  }
-
-  const dashMatch = pathname.match(/^\/dashboard(?:\/([a-z0-9_-]+))?/);
-  if (dashMatch) {
-    const role = pathToRole(dashMatch[1]);
-    return { view: 'dashboard', role, path: pathname };
-  }
-
-  if (pathname === '/landing') {
-    return { view: 'landing', role: null, path: '/landing' };
-  }
-  if (pathname === '/explore') {
-    return { view: 'explore', role: null, path: '/explore' };
-  }
-  if (pathname === '/hotel-portal' || pathname === '/hotel') {
-    return { view: 'hotel_portal', role: null, path: '/hotel-portal' };
-  }
-
-  return { view: 'role_select', role: null, path: '/' };
-};
 
 export default function App() {
   const [sites, setSites] = useState([]);
@@ -99,56 +43,6 @@ export default function App() {
   const [wallet, setWallet] = useState({ total_points: 260, history: [] });
   const [isWalletOpen, setIsWalletOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
-
-  // Emergency Reroute Persistent Cross-Dashboard Event State
-  const [activeRerouteAlert, setActiveRerouteAlert] = useState(null);
-
-  // URL-synchronized Route State: 'role_select' ('/') | 'role_login' ('/login/:role') | 'dashboard' | 'landing' | 'explore' | 'hotel_portal'
-  const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
-
-  const navigateTo = (path, replace = false) => {
-    if (typeof window === 'undefined') return;
-    const cleanPath = path.toLowerCase();
-    if (replace) {
-      window.history.replaceState({}, '', cleanPath);
-    } else {
-      window.history.pushState({}, '', cleanPath);
-    }
-
-    const normalized = cleanPath.replace(/\/+$/, '') || '/';
-    if (normalized === '/' || normalized === '/login') {
-      setCurrentRoute({ view: 'role_select', role: null, path: '/' });
-    } else if (normalized.startsWith('/login/')) {
-      const seg = normalized.split('/login/')[1];
-      const role = pathToRole(seg);
-      if (role) {
-        setCurrentRoute({ view: 'role_login', role, path: `/login/${roleToPath(role)}` });
-      } else {
-        setCurrentRoute({ view: 'role_select', role: null, path: '/' });
-      }
-    } else if (normalized.startsWith('/dashboard')) {
-      const parts = normalized.split('/');
-      const role = parts[2] ? pathToRole(parts[2]) : null;
-      setCurrentRoute({ view: 'dashboard', role, path: normalized });
-    } else if (normalized === '/landing') {
-      setCurrentRoute({ view: 'landing', role: null, path: '/landing' });
-    } else if (normalized === '/explore') {
-      setCurrentRoute({ view: 'explore', role: null, path: '/explore' });
-    } else if (normalized === '/hotel-portal') {
-      setCurrentRoute({ view: 'hotel_portal', role: null, path: '/hotel-portal' });
-    } else {
-      setCurrentRoute({ view: 'role_select', role: null, path: '/' });
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentRoute(getInitialRoute());
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   // Role Navigation State: 'tourist' | 'government' | 'hotel' | 'travel_company'
   const [activeRole, setActiveRole] = useState('tourist');
@@ -206,7 +100,7 @@ export default function App() {
         if (!isMounted) return;
         setSites(fetchedSites);
 
-        const defaultSite = fetchedSites.find(s => s.id === 'TS001' || s.id === 'site_kedarnath') || fetchedSites[0];
+        const defaultSite = fetchedSites.find(s => s.id === 'haridwar') || fetchedSites[0];
         const firstSiteId = defaultSite?.id || '';
         setSelectedSiteId(firstSiteId);
 
@@ -232,48 +126,6 @@ export default function App() {
 
     return () => {
       isMounted = false;
-    };
-  }, []);
-
-  // Synchronize Persistent Emergency Reroute Event across Dashboards
-  useEffect(() => {
-    let isMounted = true;
-
-    async function syncRerouteState() {
-      try {
-        const res = await fetchActiveRerouteAlert();
-        if (!isMounted) return;
-        if (res && res.is_active && res.alert) {
-          setActiveRerouteAlert(res.alert);
-        } else if (res && !res.is_active) {
-          setActiveRerouteAlert(null);
-        }
-      } catch (err) {
-        console.warn("Could not sync active reroute alert:", err);
-      }
-    }
-
-    syncRerouteState();
-
-    const handleRerouteEvent = (e) => {
-      if (!isMounted) return;
-      const data = e.detail;
-      if (data?.is_active && data?.alert) {
-        setActiveRerouteAlert(data.alert);
-      } else if (data?.is_active === false) {
-        setActiveRerouteAlert(null);
-      } else {
-        syncRerouteState();
-      }
-    };
-
-    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
-    const pollInterval = setInterval(syncRerouteState, 4000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(pollInterval);
-      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
     };
   }, []);
 
@@ -320,7 +172,7 @@ export default function App() {
     };
   }, [selectedSiteId]);
 
-  // 2. Load dynamic telemetry (density, forecast, prediction) with live 3-second auto-polling & concurrency guard
+  // 2. Load dynamic telemetry (density, forecast, prediction) with live auto-polling & concurrency guard
   const isPollingRef = useRef(false);
 
   useEffect(() => {
@@ -328,7 +180,6 @@ export default function App() {
     if (!selectedSiteId) return;
 
     async function pollTelemetry() {
-      // Prevent overlapping polling requests / race conditions
       if (isPollingRef.current) return;
       isPollingRef.current = true;
 
@@ -343,12 +194,7 @@ export default function App() {
 
         if (density) {
           setCurrentDensity(density);
-          const alias = SITE_ID_ALIASES[selectedSiteId];
-          setDensityMap((prev) => {
-            const next = { ...prev, [selectedSiteId]: density };
-            if (alias) next[alias] = density;
-            return next;
-          });
+          setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
         }
         if (forecast) setCurrentForecast(forecast);
         if (prediction) setCurrentPrediction(prediction);
@@ -386,8 +232,6 @@ export default function App() {
     if (['tourist', 'government', 'hotel', 'travel_company'].includes(authRole)) {
       setActiveRole(authRole);
     }
-    navigateTo(`/dashboard/${roleToPath(authRole)}`);
-
     if (authRole === 'tourist') {
       showToast(`🛡️ Welcome ${user.full_name}! Digital Yatri Card generated with Aadhaar verification.`);
     } else if (authRole === 'vendor') {
@@ -410,14 +254,11 @@ export default function App() {
     setIsWalletOpen(false);
     setIsSOSModalOpen(false);
     setIsAuthOpen(false);
-    navigateTo('/');
     showToast('Signed out successfully. Returned to role selection.');
   };
 
   const handleNavigate = (target) => {
-    if (target === 'travel-groups') {
-      setTravelTab('groups');
-    } else if (target === 'travel-trips' || target === 'travel-dashboard') {
+    if (target === 'travel-trips' || target === 'travel-groups') {
       setTravelTab('circuits');
     } else if (target === 'travel-crowd-alerts') {
       setTravelTab('optimizer');
@@ -438,12 +279,10 @@ export default function App() {
   // Immediate synchronization when Government updates crowd telemetry (POST /crowd/update)
   const handleCrowdUpdated = (siteId, updatedData) => {
     if (!updatedData) return;
-    const alias = SITE_ID_ALIASES[siteId];
-    setDensityMap((prev) => {
-      const next = { ...prev, [siteId]: updatedData };
-      if (alias) next[alias] = updatedData;
-      return next;
-    });
+    setDensityMap((prev) => ({
+      ...prev,
+      [siteId]: updatedData
+    }));
 
     if (siteId === selectedSiteId) {
       setCurrentDensity(updatedData);
@@ -452,8 +291,19 @@ export default function App() {
         live_status: {
           people_count: updatedData.people_count,
           occupancy_percentage: updatedData.occupancy_percentage,
-          status: updatedData.status
+          status: updatedData.status,
+          last_updated: 'Just now (Govt Command Update)'
+        },
+        queue_forecast: {
+          ...(prev?.queue_forecast || {}),
+          estimated_current_wait_mins: updatedData.wait_time_minutes || (updatedData.occupancy_percentage >= 90 ? 540 : 25)
         }
+      }));
+      setCurrentAlternatives((prev) => ({
+        ...(prev || {}),
+        current_occupancy_percentage: updatedData.occupancy_percentage,
+        current_status: updatedData.status,
+        redistribution_needed: updatedData.occupancy_percentage >= 50
       }));
     }
   };
@@ -509,7 +359,6 @@ export default function App() {
       return;
     }
 
-    // When switching to another alternative before reaching: cancel previous pending, set fresh +25 pending
     setActiveAlternateRoute(alt);
     setRouteStatus('ACTIVE');
     setPendingPunyaReward(25);
@@ -579,61 +428,10 @@ export default function App() {
     showToast(`🎁 Redeemed "${voucher.title}" for ${voucher.cost} Points!`);
   };
 
-  // Navigation Helper for Navbar and Footer anchor links
-  const handleNavigateSection = (sectionId) => {
-    if (sectionId === 'top') {
-      navigateTo('/landing');
-      return;
-    }
-    if (currentRoute.view !== 'landing') {
-      navigateTo('/landing');
-      setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 80);
-    } else {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
 
   return (
     <div className="yatrasetu-app app-container">
-      {/* Top Navigation Header: Rendered on Dashboards & Landing, but NOT on Login As screen */}
-      {currentRoute.view !== 'role_select' && currentRoute.view !== 'role_login' && (
-        <Navbar
-          walletPoints={wallet?.total_points || 260}
-          pendingPoints={pendingPunyaReward}
-          onOpenWallet={() => setIsWalletOpen(true)}
-          onOpenSOS={() => setIsSOSModalOpen(true)}
-          currentUser={currentUser}
-          onOpenAuth={() => navigateTo('/')}
-          onOpenProfile={() => setIsProfileOpen(true)}
-          activeRole={currentUser?.role || activeRole}
-          onSelectRole={(role) => {
-            setActiveRole(role);
-            navigateTo(`/dashboard/${roleToPath(role)}`);
-          }}
-          currentView={currentRoute.view}
-          onToggleView={() => {
-            if (currentRoute.view === 'dashboard') {
-              navigateTo('/landing');
-            } else {
-              if (currentUser) {
-                navigateTo(`/dashboard/${roleToPath(currentUser.role)}`);
-              } else {
-                navigateTo('/');
-              }
-            }
-          }}
-          onNavigateSection={handleNavigateSection}
-          onLogout={handleLogout}
-          onNavigate={handleNavigate}
-        />
-      )}
-
       {/* Global Toast Notification */}
       {toastMessage && (
         <div className="toast-notification">
@@ -643,98 +441,30 @@ export default function App() {
         </div>
       )}
 
-      {/* Dynamic Main View: Role Selection ('Login As'), Role Login, Landing Page, Explore, or Dashboards */}
-      <main className="main-content-container main-content">
-        {currentRoute.view === 'role_select' ? (
-          <RoleSelectionScreen
-            initialView="select"
-            initialRole={null}
-            onSelectRole={(roleId) => navigateTo(`/login/${roleToPath(roleId)}`)}
-            onLoginSuccess={handleLoginSuccess}
-            onViewLanding={() => navigateTo('/landing')}
-          />
-        ) : currentRoute.view === 'role_login' ? (
-          <RoleSelectionScreen
-            initialView="login"
-            initialRole={currentRoute.role || 'tourist'}
-            onSelectRole={(roleId) => navigateTo(`/login/${roleToPath(roleId)}`)}
-            onBackToSelect={() => navigateTo('/')}
-            onLoginSuccess={handleLoginSuccess}
-            onViewLanding={() => navigateTo('/landing')}
-          />
-        ) : currentRoute.view === 'landing' ? (
-          <LandingPage
-            sites={sites}
-            densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={(siteId) => {
-              handleSelectSite(siteId);
-              setActiveRole('tourist');
-            }}
-            onOpenDashboard={() => {
-              if (currentUser) {
-                navigateTo(`/dashboard/${roleToPath(currentUser.role)}`);
-              } else {
-                navigateTo('/');
-              }
-            }}
+      {/* Unauthenticated Role Selection Screen vs Authenticated Protected Experience */}
+      {!currentUser ? (
+        <RoleSelectionScreen onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <>
+          {/* Top Navigation with Role-Specific Menu */}
+          <Navbar
+            walletPoints={wallet?.total_points || 260}
+            pendingPoints={pendingPunyaReward}
+            onOpenWallet={() => setIsWalletOpen(true)}
             onOpenSOS={() => setIsSOSModalOpen(true)}
-            onOpenAuth={() => navigateTo('/')}
             currentUser={currentUser}
+            onOpenAuth={() => setIsAuthOpen(true)}
+            onOpenProfile={() => setIsProfileOpen(true)}
+            activeRole={currentUser.role || activeRole}
+            onLogout={handleLogout}
+            onNavigate={handleNavigate}
           />
-        ) : currentRoute.view === 'hotel_portal' ? (
-          <HotelPartnerPortal
-            currentUser={currentUser}
-            showToast={showToast}
-            onBackToLanding={() => navigateTo('/landing')}
-          />
-        ) : currentRoute.view === 'explore' ? (
-          <ExplorePage
-            sites={sites}
-            densityMap={densityMap}
-            onSelectShrine={(siteId) => {
-              handleSelectSite(siteId);
-              setActiveRole('tourist');
-              navigateTo('/dashboard/tourist');
-            }}
-            onBackToLanding={() => navigateTo('/landing')}
-          />
-        ) : !currentUser ? (
-          <RoleSelectionScreen
-            initialView="select"
-            initialRole={null}
-            onSelectRole={(roleId) => navigateTo(`/login/${roleToPath(roleId)}`)}
-            onLoginSuccess={handleLoginSuccess}
-            onViewLanding={() => navigateTo('/landing')}
-          />
-        ) : (
-          <div className="pilgrim-dashboard-wrapper">
-            {/* Dashboard Sub-Header Strip */}
-            <div className="dashboard-top-nav-strip">
-              <button
-                type="button"
-                className="btn-back-to-landing"
-                onClick={() => navigateTo('/')}
-              >
-                <span>← Role Selection ("Login As")</span>
-              </button>
-              <button
-                type="button"
-                className="btn-back-to-landing"
-                onClick={() => navigateTo('/landing')}
-                style={{ marginLeft: '0.5rem' }}
-              >
-                <span>Platform Overview</span>
-              </button>
-              <div className="dashboard-mode-indicator">
-                <span className="live-pulse-radar"></span>
-                <span>
-                  {(currentUser?.role || activeRole).toUpperCase().replace('_', ' ')} CONSOLE • AUTO-POLLING TELEMETRY (3s)
-                </span>
-              </div>
-            </div>
 
-            {(currentUser?.role === 'tourist' || (!currentUser?.role && activeRole === 'tourist')) && (
+          <EmergencyAlertBanner />
+
+          {/* Dynamic Protected Role-Based Dashboard View */}
+          <main className="main-content-container main-content">
+            {(currentUser.role === 'tourist' || (!currentUser.role && activeRole === 'tourist')) && (
               <TouristDashboard
                 sites={sites}
                 selectedSiteId={selectedSiteId}
@@ -759,7 +489,7 @@ export default function App() {
               />
             )}
 
-            {(currentUser?.role === 'government' || (!currentUser?.role && activeRole === 'government')) && (
+            {currentUser.role === 'government' && (
               <GovernmentDashboard
                 sites={sites}
                 densityMap={densityMap}
@@ -768,35 +498,29 @@ export default function App() {
                 onCrowdUpdated={handleCrowdUpdated}
                 currentUser={currentUser}
                 showToast={showToast}
-                activeRerouteAlert={activeRerouteAlert}
-                onRerouteChanged={(newAlert) => setActiveRerouteAlert(newAlert)}
               />
             )}
 
-            {(currentUser?.role === 'hotel' || (!currentUser?.role && activeRole === 'hotel')) && (
+            {currentUser.role === 'hotel' && (
               <HotelDashboard
                 currentUser={currentUser}
                 showToast={showToast}
-                activeRerouteAlert={activeRerouteAlert}
-                onBackToLanding={() => navigateTo('/landing')}
               />
             )}
 
-            {(currentUser?.role === 'travel_company' || (!currentUser?.role && activeRole === 'travel_company')) && (
+            {currentUser.role === 'travel_company' && (
               <TravelCompanyDashboard
                 sites={sites}
-                selectedSite={selectedSite}
                 densityMap={densityMap}
                 selectedSiteId={selectedSiteId}
                 onSelectSite={handleSelectSite}
                 showToast={showToast}
                 externalTab={travelTab}
-                activeRerouteAlert={activeRerouteAlert}
               />
             )}
-          </div>
-        )}
-      </main>
+          </main>
+        </>
+      )}
 
       {/* Green Pilgrim Wallet Modal */}
       {isWalletOpen && (
@@ -850,39 +574,24 @@ export default function App() {
         />
       )}
 
-      {/* Professional Civic-Tech Footer */}
+      {/* Footer */}
       <footer className="yatrasetu-footer">
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="footer-logo">
-              <span className="footer-om">ॐ</span> YatraSetu <span className="devanagari-sm">यात्रासेतु</span>
+              <span className="footer-om">ॐ</span> YatraSetu Smart Pilgrimage Platform
             </div>
             <p className="footer-motto">
-              Next-generation smart tourism &amp; pilgrimage crowd management platform powered by edge computer vision,
-              queue-theory analytics, gamified route redistribution, and civic emergency coordination.
+              Ensuring Safe, Serene &amp; Sustainable Darshan across India’s sacred shrines through Computer Vision, Queue Telemetry &amp; Gamified Flow Balancing.
             </p>
-            <div className="footer-badges-row">
-              <span className="footer-badge">Smart India Hackathon 2026</span>
-              <span className="footer-badge">Ministry of Tourism</span>
-              <span className="footer-badge">Vision AI 3.0</span>
-            </div>
           </div>
 
           <div className="footer-links">
             <div className="link-col">
-              <h4>Emergency Helplines</h4>
+              <h4>Quick Emergency</h4>
               <p>National Emergency: <strong>112</strong></p>
               <p>Medical Ambulance: <strong>108</strong></p>
               <p>Disaster Helpline: <strong>1070</strong></p>
-              <p>Tourist Helpline: <strong>1363</strong></p>
-            </div>
-            <div className="link-col">
-              <h4>Platform Navigation</h4>
-              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('top')}>Platform Overview</button></p>
-              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('smart-destinations')}>Explore 25 Shrines</button></p>
-              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('crowd-intelligence')}>Crowd Intelligence</button></p>
-              <p><button type="button" className="footer-link-btn" onClick={() => handleNavigateSection('how-it-works')}>How It Works</button></p>
-              <p><button type="button" className="footer-link-btn" onClick={() => { const targetRole = currentUser?.role || activeRole || 'tourist'; navigateTo(`/dashboard/${roleToPath(targetRole)}`); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Live Consoles</button></p>
             </div>
             <div className="link-col">
               <h4>Active Corridors</h4>
@@ -895,7 +604,7 @@ export default function App() {
         </div>
         <div className="footer-bottom-bar">
           <span>YatraSetu • Smart India Hackathon (SIH 2026)</span>
-          <span>FastAPI Backend: <code>127.0.0.1:8000</code> • Mode: <strong style={{ textTransform: 'uppercase' }}>{currentRoute.view === 'landing' ? 'Platform Overview' : (currentRoute.view === 'role_select' ? 'Role Selection' : (currentRoute.view === 'role_login' ? 'Role Login' : activeRole.replace('_', ' ')))}</strong></span>
+          <span>FastAPI Backend: <code>127.0.0.1:8000</code> • Role: <strong style={{ textTransform: 'uppercase' }}>{activeRole}</strong></span>
         </div>
       </footer>
     </div>

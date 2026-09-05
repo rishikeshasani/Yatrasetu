@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import SiteSelector from '../components/SiteSelector';
+import CorridorRouteMap from '../components/CorridorRouteMap';
 import LiveCrowdCard from '../components/LiveCrowdCard';
 import PilgrimAdvisory from '../components/PilgrimAdvisory';
 import SafetyAlerts from '../components/SafetyAlerts';
@@ -163,6 +164,11 @@ export default function TouristDashboard({
           onSelectSite={onSelectSite}
           densityMap={densityMap}
         />
+      </div>
+
+      {/* Corridor Route Map */}
+      <div style={{ margin: '1.25rem 0' }}>
+        <CorridorRouteMap height="400px" />
       </div>
 
       {selectedSite && (

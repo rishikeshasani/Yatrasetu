@@ -1,23 +1,48 @@
-import React, { useState } from 'react';
-import { SITE_ID_ALIASES, MOCK_SITES, saveFleetSchedules, fetchFleetSchedules } from '../api/api';
-import TeamTracker from '../components/TeamTracker';
+import React, { useState, useEffect } from 'react';
+import { SITE_ID_ALIASES, saveFleetSchedules, fetchFleetSchedules } from '../api/api';
+import CorridorRouteMap from '../components/CorridorRouteMap';
 
 export default function TravelCompanyDashboard({
   sites = [],
-  selectedSite,
   densityMap = {},
   selectedSiteId,
   onSelectSite,
   showToast,
-  externalTab,
-  activeRerouteAlert
+  externalTab
 }) {
   const [selectedCircuit, setSelectedCircuit] = useState('chardham');
   const [customSelectedSites, setCustomSelectedSites] = useState(['site_kedarnath', 'site_badrinath']);
-  const [activeTab, setActiveTab] = useState('circuits'); // 'circuits' | 'groups' | 'optimizer' | 'matrix'
+  const [activeTab, setActiveTab] = useState('circuits'); // 'circuits' | 'optimizer' | 'matrix'
+  const [showFleetModal, setShowFleetModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [fleetRoutes, setFleetRoutes] = useState([
+    { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
+    { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, occupancy: 100, type: 'Sleeper', status: 'FULL' },
+    { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, occupancy: 22, type: 'Volvo A/C', status: 'RETURN' },
+    { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, occupancy: 67, type: 'Mini Bus', status: 'NORMAL' },
+  ]);
+
+  // Load live schedule from backend on mount
+  useEffect(() => {
+    fetchFleetSchedules().then((routes) => {
+      if (routes && routes.length > 0) {
+        setFleetRoutes(routes.map((r) => ({
+          id: r.id,
+          from: r.from_location || r.from,
+          to: r.to_location || r.to,
+          date: r.journey_date || r.date,
+          buses: r.buses,
+          capacity: r.capacity || 42,
+          occupancy: r.occupancy || 80,
+          type: r.bus_type || r.type || 'Volvo A/C',
+          status: r.status || 'NORMAL',
+        })));
+      }
+    });
+  }, []);
 
   React.useEffect(() => {
-    if (externalTab && ['circuits', 'groups', 'optimizer', 'matrix'].includes(externalTab)) {
+    if (externalTab && ['circuits', 'optimizer', 'matrix'].includes(externalTab)) {
       setActiveTab(externalTab);
     }
   }, [externalTab]);
@@ -70,15 +95,10 @@ export default function TravelCompanyDashboard({
 
   // Helper to resolve site objects across aliases
   const resolveSite = (id) => {
-    if (!id) return { id: 'TS001', name: 'Kedarnath Temple', capacity: 13000 };
-    const alias = SITE_ID_ALIASES[id] || SITE_ID_ALIASES[id.toUpperCase()];
-    const normalized = id.toLowerCase().replace('site_', '');
-    const pool = (sites && sites.length > 0) ? sites : MOCK_SITES;
+    const alias = SITE_ID_ALIASES[id];
     return (
-      pool.find((s) => s?.id === id || (alias && s?.id === alias)) ||
-      pool.find((s) => s?.id?.toLowerCase() === normalized || s?.id?.toLowerCase() === id.toLowerCase()) ||
-      pool.find((s) => s?.name && s.name.toLowerCase().includes(normalized)) ||
-      MOCK_SITES.find((s) => s?.id === id || (alias && s?.id === alias)) ||
+      sites.find((s) => s.id === id || (alias && s.id === alias)) ||
+      sites.find((s) => s.name.toLowerCase().includes(id.replace('site_', '').toLowerCase())) ||
       { id, name: id.replace('site_', '').toUpperCase(), capacity: 10000 }
     );
   };
@@ -86,17 +106,17 @@ export default function TravelCompanyDashboard({
   // Helper to get telemetry for any site
   const getSiteTelemetry = (siteId) => {
     const siteObj = resolveSite(siteId);
-    const alias = SITE_ID_ALIASES[siteId] || (siteObj ? SITE_ID_ALIASES[siteObj.id] : null);
+    const alias = SITE_ID_ALIASES[siteId] || SITE_ID_ALIASES[siteObj.id];
     const d =
-      (siteObj && densityMap[siteObj.id]) ||
+      densityMap[siteObj.id] ||
       densityMap[siteId] ||
       (alias ? densityMap[alias] : null) || {
-        people_count: Math.round(((siteObj && siteObj.capacity) || 10000) * 0.48),
+        people_count: Math.round((siteObj.capacity || 10000) * 0.48),
         occupancy_percentage: 48,
         status: 'NORMAL'
       };
-    const occ = d?.occupancy_percentage != null ? d.occupancy_percentage : 48;
-    const status = d?.status || (occ >= 90 ? 'CRITICAL' : occ >= 75 ? 'HIGH' : occ >= 50 ? 'MODERATE' : 'NORMAL');
+    const occ = d.occupancy_percentage != null ? d.occupancy_percentage : 48;
+    const status = d.status || (occ >= 90 ? 'CRITICAL' : occ >= 75 ? 'HIGH' : occ >= 50 ? 'MODERATE' : 'NORMAL');
     
     let waitMins = 25;
     if (occ >= 90) waitMins = 540;
@@ -105,7 +125,7 @@ export default function TravelCompanyDashboard({
 
     return {
       site: siteObj,
-      density: d || {},
+      density: d,
       occupancy: occ,
       status,
       waitMins
@@ -133,8 +153,92 @@ export default function TravelCompanyDashboard({
     );
   };
 
+  // Forward + Return Fill Predictor Logic
+  const forwardRoutes = fleetRoutes.filter(r => r.from.includes('Delhi') || r.from.includes('Dehradun') || r.from.includes('Rishikesh'));
+  const returnRoutes = fleetRoutes.filter(r => r.from.includes('Haridwar'));
+
+  const forwardAvg = forwardRoutes.length ? Math.round(forwardRoutes.reduce((acc, r) => acc + r.occupancy, 0) / forwardRoutes.length) : 0;
+  const returnAvg = returnRoutes.length ? Math.round(returnRoutes.reduce((acc, r) => acc + r.occupancy, 0) / returnRoutes.length) : 0;
+
+  const forwardLow = Math.max(0, forwardAvg - 4);
+  const forwardHigh = Math.min(100, forwardAvg + 3);
+  
+  const returnLow = Math.max(0, returnAvg - 4);
+  const returnHigh = Math.min(100, returnAvg + 3);
+
+  const imbalance = Math.abs(forwardAvg - returnAvg);
+
   return (
     <div className="travel-dashboard-root" id="travel-dashboard">
+
+      {/* SHARMA TRAVELS: HARIDWAR PREDICTIVE WARNING */}
+      <div style={{ backgroundColor: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: '0.75rem', margin: '1.5rem 1.5rem 0', overflow: 'hidden' }}>
+        {/* Top row: alert headline + button */}
+        <div style={{ padding: '1rem 1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', borderBottom: '1px solid #FDE68A' }}>
+          <span style={{ fontSize: '2rem' }}>⚠️</span>
+          <div style={{ flex: 1 }}>
+            <h3 style={{ margin: '0 0 0.2rem', color: '#92400E', fontSize: '1.1rem' }}>Sharma Travels Route Intelligence Alert</h3>
+            <p style={{ margin: 0, color: '#B45309', fontSize: '0.95rem' }}>
+              Forward + Return Fill Predictor for Haridwar Somvati Amavasya
+            </p>
+          </div>
+          <button onClick={() => setShowFleetModal(true)} style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>🚌 Adjust Fleet Schedule</button>
+        </div>
+
+        {/* Journey timing cards: Forward | Return */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+
+          {/* FORWARD JOURNEY */}
+          <div style={{ padding: '1rem 1.5rem', borderRight: '1px solid #FDE68A' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '1.1rem' }}>➡️</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Forward Journey · Oct 12</span>
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1E3A8A', margin: '0.5rem 0' }}>
+              {forwardLow}–{forwardHigh}% full
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+              Based on Somvati Amavasya historical pattern + current corridor density
+            </div>
+            <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
+              <div style={{ width: `${forwardAvg}%`, backgroundColor: '#D97706', height: '100%' }}></div>
+            </div>
+          </div>
+
+          {/* RETURN JOURNEY */}
+          <div style={{ padding: '1rem 1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '1.1rem' }}>↩️</span>
+              <span style={{ fontWeight: 'bold', color: '#92400E', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Return Journey · Oct 13</span>
+            </div>
+            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#DC2626', margin: '0.5rem 0' }}>
+              {returnLow}–{returnHigh}% full
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+              Based on Somvati Amavasya historical pattern + current corridor density
+            </div>
+            <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
+              <div style={{ width: `${returnAvg}%`, backgroundColor: '#DC2626', height: '100%' }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* RECOMMENDATION PANEL */}
+        <div style={{ padding: '1rem 1.5rem', backgroundColor: '#FEF2F2', borderTop: '1px solid #FCA5A5', display: 'flex', gap: '0.75rem' }}>
+          <span style={{ fontSize: '1.25rem' }}>💡</span>
+          <div>
+            <h4 style={{ margin: '0 0 0.25rem', color: '#991B1B', fontSize: '0.95rem' }}>AI Actionable Insight</h4>
+            {imbalance > 30 ? (
+              <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#B91C1C', fontSize: '0.85rem' }}>
+                <li style={{ marginBottom: '0.25rem' }}>Return leg is significantly underfilled. Consider dynamic pricing — reduce return fares by 15-20% to incentivize same-day returns.</li>
+                <li>Shift the return pickup hub from Har Ki Pauri (congested) to BHEL Ground Satellite Parking (3km away, free highway access).</li>
+              </ul>
+            ) : (
+              <p style={{ margin: 0, color: '#B91C1C', fontSize: '0.85rem' }}>Forward and return fill are balanced. No schedule changes recommended.</p>
+            )}
+          </div>
+        </div>
+      </div>
       {/* Top Banner */}
       <div className="travel-header-banner">
         <div className="travel-header-title-row">
@@ -162,157 +266,6 @@ export default function TravelCompanyDashboard({
         </div>
       </div>
 
-      {/* REAL-TIME GOVERNMENT EMERGENCY REROUTE ALERT BANNER */}
-      {activeRerouteAlert && (
-        <div className="travel-emergency-reroute-alert" style={{
-          background: 'linear-gradient(135deg, #7f1d1d 0%, #991b1b 50%, #b91c1c 100%)',
-          border: '2px solid #f87171',
-          borderRadius: '16px',
-          padding: '20px 24px',
-          color: '#ffffff',
-          boxShadow: '0 8px 24px rgba(185, 28, 28, 0.35)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: '300px' }}>
-              <span style={{ fontSize: '32px', lineHeight: 1 }}>🚨</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                  <span style={{
-                    background: '#ef4444',
-                    color: '#ffffff',
-                    fontWeight: '800',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    letterSpacing: '0.6px',
-                    textTransform: 'uppercase'
-                  }}>
-                    GOVERNMENT EMERGENCY DIVERSION ORDER
-                  </span>
-                  <span style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    fontWeight: '600'
-                  }}>
-                    SITE: {activeRerouteAlert.site_name || activeRerouteAlert.site_id} ({activeRerouteAlert.site_id})
-                  </span>
-                  <span style={{
-                    background: '#fef08a',
-                    color: '#854d0e',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    fontWeight: '700'
-                  }}>
-                    {activeRerouteAlert.crowd_status || 'CRITICAL'} ({activeRerouteAlert.occupancy_percentage || 95}% DENSITY)
-                  </span>
-                </div>
-
-                <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#fff' }}>
-                  Emergency Rerouting Active for {activeRerouteAlert.site_name || 'Pilgrimage Corridor'}
-                </h3>
-                <p style={{ margin: '0 0 14px 0', fontSize: '13px', lineHeight: '1.5', color: '#fee2e2' }}>
-                  {activeRerouteAlert.notes || `Government Command has declared critical congestion. Tour operators must pause direct departures to ${activeRerouteAlert.site_name} and reroute tourist fleets to designated sister shrines.`}
-                </p>
-
-                {/* Logistics Stats */}
-                <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '11px', opacity: 0.85, textTransform: 'uppercase' }}>Bypass Buses Deployed</div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#fef08a' }}>🚌 {activeRerouteAlert.partner_buses || 14} Fleet Units</div>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '11px', opacity: 0.85, textTransform: 'uppercase' }}>Devotees Being Diverted</div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#67e8f9' }}>👥 {activeRerouteAlert.diverted_tourists || 350} Pilgrims</div>
-                  </div>
-                  <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <div style={{ fontSize: '11px', opacity: 0.85, textTransform: 'uppercase' }}>Partner Accommodations</div>
-                    <div style={{ fontSize: '16px', fontWeight: '700', color: '#86efac' }}>🏨 {activeRerouteAlert.partner_hotels || 22} Verified Hotels</div>
-                  </div>
-                </div>
-
-                {/* Sister Shrine Alternatives */}
-                <div style={{ marginTop: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', color: '#fecaca', marginBottom: '8px' }}>
-                    Recommended Sister Shrine Corridors for Fleet Diversion:
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
-                    {(activeRerouteAlert.alternative_routes && activeRerouteAlert.alternative_routes.length > 0
-                      ? activeRerouteAlert.alternative_routes.slice(0, 3)
-                      : [
-                          { name: 'Triyuginarayan Temple', darshan_wait_time_mins: 15, distance_km: 22, highlight: 'Holy Akhand Dhuni & smooth darshan' },
-                          { name: 'Ukhimath Omkareshwar Mandir', darshan_wait_time_mins: 10, distance_km: 41, highlight: 'Winter seat of Kedarnath' },
-                          { name: 'Tungnath Temple (Chopta)', darshan_wait_time_mins: 20, distance_km: 38, highlight: 'Highest Shiva shrine' }
-                        ]
-                    ).map((alt, idx) => (
-                      <div key={idx} style={{
-                        background: 'rgba(255, 255, 255, 0.12)',
-                        border: '1px solid rgba(255, 255, 255, 0.25)',
-                        borderRadius: '10px',
-                        padding: '10px 12px'
-                      }}>
-                        <div style={{ fontWeight: '700', fontSize: '13px', color: '#ffffff' }}>
-                          📍 {alt.name}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#fef08a', marginTop: '3px' }}>
-                          ⏱️ Wait: {alt.darshan_wait_time_mins || 15} mins • 🚗 {alt.distance_km || alt.dist || '20 km'}
-                        </div>
-                        {alt.highlight && (
-                          <div style={{ fontSize: '11px', color: '#e2e8f0', marginTop: '2px', opacity: 0.9 }}>
-                            {alt.highlight}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '180px' }}>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await saveFleetSchedules([
-                      { id: "HR-01", buses: 5, operator: "Sharma Travels" },
-                      { id: "HR-02", buses: 4, operator: "Sharma Travels" },
-                      { id: "HR-04", buses: 5, operator: "Sharma Travels" }
-                    ]);
-                    if (showToast) {
-                      showToast('✅ Fleet dispatch synchronized with backend! 14 Volvo buses rerouted to Sister Shrine corridors.');
-                    }
-                  } catch (err) {
-                    if (showToast) {
-                      showToast(`⚠️ Fleet reroute update failed: ${err.message || err}`);
-                    }
-                  }
-                }}
-                style={{
-                  background: '#ffffff',
-                  color: '#991b1b',
-                  border: 'none',
-                  borderRadius: '10px',
-                  padding: '12px 16px',
-                  fontWeight: '700',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                ✓ Apply Fleet Reroute (14 Buses)
-              </button>
-              <div style={{ fontSize: '11px', color: '#fecaca', textAlign: 'center' }}>
-                Auto-synced via Govt State Broadcast
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation Sub-Tabs */}
       <div className="travel-tab-bar">
         <button
@@ -324,17 +277,17 @@ export default function TravelCompanyDashboard({
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab('groups')}
-          className={`travel-tab-btn ${activeTab === 'groups' ? 'active' : ''}`}
-        >
-          👥 Tour Groups &amp; Dal Tracker
-        </button>
-        <button
-          type="button"
           onClick={() => setActiveTab('optimizer')}
           className={`travel-tab-btn ${activeTab === 'optimizer' ? 'active' : ''}`}
         >
           ⚡ Queue vs Distance Optimization Engine
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('map')}
+          className={`travel-tab-btn ${activeTab === 'map' ? 'active' : ''}`}
+        >
+          📍 Live Corridor Highway Map
         </button>
         <button
           type="button"
@@ -345,9 +298,17 @@ export default function TravelCompanyDashboard({
         </button>
       </div>
 
+      {/* TAB: Live Corridor Highway Map */}
+      {activeTab === 'map' && (
+        <div style={{ margin: '1.5rem 1.5rem' }}>
+          <CorridorRouteMap height="550px" />
+        </div>
+      )}
+
       {/* TAB 1: Smart Pilgrimage Circuits & Itinerary Planner */}
       {activeTab === 'circuits' && (
         <div className="circuits-section" id="travel-trips">
+          <div id="travel-groups" style={{ display: 'none' }} />
           {/* Circuit Selectors Grid */}
           <div className="circuit-selector-grid">
             {PRESET_CIRCUITS.map((c) => {
@@ -475,79 +436,7 @@ export default function TravelCompanyDashboard({
         </div>
       )}
 
-      {/* TAB: Tour Groups & Pilgrim Dal Tracker */}
-      {activeTab === 'groups' && (
-        <div className="groups-section" id="travel-groups" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Tour Fleet Groups Status Overview */}
-          <div className="optimizer-intro-card">
-            <span className="intro-icon">👥</span>
-            <div>
-              <h3 style={{ margin: '0 0 0.35rem', color: '#0F172A' }}>
-                Tour Groups &amp; Pilgrim Dal Fleet Management
-              </h3>
-              <p style={{ margin: 0, color: '#475569', fontSize: '0.9rem' }}>
-                Active pilgrimage groups, fleet bus assignments, devotee rosters, and GPS safety monitoring (Device GPS &amp; Dal Simulation).
-              </p>
-            </div>
-          </div>
-
-          {/* Active Tour Dals Summary Cards */}
-          <div className="circuit-selector-grid">
-            <div className="circuit-card selected" style={{ cursor: 'default' }}>
-              <div className="circuit-card-header">
-                <span className="circuit-duration">32 Devotees</span>
-                <span className="circuit-region-tag" style={{ color: '#059669', fontWeight: '700' }}>● ON SCHEDULE</span>
-              </div>
-              <h3 className="circuit-name" style={{ fontSize: '1.05rem', margin: '0.25rem 0' }}>Kedarnath Divine Yatra Dal #402</h3>
-              <p className="circuit-desc" style={{ fontSize: '0.85rem' }}>
-                🚌 Bus UK-07-PA-4029 • Guide: Rishikesh Rawat • Route: Haridwar → Guptkashi → Kedarnath
-              </p>
-              <div className="circuit-card-footer" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Current Status: Approaching Shrine Base</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#7c3aed' }}>Dal Code: DAL-4029</span>
-              </div>
-            </div>
-
-            <div className="circuit-card" style={{ cursor: 'default' }}>
-              <div className="circuit-card-header">
-                <span className="circuit-duration">28 Devotees</span>
-                <span className="circuit-region-tag" style={{ color: '#059669', fontWeight: '700' }}>● ON SCHEDULE</span>
-              </div>
-              <h3 className="circuit-name" style={{ fontSize: '1.05rem', margin: '0.25rem 0' }}>Badrinath Express Yatra Dal #108</h3>
-              <p className="circuit-desc" style={{ fontSize: '0.85rem' }}>
-                🚌 Bus UK-07-PA-1088 • Guide: Manoj Bhatt • Route: Rishikesh → Joshimath → Badrinath
-              </p>
-              <div className="circuit-card-footer" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Current Status: Transit via Alaknanda Highway</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#7c3aed' }}>Dal Code: DAL-1088</span>
-              </div>
-            </div>
-
-            <div className="circuit-card" style={{ cursor: 'default' }}>
-              <div className="circuit-card-header">
-                <span className="circuit-duration">45 Devotees</span>
-                <span className="circuit-region-tag" style={{ color: '#2563eb', fontWeight: '700' }}>● DARSHAN CONFIRMED</span>
-              </div>
-              <h3 className="circuit-name" style={{ fontSize: '1.05rem', margin: '0.25rem 0' }}>Kashi Corridor Yatra Dal #214</h3>
-              <p className="circuit-desc" style={{ fontSize: '0.85rem' }}>
-                🚌 Bus UP-65-BT-2140 • Guide: Anand Pandey • Route: Varanasi Cantt → Godowlia → Kashi Vishwanath
-              </p>
-              <div className="circuit-card-footer" style={{ borderTop: '1px solid #f1f5f9', paddingTop: '8px' }}>
-                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Current Status: Morning Aarti Slot Completed</span>
-                <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#7c3aed' }}>Dal Code: DAL-2140</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Integrated Pilgrim Dal Safety Tracker */}
-          <TeamTracker
-            currentSite={selectedSite || sites.find((s) => s?.id === selectedSiteId) || sites[0] || resolveSite('TS001')}
-            siteId={selectedSiteId || 'TS001'}
-          />
-        </div>
-      )}
-
-      {/* TAB 3: Queue vs Distance Optimizer */}
+      {/* TAB 2: Queue vs Distance Optimizer */}
       {activeTab === 'optimizer' && (
         <div className="optimizer-section" id="travel-crowd-alerts">
           <div className="optimizer-intro-card">
@@ -670,11 +559,11 @@ export default function TravelCompanyDashboard({
         </div>
       )}
 
-      {/* TAB 4: National 25-Shrine Fleet Intelligence Matrix */}
+      {/* TAB 3: National 25-Shrine Fleet Intelligence Matrix */}
       {activeTab === 'matrix' && (
         <div className="matrix-section" id="travel-routes">
           <div className="matrix-grid">
-            {((sites && sites.length > 0) ? sites : MOCK_SITES).map((site) => {
+            {sites.map((site) => {
               const tel = getSiteTelemetry(site.id);
               return (
                 <div key={site.id} className="fleet-matrix-card">
@@ -723,6 +612,125 @@ export default function TravelCompanyDashboard({
           </div>
         </div>
       )}
+
+      {/* ====================================================== */}
+      {/* FLEET SCHEDULE ADJUSTMENT MODAL                        */}
+      {/* ====================================================== */}
+      {showFleetModal && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ backgroundColor: '#FFF', borderRadius: '1rem', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
+            
+            {/* Modal Header */}
+            <div style={{ background: 'linear-gradient(135deg, #92400E, #D97706)', padding: '1.5rem 2rem', borderRadius: '1rem 1rem 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h2 style={{ margin: '0 0 0.25rem', color: '#FFF', fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  🚌 Fleet Schedule Adjustment Panel
+                </h2>
+                <p style={{ margin: 0, color: '#FDE68A', fontSize: '0.95rem' }}>
+                  Haridwar – Somvati Amavasya (Oct 12–13) · Adjust buses per route to match demand
+                </p>
+              </div>
+              <button onClick={() => setShowFleetModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#FFF', borderRadius: '50%', width: '36px', height: '36px', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            </div>
+
+            {/* AI Recommendation Banner */}
+            <div style={{ backgroundColor: '#FFFBEB', borderBottom: '1px solid #FDE68A', padding: '1rem 2rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <span style={{ fontSize: '1.5rem' }}>🤖</span>
+              <p style={{ margin: 0, color: '#92400E', fontSize: '0.95rem', fontWeight: '500' }}>
+                <strong>AI Recommendation:</strong> Add at least <strong>2 extra buses</strong> on the Delhi→Haridwar route (HR-01) and <strong>1 extra bus</strong> on the return leg (HR-03) to handle the Somvati Amavasya surge safely.
+              </p>
+            </div>
+
+            {/* Route Cards */}
+            <div style={{ padding: '1.5rem 2rem' }}>
+              <h3 style={{ margin: '0 0 1rem', color: '#374151', fontSize: '1.1rem' }}>Active Routes – Haridwar Corridor</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {fleetRoutes.map((route, idx) => {
+                  const isFull = route.occupancy >= 100;
+                  const isHighDemand = route.occupancy >= 80;
+                  const statusColor = isFull ? '#DC2626' : isHighDemand ? '#D97706' : '#16A34A';
+                  const statusBg = isFull ? '#FEF2F2' : isHighDemand ? '#FFFBEB' : '#F0FDF4';
+
+                  return (
+                    <div key={route.id} style={{ border: `1.5px solid ${isFull ? '#FECACA' : isHighDemand ? '#FDE68A' : '#BBF7D0'}`, borderRadius: '0.75rem', padding: '1.25rem', backgroundColor: statusBg }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#6B7280', background: '#E5E7EB', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>{route.id}</span>
+                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: statusColor, background: statusBg, border: `1px solid ${statusColor}`, padding: '0.15rem 0.5rem', borderRadius: '4px' }}>{route.status}</span>
+                          </div>
+                          <p style={{ margin: '0 0 0.15rem', fontWeight: 'bold', color: '#111827', fontSize: '1rem' }}>
+                            📍 {route.from} → {route.to}
+                          </p>
+                          <p style={{ margin: 0, color: '#6B7280', fontSize: '0.9rem' }}>📅 {route.date} · 🚌 {route.type}</p>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: statusColor }}>{route.occupancy}%</div>
+                          <div style={{ fontSize: '0.8rem', color: '#6B7280' }}>Avg Occupancy</div>
+                        </div>
+                      </div>
+
+                      {/* Bus Count Adjuster */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', borderRadius: '0.5rem', padding: '0.75rem 1rem', border: '1px solid #E5E7EB' }}>
+                        <div>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Buses Assigned</span>
+                          <p style={{ margin: '0.1rem 0 0', fontSize: '0.8rem', color: '#6B7280' }}>Each bus carries up to {route.capacity} passengers</p>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <button
+                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: Math.max(1, r.buses - 1) } : r))}
+                            style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #D1D5DB', background: '#F9FAFB', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >−</button>
+                          <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#111827', minWidth: '2.5rem', textAlign: 'center' }}>{route.buses}</span>
+                          <button
+                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: r.buses + 1 } : r))}
+                            style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #D97706', background: '#FEF3C7', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#92400E' }}
+                          >+</button>
+                          <div style={{ fontSize: '0.85rem', color: '#6B7280', textAlign: 'right', minWidth: '80px' }}>
+                            Total capacity:<br/>
+                            <strong style={{ color: '#111827' }}>{route.buses * route.capacity} seats</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ padding: '1rem 2rem 1.5rem', borderTop: '1px solid #E5E7EB', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowFleetModal(false)} style={{ padding: '0.65rem 1.5rem', backgroundColor: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: '0.5rem', fontWeight: 'bold', cursor: 'pointer', color: '#374151' }}>Cancel</button>
+              <button
+                disabled={isSaving}
+                onClick={async () => {
+                  setIsSaving(true);
+                  try {
+                    const payload = fleetRoutes.map((r) => ({ id: r.id, buses: r.buses, operator: 'Sharma Travels' }));
+                    const result = await saveFleetSchedules(payload);
+                    setShowFleetModal(false);
+                    if (result?.status === 'success') {
+                      if (showToast) showToast('✅ Fleet schedule saved to database! Hotel & Government dashboards will update within 30s.');
+                    } else {
+                      if (showToast) showToast('⚠️ Saved locally. Backend sync pending — Hotel dashboard will update shortly.');
+                    }
+                  } catch (err) {
+                    if (showToast) showToast('⚠️ Could not reach backend. Changes saved locally for this session.');
+                    setShowFleetModal(false);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                style={{ padding: '0.65rem 1.75rem', backgroundColor: isSaving ? '#9CA3AF' : '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '1rem', cursor: isSaving ? 'not-allowed' : 'pointer' }}
+              >
+                {isSaving ? '⏳ Saving...' : '✅ Confirm & Notify Drivers'}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
