@@ -374,31 +374,33 @@ export default function TouristDashboard({
       )}
 
       {/* 2. CURRENT SELECTED DESTINATION & LIVE CROWD CARD (FRONT AND CENTER) */}
-      {activeSite && (
-        <div id="tourist-crowd-status">
-          <div id="tourist-forecast">
+      <div id="tourist-crowd-status">
+        <div id="crowd-intelligence">
+          {activeSite && (
             <LiveCrowdCard
               site={activeSite}
               density={activeDensity}
               forecast={currentForecast}
               prediction={currentPrediction}
             />
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* 3. DESTINATION EXPLORER (25 SHRINE CARDS WITH LOCAL IMAGES) */}
       <div id="tourist-destinations">
-        <DestinationGrid
-          sites={sites}
-          densityMap={densityMap}
-          selectedSiteId={selectedSiteId}
-          onSelectSite={(id) => {
-            onSelectSite(id);
-            scrollToSection('tourist-crowd-status');
-          }}
-          onViewDetails={handleOpenDetails}
-        />
+        <div id="smart-destinations">
+          <DestinationGrid
+            sites={sites}
+            densityMap={densityMap}
+            selectedSiteId={selectedSiteId}
+            onSelectSite={(id) => {
+              onSelectSite(id);
+              scrollToSection('tourist-crowd-status');
+            }}
+            onViewDetails={handleOpenDetails}
+          />
+        </div>
       </div>
 
       {/* 4. DESTINATION DETAILS MODAL (WITH LARGER IMAGE) */}
@@ -414,24 +416,26 @@ export default function TouristDashboard({
       />
 
       {/* 5. AI PILGRIM ADVISORY & DYNAMIC ALTERNATIVE ROUTE RECOMMENDATION */}
-      {activeSite && (
-        <div id="tourist-alternatives">
-          <PilgrimAdvisory
-            currentSite={activeSite}
-            density={activeDensity}
-            forecast={currentForecast}
-            prediction={currentPrediction}
-            alternativesData={currentAlternatives}
-            activeAlternateRoute={activeAlternateRoute}
-            pendingPunyaReward={pendingPunyaReward}
-            routeStatus={routeStatus}
-            completedRouteIds={completedRouteIds}
-            onSelectRoute={onSelectRoute}
-            onCompleteArrival={onCompleteArrival}
-            onSwitchBack={onSwitchBack}
-          />
+      <div id="tourist-alternatives">
+        <div id="how-it-works">
+          {activeSite && (
+            <PilgrimAdvisory
+              currentSite={activeSite}
+              density={activeDensity}
+              forecast={currentForecast}
+              prediction={currentPrediction}
+              alternativesData={currentAlternatives}
+              activeAlternateRoute={activeAlternateRoute}
+              pendingPunyaReward={pendingPunyaReward}
+              routeStatus={routeStatus}
+              completedRouteIds={completedRouteIds}
+              onSelectRoute={onSelectRoute}
+              onCompleteArrival={onCompleteArrival}
+              onSwitchBack={onSwitchBack}
+            />
+          )}
         </div>
-      )}
+      </div>
 
       {/* 6. YATRA DAL GROUP TRACKER */}
       {activeSite && (
@@ -442,16 +446,18 @@ export default function TouristDashboard({
       )}
 
       {/* 7. SAFETY ADVISORIES, EMERGENCY SOS & SDRF CONTACTS */}
-      {activeSite && (
-        <div id="tourist-safety">
-          <SafetyAlerts
-            alerts={alerts}
-            safetyInfo={safetyInfo}
-            currentSite={activeSite}
-            onOpenSOS={onOpenSOS}
-          />
+      <div id="tourist-safety">
+        <div id="safety">
+          {activeSite && (
+            <SafetyAlerts
+              alerts={alerts}
+              safetyInfo={safetyInfo}
+              currentSite={activeSite}
+              onOpenSOS={onOpenSOS}
+            />
+          )}
         </div>
-      )}
+      </div>
 
       {/* 8. GREEN PILGRIM WALLET SUMMARY BANNER */}
       <div
