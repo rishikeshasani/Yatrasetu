@@ -105,9 +105,33 @@ export default function Navbar({
     setMobileMenuOpen(false);
     if (onNavigateSection) {
       onNavigateSection(sectionId);
-    } else {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
+
+    const targetMap = {
+      'top': ['top', 'tourist-home', 'yatrasetu-app'],
+      'smart-destinations': ['smart-destinations', 'tourist-destinations', 'destinations'],
+      'crowd-intelligence': ['crowd-intelligence', 'tourist-crowd-status', 'tourist-forecast', 'live-crowd-card'],
+      'how-it-works': ['how-it-works', 'tourist-alternatives', 'pilgrim-advisory'],
+      'safety': ['safety', 'tourist-safety', 'safety-section'],
+      'impact': ['impact', 'tourist-hotels', 'yatrasetu-footer']
+    };
+
+    const candidateIds = targetMap[sectionId] || [sectionId];
+    for (const id of candidateIds) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+    }
+
+    if (sectionId === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (sectionId === 'safety' && onOpenSOS) {
+      onOpenSOS();
+    } else if (sectionId === 'impact' && onOpenWallet) {
+      onOpenWallet();
     }
   };
 
@@ -126,14 +150,19 @@ export default function Navbar({
 
     if (onNavigate) {
       onNavigate(item.target);
-    } else {
-      const el = document.getElementById(item.target);
+    }
+
+    const candidateIds = [item.target, item.target?.replace('tourist-', ''), item.target?.replace('gov-', ''), item.target?.replace('hotel-', ''), item.target?.replace('travel-', '')].filter(Boolean);
+
+    for (const id of candidateIds) {
+      const el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
     }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
