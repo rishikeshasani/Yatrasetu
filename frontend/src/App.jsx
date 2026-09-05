@@ -464,7 +464,7 @@ export default function App() {
 
           {/* Dynamic Protected Role-Based Dashboard View */}
           <main className="main-content-container main-content">
-            {(currentUser.role === 'tourist' || (!currentUser.role && activeRole === 'tourist')) && (
+            {activeRole === 'tourist' && (
               <TouristDashboard
                 sites={sites}
                 selectedSiteId={selectedSiteId}
@@ -491,7 +491,7 @@ export default function App() {
               />
             )}
 
-            {currentUser.role === 'government' && (
+            {activeRole === 'government' && (
               <GovernmentDashboard
                 sites={sites}
                 densityMap={densityMap}
@@ -503,14 +503,14 @@ export default function App() {
               />
             )}
 
-            {currentUser.role === 'hotel' && (
+            {activeRole === 'hotel' && (
               <HotelDashboard
                 currentUser={currentUser}
                 showToast={showToast}
               />
             )}
 
-            {currentUser.role === 'travel_company' && (
+            {activeRole === 'travel_company' && (
               <TravelCompanyDashboard
                 sites={sites}
                 densityMap={densityMap}
