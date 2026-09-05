@@ -1,0 +1,6802 @@
+[
+  {
+    "room_number": "101",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "102",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "103",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "104",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "105",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "106",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "107",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "108",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "109",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "110",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "111",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "112",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "check-in"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "113",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "114",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "115",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "116",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "117",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "118",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "119",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "120",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "201",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "202",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "check-in"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "203",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "check-out"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "204",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "205",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "check-out"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "206",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "207",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "check-in"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "208",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "209",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "210",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "211",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "212",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "213",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "214",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "215",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "216",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "217",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "218",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "219",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "220",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "301",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "check-in"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "302",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "303",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "304",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "305",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "306",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "307",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "308",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "309",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "310",
+    "date": "2026-09-04",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "101",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "102",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "103",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "104",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "105",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "106",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "107",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "108",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "109",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "110",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "111",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "112",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "113",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "114",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "115",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "116",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "117",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "118",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "119",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "120",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "201",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "202",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "check-in"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "203",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "204",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "205",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "206",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "207",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "208",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "209",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "210",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "211",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "212",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "213",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "214",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "215",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "216",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "217",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "218",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "219",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "220",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "301",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "302",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "303",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "304",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "305",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "306",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "307",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "308",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "309",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "310",
+    "date": "2026-09-05",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "101",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "102",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "103",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "104",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "105",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-in"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "106",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "107",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "108",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "109",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "110",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "111",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "112",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "113",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "114",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "115",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "116",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "117",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "118",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "119",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "120",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "201",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "202",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "203",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "204",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "205",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "booked"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "206",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "207",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "check-in"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "208",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "209",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "check-in"
+      },
+      {
+        "time": "14:00",
+        "status": "booked"
+      },
+      {
+        "time": "16:00",
+        "status": "booked"
+      },
+      {
+        "time": "18:00",
+        "status": "booked"
+      },
+      {
+        "time": "20:00",
+        "status": "booked"
+      },
+      {
+        "time": "22:00",
+        "status": "booked"
+      }
+    ]
+  },
+  {
+    "room_number": "210",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "211",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "212",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "213",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "214",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "215",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "216",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "217",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "218",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "219",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "220",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "301",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "302",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "303",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "304",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "305",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "306",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "307",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "308",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "309",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "310",
+    "date": "2026-09-06",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "101",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "102",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "103",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "104",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "105",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "106",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "107",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "108",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "109",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "110",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "111",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "112",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "113",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "114",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "115",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "116",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "117",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "118",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "119",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "120",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "201",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "202",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "203",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "204",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "205",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "206",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "207",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "booked"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "208",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "209",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "check-out"
+      },
+      {
+        "time": "12:00",
+        "status": "check-out"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "210",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "211",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "212",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "213",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "214",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "215",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "216",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "217",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "218",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "219",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "220",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "301",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "302",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "303",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "304",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "305",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "306",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "307",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "308",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "309",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  },
+  {
+    "room_number": "310",
+    "date": "2026-09-07",
+    "slots": [
+      {
+        "time": "10:00",
+        "status": "available"
+      },
+      {
+        "time": "12:00",
+        "status": "available"
+      },
+      {
+        "time": "14:00",
+        "status": "available"
+      },
+      {
+        "time": "16:00",
+        "status": "available"
+      },
+      {
+        "time": "18:00",
+        "status": "available"
+      },
+      {
+        "time": "20:00",
+        "status": "available"
+      },
+      {
+        "time": "22:00",
+        "status": "available"
+      }
+    ]
+  }
+]

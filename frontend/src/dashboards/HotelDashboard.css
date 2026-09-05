@@ -981,3 +981,593 @@
   background: #fbbf24;
   color: #0f172a;
 }
+
+
+/* Reorganized 5 KPI Row */
+.hotel-kpi-row-five {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .hotel-kpi-row-five {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .hotel-kpi-row-five {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* Incoming Booking Requests Card */
+.hotel-booking-requests-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.requests-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+@media (min-width: 768px) {
+  .requests-card-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.requests-pending-pill {
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.requests-filter-tabs {
+  display: flex;
+  gap: 6px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-btn.active {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.no-requests-message {
+  padding: 32px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.requests-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (min-width: 768px) {
+  .requests-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.owner-req-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.owner-req-card.pending {
+  border-color: #fde68a;
+  background: #fffdfa;
+}
+
+.owner-req-card.confirmed {
+  border-color: #a7f3d0;
+  background: #fcfdfd;
+}
+
+.owner-req-card.declined {
+  border-color: #fecdd3;
+  opacity: 0.85;
+}
+
+.req-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.req-refs-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-family: monospace;
+  margin-bottom: 4px;
+}
+
+.badge-req-id {
+  background: #f1f5f9;
+  color: #334155;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.badge-booking-id {
+  color: #64748b;
+}
+
+.req-guest-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.req-party-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 6px;
+}
+
+.req-room-pill {
+  font-size: 12.5px;
+  color: #334155;
+}
+
+.req-room-pill strong {
+  color: #0284c7;
+}
+
+.req-status-box {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-badge.confirmed {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-badge.declined {
+  background: #ffe4e6;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.req-amount {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.req-time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #475569;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.req-reason-row {
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.req-owner-actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-owner-accept {
+  height: 36px;
+  background: #059669;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.btn-owner-accept:hover {
+  background: #047857;
+}
+
+.btn-owner-decline {
+  height: 36px;
+  background: #ffffff;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-owner-decline:hover {
+  background: #ffe4e6;
+}
+
+.req-confirmed-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #059669;
+  font-weight: 600;
+  background: #ecfdf5;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.btn-load-terminal {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0284c7;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Decline Dialog Modal */
+.decline-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.decline-dialog-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.decline-dialog-box h4 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.decline-dialog-box p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 14px 0;
+}
+
+.decline-select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  color: #0f172a;
+  outline: none;
+  margin-bottom: 18px;
+}
+
+.decline-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dialog-cancel-btn {
+  padding: 8px 14px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.dialog-confirm-decline-btn {
+  padding: 8px 16px;
+  background: #e11d48;
+  border: none;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+/* Room Slots Card */
+.hotel-room-slots-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.slots-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+@media (min-width: 768px) {
+  .slots-card-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.slots-partner-tag {
+  font-size: 10px;
+  font-family: monospace;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  border: 1px solid #e2e8f0;
+}
+
+.slots-day-switcher {
+  display: flex;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.day-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.day-btn.active {
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.slots-controls-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+}
+
+@media (min-width: 640px) {
+  .slots-controls-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.slots-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.legend-dot.avail { background: #10b981; }
+.legend-dot.booked { background: #334155; }
+.legend-dot.checkin { background: #f59e0b; }
+.legend-dot.checkout { background: #f43f5e; }
+
+.slots-category-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.category-filter-select {
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.slots-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.slots-matrix-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: center;
+}
+
+.slots-matrix-table th {
+  background: #f8fafc;
+  padding: 10px 8px;
+  font-weight: 700;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.slots-matrix-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
+}
+
+.slots-matrix-table tr.highlight-room-204 {
+  background: #f8fafc;
+}
+
+.room-cell {
+  text-align: left;
+  padding-left: 12px !important;
+}
+
+.room-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.room-sub {
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+.slot-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.slot-badge.slot-avail {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.slot-badge.slot-booked {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.slot-badge.slot-checkin {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.slot-badge.slot-checkout {
+  background: #ffe4e6;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.slots-footer-note {
+  font-size: 11.5px;
+  color: #64748b;
+  margin-top: 10px;
+  text-align: right;
+}
+

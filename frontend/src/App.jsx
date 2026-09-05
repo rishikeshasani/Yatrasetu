@@ -415,6 +415,8 @@ export default function App() {
             onCompleteArrival={handleCompleteArrival}
             onSwitchBack={handleSwitchBack}
             onOpenSOS={() => setIsSOSModalOpen(true)}
+            currentUser={currentUser}
+            onShowToast={showToast}
           />
         )}
 

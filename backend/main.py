@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(crowd_router)
 app.include_router(hotels_router)
+app.include_router(hotels_router, prefix="/api")
 app.include_router(recommendations_router)
 app.include_router(safety_router)
 app.include_router(vendors_router)

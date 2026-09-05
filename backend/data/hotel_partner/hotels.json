@@ -1,0 +1,20 @@
+{
+  "hotel_id": "H001",
+  "name": "Hotel Ganga Heritage",
+  "location": "Kashi Corridor, Zone B-2",
+  "city": "Varanasi",
+  "state": "Uttar Pradesh",
+  "pin_code": "221001",
+  "contact_phone": "+91 542 245 8890",
+  "contact_email": "desk@gangaheritage-yatrasetu.in",
+  "total_rooms": 50,
+  "room_categories": {
+    "Standard": 30,
+    "Deluxe": 15,
+    "Family": 5
+  },
+  "operating_license": "UP-TOU-KSH-2024-0089",
+  "tax_credit_rate_per_stay": 25.0,
+  "base_rate_inr": 1000.0,
+  "currency": "INR"
+}

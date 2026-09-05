@@ -5,6 +5,7 @@ import PilgrimAdvisory from '../components/PilgrimAdvisory';
 import SafetyAlerts from '../components/SafetyAlerts';
 import LocalVendors from '../components/LocalVendors';
 import TeamTracker from '../components/TeamTracker';
+import HotelBookingWidget from '../components/HotelBookingWidget';
 
 export default function TouristDashboard({
   sites = [],
@@ -26,7 +27,9 @@ export default function TouristDashboard({
   onSelectRoute,
   onCompleteArrival,
   onSwitchBack,
-  onOpenSOS
+  onOpenSOS,
+  currentUser,
+  onShowToast
 }) {
   return (
     <div className="tourist-dashboard-flow">
@@ -62,6 +65,12 @@ export default function TouristDashboard({
             onSelectRoute={onSelectRoute}
             onCompleteArrival={onCompleteArrival}
             onSwitchBack={onSwitchBack}
+          />
+
+          {/* Two-Sided Pilgrim Hotel Booking Request Interface */}
+          <HotelBookingWidget
+            currentUser={currentUser}
+            onShowToast={onShowToast}
           />
 
           {/* Yatra Dal Group Tracker */}

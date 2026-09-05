@@ -1,0 +1,52 @@
+[
+  {
+    "event_id": "RR-001",
+    "source_zone": "Main Travel Hub (Varanasi Cantt)",
+    "destination_zone": "Kashi Corridor B-2",
+    "incoming_tourists": 120,
+    "expected_arrival": "2026-09-04T14:00:00",
+    "demand_level": "high",
+    "recommended_action": "Activate transit surge rate (+30%) and allocate buffer rooms 206 & 208",
+    "status": "active"
+  },
+  {
+    "event_id": "RR-002",
+    "source_zone": "Dashashwamedh Ghat Evening Aarti Diverter",
+    "destination_zone": "Kashi Corridor B-2",
+    "incoming_tourists": 85,
+    "expected_arrival": "2026-09-04T18:30:00",
+    "demand_level": "medium",
+    "recommended_action": "Direct verified transit guests to rooms checking out at 18:00 (Room 205)",
+    "status": "scheduled"
+  },
+  {
+    "event_id": "RR-003",
+    "source_zone": "Godowlia Junction Pilgrim Bottleneck",
+    "destination_zone": "Kashi Corridor B-2",
+    "incoming_tourists": 165,
+    "expected_arrival": "2026-09-05T08:00:00",
+    "demand_level": "critical_surge",
+    "recommended_action": "Early dispatch to turnover rooms freeing up between 09:00 AM and 11:00 AM",
+    "status": "scheduled"
+  },
+  {
+    "event_id": "RR-004",
+    "source_zone": "Assi Ghat Overflow Node",
+    "destination_zone": "Kashi Corridor B-2",
+    "incoming_tourists": 70,
+    "expected_arrival": "2026-09-05T15:00:00",
+    "demand_level": "medium",
+    "recommended_action": "Utilize afternoon vacancies across Floor 1 Standard inventory",
+    "status": "scheduled"
+  },
+  {
+    "event_id": "RR-005",
+    "source_zone": "Kashi Vishwanath Corridor North Gate",
+    "destination_zone": "Kashi Corridor B-2",
+    "incoming_tourists": 140,
+    "expected_arrival": "2026-09-06T11:00:00",
+    "demand_level": "high",
+    "recommended_action": "Synchronize intake with Sunday pilgrimage morning departures",
+    "status": "scheduled"
+  }
+]
