@@ -1818,7 +1818,7 @@ export async function loginUser(email, password) {
     matchedRole = "government";
   } else if (lowerEmail.includes("hotel") || lowerEmail.includes("lodge") || lowerEmail.includes("inn")) {
     matchedRole = "hotel";
-  } else if (lowerEmail.includes("travel") || lowerEmail.includes("tour") || lowerEmail.includes("planner")) {
+  } else if (lowerEmail.includes("travel") || lowerEmail.includes("agency") || lowerEmail.includes("fleet") || lowerEmail.includes("planner")) {
     matchedRole = "travel_company";
   }
 
