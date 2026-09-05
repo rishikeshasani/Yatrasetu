@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { saveFleetSchedules, fetchFleetSchedules } from '../api/api';
+import { saveFleetSchedules, fetchFleetSchedules, fetchActiveRerouteAlert } from '../api/api';
 import TravelAgencyConsole from '../components/TravelAgencyConsole';
 
 export default function TravelCompanyDashboard({ showToast }) {
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeReroute, setActiveReroute] = useState(null);
   const [fleetRoutes, setFleetRoutes] = useState([
     { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
     { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, occupancy: 100, type: 'Sleeper', status: 'FULL' },
@@ -12,7 +13,7 @@ export default function TravelCompanyDashboard({ showToast }) {
     { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, occupancy: 67, type: 'Mini Bus', status: 'NORMAL' },
   ]);
 
-  // Load live schedule from backend on mount
+  // Load live schedule and active reroute directives on mount
   useEffect(() => {
     fetchFleetSchedules().then((routes) => {
       if (routes && routes.length > 0) {
@@ -29,10 +30,113 @@ export default function TravelCompanyDashboard({ showToast }) {
         })));
       }
     });
+
+    const syncReroute = () => {
+      fetchActiveRerouteAlert().then((reroute) => {
+        if (reroute && reroute.is_active) {
+          setActiveReroute(reroute);
+        } else {
+          setActiveReroute(null);
+        }
+      }).catch(() => {});
+    };
+    syncReroute();
+
+    const handleRerouteEvent = (e) => {
+      if (e?.detail) {
+        setActiveReroute(e.detail.is_active ? e.detail : null);
+      }
+    };
+    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+    const pollTimer = setInterval(syncReroute, 6000);
+
+    return () => {
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+      clearInterval(pollTimer);
+    };
   }, []);
 
   return (
     <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0 0 2rem' }}>
+
+      {/* Active State Emergency Directive Banner */}
+      {activeReroute?.is_active && (
+        <div style={{
+          margin: '1.25rem 1.5rem',
+          padding: '1.25rem 1.5rem',
+          background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)',
+          border: '1px solid #EF4444',
+          borderRadius: '0.75rem',
+          color: '#FFFFFF',
+          boxShadow: '0 4px 14px rgba(220, 38, 38, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <span style={{ fontSize: '1.8rem', animation: 'bounce 1s infinite' }}>🚨</span>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{
+                  background: '#DC2626',
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '0.25rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 'bold',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase'
+                }}>
+                  STATE EMERGENCY DIRECTIVE
+                </span>
+                <span style={{ fontWeight: 'bold', fontSize: '1.05rem' }}>
+                  Halt &amp; Divert Fleet: {activeReroute.source_site || 'Primary Sacred Corridor'}
+                </span>
+              </div>
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#FEE2E2', lineHeight: 1.4 }}>
+                {activeReroute.message || 'Haridwar Corridor Overtourism Override Active. Re-route buses to satellite parking.'}
+              </p>
+              {activeReroute.target_sites && activeReroute.target_sites.length > 0 && (
+                <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#FECACA' }}>
+                  Suggested Sister Shrines:{' '}
+                  <strong>{activeReroute.target_sites.join(', ')}</strong>
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              padding: '0.5rem 0.85rem',
+              borderRadius: '0.5rem',
+              textAlign: 'center',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <div style={{ fontSize: '0.7rem', color: '#FCA5A5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Diverted Pilgrims
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#FFFFFF' }}>
+                {activeReroute.diverted_tourists_count || 320}
+              </div>
+            </div>
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              padding: '0.5rem 0.85rem',
+              borderRadius: '0.5rem',
+              textAlign: 'center',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
+              <div style={{ fontSize: '0.7rem', color: '#FCA5A5', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Buses Assigned
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#FFFFFF' }}>
+                {activeReroute.assigned_buses_count || 8}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HIMALAYA YATRA TRAVELS: PARTNER CONSOLE & DEMAND CALCULATOR (3 CORE FEATURES) */}
       <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} />

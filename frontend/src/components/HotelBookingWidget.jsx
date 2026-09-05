@@ -162,6 +162,15 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
     }
   }, [hotelId, checkInDate, checkInTime, checkOutDate, checkOutTime, guests, categoryFilter, selectedRoomNumber]);
 
+  // Find selected room metadata
+  const selectedRoomObj = allRooms.find(r => String(r.room_number) === String(selectedRoomNumber)) || {
+    room_number: selectedRoomNumber,
+    room_type: 'Deluxe',
+    floor: 2,
+    capacity: 3,
+    price_per_night: 1300.0
+  };
+
   // Auto-check availability and calculate live dynamic hourly pricing
   useEffect(() => {
     checkCurrentRoomAvailability();
@@ -182,15 +191,6 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
 
     return () => { isMounted = false; };
   }, [checkCurrentRoomAvailability, hotelId, checkInDate, checkInTime, checkOutDate, checkOutTime, selectedRoomObj.room_type, selectedRoomNumber]);
-
-  // Find selected room metadata
-  const selectedRoomObj = allRooms.find(r => String(r.room_number) === String(selectedRoomNumber)) || {
-    room_number: selectedRoomNumber,
-    room_type: 'Deluxe',
-    floor: 2,
-    capacity: 3,
-    price_per_night: 1300.0
-  };
 
   // Send Booking Request to Hotel Owner
   const handleSendBookingRequest = async (e) => {

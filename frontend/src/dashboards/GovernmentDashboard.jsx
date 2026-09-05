@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   updateCrowdObservation,
   fetchActiveSOSAlerts,
-  fetchGovernmentOccupancyReport
+  fetchGovernmentOccupancyReport,
+  activateEmergencyReroute,
+  deactivateEmergencyReroute,
+  fetchActiveRerouteAlert
 } from '../api/api';
 import { supabase } from '../supabaseClient';
 import './GovernmentDashboard.css';
@@ -64,47 +67,53 @@ export default function GovernmentDashboard({
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [emergencyTimestamp, setEmergencyTimestamp] = useState(null);
 
-  // Check for existing active emergency on mount
+  // Check for existing active emergency on mount from authoritative backend
   useEffect(() => {
+    let isMounted = true;
     const checkExisting = async () => {
       try {
-        const { data } = await supabase
-          .from('platform_events')
-          .select('*')
-          .in('event_type', ['emergency', 'emergency_lifted'])
-          .order('created_at', { ascending: false })
-          .limit(1);
-        if (data && data.length > 0 && data[0].event_type === 'emergency') {
+        const targetSiteId = selectedSiteId || updateSiteId || 'TS001';
+        const res = await fetchActiveRerouteAlert(targetSiteId);
+        if (!isMounted) return;
+        if (res && res.is_active && res.alert) {
           setIsRerouteActive(true);
+          const t = res.alert.activated_at || res.alert.timestamp;
           setEmergencyTimestamp(
-            new Date(data[0].created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+            t ? new Date(t).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
           );
+        } else {
+          setIsRerouteActive(false);
+          setEmergencyTimestamp(null);
         }
       } catch (err) {
         console.warn('[Gov] Failed to check existing emergency:', err);
       }
     };
     checkExisting();
-  }, []);
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedSiteId]);
 
-  // Activate emergency reroute
+  // Activate emergency reroute with backend persistence
   const handleActivateEmergency = async () => {
     setIsRecalculating(true);
     try {
-      await supabase.from('platform_events').insert({
-        event_type: 'emergency',
-        payload: {
-          corridor: 'haridwar',
-          message: 'EMERGENCY: Haridwar corridor reroute enforced by District Administration. Inbound vehicles diverted to BHEL Satellite Hub.',
-          zones_affected: ['Har Ki Pauri', 'Haridwar City Center', 'Zone A'],
-          satellite_destination: 'BHEL Ground / Rishikesh Bypass',
-        },
-        created_by: currentUser?.name || 'District Magistrate',
+      const targetSiteId = selectedSiteId || updateSiteId || 'TS001';
+      const res = await activateEmergencyReroute(targetSiteId, {
+        diverted_tourists: 350,
+        partner_buses: 14,
+        partner_hotels: 22,
+        notes: `EMERGENCY: Haridwar corridor reroute enforced by ${currentUser?.full_name || 'District Administration'}. Inbound vehicles diverted to BHEL Satellite Hub.`
       });
-      setIsRerouteActive(true);
-      const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-      setEmergencyTimestamp(timeStr);
-      if (showToast) showToast('🚨 Emergency reroute ACTIVATED — all agency dashboards notified in real-time.');
+      if (res && (res.is_active || res.status === 'success')) {
+        setIsRerouteActive(true);
+        const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+        setEmergencyTimestamp(timeStr);
+        if (showToast) showToast('🚨 Emergency reroute ACTIVATED — all agency dashboards notified in real-time.');
+      } else {
+        throw new Error(res?.detail || 'Activation failed');
+      }
     } catch (err) {
       console.error('[Gov] Failed to activate emergency:', err);
       if (showToast) showToast('⚠️ Failed to activate emergency reroute.');
@@ -113,32 +122,32 @@ export default function GovernmentDashboard({
     }
   };
 
-  // Deactivate / lift emergency reroute
+  // Deactivate / lift emergency reroute with backend persistence
   const handleLiftEmergency = async () => {
     setIsRecalculating(true);
     try {
-      await supabase.from('platform_events').insert({
-        event_type: 'emergency_lifted',
-        payload: {
-          corridor: 'haridwar',
-          message: 'Emergency reroute lifted. Normal corridor transit resumed on Haridwar arterial routes.',
-        },
-        created_by: currentUser?.name || 'District Magistrate',
-      });
+      const targetSiteId = selectedSiteId || updateSiteId || 'TS001';
+      await deactivateEmergencyReroute(targetSiteId, 'Emergency reroute lifted. Normal corridor transit resumed on Haridwar arterial routes.');
       setIsRerouteActive(false);
       setEmergencyTimestamp(null);
       if (showToast) showToast('✅ Emergency reroute DEACTIVATED — normal operations restored.');
     } catch (err) {
       console.error('[Gov] Failed to lift emergency:', err);
+      if (showToast) showToast('⚠️ Failed to deactivate emergency reroute.');
     } finally {
       setIsRecalculating(false);
     }
   };
 
-  const handleResetSimulation = () => {
-    setIsRerouteActive(false);
+  const handleResetSimulation = async () => {
     setIsRecalculating(false);
     setSurgeAlertVisible(true);
+    try {
+      const targetSiteId = selectedSiteId || updateSiteId || 'TS001';
+      await deactivateEmergencyReroute(targetSiteId, 'Reset simulation');
+    } catch {}
+    setIsRerouteActive(false);
+    setEmergencyTimestamp(null);
     if (showToast) {
       showToast('↺ Baseline simulation restored. All demonstration zones reset.');
     }

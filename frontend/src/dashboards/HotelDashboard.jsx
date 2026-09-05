@@ -8,7 +8,8 @@ import {
   fetchHotelRoomSlots,
   subscribeToHotelUpdates,
   checkRoomConflictLocal,
-  fetchInboundBuses
+  fetchInboundBuses,
+  fetchActiveRerouteAlert
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -202,9 +203,10 @@ export default function HotelDashboard({ currentUser, showToast }) {
     async function loadData() {
       setIsLoadingBackend(true);
       try {
-        const [hotelsList, ownerBookings] = await Promise.all([
+        const [hotelsList, ownerBookings, rerouteAlert] = await Promise.all([
           fetchHotels(),
-          fetchHotelOwnerBookings()
+          fetchHotelOwnerBookings(),
+          fetchActiveRerouteAlert().catch(() => null)
         ]);
         if (!isMounted) return;
 
@@ -219,6 +221,15 @@ export default function HotelDashboard({ currentUser, showToast }) {
         if (Array.isArray(ownerBookings)) {
           setBackendBookings(ownerBookings);
         }
+        if (rerouteAlert && typeof rerouteAlert.is_active === 'boolean') {
+          setState(prev => ({
+            ...prev,
+            isRerouteSpikeActive: rerouteAlert.is_active,
+            demandLevel: rerouteAlert.is_active ? 'HIGH_SURGE' : 'NORMAL',
+            incomingTourists: rerouteAlert.is_active ? 180 : 120,
+            suggestedRate: rerouteAlert.is_active ? 1300 : 1000
+          }));
+        }
       } catch (err) {
         console.warn('Fallback hotel data loaded');
       } finally {
@@ -231,12 +242,24 @@ export default function HotelDashboard({ currentUser, showToast }) {
     const handleHotelBooked = () => {
       loadData();
     };
+    const handleRerouteEvent = (e) => {
+      const active = Boolean(e?.detail?.is_active);
+      setState(prev => ({
+        ...prev,
+        isRerouteSpikeActive: active,
+        demandLevel: active ? 'HIGH_SURGE' : 'NORMAL',
+        incomingTourists: active ? 180 : 120,
+        suggestedRate: active ? 1300 : 1000
+      }));
+    };
     window.addEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
     const pollInterval = setInterval(loadData, 6000);
 
     return () => {
       isMounted = false;
       window.removeEventListener('yatrasetu:hotel_booked', handleHotelBooked);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
       clearInterval(pollInterval);
     };
   }, [currentUser]);

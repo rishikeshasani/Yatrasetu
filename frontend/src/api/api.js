@@ -1766,7 +1766,6 @@ export const DEMO_CREDENTIALS = {
     business_name: "Kedarnath Himalayan Inn & Ashrams",
     phone: "+91-9876543210",
     badge: "SHRINE HOSPITALITY",
-    hotel_id: "hotel-kedarnath-1",
     verified: true
   },
   travel_company: {
@@ -2764,7 +2763,11 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
 export async function acceptBookingRequest(requestId) {
   try {
     const res = await fetch(`${API_BASE_URL}/booking-requests/${requestId}/accept`, {
-      method: 'PATCH'
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      }
     });
     if (res.ok) {
       const updated = await res.json();
@@ -2823,7 +2826,10 @@ export async function declineBookingRequest(requestId, reason = 'Room unavailabl
   try {
     const res = await fetch(`${API_BASE_URL}/booking-requests/${requestId}/decline`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders()
+      },
       body: JSON.stringify({ reason })
     });
     if (res.ok) {
