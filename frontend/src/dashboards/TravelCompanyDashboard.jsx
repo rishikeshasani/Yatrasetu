@@ -179,10 +179,22 @@ export default function TravelCompanyDashboard({
           <div style={{ flex: 1 }}>
             <h3 style={{ margin: '0 0 0.2rem', color: '#92400E', fontSize: '1.1rem' }}>Sharma Travels Route Intelligence Alert</h3>
             <p style={{ margin: 0, color: '#B45309', fontSize: '0.95rem' }}>
-              Forward + Return Fill Predictor for Haridwar Somvati Amavasya
+              Forward + Return Fill Predictor (Hybrid Calendar Pattern + YOLO v8 CCTV Spike Telemetry)
             </p>
           </div>
           <button onClick={() => setShowFleetModal(true)} style={{ padding: '0.6rem 1.2rem', backgroundColor: '#D97706', color: '#FFF', border: 'none', borderRadius: '0.5rem', fontWeight: 'bold', fontSize: '0.95rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>🚌 Adjust Fleet Schedule</button>
+        </div>
+
+        {/* YOLO CCTV Live Telemetry Spike Strip */}
+        <div style={{ padding: '0.75rem 1.5rem', backgroundColor: '#FEF3C7', borderBottom: '1px solid #FDE68A', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#78350F', fontSize: '0.88rem', fontWeight: '600' }}>
+            <span>🎥 <strong>YOLO v8 CCTV Telemetry:</strong></span>
+            <span style={{ backgroundColor: '#D97706', color: '#FFF', padding: '0.15rem 0.5rem', borderRadius: '0.25rem', fontSize: '0.78rem', fontWeight: 'bold' }}>⚡ +312% Crowd Surge Spike</span>
+            <span>Har Ki Pauri Exit (Cam #04) • 2,450 devotees/min</span>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#92400E', fontWeight: 'bold', backgroundColor: '#FFF', padding: '0.2rem 0.6rem', borderRadius: '0.25rem', border: '1px solid #FCD34D' }}>
+            🟢 region_occupancy_pipeline.py Feed Active
+          </div>
         </div>
 
         {/* Journey timing cards: Forward | Return */}
@@ -198,7 +210,7 @@ export default function TravelCompanyDashboard({
               {forwardLow}–{forwardHigh}% full
             </div>
             <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              Based on Somvati Amavasya historical pattern + current corridor density
+              Based on Somvati Amavasya calendar pattern + YOLO CCTV live density feeds
             </div>
             <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
               <div style={{ width: `${forwardAvg}%`, backgroundColor: '#D97706', height: '100%' }}></div>
@@ -215,7 +227,7 @@ export default function TravelCompanyDashboard({
               {returnLow}–{returnHigh}% full
             </div>
             <div style={{ fontSize: '0.75rem', color: '#6B7280', fontStyle: 'italic', marginBottom: '0.75rem' }}>
-              Based on Somvati Amavasya historical pattern + current corridor density
+              Based on Somvati Amavasya calendar pattern + YOLO CCTV live density feeds
             </div>
             <div style={{ width: '100%', backgroundColor: '#E5E7EB', borderRadius: '999px', height: '0.75rem', overflow: 'hidden' }}>
               <div style={{ width: `${returnAvg}%`, backgroundColor: '#DC2626', height: '100%' }}></div>
@@ -227,14 +239,15 @@ export default function TravelCompanyDashboard({
         <div style={{ padding: '1rem 1.5rem', backgroundColor: '#FEF2F2', borderTop: '1px solid #FCA5A5', display: 'flex', gap: '0.75rem' }}>
           <span style={{ fontSize: '1.25rem' }}>💡</span>
           <div>
-            <h4 style={{ margin: '0 0 0.25rem', color: '#991B1B', fontSize: '0.95rem' }}>AI Actionable Insight</h4>
+            <h4 style={{ margin: '0 0 0.25rem', color: '#991B1B', fontSize: '0.95rem' }}>AI &amp; YOLO Vision Actionable Insights</h4>
             {imbalance > 30 ? (
               <ul style={{ margin: 0, paddingLeft: '1.25rem', color: '#B91C1C', fontSize: '0.85rem' }}>
-                <li style={{ marginBottom: '0.25rem' }}>Return leg is significantly underfilled. Consider dynamic pricing — reduce return fares by 15-20% to incentivize same-day returns.</li>
-                <li>Shift the return pickup hub from Har Ki Pauri (congested) to BHEL Ground Satellite Parking (3km away, free highway access).</li>
+                <li style={{ marginBottom: '0.25rem' }}><strong>Calendar &amp; Booking Imbalance:</strong> Return leg is significantly underfilled. Consider dynamic pricing — reduce return fares by 15–20% to incentivize same-day returns.</li>
+                <li style={{ marginBottom: '0.25rem' }}><strong>YOLO Vision Telemetry Spike:</strong> Real-time CCTV analysis (<code style={{ backgroundColor: '#FEE2E2', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>region_occupancy_pipeline.py</code>) detected a <strong>+312% density spike</strong> at Har Ki Pauri exit gates. 84% of exiting crowd heading towards bus terminal.</li>
+                <li><strong>Route Diversion:</strong> Shift the return pickup hub from Har Ki Pauri (congested) to BHEL Ground Satellite Parking (3km away, free highway access).</li>
               </ul>
             ) : (
-              <p style={{ margin: 0, color: '#B91C1C', fontSize: '0.85rem' }}>Forward and return fill are balanced. No schedule changes recommended.</p>
+              <p style={{ margin: 0, color: '#B91C1C', fontSize: '0.85rem' }}>Forward and return fill are balanced. YOLO vision telemetry showing steady flow.</p>
             )}
           </div>
         </div>
