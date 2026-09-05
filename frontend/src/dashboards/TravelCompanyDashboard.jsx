@@ -56,6 +56,41 @@ export default function TravelCompanyDashboard({ showToast }) {
     };
   }, []);
 
+  // Dynamic Bus & Occupancy Adjuster
+  const updateRouteBuses = (route, delta) => {
+    const newBuses = Math.max(1, (route.buses || 1) + delta);
+    const initialBuses = route.initialBuses || route.buses || 3;
+    const initialOccupancy = route.initialOccupancy || route.occupancy || 80;
+    // Calculate total passenger demand load for this route schedule
+    const demand = route.passengerDemand || Math.round(initialBuses * route.capacity * (initialOccupancy / 100));
+
+    const totalSeats = newBuses * route.capacity;
+    const newOccupancy = Math.min(100, Math.max(10, Math.round((demand / totalSeats) * 100)));
+
+    let newStatus = 'NORMAL';
+    if (newOccupancy >= 98) {
+      newStatus = 'FULL';
+    } else if (newOccupancy >= 80) {
+      newStatus = 'HIGH DEMAND';
+    } else if (route.id === 'HR-03' || (route.from && route.from.includes('Haridwar'))) {
+      newStatus = newOccupancy < 40 ? 'RETURN' : (newOccupancy >= 75 ? 'HIGH DEMAND' : 'MODERATE');
+    } else if (newOccupancy < 50) {
+      newStatus = 'OPTIMAL';
+    } else {
+      newStatus = 'MODERATE';
+    }
+
+    return {
+      ...route,
+      buses: newBuses,
+      occupancy: newOccupancy,
+      status: newStatus,
+      passengerDemand: demand,
+      initialBuses: initialBuses,
+      initialOccupancy: initialOccupancy
+    };
+  };
+
   return (
     <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0 0 2rem' }}>
 
@@ -206,12 +241,12 @@ export default function TravelCompanyDashboard({ showToast }) {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                           <button
-                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: Math.max(1, r.buses - 1) } : r))}
+                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? updateRouteBuses(r, -1) : r))}
                             style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #D1D5DB', background: '#F9FAFB', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                           >−</button>
                           <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#111827', minWidth: '2.5rem', textAlign: 'center' }}>{route.buses}</span>
                           <button
-                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: r.buses + 1 } : r))}
+                            onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? updateRouteBuses(r, 1) : r))}
                             style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid #D97706', background: '#FEF3C7', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#92400E' }}
                           >+</button>
                           <div style={{ fontSize: '0.85rem', color: '#6B7280', textAlign: 'right', minWidth: '80px' }}>
