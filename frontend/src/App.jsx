@@ -133,6 +133,48 @@ export default function App() {
     };
   }, []);
 
+  // Synchronize Persistent Emergency Reroute Event across Dashboards
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncRerouteState() {
+      try {
+        const res = await fetchActiveRerouteAlert();
+        if (!isMounted) return;
+        if (res && res.is_active && res.alert) {
+          setActiveRerouteAlert(res.alert);
+        } else if (res && !res.is_active) {
+          setActiveRerouteAlert(null);
+        }
+      } catch (err) {
+        console.warn("Could not sync active reroute alert:", err);
+      }
+    }
+
+    syncRerouteState();
+
+    const handleRerouteEvent = (e) => {
+      if (!isMounted) return;
+      const data = e.detail;
+      if (data?.is_active && data?.alert) {
+        setActiveRerouteAlert(data.alert);
+      } else if (data?.is_active === false) {
+        setActiveRerouteAlert(null);
+      } else {
+        syncRerouteState();
+      }
+    };
+
+    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+    const pollInterval = setInterval(syncRerouteState, 4000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
+    };
+  }, []);
+
   // 1. Load static site metadata (alternatives, safety info, vendors) once per site selection
   useEffect(() => {
     let isMounted = true;
@@ -498,6 +540,7 @@ export default function App() {
                 onCompleteArrival={handleCompleteArrival}
                 onSwitchBack={handleSwitchBack}
                 onOpenWallet={() => setIsWalletOpen(true)}
+                onOpenSOS={() => setIsSOSModalOpen(true)}
                 walletPoints={wallet?.total_points || 260}
                 activeRerouteAlert={activeRerouteAlert}
                 currentUser={currentUser}

@@ -6,7 +6,6 @@ import '../components/tourist/TouristDashboard.css';
 import LanguageSelector from '../components/tourist/LanguageSelector';
 import DestinationGrid from '../components/tourist/DestinationGrid';
 import DestinationDetailsModal from '../components/tourist/DestinationDetailsModal';
-import CorridorRouteMap from '../components/CorridorRouteMap';
 
 // Restored Core Person 2 Subsystems
 import LiveCrowdCard from '../components/LiveCrowdCard';
@@ -232,7 +231,7 @@ export default function TouristDashboard({
           </span>
           <div className="quick-nav-pills desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem' }}>
             <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-crowd-status')}>
-              📡 Live Telemetry
+              👥 Crowd &amp; Wait Time
             </button>
             <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-destinations')}>
               🏛️ Explore 25
@@ -326,7 +325,7 @@ export default function TouristDashboard({
                     borderRadius: '5px',
                     fontWeight: '700'
                   }}>
-                    {activeRerouteAlert.crowd_status || 'CRITICAL'} ({activeRerouteAlert.occupancy_percentage || 95}% DENSITY)
+                    {activeRerouteAlert.crowd_status || 'CRITICAL'} CONGESTION
                   </span>
                 </div>
 
@@ -400,11 +399,6 @@ export default function TouristDashboard({
           }}
           onViewDetails={handleOpenDetails}
         />
-      </div>
-
-      {/* Corridor Route Map */}
-      <div style={{ margin: '1.25rem 0' }}>
-        <CorridorRouteMap height="400px" />
       </div>
 
       {/* 4. DESTINATION DETAILS MODAL (WITH LARGER IMAGE) */}

@@ -1,4 +1,4 @@
-export const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || "http://127.0.0.1:8001";
+export const API_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || "http://127.0.0.1:8000";
 
 // Clean environment/config switch for Demo Mode vs Strict Real Backend Mode
 // When DEMO_MODE=false: Backend/API failures throw or return errors; DO NOT silently replace with mock success/data.
