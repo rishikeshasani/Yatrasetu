@@ -2048,23 +2048,715 @@
 }
 
 
-/* Reorganized 5 KPI Row */
+/* ==========================================================================
+   HOTEL PARTNER DASHBOARD: HERO, KPIS & AI PRICING LAYER STYLING
+   ========================================================================== */
+
+/* 1. HOTEL PARTNER HEADER CARD */
+.hotel-portal-header-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.hotel-header-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.hotel-brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hotel-brand-badge-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hotel-portal-tag-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ea580c;
+  letter-spacing: -0.2px;
+}
+
+.hotel-partner-role-pill {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.hotel-property-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.3px;
+}
+
+.hotel-property-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.hotel-property-path svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.hotel-header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hotel-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 9999px;
+}
+
+.hotel-verified-badge svg {
+  color: #059669;
+}
+
+.hotel-reset-demo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.hotel-reset-demo-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+/* 2. DEMAND/SURGE AREA */
+.hotel-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.hotel-hero-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+}
+
+.hero-left-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.hero-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.demand-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.demand-status-badge.surge-active {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+}
+
+.demand-status-badge.normal-active {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.demand-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+  animation: pulse-dot 1.8s infinite;
+}
+
+.hub-location-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.hub-location-tag svg {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.hero-headline-eta-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-metrics-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.counter-highlight {
+  color: #ea580c;
+  font-weight: 800;
+}
+
+.hero-eta-highlight-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e40af;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.hero-eta-highlight-badge svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.hero-eta-highlight-badge strong {
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.hero-desc-p {
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 760px;
+}
+
+.hero-right-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.simulate-reroute-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.simulate-reroute-btn.default {
+  background: linear-gradient(135deg, #ea580c, #c2410c);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
+}
+
+.simulate-reroute-btn.default:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 88, 12, 0.4);
+}
+
+.simulate-reroute-btn.surge-active {
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #047857;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2);
+}
+
+.simulate-subtext {
+  font-size: 11.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.simulate-subtext strong {
+  color: #d97706;
+}
+
+/* 3. 5 METRIC CARDS */
 .hotel-kpi-row-five {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
 
-@media (min-width: 768px) {
+.hotel-kpi-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.hotel-kpi-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.kpi-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kpi-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.kpi-icon-emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.kpi-icon-indigo {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.kpi-icon-amber {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.kpi-icon-rose {
+  background: #fff1f2;
+  color: #e11d48;
+}
+
+.kpi-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.2;
+}
+
+.kpi-main-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.kpi-metric-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
+}
+
+.kpi-metric-denom {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.kpi-metric-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.kpi-footer-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.3;
+}
+
+.kpi-progress-bar {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.kpi-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* 4. AI PRICING DECISION LAYER CARD */
+.hotel-ai-pricing-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.ai-pricing-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-pricing-title-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ai-pricing-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.25);
+}
+
+.ai-pricing-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.2px;
+}
+
+.ai-pricing-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.sih-layer-pill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #4338ca;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.ai-pricing-card-body {
+  padding-top: 18px;
+}
+
+.ai-pricing-rates-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ai-rate-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ai-rate-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748b;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.ai-rate-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
+}
+
+.ai-rate-caption {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.ai-rate-block-suggested {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.15);
+  position: relative;
+}
+
+.ai-suggested-tag {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  background: #d97706;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+}
+
+.ai-rate-value-highlight {
+  font-size: 28px;
+  font-weight: 900;
+  color: #b45309;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.ai-rate-caption-highlight {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.ai-surge-active-text {
+  color: #e11d48;
+}
+
+.ai-pricing-action-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ai-pricing-info-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.ai-pricing-info-note svg {
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.ai-pricing-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.3);
+  white-space: nowrap;
+}
+
+.ai-pricing-primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.45);
+  filter: brightness(1.05);
+}
+
+.ai-pricing-primary-btn:active {
+  transform: translateY(0);
+}
+
+/* 5. RESPONSIVE BREAKPOINTS (ONLY FOR THIS SECTION) */
+@media (max-width: 1100px) {
   .hotel-kpi-row-five {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (min-width: 1024px) {
+@media (max-width: 900px) {
+  .hotel-hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-right-actions {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .simulate-reroute-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .hotel-portal-header-card,
+  .hotel-hero-card,
+  .hotel-ai-pricing-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .hotel-header-main-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .hotel-header-right-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .hotel-kpi-row-five {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ai-pricing-rates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-pricing-action-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ai-pricing-primary-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .hotel-kpi-row-five {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-headline-eta-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hotel-property-title {
+    font-size: 19px;
+  }
+
+  .hero-metrics-title {
+    font-size: 18px;
   }
 }
 

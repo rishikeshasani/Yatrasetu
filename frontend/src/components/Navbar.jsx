@@ -106,8 +106,14 @@ export default function Navbar({
     if (onNavigateSection) {
       onNavigateSection(sectionId);
     } else {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
+      const el = sectionId === 'top'
+        ? (document.getElementById('top') || document.getElementById('tourist-home') || document.getElementById('gov-command-center') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard'))
+        : document.getElementById(sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
@@ -181,41 +187,6 @@ export default function Navbar({
               onClick={() => handleNavClick('top')}
             >
               Home
-            </button>
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => handleNavClick('smart-destinations')}
-            >
-              Explore 25
-            </button>
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => handleNavClick('crowd-intelligence')}
-            >
-              Crowd AI
-            </button>
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => handleNavClick('how-it-works')}
-            >
-              How It Works
-            </button>
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => handleNavClick('safety')}
-            >
-              Safety &amp; SOS
-            </button>
-            <button
-              type="button"
-              className="nav-link-btn"
-              onClick={() => handleNavClick('impact')}
-            >
-              Civic Impact
             </button>
           </nav>
         ) : (
@@ -409,12 +380,7 @@ export default function Navbar({
           <div className="mobile-nav-links">
             {currentView === 'landing' ? (
               <>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>Home Overview</button>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('smart-destinations')}>Explore 25 Shrines</button>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('crowd-intelligence')}>Crowd Intelligence</button>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('how-it-works')}>How It Works</button>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('safety')}>Emergency Safety &amp; SOS</button>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('impact')}>Civic &amp; Economic Impact</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>Home</button>
               </>
             ) : (
               navItems.map((item, idx) => (

@@ -682,47 +682,45 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
             </div>
           </div>
         </div>
-      {/* 1. HEADER & TOP NAVIGATION BAR */}
-      <header className="hotel-portal-header">
-        <div className="hotel-portal-header-inner">
-          {/* Brand & Property Location Info */}
-          <div className="hotel-brand-box">
-            <div className="hotel-icon-badge">
-              🏨
+      {/* 1. HOTEL PARTNER CARD */}
+      <header className="hotel-portal-header-card">
+        <div className="hotel-header-main-row">
+          <div className="hotel-brand-info">
+            <div className="hotel-brand-badge-strip">
+              <span className="hotel-portal-tag-name">YatraSetu</span>
+              <span className="hotel-partner-role-pill">HOTEL PARTNER</span>
             </div>
-            <div className="hotel-brand-titles">
-              <div className="hotel-brand-row">
-                <span className="hotel-brand-name">YatraSetu</span>
-                <span className="hotel-partner-pill">HOTEL PARTNER</span>
-              </div>
-              <p className="hotel-property-sub">
-                <span className="hotel-live-dot animate-ping-slow"></span>
-                <strong>{backendHotel?.name || 'Hotel Ganga Heritage'}</strong>
-                &nbsp;• {backendHotel?.address ? backendHotel.address.split(',')[0] : 'Kashi Corridor (Zone B-2)'}
-              </p>
+            <h1 className="hotel-property-title">
+              {backendHotel?.name || 'Kedarnath Real Pilgrimage Lodge'}
+            </h1>
+            <div className="hotel-property-path">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>{backendHotel?.address ? backendHotel.address.split(',')[0] : 'Main Temple Path'}</span>
             </div>
           </div>
 
-          {/* Controls: Verification & Master Reset */}
-          <div className="hotel-header-controls">
-            <div className="hotel-verified-badge">
-              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <div className="hotel-header-right-actions">
+            <div className="hotel-verified-badge" title="Verified YatraSetu Hospitality Partner">
+              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" />
               </svg>
               <span>Verified Partner</span>
             </div>
 
-            {/* Discreet Demo Reset Button */}
             <button
               type="button"
               onClick={resetFullDemoState}
               title="Reset all demo states back to baseline"
-              className="hotel-reset-btn"
+              className="hotel-reset-demo-btn"
             >
-              <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
               </svg>
-              <span>🔄 Reset Demo</span>
+              <span>Reset Demo</span>
             </button>
           </div>
         </div>
@@ -753,36 +751,39 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
       {/* 2. MAIN DASHBOARD CONTENT */}
       <main className="hotel-main-body">
-        {/* HERO SECTION: INCOMING REROUTED DEMAND & SIMULATE BUTTON */}
+        {/* DEMAND/SURGE AREA */}
         <div className="hotel-hero-card">
-          <div className="hotel-hero-glow"></div>
-
           <div className="hotel-hero-content">
             <div className="hero-left-stack">
               <div className="hero-tags-row">
-                <span className={`demand-badge ${state.isRerouteSpikeActive ? 'surge' : 'normal'}`}>
-                  <span
-                    className="hotel-live-dot"
-                    style={{ backgroundColor: state.isRerouteSpikeActive ? '#f43f5e' : '#34d399' }}
-                  ></span>
-                  <span>
-                    {state.isRerouteSpikeActive ? 'High Surge (+50%)' : 'Demand: Normal'}
-                  </span>
+                <span className={`demand-status-badge ${state.isRerouteSpikeActive ? 'surge-active' : 'normal-active'}`}>
+                  <span className="demand-status-dot"></span>
+                  <span>{state.isRerouteSpikeActive ? 'High Surge (+50%)' : 'Demand: Normal'}</span>
                 </span>
 
                 <span className="hub-location-tag">
-                  Kashi Vishwanath Gate #4 Smart Transit Hub
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span>Kashi Vishwanath Gate #4 Smart Transit Hub</span>
                 </span>
               </div>
 
-              <h2 className="hero-metrics-title">
-                <span>Incoming Rerouted Demand: </span>
-                <span className="counter-highlight">{displayTouristsCount}</span>
-                <span className="counter-highlight"> Pilgrims</span>
-                <span className="hero-eta-sub">
-                  | Expected ETA: <strong>2:00 PM</strong>
-                </span>
-              </h2>
+              <div className="hero-headline-eta-group">
+                <h2 className="hero-metrics-title">
+                  Incoming Rerouted Demand: <span className="counter-highlight">{displayTouristsCount} Pilgrims</span>
+                </h2>
+                <div className="hero-eta-highlight-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span>Expected ETA:</span>
+                  <strong>2:00 PM</strong>
+                </div>
+              </div>
 
               <p className="hero-desc-p">
                 {state.isRerouteSpikeActive
@@ -791,92 +792,131 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
               </p>
             </div>
 
-            {/* PRIMARY ACTION BUTTON: SIMULATE REROUTING SPIKE */}
+            {/* Action button */}
             <div className="hero-right-actions">
               <button
                 type="button"
                 onClick={triggerReroutingSpike}
                 className={`simulate-reroute-btn ${state.isRerouteSpikeActive ? 'surge-active' : 'default'}`}
               >
-                <span>{state.isRerouteSpikeActive ? '✓' : '🔄'}</span>
+                <span className="sim-btn-icon">{state.isRerouteSpikeActive ? '✓' : '⚡'}</span>
                 <span>
                   {state.isRerouteSpikeActive ? 'Surge Active (+50%)' : 'Simulate Rerouting Spike'}
                 </span>
               </button>
 
               <div className="simulate-subtext">
-                Simulates <strong style={{ color: '#fde68a' }}>Travel ➔ Hotel</strong> rerouting bridge
+                Simulates <strong>Travel → Hotel</strong> rerouting bridge
               </div>
             </div>
           </div>
         </div>
 
-        {/* 3. REORGANIZED KPI DASHBOARD CARDS (EXPRESS BEDS & PUNYA POINTS REMOVED) */}
+        {/* 3. METRIC CARDS (5-COLUMN GRID) */}
         <div className="hotel-kpi-row-five">
           {/* 1. Room Availability */}
           <div className="hotel-kpi-item" id="hotel-rooms">
-            <div className="kpi-title-row">
-              <span>🛏️</span>
-              <span>Room Availability</span>
+            <div className="kpi-card-header">
+              <div className="kpi-icon-wrapper kpi-icon-blue">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M2 4v16" />
+                  <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+                  <path d="M2 17h20" />
+                  <path d="M6 8v9" />
+                </svg>
+              </div>
+              <span className="kpi-label">Room Availability</span>
             </div>
             <div className="kpi-main-metric">
-              <span className="metric-accent">{availableRooms}</span>
-              <span className="metric-denom"> / {totalRoomsCount} Total</span>
+              <span className="kpi-metric-number">{availableRooms}</span>
+              <span className="kpi-metric-denom"> / {totalRoomsCount} Total</span>
             </div>
             <div className="kpi-footer-sub">Available for check-in</div>
           </div>
 
           {/* 2. Occupancy Rate */}
           <div className="hotel-kpi-item" id="hotel-occupancy">
-            <div className="kpi-title-row">
-              <span>📊</span>
-              <span>Occupancy Rate</span>
+            <div className="kpi-card-header">
+              <div className="kpi-icon-wrapper kpi-icon-emerald">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="20" x2="18" y2="10" />
+                  <line x1="12" y1="20" x2="12" y2="4" />
+                  <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+              </div>
+              <span className="kpi-label">Occupancy Rate</span>
             </div>
             <div className="kpi-main-metric">
-              {occupancyPercent}%
+              <span className="kpi-metric-number">{occupancyPercent}%</span>
             </div>
             <div className="kpi-progress-bar">
               <div
                 className="kpi-progress-fill"
-                style={{ width: `${occupancyPercent}%` }}
+                style={{ width: `${Math.min(100, Math.max(0, occupancyPercent))}%` }}
               ></div>
             </div>
           </div>
 
-          {/* 3. Total Property Capacity */}
+          {/* 3. Total Capacity */}
           <div className="hotel-kpi-item">
-            <div className="kpi-title-row">
-              <span>🏢</span>
-              <span>Total Capacity</span>
+            <div className="kpi-card-header">
+              <div className="kpi-icon-wrapper kpi-icon-indigo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+                  <line x1="9" y1="22" x2="9" y2="22.01" />
+                  <line x1="15" y1="22" x2="15" y2="22.01" />
+                  <line x1="8" y1="6" x2="8.01" y2="6" />
+                  <line x1="12" y1="6" x2="12.01" y2="6" />
+                  <line x1="16" y1="6" x2="16.01" y2="6" />
+                  <line x1="8" y1="10" x2="8.01" y2="10" />
+                  <line x1="12" y1="10" x2="12.01" y2="10" />
+                  <line x1="16" y1="10" x2="16.01" y2="10" />
+                  <line x1="8" y1="14" x2="8.01" y2="14" />
+                  <line x1="12" y1="14" x2="12.01" y2="14" />
+                  <line x1="16" y1="14" x2="16.01" y2="14" />
+                </svg>
+              </div>
+              <span className="kpi-label">Total Capacity</span>
             </div>
-            <div className="kpi-main-metric" style={{ color: '#0284c7' }}>
-              {state.totalRooms} Rooms
+            <div className="kpi-main-metric">
+              <span className="kpi-metric-number">{state.totalRooms || 50}</span>
+              <span className="kpi-metric-unit"> Rooms</span>
             </div>
             <div className="kpi-footer-sub">30 Std • 15 Dlx • 5 Fam</div>
           </div>
 
-          {/* 4. Current Base Rate & Pricing Engine */}
+          {/* 4. Live Room Rate */}
           <div className="hotel-kpi-item">
-            <div className="kpi-title-row">
-              <span>💰</span>
-              <span>Live Room Rate</span>
+            <div className="kpi-card-header">
+              <div className="kpi-icon-wrapper kpi-icon-amber">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="12" y1="1" x2="12" y2="23" />
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <span className="kpi-label">Live Room Rate</span>
             </div>
             <div className="kpi-main-metric">
-              ₹{state.currentRate.toLocaleString('en-IN')}
+              <span className="kpi-metric-number">₹{state.currentRate.toLocaleString('en-IN')}</span>
             </div>
-            <div className="kpi-footer-sub" style={{ color: state.currentRate > 1000 ? '#f59e0b' : '#64748b' }}>
+            <div className="kpi-footer-sub" style={{ color: state.currentRate > 1000 ? '#d97706' : '#64748b' }}>
               {state.currentRate > 1000 ? 'Surge Rate Active' : 'Standard Parity'}
             </div>
           </div>
 
-          {/* 5. Incoming Booking Requests Action Card */}
+          {/* 5. Booking Requests */}
           <div className="hotel-kpi-item">
-            <div className="kpi-title-row">
-              <span>📩</span>
-              <span>Booking Requests</span>
+            <div className="kpi-card-header">
+              <div className="kpi-icon-wrapper kpi-icon-rose">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                  <polyline points="22,6 12,13 2,6" />
+                </svg>
+              </div>
+              <span className="kpi-label">Booking Requests</span>
             </div>
-            <div className="kpi-main-metric" style={{ color: pendingRequestsCount > 0 ? '#f59e0b' : '#10b981' }}>
-              {pendingRequestsCount} Pending
+            <div className="kpi-main-metric" style={{ color: pendingRequestsCount > 0 ? '#d97706' : '#059669' }}>
+              <span className="kpi-metric-number">{pendingRequestsCount} Pending</span>
             </div>
             <div className="kpi-footer-sub">
               {pendingRequestsCount > 0 ? 'Requires Partner Action' : 'All Requests Processed'}
@@ -884,44 +924,84 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
           </div>
         </div>
 
-        {/* 4. RULE-BASED SURGE PRICING STRIP (SIH Decision Layer) */}
-        <div className="pricing-control-strip">
-          <div className="pricing-left">
-            <span className="pricing-icon">⚡</span>
-            <div>
-              <div className="pricing-heading-row">
-                <span>Rule-Based Surge Pricing</span>
-                <span className="sih-layer-tag">SIH Decision Layer</span>
+        {/* 4. AI PRICING DECISION LAYER */}
+        <div className="hotel-ai-pricing-card">
+          <div className="ai-pricing-card-header">
+            <div className="ai-pricing-title-group">
+              <div className="ai-pricing-icon-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
               </div>
-              <div className="pricing-detail-row">
-                Current Rate: <strong>₹{state.currentRate.toLocaleString('en-IN')}</strong> &nbsp;|&nbsp;
-                AI-Simulated Suggested Rate: <strong style={{ color: '#fbbf24' }}>₹{state.suggestedRate.toLocaleString('en-IN')}</strong>
-                {state.isRerouteSpikeActive && (
-                  <span className="pricing-surge-pill">Surge Active (+30%)</span>
-                )}
-              </div>
-              <div className="pricing-tooltip-row">
-                <span>ℹ️</span>
-                <span>Automated pricing decision layer based on real-time temple transit reroute volume.</span>
+              <div>
+                <h3 className="ai-pricing-title">AI Pricing Decision Layer</h3>
+                <p className="ai-pricing-subtitle">
+                  Automated pricing decision layer based on real-time temple transit reroute volume.
+                </p>
               </div>
             </div>
+            <span className="sih-layer-pill">SIH Decision Layer</span>
           </div>
 
-          <button
-            type="button"
-            onClick={toggleSuggestedRate}
-            className={`apply-rate-btn ${
-              state.isSuggestedApplied
-                ? 'default'
-                : state.isRerouteSpikeActive
-                ? 'surge-recommend ring-attention'
-                : 'default'
-            }`}
-          >
-            {state.isSuggestedApplied
-              ? 'Revert to Base Rate (₹1,000)'
-              : `Apply Suggested Rate (₹${state.suggestedRate.toLocaleString('en-IN')})`}
-          </button>
+          <div className="ai-pricing-card-body">
+            <div className="ai-pricing-rates-grid">
+              {/* Current Rate */}
+              <div className="ai-rate-block">
+                <span className="ai-rate-label">Current Rate</span>
+                <div className="ai-rate-value">
+                  ₹{state.currentRate.toLocaleString('en-IN')}
+                </div>
+                <span className="ai-rate-caption">Standard Parity</span>
+              </div>
+
+              {/* AI-Simulated Suggested Rate (Visually Prominent!) */}
+              <div className="ai-rate-block ai-rate-block-suggested">
+                <div className="ai-suggested-tag">Recommended</div>
+                <span className="ai-rate-label">AI-Simulated Suggested Rate</span>
+                <div className="ai-rate-value-highlight">
+                  ₹{state.suggestedRate.toLocaleString('en-IN')}
+                </div>
+                <span className="ai-rate-caption-highlight">Dynamic Pilgrimage Flow Optimization</span>
+              </div>
+
+              {/* Surge Active */}
+              <div className="ai-rate-block">
+                <span className="ai-rate-label">Surge Active</span>
+                <div className="ai-rate-value ai-surge-active-text">
+                  +30%
+                </div>
+                <span className="ai-rate-caption">
+                  {state.isRerouteSpikeActive ? 'Transit Surge Multiplier' : 'Spike Alert Multiplier'}
+                </span>
+              </div>
+            </div>
+
+            <div className="ai-pricing-action-footer">
+              <div className="ai-pricing-info-note">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                <span>Automated pricing decision layer based on real-time temple transit reroute volume.</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={toggleSuggestedRate}
+                className="ai-pricing-primary-btn"
+              >
+                <span>
+                  {state.isSuggestedApplied
+                    ? 'Revert to Base Rate (₹1,000)'
+                    : `Apply Suggested Rate (₹${state.suggestedRate.toLocaleString('en-IN')})`}
+                </span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* ================================================================= */}
