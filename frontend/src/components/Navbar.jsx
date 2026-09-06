@@ -101,19 +101,38 @@ export default function Navbar({
   const navItems = getRoleNavItems();
   const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole);
 
+  const scrollToTargetElement = (element) => {
+    if (!element) return false;
+    const navHeader = document.querySelector('.navbar-header') || document.querySelector('.app-header');
+    const navHeight = navHeader ? navHeader.getBoundingClientRect().height + 15 : 90;
+    const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+    const offsetPosition = elementPosition - navHeight;
+
+    window.scrollTo({
+      top: Math.max(0, offsetPosition),
+      behavior: 'smooth'
+    });
+    return true;
+  };
+
   const handleNavClick = (sectionId) => {
     setMobileMenuOpen(false);
+
+    if (sectionId === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (onNavigateSection) {
       onNavigateSection(sectionId);
     } else {
       const el = sectionId === 'top'
         ? (document.getElementById('top') || document.getElementById('tourist-home') || document.getElementById('gov-command-center') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard'))
         : document.getElementById(sectionId);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (el && scrollToTargetElement(el)) {
+        return;
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -132,14 +151,18 @@ export default function Navbar({
 
     if (onNavigate) {
       onNavigate(item.target);
-    } else {
-      const el = document.getElementById(item.target);
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    const candidateIds = [item.target, item.target?.replace('tourist-', ''), item.target?.replace('gov-', ''), item.target?.replace('hotel-', ''), item.target?.replace('travel-', '')].filter(Boolean);
+
+    for (const id of candidateIds) {
+      const el = document.getElementById(id);
+      if (el && scrollToTargetElement(el)) {
+        return;
       }
     }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
