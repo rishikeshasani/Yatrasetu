@@ -6,6 +6,7 @@ import '../components/tourist/TouristDashboard.css';
 import LanguageSelector from '../components/tourist/LanguageSelector';
 import DestinationGrid from '../components/tourist/DestinationGrid';
 import DestinationDetailsModal from '../components/tourist/DestinationDetailsModal';
+import HotelBookingModal from '../components/tourist/HotelBookingModal';
 
 // Restored Core Person 2 Subsystems
 import LiveCrowdCard from '../components/LiveCrowdCard';
@@ -59,6 +60,8 @@ export default function TouristDashboard({
   const [hotels, setHotels] = useState([]);
   const [bookingHotelId, setBookingHotelId] = useState(null);
   const [bookingSuccess, setBookingSuccess] = useState(null);
+  const [selectedHotelForBooking, setSelectedHotelForBooking] = useState(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -164,58 +167,36 @@ export default function TouristDashboard({
     return verifiedHotels.length > 0 ? verifiedHotels.slice(0, 6) : hotels.slice(0, 6);
   }, [hotels, activeSite]);
 
-  const handleBookRoom = async (hotel) => {
-    const availableRoom = (hotel.rooms || []).find((r) => r.available_rooms > 0) || hotel.rooms?.[0];
-    if (!availableRoom) {
-      alert("No vacant rooms currently available for this hotel.");
-      return;
-    }
+  const handleOpenBookingModal = (hotel) => {
+    setSelectedHotelForBooking(hotel);
+    setIsBookingModalOpen(true);
+  };
 
-    setBookingHotelId(hotel.id);
-
-    const today = new Date();
-    const checkIn = new Date(today);
-    checkIn.setDate(checkIn.getDate() + 1);
-    const checkOut = new Date(today);
-    checkOut.setDate(checkOut.getDate() + 3);
-
-    // Get guest name from localStorage user profile
-    let guestName = "Pilgrim Guest";
-    try {
-      const storedUser = JSON.parse(localStorage.getItem("yatrasetu_user") || "{}");
-      guestName = storedUser.full_name || storedUser.name || "Pilgrim Guest";
-    } catch (e) {}
-
-    const bookingPayload = {
-      hotel_id: hotel.id || "H001",
-      tourist_id: "T001",
-      room_id: availableRoom.id || `R${availableRoom.room_number || 101}`,
-      room_number: String(availableRoom.room_number || 101),
-      room_type: availableRoom.room_type || "Deluxe",
-      guest_name: guestName,
-      guest_count: 2,
-      check_in_datetime: checkIn.toISOString(),
-      check_out_datetime: checkOut.toISOString(),
-      check_in: checkIn.toISOString(),
-      check_out: checkOut.toISOString(),
-      special_request: "",
-      price: availableRoom.price_per_night ? availableRoom.price_per_night * 2 : 1575.0,
-      pricing_multiplier: 1.5
-    };
-
+  const handleConfirmBooking = async (bookingPayload) => {
+    setBookingHotelId(bookingPayload.hotel_id);
     try {
       const result = await createBookingRequest(bookingPayload);
       setBookingSuccess({
         bookingId: result.booking_id || result.id,
-        hotelName: hotel.name,
-        roomType: result.room_type || availableRoom.room_type,
+        hotelName: selectedHotelForBooking?.name || 'Shrine Pilgrimage Lodge',
+        roomType: result.room_type || bookingPayload.room_type,
         price: result.total_amount || result.price || bookingPayload.price,
+        checkIn: bookingPayload.check_in_datetime || bookingPayload.check_in,
+        checkOut: bookingPayload.check_out_datetime || bookingPayload.check_out,
+        guestCount: bookingPayload.guest_count,
         status: result.status || 'pending'
       });
+
+      if (onShowToast) {
+        onShowToast(`📩 Reservation Request Sent to ${selectedHotelForBooking?.name || 'Hotel'}!`);
+      }
+
       const freshHotels = await fetchHotels();
       if (Array.isArray(freshHotels)) setHotels(freshHotels);
+      return result;
     } catch (err) {
       alert("Booking error: " + (err.message || "Please try again."));
+      throw err;
     } finally {
       setBookingHotelId(null);
     }
@@ -589,6 +570,16 @@ export default function TouristDashboard({
                   Booking ID: <code style={{ fontWeight: 'bold' }}>{bookingSuccess.bookingId}</code> • {bookingSuccess.roomType} • ₹{bookingSuccess.price} 
                   {bookingSuccess.status === 'pending' ? ' (Transmitted to Hotel Partner Portal)' : ' (Saved in Supabase)'}
                 </p>
+                {bookingSuccess.checkIn && bookingSuccess.checkOut && (
+                  <p style={{
+                    margin: '0.2rem 0 0',
+                    fontSize: '0.78rem',
+                    color: bookingSuccess.status === 'confirmed' ? '#065F46' : '#78350F',
+                    fontWeight: '600'
+                  }}>
+                    📅 Stay: {new Date(bookingSuccess.checkIn).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} → {new Date(bookingSuccess.checkOut).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} {bookingSuccess.guestCount ? `• ${bookingSuccess.guestCount} Devotee(s)` : ''}
+                  </p>
+                )}
               </div>
               <button
                 onClick={() => setBookingSuccess(null)}
@@ -658,7 +649,7 @@ export default function TouristDashboard({
                     <button
                       type="button"
                       disabled={bookingHotelId === h.id}
-                      onClick={() => handleBookRoom(h)}
+                      onClick={() => handleOpenBookingModal(h)}
                       style={{
                         background: '#059669',
                         color: '#FFFFFF',
@@ -687,6 +678,15 @@ export default function TouristDashboard({
           siteName={activeSite.name}
         />
       )}
+
+      {/* Interactive Hotel Booking & Date/Time Selection Modal */}
+      <HotelBookingModal
+        isOpen={isBookingModalOpen}
+        hotel={selectedHotelForBooking}
+        onClose={() => setIsBookingModalOpen(false)}
+        onConfirmBooking={handleConfirmBooking}
+        currentUser={currentUser}
+      />
     </div>
   );
 }
