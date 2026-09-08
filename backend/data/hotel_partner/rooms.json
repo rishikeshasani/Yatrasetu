@@ -7,8 +7,8 @@
     "floor": 1,
     "capacity": 2,
     "status": "occupied",
-    "current_booking_id": "YC-48103",
-    "next_available_time": "2026-09-05T10:00:00"
+    "current_booking_id": "YC-48205",
+    "next_available_time": "2026-09-11T14:15:05.272000+00:00"
   },
   {
     "room_id": "R102",
@@ -260,8 +260,8 @@
     "floor": 2,
     "capacity": 3,
     "status": "available",
-    "current_booking_id": "YC-48217",
-    "next_available_time": "2026-09-10T11:00:00"
+    "current_booking_id": "YC-48203",
+    "next_available_time": "2026-09-11T11:00:00"
   },
   {
     "room_id": "R205",
