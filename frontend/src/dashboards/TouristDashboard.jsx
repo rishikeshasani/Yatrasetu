@@ -13,7 +13,7 @@ import PilgrimAdvisory from '../components/PilgrimAdvisory';
 import SafetyAlerts from '../components/SafetyAlerts';
 import LocalVendors from '../components/LocalVendors';
 import TeamTracker from '../components/TeamTracker';
-import { fetchHotels, bookHotelRoom, fetchMyHotelBookings } from '../api/api';
+import { fetchHotels, createBookingRequest, fetchMyHotelBookings } from '../api/api';
 
 export default function TouristDashboard({
   sites = [],
@@ -179,34 +179,48 @@ export default function TouristDashboard({
     const checkOut = new Date(today);
     checkOut.setDate(checkOut.getDate() + 3);
 
+    // Get guest name from localStorage user profile
+    let guestName = "Pilgrim Guest";
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("yatrasetu_user") || "{}");
+      guestName = storedUser.full_name || storedUser.name || "Pilgrim Guest";
+    } catch (e) {}
+
     const bookingPayload = {
-      room_id: availableRoom.id,
-      check_in: checkIn.toISOString().split('T')[0],
-      check_out: checkOut.toISOString().split('T')[0],
-      guests: 2
+      hotel_id: hotel.id || "H001",
+      tourist_id: "T001",
+      room_id: availableRoom.id || `R${availableRoom.room_number || 101}`,
+      room_number: String(availableRoom.room_number || 101),
+      room_type: availableRoom.room_type || "Deluxe",
+      guest_name: guestName,
+      guest_count: 2,
+      check_in_datetime: checkIn.toISOString(),
+      check_out_datetime: checkOut.toISOString(),
+      check_in: checkIn.toISOString(),
+      check_out: checkOut.toISOString(),
+      special_request: "",
+      price: availableRoom.price_per_night ? availableRoom.price_per_night * 2 : 1575.0,
+      pricing_multiplier: 1.5
     };
 
     try {
-      const res = await bookHotelRoom(hotel.id, bookingPayload);
-      if (res.status === 'success') {
-        setBookingSuccess({
-          bookingId: res.data?.id,
-          hotelName: hotel.name,
-          roomType: availableRoom.room_type,
-          price: res.data?.total_price || availableRoom.price_per_night * 2,
-          status: 'pending'
-        });
-        const freshHotels = await fetchHotels();
-        if (Array.isArray(freshHotels)) setHotels(freshHotels);
-      } else {
-        alert(res.detail || "Booking failed. Please ensure you are logged in as a Tourist.");
-      }
+      const result = await createBookingRequest(bookingPayload);
+      setBookingSuccess({
+        bookingId: result.booking_id || result.id,
+        hotelName: hotel.name,
+        roomType: result.room_type || availableRoom.room_type,
+        price: result.total_amount || result.price || bookingPayload.price,
+        status: result.status || 'pending'
+      });
+      const freshHotels = await fetchHotels();
+      if (Array.isArray(freshHotels)) setHotels(freshHotels);
     } catch (err) {
-      alert("Booking error: " + err.message);
+      alert("Booking error: " + (err.message || "Please try again."));
     } finally {
       setBookingHotelId(null);
     }
   };
+
 
   const handleOpenDetails = (site) => {
     setDetailSite(site);
