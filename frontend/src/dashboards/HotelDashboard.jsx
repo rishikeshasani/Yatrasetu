@@ -270,9 +270,14 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
         if (!isMounted) return;
 
         if (Array.isArray(hotelsList) && hotelsList.length > 0) {
+          const userEmail = (currentUser?.email || '').toLowerCase();
           const matched =
-            hotelsList.find(h => currentUser?.id && h.owner_id === currentUser.id) ||
+            hotelsList.find(h => currentUser?.id && (h.owner_id === currentUser.id || h.owner_id === currentUser.user_id)) ||
             hotelsList.find(h => currentUser?.hotel_id && h.id === currentUser.hotel_id) ||
+            hotelsList.find(h => currentUser?.business_name && h.name.toLowerCase().includes(currentUser.business_name.toLowerCase())) ||
+            (userEmail.includes('badrinath') ? hotelsList.find(h => h.name.toLowerCase().includes('badrinath')) : null) ||
+            (userEmail.includes('kashi') || userEmail.includes('ganga') ? hotelsList.find(h => h.name.toLowerCase().includes('kashi') || h.name.toLowerCase().includes('ganga')) : null) ||
+            (userEmail.includes('kedarnath') ? hotelsList.find(h => h.name.toLowerCase().includes('kedarnath')) : null) ||
             hotelsList.find(h => h.name.toLowerCase().includes('kedarnath')) ||
             hotelsList[0];
           setBackendHotel(matched);

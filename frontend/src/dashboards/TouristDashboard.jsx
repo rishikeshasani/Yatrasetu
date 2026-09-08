@@ -15,6 +15,7 @@ import SafetyAlerts from '../components/SafetyAlerts';
 import LocalVendors from '../components/LocalVendors';
 import TeamTracker from '../components/TeamTracker';
 import { fetchHotels, createBookingRequest, fetchMyHotelBookings } from '../api/api';
+import { getShrineAccommodations } from '../utils/shrineImages';
 
 export default function TouristDashboard({
   sites = [],
@@ -112,18 +113,22 @@ export default function TouristDashboard({
     };
   }, []);
 
-  // Match real hotel records to the selected pilgrimage site
+  // Match real hotel records to the selected pilgrimage site stably and deterministically
   const displayedHotels = useMemo(() => {
-    if (!hotels || hotels.length === 0) return [];
-    if (!activeSite) return hotels.slice(0, 6);
+    const sId = activeSite?.id || activeSite?.site_id || 'TS001';
+    const sName = activeSite?.name || 'Kedarnath Temple';
+    const canonicalLodges = getShrineAccommodations(sId, sName);
 
-    const sId = activeSite.id || activeSite.site_id;
-    const sLat = activeSite.latitude;
-    const sLon = activeSite.longitude;
+    if (!hotels || hotels.length === 0) {
+      return canonicalLodges;
+    }
+
+    const sLat = activeSite?.latitude;
+    const sLon = activeSite?.longitude;
 
     const STOP_WORDS = new Set(['temple', 'mandir', 'shrine', 'the', 'and', 'ghat', 'sansthan', 'parisar', 'corridor', 'path', 'main', 'zone']);
     const clean = (str) => (str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
-    const siteTokens = clean(activeSite.name)
+    const siteTokens = clean(sName)
       .split(/\s+/)
       .filter((t) => t.length > 3 && !STOP_WORDS.has(t));
 
@@ -138,33 +143,37 @@ export default function TouristDashboard({
     };
 
     // 1. Direct site_id relationship
-    const idMatched = hotels.filter((h) => h.site_id && (h.site_id === sId || h.site_id === activeSite.id));
-    if (idMatched.length > 0) return idMatched;
+    const idMatched = hotels.filter((h) => h.site_id && (h.site_id === sId || h.site_id === activeSite?.id));
 
-    // 2. Geographic proximity within 25 km
-    if (sLat != null && sLon != null) {
-      const geoMatched = hotels.filter((h) => {
-        if (h.latitude != null && h.longitude != null) {
-          return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 25.0;
-        }
-        return false;
-      });
-      if (geoMatched.length > 0) return geoMatched;
-    }
+    // 2. Geographic proximity within 35 km
+    const geoMatched = (sLat != null && sLon != null) ? hotels.filter((h) => {
+      if (h.latitude != null && h.longitude != null) {
+        return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 35.0;
+      }
+      return false;
+    }) : [];
 
-    // 3. Normalized distinctive token matching against hotel name or address
-    if (siteTokens.length > 0) {
-      const tokenMatched = hotels.filter((h) => {
-        const hText = `${clean(h.name)} ${clean(h.address)}`;
-        const hWords = new Set(hText.split(/\s+/));
-        return siteTokens.some((tok) => hWords.has(tok) || hText.includes(tok));
-      });
-      if (tokenMatched.length > 0) return tokenMatched;
-    }
+    // 3. Name token match
+    const tokenMatched = siteTokens.length > 0 ? hotels.filter((h) => {
+      const hText = `${clean(h.name)} ${clean(h.address)}`;
+      return siteTokens.some((tok) => hText.includes(tok));
+    }) : [];
 
-    // 4. Fallback with real verified hotel data
-    const verifiedHotels = hotels.filter((h) => h.verified);
-    return verifiedHotels.length > 0 ? verifiedHotels.slice(0, 6) : hotels.slice(0, 6);
+    // Combined matched live hotels + canonical lodges (canonical lodges ensure full authentic coverage for all 25 shrines)
+    const combined = [...idMatched, ...geoMatched, ...tokenMatched, ...canonicalLodges];
+
+    // Deduplicate by clean normalized name so identical copies never duplicate or fluctuate
+    const seenNames = new Set();
+    const deduplicated = [];
+    combined.forEach((h) => {
+      const norm = clean(h.name);
+      if (!seenNames.has(norm)) {
+        seenNames.add(norm);
+        deduplicated.push(h);
+      }
+    });
+
+    return deduplicated.slice(0, 6);
   }, [hotels, activeSite]);
 
   const handleOpenBookingModal = (hotel) => {
