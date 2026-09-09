@@ -15,6 +15,8 @@ import {
   fetchSites,
   fetchSiteDensity,
   fetchSiteForecast,
+  fetchSiteQueueForecast,
+  fetchSite24hForecast,
   fetchSitePrediction,
   fetchAlternatives,
   fetchAlerts,
@@ -26,7 +28,8 @@ import {
   logoutUser,
   fetchMe,
   getAuthToken,
-  fetchActiveRerouteAlert
+  fetchActiveRerouteAlert,
+  toCanonicalSiteId
 } from './api/api';
 import './App.css';
 
@@ -36,6 +39,7 @@ export default function App() {
   const [densityMap, setDensityMap] = useState({});
   const [currentDensity, setCurrentDensity] = useState(null);
   const [currentForecast, setCurrentForecast] = useState(null);
+  const [current24hForecast, setCurrent24hForecast] = useState(null);
   const [currentPrediction, setCurrentPrediction] = useState(null);
   const [currentAlternatives, setCurrentAlternatives] = useState(null);
   const [safetyInfo, setSafetyInfo] = useState(null);
@@ -94,6 +98,7 @@ export default function App() {
           // Token expired or invalid
           logoutUser();
           setCurrentUser(null);
+          showToast("Your session expired. Please log in again.");
         }
       }).catch(() => {});
     }
@@ -102,22 +107,26 @@ export default function App() {
       try {
         const fetchedSites = await fetchSites();
         if (!isMounted) return;
-        setSites(fetchedSites);
+        // Presentation layer filter: Only canonical TS001-TS025 shrines (exclude legacy SITE001, SITE002)
+        const canonicalSites = Array.isArray(fetchedSites)
+          ? fetchedSites.filter(s => s && s.id && /^TS\d{3}$/i.test(s.id))
+          : [];
+        setSites(canonicalSites);
 
-        const defaultSite = fetchedSites.find(s => s.id === 'haridwar') || fetchedSites[0];
-        const firstSiteId = defaultSite?.id || '';
+        const defaultSite = canonicalSites.find(s => s.id === 'TS015' || s.id === 'TS001') || canonicalSites[0];
+        const firstSiteId = defaultSite?.id || 'TS001';
         setSelectedSiteId(firstSiteId);
 
         const [fetchedAlerts, fetchedWallet] = await Promise.all([
           fetchAlerts(),
-          fetchWallet(savedUser?.user_id || 'pilgrim_demo_user')
+          fetchWallet(savedUser?.user_id || savedUser?.id || 'pilgrim_demo_user')
         ]);
         if (!isMounted) return;
         setAlerts(fetchedAlerts);
         setWallet(fetchedWallet);
 
         const dEntries = await Promise.all(
-          fetchedSites.map(async (s) => [s.id, await fetchSiteDensity(s.id)])
+          canonicalSites.map(async (s) => [s.id, await fetchSiteDensity(s.id)])
         );
         if (!isMounted) return;
         setDensityMap(Object.fromEntries(dEntries));
@@ -230,9 +239,10 @@ export default function App() {
       isPollingRef.current = true;
 
       try {
-        const [density, forecast, prediction] = await Promise.all([
+        const [density, queueForecast, mlForecast, prediction] = await Promise.all([
           fetchSiteDensity(selectedSiteId),
-          fetchSiteForecast(selectedSiteId),
+          fetchSiteQueueForecast(selectedSiteId),
+          fetchSite24hForecast(selectedSiteId),
           fetchSitePrediction(selectedSiteId)
         ]);
 
@@ -242,7 +252,8 @@ export default function App() {
           setCurrentDensity(density);
           setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
         }
-        if (forecast) setCurrentForecast(forecast);
+        if (queueForecast) setCurrentForecast(queueForecast);
+        if (mlForecast) setCurrent24hForecast(mlForecast);
         if (prediction) setCurrentPrediction(prediction);
       } catch (err) {
         console.error(`Error polling telemetry for ${selectedSiteId}:`, err);
@@ -527,6 +538,8 @@ export default function App() {
                 densityMap={densityMap}
                 currentDensity={currentDensity}
                 currentForecast={currentForecast}
+                currentQueueForecast={currentForecast}
+                current24hForecast={current24hForecast}
                 currentPrediction={currentPrediction}
                 currentAlternatives={currentAlternatives}
                 safetyInfo={safetyInfo}

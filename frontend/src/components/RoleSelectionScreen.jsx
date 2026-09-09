@@ -4,7 +4,8 @@ import {
   signupUser,
   sendAadhaarOTP,
   verifyAadhaarOTP,
-  DEMO_CREDENTIALS
+  DEMO_CREDENTIALS,
+  TEST_ACCOUNT_PASSWORD
 } from '../api/api';
 import './RoleSelectionScreen.css';
 
@@ -138,7 +139,7 @@ export default function RoleSelectionScreen({
       if (demo) {
         setEmail(demo.email || '');
       }
-      setPassword('DemoPassword123!');
+      setPassword(TEST_ACCOUNT_PASSWORD);
     }
     if (initialView) {
       setCurrentView(initialView);
@@ -160,7 +161,7 @@ export default function RoleSelectionScreen({
     } else {
       setEmail('');
     }
-    setPassword('DemoPassword123!');
+    setPassword(TEST_ACCOUNT_PASSWORD);
 
     if (onSelectRole) {
       onSelectRole(roleId);
@@ -189,7 +190,7 @@ export default function RoleSelectionScreen({
 
     try {
       const demo = DEMO_CREDENTIALS[targetRole] || DEMO_CREDENTIALS.tourist;
-      const res = await loginUser(demo.email, 'DemoPassword123!');
+      const res = await loginUser(demo.email, TEST_ACCOUNT_PASSWORD);
       if (res.status === 'success' && res.user) {
         onLoginSuccess(res.user);
       } else {
@@ -579,7 +580,7 @@ export default function RoleSelectionScreen({
                 <div className="auth-input-group">
                   <div className="label-row">
                     <label htmlFor="auth-password">Password *</label>
-                    <span className="auth-sub-note">Default Demo: DemoPassword123!</span>
+                    <span className="auth-sub-note">Default Demo: {TEST_ACCOUNT_PASSWORD}</span>
                   </div>
                   <input
                     id="auth-password"

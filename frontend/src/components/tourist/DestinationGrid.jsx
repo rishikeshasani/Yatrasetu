@@ -18,6 +18,9 @@ export default function DestinationGrid({
   const processedSites = useMemo(() => {
     return sites
       .filter((site) => {
+        // Presentation filter: Only canonical TS001 through TS025 shrines
+        if (!site.id || !/^TS\d{3}$/i.test(site.id)) return false;
+
         // Search matching
         const term = searchTerm.toLowerCase().trim();
         const matchesSearch =
@@ -33,11 +36,13 @@ export default function DestinationGrid({
         if (statusFilter === 'ALL') return true;
         const d = densityMap[site.id];
         const occ = d?.occupancy_percentage ?? 0;
-        let st = d?.status || 'NORMAL';
-        if (occ >= 90) st = 'CRITICAL';
-        else if (occ >= 75) st = 'HIGH';
-        else if (occ >= 50) st = 'MODERATE';
-        else st = 'NORMAL';
+        let st = d?.status;
+        if (!st) {
+          if (occ >= 90) st = 'CRITICAL';
+          else if (occ >= 75) st = 'HIGH';
+          else if (occ >= 50) st = 'MODERATE';
+          else st = 'NORMAL';
+        }
 
         return st === statusFilter;
       })

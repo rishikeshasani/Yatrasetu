@@ -14,11 +14,13 @@ export default function DestinationCard({
   const category = getShrineCategory(site.id, site.name);
 
   const occupancy = density?.occupancy_percentage ?? 0;
-  let status = density?.status || 'NORMAL';
-  if (occupancy >= 90) status = 'CRITICAL';
-  else if (occupancy >= 75) status = 'HIGH';
-  else if (occupancy >= 50) status = 'MODERATE';
-  else status = 'NORMAL';
+  let status = density?.status;
+  if (!status) {
+    if (occupancy >= 90) status = 'CRITICAL';
+    else if (occupancy >= 75) status = 'HIGH';
+    else if (occupancy >= 50) status = 'MODERATE';
+    else status = 'NORMAL';
+  }
 
   const statusClass = `status-${status.toLowerCase()}`;
   const waitMins = density?.wait_time_minutes || Math.max(15, Math.round((occupancy / 100) * 120));

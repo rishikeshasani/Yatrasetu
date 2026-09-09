@@ -126,6 +126,12 @@ export default function SOSModal({
         location_source: source
       });
 
+      if (!res || res.status === 'error') {
+        setErrorMessage(res?.message || 'Failed to dispatch SOS alert. Please dial emergency helplines directly.');
+        setStep('error');
+        return;
+      }
+
       setDispatchedData({
         alertId: res.alert_id || `SOS-${Math.floor(1000 + Math.random() * 9000)}`,
         emergencyType: typeObj,

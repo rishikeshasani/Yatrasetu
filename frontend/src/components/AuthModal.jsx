@@ -5,13 +5,14 @@ import {
   sendAadhaarOTP,
   verifyAadhaarOTP,
   loginVendor,
-  DEMO_CREDENTIALS
+  DEMO_CREDENTIALS,
+  TEST_ACCOUNT_PASSWORD
 } from '../api/api';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
   if (!isOpen) return null;
 
-  const [authMode, setAuthMode] = useState('demo'); // 'demo' | 'email_login' | 'signup' | 'aadhaar' | 'vendor'
+  const [authMode, setAuthMode] = useState('email_login'); // 'email_login' | 'signup' | 'demo' | 'aadhaar' | 'vendor'
   const [role, setRole] = useState('tourist');
 
   // Email/Password Login & Signup State
@@ -48,7 +49,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
 
     try {
       const demo = DEMO_CREDENTIALS[selectedRole] || DEMO_CREDENTIALS.tourist;
-      const res = await loginUser(demo.email, 'DemoPassword123!');
+      const res = await loginUser(demo.email, TEST_ACCOUNT_PASSWORD);
       if (res.status === 'success' && res.user) {
         onLoginSuccess(res.user);
         onClose();

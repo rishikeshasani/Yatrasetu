@@ -200,8 +200,9 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
   // Load incoming booking requests
   const loadBookingRequests = async () => {
+    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'H001';
     try {
-      const data = await fetchHotelBookingRequests('H001');
+      const data = await fetchHotelBookingRequests(activeHotelId);
       setBookingRequests(data || []);
     } catch (err) {
       console.warn('Error loading hotel requests:', err);
@@ -210,15 +211,22 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
   // Load room slots matrix
   const loadRoomSlots = async () => {
-    const dateMap = {
-      today: '2026-09-04',
-      tomorrow: '2026-09-05',
-      nextDay: '2026-09-06',
-      sep7: '2026-09-07'
+    const now = new Date();
+    const addDays = (d, n) => {
+      const res = new Date(d);
+      res.setDate(res.getDate() + n);
+      return res.toISOString().split('T')[0];
     };
-    const targetDate = dateMap[selectedSlotDay] || '2026-09-05';
+    const dateMap = {
+      today: addDays(now, 0),
+      tomorrow: addDays(now, 1),
+      nextDay: addDays(now, 2),
+      sep7: addDays(now, 3)
+    };
+    const targetDate = dateMap[selectedSlotDay] || addDays(now, 1);
+    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'H001';
     try {
-      const data = await fetchHotelRoomSlots('H001', targetDate);
+      const data = await fetchHotelRoomSlots(activeHotelId, targetDate);
       setRoomSlotsData(data || []);
     } catch (err) {
       console.warn('Error loading room slots:', err);

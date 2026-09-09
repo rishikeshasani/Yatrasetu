@@ -8,7 +8,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, field_validator
 from supabase_auth.errors import AuthApiError, AuthError
 
-from database import supabase
+from database import supabase, supabase_admin
 from dependencies import AuthenticatedUser, get_current_user, require_role
 
 router = APIRouter(tags=["Authentication & Identity"])
@@ -146,12 +146,12 @@ def signup(data: SignupRequest):
     # Verify and ensure record in public.profiles table
     profile_data = None
     try:
-        prof_res = supabase.table("profiles").select("*").eq("id", user.id).execute()
+        prof_res = supabase_admin.table("profiles").select("*").eq("id", user.id).execute()
         if prof_res.data and len(prof_res.data) > 0:
             profile_data = prof_res.data[0]
         else:
             # Fallback upsert if trigger has not executed
-            insert_res = supabase.table("profiles").upsert({
+            insert_res = supabase_admin.table("profiles").upsert({
                 "id": user.id,
                 "full_name": data.full_name,
                 "role": role_value
@@ -238,7 +238,7 @@ def login(data: LoginRequest):
     # Fetch profile record from public.profiles
     profile_data = None
     try:
-        prof_res = supabase.table("profiles").select("*").eq("id", user.id).execute()
+        prof_res = supabase_admin.table("profiles").select("*").eq("id", user.id).execute()
         if prof_res.data and len(prof_res.data) > 0:
             profile_data = prof_res.data[0]
     except Exception:
@@ -251,7 +251,7 @@ def login(data: LoginRequest):
     # If profile record was missing, synchronize it
     if not profile_data:
         try:
-            insert_res = supabase.table("profiles").upsert({
+            insert_res = supabase_admin.table("profiles").upsert({
                 "id": user.id,
                 "full_name": full_name,
                 "role": role

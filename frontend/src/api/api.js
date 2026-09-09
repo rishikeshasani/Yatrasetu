@@ -5,6 +5,135 @@ import { getShrineImage, CANONICAL_25_SHRINES } from '../utils/shrineImages';
 import { API_BASE_URL, DEMO_MODE } from './api_config';
 export { API_BASE_URL, DEMO_MODE };
 
+// ==========================================================================
+// CENTRAL API ERROR, AUTH & HTTP CLIENT HELPERS
+// ==========================================================================
+
+export class ApiError extends Error {
+  constructor(message, status = 0, data = null) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+export function getAuthToken() {
+  try {
+    return localStorage.getItem("yatrasetu_token") || null;
+  } catch {
+    return null;
+  }
+}
+
+export function getAuthHeaders() {
+  const token = getAuthToken();
+  const headers = { "Content-Type": "application/json" };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+export function loadUserSession() {
+  try {
+    const saved = localStorage.getItem("yatrasetu_user");
+    return saved ? JSON.parse(saved) : null;
+  } catch (err) {
+    console.warn("Could not load user session from localStorage:", err);
+    return null;
+  }
+}
+
+export function logoutUser() {
+  try {
+    localStorage.removeItem("yatrasetu_user");
+    localStorage.removeItem("yatrasetu_token");
+  } catch (err) {
+    console.warn("Error clearing localStorage session:", err);
+  }
+}
+
+export async function apiRequest(endpoint, options = {}) {
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  const requiresAuth = options.requiresAuth || options.auth || false;
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+
+  if (requiresAuth || getAuthToken()) {
+    Object.assign(headers, getAuthHeaders());
+  }
+
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers
+    });
+  } catch (netErr) {
+    console.warn(`[API Network Error] ${options.method || 'GET'} ${url}:`, netErr.message);
+    throw new ApiError(
+      "Unable to connect to YatraSetu backend server. Please check your network connection.",
+      0,
+      { originalError: netErr.message }
+    );
+  }
+
+  if (res.ok) {
+    if (res.status === 204) return null;
+    return await res.json();
+  }
+
+  let errorBody = null;
+  try {
+    errorBody = await res.json();
+  } catch {
+    errorBody = null;
+  }
+
+  const detail = errorBody?.detail || errorBody?.message || `HTTP ${res.status} Error`;
+
+  if (res.status === 400) {
+    throw new ApiError(detail || "Bad request.", 400, errorBody);
+  }
+
+  if (res.status === 401) {
+    if (getAuthToken()) {
+      logoutUser();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('yatrasetu:session_expired', { 
+          detail: { message: detail || "Your session expired. Please log in again." } 
+        }));
+      }
+    }
+    throw new ApiError(detail || "Your session expired. Please log in again.", 401, errorBody);
+  }
+
+  if (res.status === 403) {
+    throw new ApiError(detail || "Access denied: insufficient permissions for this role.", 403, errorBody);
+  }
+
+  if (res.status === 404) {
+    throw new ApiError(detail || "Requested resource not found.", 404, errorBody);
+  }
+
+  if (res.status === 422) {
+    const msg = Array.isArray(errorBody?.detail)
+      ? errorBody.detail.map(e => `${e.loc ? e.loc.join('.') : 'field'}: ${e.msg}`).join(', ')
+      : detail;
+    throw new ApiError(msg || "Validation error in request payload.", 422, errorBody);
+  }
+
+  if (res.status >= 500) {
+    throw new ApiError(detail || "Server error occurred. Please try again later.", res.status, errorBody);
+  }
+
+  throw new ApiError(detail, res.status, errorBody);
+}
+
 // Delhi ⇄ Haridwar/Rishikesh Corridor — Somvati Amavasya Demo
 export const CORRIDOR_STOPS = [
   { id: 'delhi_isbt', name: 'Delhi ISBT Kashmiri Gate', city: 'New Delhi', state: 'Delhi', capacity: 15000, lat: 28.6670, lng: 77.2284, type: 'origin' },
@@ -14,7 +143,7 @@ export const CORRIDOR_STOPS = [
   { id: 'neelkanth', name: 'Neelkanth Mahadev Temple', city: 'Neelkanth', state: 'Uttarakhand', capacity: 8000, lat: 30.1383, lng: 78.3928, type: 'satellite' },
 ];
 
-// Mock Fallback Data for resilient hackathon demos
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd density dataset. Real requests query live backend density. */
 export const MOCK_DENSITY = {
   "site_kedarnath": {
     "site_id": "site_kedarnath",
@@ -218,6 +347,7 @@ export const MOCK_DENSITY = {
   }
 };
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd forecast dataset. Real requests query live backend crowd forecast. */
 export const MOCK_FORECAST = {
   site_kedarnath: {
     site_id: "site_kedarnath",
@@ -339,6 +469,7 @@ export const MOCK_FORECAST = {
 // ==========================================================================
 // COMPREHENSIVE ALTERNATIVES DATASET WITH HOSPITALITY & CROWD TELEMETRY
 // ==========================================================================
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock alternatives dataset. Real requests query live backend alternatives. */
 export const MOCK_ALTERNATIVES = {
   // 1. KEDARNATH ALTERNATIVES
   site_kedarnath: {
@@ -1078,6 +1209,7 @@ export const MOCK_ALTERNATIVES = {
   }
 };
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd alerts dataset. Real requests query live backend alerts. */
 export const MOCK_ALERTS = [
   {
     site_id: "site_kedarnath",
@@ -1125,6 +1257,7 @@ export const MOCK_ALERTS = [
   }
 ];
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock site safety info dataset. Real requests query live backend safety-info. */
 export const MOCK_SAFETY_INFO = {
   site_kedarnath: {
     nearest_hospital: "Kedarnath High Altitude Health Post & Vivekananda Hospital",
@@ -1233,12 +1366,65 @@ export const SITE_ID_ALIASES = {
   site_ayodhya: 'TS004',
   site_vaishnodevi: 'TS005',
   site_tirupati: 'TS006',
+  site_puri: 'TS007',
+  site_mahakaleshwar: 'TS008',
+  site_goldentemple: 'TS009',
   site_meenakshi: 'TS010',
   site_ts011: 'TS011',
+  site_ts012: 'TS012',
+  site_ts013: 'TS013',
+  site_ts014: 'TS014',
   site_ts015: 'TS015',
-  site_ts016: 'TS016'
+  site_ts016: 'TS016',
+  site_ts017: 'TS017',
+  site_ts018: 'TS018',
+  site_ts019: 'TS019',
+  site_ts020: 'TS020',
+  site_ts021: 'TS021',
+  site_ts022: 'TS022',
+  site_ts023: 'TS023',
+  site_ts024: 'TS024',
+  site_ts025: 'TS025',
+  haridwar: 'TS015',
+  site_haridwar: 'TS015',
+  kedarnath: 'TS001',
+  badrinath: 'TS002',
+  kashi: 'TS003',
+  ayodhya: 'TS004',
+  vaishnodevi: 'TS005',
+  tirupati: 'TS006',
+  puri: 'TS007',
+  mahakaleshwar: 'TS008',
+  goldentemple: 'TS009',
+  meenakshi: 'TS010',
+  ramanathaswamy: 'TS011',
+  somnath: 'TS012',
+  shirdi: 'TS013',
+  sabarimala: 'TS014',
+  triveni: 'TS016',
+  vrindavan: 'TS017',
+  tajmahal: 'TS018',
+  amberfort: 'TS019',
+  qutubminar: 'TS020',
+  ellora: 'TS021',
+  hampi: 'TS022',
+  pangong: 'TS023',
+  rohtang: 'TS024',
+  kamakhya: 'TS025'
 };
 
+export function toCanonicalSiteId(siteId) {
+  if (!siteId) return 'TS001';
+  const str = String(siteId).trim();
+  const lower = str.toLowerCase();
+  if (SITE_ID_ALIASES[lower]) return SITE_ID_ALIASES[lower];
+  if (SITE_ID_ALIASES[str]) return SITE_ID_ALIASES[str];
+  const upper = str.toUpperCase();
+  if (upper.startsWith('TS') || upper.startsWith('SITE')) return upper;
+  return upper;
+}
+
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock sites dataset. Real requests query live backend /sites endpoint. */
 export const MOCK_SITES = [
   { id: "SITE001", name: "Main Temple", capacity: 1000, latitude: 20.1, longitude: 85.8, ...(SITE_METADATA.SITE001 || {}) },
   { id: "SITE002", name: "Heritage Shrine", capacity: 500, latitude: 20.2, longitude: 85.9, ...(SITE_METADATA.SITE002 || {}) },
@@ -1269,59 +1455,60 @@ export const MOCK_SITES = [
   { id: "TS025", "name": "Maa Kamakhya Devalaya", capacity: 35000, latitude: 26.1664, longitude: 91.7054, ...(SITE_METADATA.TS025 || {}) }
 ];
 
-// ==========================================
-// API CLIENT IMPLEMENTATIONS WITH RESILIENT FALLBACKS
-// ==========================================
+// ==========================================================================
+// CENTRALIZED API CLIENT IMPLEMENTATIONS (LIVE FIRST / NO SILENT FALLBACKS)
+// ==========================================================================
 
 export async function fetchSites() {
   try {
-    const res = await fetch(`${API_BASE_URL}/sites`, { cache: 'no-store' });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        return data.map((site) => {
-          const meta = SITE_METADATA[site.id] || {};
-          return {
-            ...meta,
-            ...site,
-            city: site.city || meta.city || meta.state || 'Pilgrim Center',
-            state: site.state || meta.state || 'India',
-            description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
-            altitude: site.altitude || meta.altitude || '',
-            darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours',
-            image: getShrineImage(site.id)
-          };
-        });
-      }
+    const data = await apiRequest('/sites', { cache: 'no-store' });
+    if (Array.isArray(data) && data.length > 0) {
+      return data.map((site) => {
+        const meta = SITE_METADATA[site.id] || {};
+        return {
+          ...meta,
+          ...site,
+          city: site.city || meta.city || meta.state || 'Pilgrim Center',
+          state: site.state || meta.state || 'India',
+          description: site.description || meta.description || `${site.name}, sacred heritage destination.`,
+          altitude: site.altitude || meta.altitude || '',
+          darshan_timings: site.darshan_timings || meta.darshan_timings || 'Daily Temple Hours',
+          image: getShrineImage(site.id)
+        };
+      });
     }
+    return data || [];
   } catch (err) {
-    console.warn("Using fallback sites data:", err);
+    console.error("[API Error] fetchSites failed:", err.message);
+    if (DEMO_MODE) {
+      return MOCK_SITES.map((s) => ({ ...s, image: s.image || getShrineImage(s.id) }));
+    }
+    throw err;
   }
-  return MOCK_SITES.map((s) => ({ ...s, image: s.image || getShrineImage(s.id) }));
 }
 
 export async function fetchSiteDensity(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/density`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/density`);
   } catch (err) {
-    console.warn(`Fallback density for ${siteId}:`, err);
-  }
-  const alias = SITE_ID_ALIASES[siteId];
-  return (
-    MOCK_DENSITY[siteId] ||
-    (alias ? MOCK_DENSITY[alias] : null) || {
-      site_id: siteId,
-      site_name: "Sacred Shrine",
-      people_count: 0,
-      occupancy_percentage: 0.0,
-      status: "NORMAL",
-      last_updated: "Just now"
+    console.error(`[API Error] fetchSiteDensity failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) {
+      return (
+        MOCK_DENSITY[canonicalId] ||
+        MOCK_DENSITY[siteId] || {
+          site_id: canonicalId,
+          site_name: "Sacred Shrine",
+          people_count: 0,
+          occupancy_percentage: 0.0,
+          status: "NORMAL",
+          last_updated: "Just now"
+        }
+      );
     }
-  );
+    throw err;
+  }
 }
 
 export async function fetchAllSiteDensities(sites = []) {
@@ -1329,8 +1516,13 @@ export async function fetchAllSiteDensities(sites = []) {
   try {
     const entries = await Promise.all(
       sites.map(async (s) => {
-        const d = await fetchSiteDensity(s.id);
-        return [s.id, d];
+        try {
+          const d = await fetchSiteDensity(s.id);
+          return [s.id, d];
+        } catch (err) {
+          console.warn(`Could not fetch density for ${s.id}:`, err.message);
+          return [s.id, null];
+        }
       })
     );
     return Object.fromEntries(entries);
@@ -1340,274 +1532,242 @@ export async function fetchAllSiteDensities(sites = []) {
   }
 }
 
-export async function fetchSiteForecast(siteId) {
+/**
+ * Queue / Wait Time & Seasonal Crowd Forecast (GET /sites/{site_id}/crowd-forecast)
+ */
+export async function fetchSiteQueueForecast(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/crowd-forecast`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/crowd-forecast`);
   } catch (err) {
-    console.warn(`Fallback forecast for ${siteId}:`, err);
-  }
-  const alias = SITE_ID_ALIASES[siteId];
-  return (
-    MOCK_FORECAST[siteId] ||
-    (alias ? MOCK_FORECAST[alias] : null) || {
-      site_id: siteId,
-      site_name: "Sacred Shrine",
-      live_status: { people_count: 0, occupancy_percentage: 0.0, status: "NORMAL", last_updated: "Just now" },
-      queue_forecast: {
-        estimated_current_wait_mins: 20,
-        normal_wait_mins: 20,
-        peak_wait_mins: 90,
-        queue_management_system: "Standard Queue System",
-        fast_track_details: "Priority lane available for senior citizens"
-      },
-      seasonal_context: {
-        peak_seasons: "Festival and seasonal peak periods",
-        upcoming_peak_festivals: "Seasonal Utsav",
-        weather_warnings: "Pleasant weather conditions.",
-        surge_triggers: "Morning and Evening Aarti"
-      }
+    console.error(`[API Error] fetchSiteQueueForecast failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) {
+      return MOCK_FORECAST[canonicalId] || MOCK_FORECAST[siteId] || null;
     }
-  );
+    throw err;
+  }
 }
+export const fetchSiteForecast = fetchSiteQueueForecast;
 
+/**
+ * 24-Hour ML Crowd Forecast (GET /sites/{site_id}/forecast)
+ */
+export async function fetchSite24hForecast(siteId) {
+  if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
+  try {
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/forecast`);
+  } catch (err) {
+    console.error(`[API Error] fetchSite24hForecast failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) return null;
+    throw err;
+  }
+}
+export const fetchSiteMLForecast = fetchSite24hForecast;
+
+/**
+ * Near-Term Prediction (GET /sites/{site_id}/prediction)
+ */
 export async function fetchSitePrediction(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/prediction`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/prediction`);
   } catch (err) {
-    console.warn(`Fallback prediction for ${siteId}:`, err);
+    console.error(`[API Error] fetchSitePrediction failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) {
+      return { site_id: canonicalId, predicted_next_count: null, prediction: "Prediction unavailable" };
+    }
+    throw err;
   }
-  return { site_id: siteId, predicted_next_count: null, prediction: "Prediction unavailable" };
 }
 
+/**
+ * Sister Shrine & Alternate Route Recommendations (GET /sites/{site_id}/alternatives)
+ */
 export async function fetchAlternatives(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/alternatives`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/alternatives`);
   } catch (err) {
-    console.warn(`Fallback alternatives for ${siteId}:`, err);
-  }
-  const alias = SITE_ID_ALIASES[siteId];
-  return (
-    MOCK_ALTERNATIVES[siteId] ||
-    (alias ? MOCK_ALTERNATIVES[alias] : null) || {
-      site_id: siteId,
-      site_name: "Sacred Spot",
-      current_occupancy_percentage: 0,
-      current_status: "NORMAL",
-      redistribution_needed: false,
-      recommendations: []
+    console.error(`[API Error] fetchAlternatives failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) {
+      return MOCK_ALTERNATIVES[canonicalId] || MOCK_ALTERNATIVES[siteId] || null;
     }
-  );
+    throw err;
+  }
 }
 
+/**
+ * Safety & Crowd Congestion Alerts (GET /alerts)
+ */
 export async function fetchAlerts() {
   try {
-    const res = await fetch(`${API_BASE_URL}/alerts`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest('/alerts');
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("Fallback alerts:", err);
+    console.error("[API Error] fetchAlerts failed:", err.message);
+    if (DEMO_MODE) return MOCK_ALERTS;
+    throw err;
   }
-  return MOCK_ALERTS;
 }
 
+/**
+ * Emergency & Medical Safety Info for Site (GET /sites/{site_id}/safety-info)
+ */
 export async function fetchSafetyInfo(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/safety-info`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/safety-info`);
   } catch (err) {
-    console.warn(`Fallback safety info for ${siteId}:`, err);
-  }
-  const alias = SITE_ID_ALIASES[siteId];
-  return (
-    MOCK_SAFETY_INFO[siteId] ||
-    (alias ? MOCK_SAFETY_INFO[alias] : null) || {
-      nearest_hospital: "Local Community Health Center",
-      hospital_distance_km: 1.2,
-      hospital_phone: "108",
-      nearest_police: "Local Police Station",
-      police_phone: "112",
-      disaster_control_room: "1070",
-      evacuation_routes: "Follow marked emergency evacuation pathways.",
-      high_risk_zone_type: "Crowd Congestion Area",
-      risk_mitigation_measures: "Follow volunteer and SDRF security marshals."
+    console.error(`[API Error] fetchSafetyInfo failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) {
+      return MOCK_SAFETY_INFO[canonicalId] || MOCK_SAFETY_INFO[siteId] || null;
     }
-  );
+    throw err;
+  }
 }
 
+/**
+ * Check Geofence & Crowd Hazard for Specific GPS Coordinates (POST /check-safety)
+ */
 export async function checkLocationSafety(latitude, longitude) {
   try {
-    const res = await fetch(`${API_BASE_URL}/check-safety`, {
+    return await apiRequest('/check-safety', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ latitude, longitude })
+      body: JSON.stringify({ latitude: Number(latitude), longitude: Number(longitude) })
     });
-    if (res.ok) return await res.json();
   } catch (err) {
-    console.warn("Fallback check-safety:", err);
+    console.error("[API Error] checkLocationSafety failed:", err.message);
+    if (DEMO_MODE) {
+      return {
+        in_danger_zone: false,
+        message: "You are currently in a safe area."
+      };
+    }
+    throw err;
   }
-  return {
-    in_danger_zone: false,
-    message: "You are currently in a safe area."
-  };
 }
 
+/**
+ * Emergency SOS Distress Beacon (POST /sos)
+ */
 export async function triggerSOS(
-  userId = "pilgrim_demo_user",
+  userId = null,
   latitude = 30.7352,
   longitude = 79.0669,
   emergencyType = "General Emergency",
   extraDetails = {}
 ) {
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders()
-    };
-    const res = await fetch(`${API_BASE_URL}/sos`, {
+    const session = loadUserSession();
+    const resolvedUserId = userId || session?.id || session?.user_id || "tourist";
+    const data = await apiRequest('/sos', {
       method: "POST",
-      headers,
+      requiresAuth: true,
       body: JSON.stringify({
         latitude: Number(latitude),
         longitude: Number(longitude),
-        user_id: userId
+        user_id: resolvedUserId
       })
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
-      }
-      return data;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
     }
+    return data;
   } catch (err) {
-    console.warn("Fallback SOS:", err);
+    console.error("[API Error] triggerSOS failed:", err.message);
+    throw err;
   }
-  const fallback = {
-    message: `🚨 Emergency SOS alert broadcasted for ${emergencyType}. Emergency response network notified.`,
-    status: "success",
-    alert_id: `SOS-${Math.floor(1000 + Math.random() * 9000)}`,
-    recorded_at: new Date().toISOString()
-  };
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: fallback }));
-  }
-  return fallback;
 }
 
-export async function fetchVendors(siteId) {
+/**
+ * Local Vendors & Artisans (GET /vendors or GET /vendors/{site_id})
+ */
+export async function fetchVendors(siteId = null) {
+  const canonicalId = siteId ? toCanonicalSiteId(siteId) : null;
+  const endpoint = canonicalId ? `/vendors/${encodeURIComponent(canonicalId)}` : '/vendors';
   try {
-    const url = siteId ? `${API_BASE_URL}/vendors/${encodeURIComponent(siteId)}` : `${API_BASE_URL}/vendors`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        return data.map((v) => ({
-          ...v,
-          category: v.category || v.type || "Artisan / Merchant",
-          specialty: v.specialty || v.specialties_or_services || "Authentic Local Offerings",
-          discount_points_offer: v.discount_points_offer || v.offer || "",
-          location: v.location || v.address_locality || "Near Site Entrance",
-          rating: v.rating || 4.8,
-          reviews_count: v.reviews_count || 120
-        }));
-      }
+    const data = await apiRequest(endpoint);
+    if (Array.isArray(data)) {
+      return data.map((v) => ({
+        ...v,
+        category: v.category || v.type || "Artisan / Merchant",
+        specialty: v.specialty || v.specialties_or_services || "Authentic Local Offerings",
+        discount_points_offer: v.discount_points_offer || v.offer || "",
+        location: v.location || v.address_locality || "Near Site Entrance",
+        rating: v.rating || 4.8,
+        reviews_count: v.reviews_count || 120
+      }));
     }
+    return [];
   } catch (err) {
-    console.warn(`Fallback vendors for ${siteId}:`, err);
+    console.error(`[API Error] fetchVendors failed:`, err.message);
+    if (DEMO_MODE) {
+      if (canonicalId) {
+        return MOCK_VENDORS.filter((v) => v.site_id === canonicalId || v.site_id === siteId);
+      }
+      return MOCK_VENDORS;
+    }
+    throw err;
   }
-  if (siteId) {
-    const alias = SITE_ID_ALIASES[siteId];
-    const filtered = MOCK_VENDORS.filter((v) => v.site_id === siteId || (alias && v.site_id === alias));
-    return filtered;
-  }
-  return MOCK_VENDORS;
 }
 
-export async function fetchWallet(userId = "pilgrim_demo_user") {
+/**
+ * Digital Green Pilgrim Wallet (GET /wallet/{user_id})
+ */
+export async function fetchWallet(userId = null) {
+  const session = loadUserSession();
+  const targetId = userId || session?.id || session?.user_id || "pilgrim_demo_user";
   try {
-    const res = await fetch(`${API_BASE_URL}/wallet/${userId}`);
-    if (res.ok) return await res.json();
+    return await apiRequest(`/wallet/${encodeURIComponent(targetId)}`);
   } catch (err) {
-    console.warn(`Fallback wallet for ${userId}:`, err);
+    console.error(`[API Error] fetchWallet failed for ${targetId}:`, err.message);
+    if (DEMO_MODE) return MOCK_WALLET;
+    throw err;
   }
-  return MOCK_WALLET;
 }
 
-export async function rewardUser(userId = "pilgrim_demo_user", points = 50, reason = "Green Pilgrim Milestone") {
+/**
+ * Reward Green Pilgrim Punya Points (POST /wallet/reward)
+ */
+export async function rewardUser(userId = null, points = 50, reason = "Green Pilgrim Milestone") {
+  const session = loadUserSession();
+  const targetId = userId || session?.id || session?.user_id || "pilgrim_demo_user";
   try {
-    const res = await fetch(`${API_BASE_URL}/wallet/reward`, {
+    return await apiRequest('/wallet/reward', {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userId, points, reason })
+      requiresAuth: true,
+      body: JSON.stringify({ user_id: targetId, points: Number(points), reason })
     });
-    if (res.ok) return await res.json();
   } catch (err) {
-    console.warn("Fallback reward user:", err);
+    console.error("[API Error] rewardUser failed:", err.message);
+    throw err;
   }
-  return { message: `${points} Green Pilgrim Punya Points credited!`, status: "success" };
 }
 
+/**
+ * Peak & Optimal Visit Hours (GET /sites/{site_id}/schedule-insights)
+ */
 export async function fetchSiteScheduleInsights(siteId) {
   if (!siteId) return null;
+  const canonicalId = toCanonicalSiteId(siteId);
   try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/schedule-insights`);
-    if (res.ok) return await res.json();
+    return await apiRequest(`/sites/${encodeURIComponent(canonicalId)}/schedule-insights`);
   } catch (err) {
-    console.warn(`Fallback schedule insights for ${siteId}:`, err);
+    console.error(`[API Error] fetchSiteScheduleInsights failed for ${canonicalId}:`, err.message);
+    if (DEMO_MODE) return null;
+    throw err;
   }
-  return null;
-}
-
-export async function fetchSiteMLForecast(siteId) {
-  if (!siteId) return null;
-  try {
-    const res = await fetch(`${API_BASE_URL}/sites/${encodeURIComponent(siteId)}/forecast`);
-    if (res.ok) return await res.json();
-  } catch (err) {
-    console.warn(`Fallback ML forecast for ${siteId}:`, err);
-  }
-  return null;
 }
 
 // ==========================================================================
 // AADHAAR IDENTITY & VENDOR SESSION CLIENT HELPERS
 // ==========================================================================
-
-export function loadUserSession() {
-  try {
-    const saved = localStorage.getItem("yatrasetu_user");
-    return saved ? JSON.parse(saved) : null;
-  } catch (err) {
-    console.warn("Could not load user session from localStorage:", err);
-    return null;
-  }
-}
-
-export function logoutUser() {
-  try {
-    localStorage.removeItem("yatrasetu_user");
-    localStorage.removeItem("yatrasetu_token");
-  } catch (err) {
-    console.warn("Error clearing localStorage:", err);
-  }
-}
 
 export async function sendAadhaarOTP(aadhaarNumber, phone) {
   try {
@@ -1719,23 +1879,6 @@ export async function loginVendor(payload) {
 // UNIFIED AUTHENTICATION & JWT TOKEN HELPERS
 // ==========================================================================
 
-export function getAuthToken() {
-  try {
-    return localStorage.getItem("yatrasetu_token") || null;
-  } catch {
-    return null;
-  }
-}
-
-export function getAuthHeaders() {
-  const token = getAuthToken();
-  const headers = { "Content-Type": "application/json" };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 // Standard Demo Accounts for 1-Click Hackathon Evaluation
 export const DEMO_CREDENTIALS = {
   tourist: {
@@ -1779,6 +1922,7 @@ export const DEMO_CREDENTIALS = {
     active_circuits: ["Char Dham", "Braj Bhoomi", "Varanasi Heritage"]
   }
 };
+export const TEST_ACCOUNT_PASSWORD = import.meta.env.VITE_TEST_ACCOUNT_PASSWORD || 'DemoPassword123!';
 
 export async function loginUser(email, password) {
   try {
@@ -1793,8 +1937,8 @@ export async function loginUser(email, password) {
         localStorage.setItem("yatrasetu_token", data.access_token);
       }
       const userObj = {
-        id: data.user?.id || `USER-${Date.now()}`,
-        user_id: data.user?.id || `USER-${Date.now()}`,
+        id: data.user?.id,
+        user_id: data.user?.id,
         email: data.user?.email || email,
         full_name: data.user?.full_name || data.profile?.full_name || email.split("@")[0],
         role: data.user?.role || data.profile?.role || "tourist",
@@ -1805,45 +1949,16 @@ export async function loginUser(email, password) {
       return { status: "success", user: userObj, token: data.access_token };
     }
     const errData = await res.json().catch(() => ({}));
-    console.warn("Backend auth/login returned error:", errData);
+    return {
+      status: "error",
+      detail: errData.detail || "Invalid email or password. Please try again."
+    };
   } catch (err) {
-    console.warn("Backend login failed or offline. Using resilient demo auth fallback:", err);
+    return {
+      status: "error",
+      detail: "Unable to connect to YatraSetu authentication services. Please verify backend is running."
+    };
   }
-
-  // Resilient Demo Auth Fallback
-  const lowerEmail = email.toLowerCase().trim();
-  let matchedRole = "tourist";
-  if (lowerEmail.includes("govt") || lowerEmail.includes("dm") || lowerEmail.includes("police")) {
-    matchedRole = "government";
-  } else if (lowerEmail.includes("hotel") || lowerEmail.includes("lodge") || lowerEmail.includes("inn")) {
-    matchedRole = "hotel";
-  } else if (lowerEmail.includes("travel") || lowerEmail.includes("agency") || lowerEmail.includes("fleet") || lowerEmail.includes("planner")) {
-    matchedRole = "travel_company";
-  }
-
-  const demoProfile = DEMO_CREDENTIALS[matchedRole] || DEMO_CREDENTIALS.tourist;
-  const fallbackUser = {
-    id: `DEMO-${matchedRole.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    user_id: `DEMO-${matchedRole.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    email: email,
-    full_name: demoProfile.full_name,
-    role: matchedRole,
-    punya_points: demoProfile.punya_points || 260,
-    phone: demoProfile.phone,
-    aadhaar_masked: demoProfile.aadhaar_masked,
-    business_name: demoProfile.business_name,
-    token: `demo-jwt-token-for-${matchedRole}`
-  };
-
-  localStorage.setItem("yatrasetu_token", fallbackUser.token);
-  localStorage.setItem("yatrasetu_user", JSON.stringify(fallbackUser));
-
-  return {
-    status: "success",
-    user: fallbackUser,
-    token: fallbackUser.token,
-    message: `Logged in as ${fallbackUser.full_name} (${matchedRole.toUpperCase()})`
-  };
 }
 
 export async function signupUser(email, password, fullName, role = "tourist") {
@@ -1859,46 +1974,55 @@ export async function signupUser(email, password, fullName, role = "tourist") {
         localStorage.setItem("yatrasetu_token", data.access_token);
       }
       const userObj = {
-        id: data.user?.id || `USER-${Date.now()}`,
-        user_id: data.user?.id || `USER-${Date.now()}`,
+        id: data.user?.id,
+        user_id: data.user?.id,
         email: data.user?.email || email,
         full_name: data.user?.full_name || fullName,
         role: data.user?.role || role,
         punya_points: 260,
         token: data.access_token
       };
-      localStorage.setItem("yatrasetu_user", JSON.stringify(userObj));
-      return { status: "success", user: userObj, token: data.access_token };
+      if (data?.access_token) {
+        localStorage.setItem("yatrasetu_user", JSON.stringify(userObj));
+      }
+      return { status: "success", user: userObj, token: data.access_token, message: data.message };
     }
     const errData = await res.json().catch(() => ({}));
-    return { status: "error", detail: errData.detail || "Registration failed" };
+    return { status: "error", detail: errData.detail || "Registration failed. Please try again." };
   } catch (err) {
-    console.warn("Backend signup offline, creating simulated session:", err);
-    const userObj = {
-      id: `USER-${Date.now()}`,
-      user_id: `USER-${Date.now()}`,
-      email,
-      full_name: fullName,
-      role,
-      punya_points: 260,
-      token: `demo-jwt-token-${role}`
+    return {
+      status: "error",
+      detail: "Unable to connect to YatraSetu authentication services. Please verify backend is running."
     };
-    localStorage.setItem("yatrasetu_token", userObj.token);
-    localStorage.setItem("yatrasetu_user", JSON.stringify(userObj));
-    return { status: "success", user: userObj, token: userObj.token };
   }
 }
 
 export async function fetchMe() {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    if (res.ok) return await res.json();
-  } catch (err) {
-    console.warn("Fallback fetchMe:", err);
+  const token = getAuthToken();
+  if (!token) {
+    return null;
   }
-  return loadUserSession();
+  try {
+    const data = await apiRequest('/auth/me', { requiresAuth: true });
+    const updatedUser = {
+      id: data.id,
+      user_id: data.id,
+      email: data.email,
+      full_name: data.full_name || data.profile?.full_name,
+      role: data.role || data.profile?.role || "tourist",
+      created_at: data.created_at,
+      token: token
+    };
+    localStorage.setItem("yatrasetu_user", JSON.stringify(updatedUser));
+    return updatedUser;
+  } catch (err) {
+    if (err.status === 401) {
+      logoutUser();
+      return null;
+    }
+    console.warn("fetchMe network error:", err.message);
+    return null;
+  }
 }
 
 // ==========================================================================
@@ -1906,35 +2030,35 @@ export async function fetchMe() {
 // ==========================================================================
 
 export async function updateCrowdObservation(siteId, peopleCount, queueLength = 0, waitTime = null) {
+  const canonicalId = toCanonicalSiteId(siteId);
   const count = Number(peopleCount);
   const qLen = Number(queueLength || 0);
 
   // 1. Try real FastAPI endpoint with auth token
   try {
-    const res = await fetch(`${API_BASE_URL}/crowd/update`, {
+    const data = await apiRequest('/crowd/update', {
       method: "POST",
-      headers: getAuthHeaders(),
+      requiresAuth: true,
       body: JSON.stringify({
-        site_id: siteId,
+        site_id: canonicalId,
         people_count: count,
         queue_length: qLen,
         timestamp: new Date().toISOString()
       })
     });
-    if (res.ok) {
-      const data = await res.json();
-      // Synchronize in-memory mock structures as well so fallback queries match
-      syncLocalCrowdObservation(siteId, count, qLen, data.occupancy_percentage, data.status);
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data } }));
-      }
-      return { status: "success", data };
+    syncLocalCrowdObservation(canonicalId, count, qLen, data.occupancy_percentage, data.status);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId: canonicalId, peopleCount: count, data } }));
     }
+    return { status: "success", data };
   } catch (err) {
-    console.warn("Backend /crowd/update unreachable. Updating local telemetry:", err);
+    console.error("[API Error] updateCrowdObservation failed:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
-  // 2. Resilient Fallback Calculation
+  // 2. Demo Mode Fallback Calculation
   const siteCapacities = {
     site_kedarnath: 13000,
     TS001: 13000,
@@ -1949,7 +2073,7 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
     site_tirupati: 85000,
     TS006: 85000
   };
-  const cap = siteCapacities[siteId] || 15000;
+  const cap = siteCapacities[canonicalId] || siteCapacities[siteId] || 15000;
   const occupancy = Math.min(100, Math.round((count / cap) * 1000) / 10);
   let crowdStatus = "NORMAL";
   let waitMins = 25;
@@ -1969,7 +2093,7 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
   }
 
   const result = {
-    site_id: siteId,
+    site_id: canonicalId,
     people_count: count,
     occupancy_percentage: occupancy,
     status: crowdStatus,
@@ -1978,10 +2102,10 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
     last_updated: "Just now (Govt Command Update)"
   };
 
-  syncLocalCrowdObservation(siteId, count, qLen, occupancy, crowdStatus, waitMins);
+  syncLocalCrowdObservation(canonicalId, count, qLen, occupancy, crowdStatus, waitMins);
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId, peopleCount: count, data: result } }));
+    window.dispatchEvent(new CustomEvent('yatrasetu:crowd_updated', { detail: { siteId: canonicalId, peopleCount: count, data: result } }));
   }
 
   return {
@@ -2026,6 +2150,7 @@ function syncLocalCrowdObservation(siteId, count, queueLength, occupancy, status
 // HOTEL PARTNER & HOSPITALITY CLIENT HELPERS
 // ==========================================================================
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock hotels dataset. Real requests query live backend /hotels endpoint. */
 export const MOCK_HOTELS = [
   {
     id: "hotel-kedarnath-1",
@@ -2100,6 +2225,7 @@ export const MOCK_HOTELS = [
   }
 ];
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock hotel owner bookings dataset. Real requests query live backend /hotels/owner/bookings. */
 export const MOCK_OWNER_BOOKINGS = [
   {
     id: "BOOK-84920",
@@ -2151,165 +2277,139 @@ export async function fetchHotels(params = {}) {
     if (params.verified_only) query.append("verified_only", "true");
 
     const qs = query.toString();
-    const url = qs ? `${API_BASE_URL}/hotels?${qs}` : `${API_BASE_URL}/hotels`;
-    const headers = typeof getAuthHeaders === "function" ? getAuthHeaders() : { "Content-Type": "application/json" };
-
-    const res = await fetch(url, { headers });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const endpoint = qs ? `/hotels?${qs}` : `/hotels`;
+    const data = await apiRequest(endpoint);
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("Fallback hotels:", err);
+    console.error("[API Error] fetchHotels failed:", err.message);
+    if (DEMO_MODE) return MOCK_HOTELS;
+    throw err;
   }
-  return MOCK_HOTELS;
 }
 
 export async function fetchHotelAvailability(hotelId) {
+  if (!hotelId) return null;
   try {
-    const res = await fetch(`${API_BASE_URL}/hotels/${encodeURIComponent(hotelId)}/availability`);
-    if (res.ok) return await res.json();
+    return await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/availability`);
   } catch (err) {
-    console.warn("Fallback hotel availability:", err);
+    console.error(`[API Error] fetchHotelAvailability failed for ${hotelId}:`, err.message);
+    if (DEMO_MODE) {
+      const h = MOCK_HOTELS.find((x) => x.id === hotelId) || MOCK_HOTELS[0];
+      const total = h.rooms.reduce((acc, r) => acc + r.total_rooms, 0);
+      const available = h.rooms.reduce((acc, r) => acc + r.available_rooms, 0);
+      const booked = total - available;
+      const occ = total > 0 ? Math.round((booked / total) * 1000) / 10 : 0;
+
+      return {
+        hotel_id: h.id,
+        hotel_name: h.name,
+        total_rooms: total,
+        available_rooms: available,
+        occupancy_percentage: occ,
+        has_vacancy: available > 0,
+        rooms: h.rooms
+      };
+    }
+    throw err;
   }
-
-  const h = MOCK_HOTELS.find((x) => x.id === hotelId) || MOCK_HOTELS[0];
-  const total = h.rooms.reduce((acc, r) => acc + r.total_rooms, 0);
-  const available = h.rooms.reduce((acc, r) => acc + r.available_rooms, 0);
-  const booked = total - available;
-  const occ = total > 0 ? Math.round((booked / total) * 1000) / 10 : 0;
-
-  return {
-    hotel_id: h.id,
-    hotel_name: h.name,
-    total_rooms: total,
-    available_rooms: available,
-    occupancy_percentage: occ,
-    has_vacancy: available > 0,
-    rooms: h.rooms
-  };
 }
 
 export async function fetchHotelOwnerBookings() {
   try {
-    const res = await fetch(`${API_BASE_URL}/hotels/owner/bookings`, {
-      headers: getAuthHeaders()
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest('/hotels/owner/bookings', { requiresAuth: true });
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("Fallback hotel owner bookings:", err);
+    console.error("[API Error] fetchHotelOwnerBookings failed:", err.message);
+    if (DEMO_MODE) return MOCK_OWNER_BOOKINGS;
+    throw err;
   }
-  return MOCK_OWNER_BOOKINGS;
 }
 
 export async function fetchGovernmentOccupancyReport() {
   try {
-    const res = await fetch(`${API_BASE_URL}/hotels/government/occupancy-report`, {
-      headers: getAuthHeaders()
-    });
-    if (res.ok) return await res.json();
+    return await apiRequest('/hotels/government/occupancy-report', { requiresAuth: true });
   } catch (err) {
-    console.warn("Fallback government occupancy report:", err);
+    console.error("[API Error] fetchGovernmentOccupancyReport failed:", err.message);
+    if (DEMO_MODE) {
+      const allHotels = MOCK_HOTELS;
+      let totalCap = 0;
+      let totalAvail = 0;
+      allHotels.forEach((h) => {
+        h.rooms.forEach((r) => {
+          totalCap += r.total_rooms;
+          totalAvail += r.available_rooms;
+        });
+      });
+      const booked = totalCap - totalAvail;
+      const occ = totalCap > 0 ? Math.round((booked / totalCap) * 1000) / 10 : 0;
+
+      return {
+        total_hotels: allHotels.length,
+        verified_hotels: allHotels.filter((h) => h.verified).length,
+        total_capacity_rooms: totalCap,
+        total_available_rooms: totalAvail,
+        total_booked_rooms: booked,
+        overall_occupancy_percentage: occ,
+        hotels: allHotels
+      };
+    }
+    throw err;
   }
-
-  const allHotels = MOCK_HOTELS;
-  let totalCap = 0;
-  let totalAvail = 0;
-  allHotels.forEach((h) => {
-    h.rooms.forEach((r) => {
-      totalCap += r.total_rooms;
-      totalAvail += r.available_rooms;
-    });
-  });
-  const booked = totalCap - totalAvail;
-  const occ = totalCap > 0 ? Math.round((booked / totalCap) * 1000) / 10 : 0;
-
-  return {
-    total_hotels: allHotels.length,
-    verified_hotels: allHotels.filter((h) => h.verified).length,
-    total_capacity_rooms: totalCap,
-    total_available_rooms: totalAvail,
-    total_booked_rooms: booked,
-    overall_occupancy_percentage: occ,
-    hotels: allHotels
-  };
 }
 
 export async function bookHotelRoom(hotelId, bookingData = {}) {
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders()
-    };
-    const res = await fetch(`${API_BASE_URL}/hotels/${encodeURIComponent(hotelId)}/book`, {
+    const data = await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/book`, {
       method: "POST",
-      headers,
+      requiresAuth: true,
       body: JSON.stringify(bookingData)
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:hotel_booked', { detail: { hotelId, data } }));
-      }
-      return { status: "success", data };
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:hotel_booked', { detail: { hotelId, data } }));
     }
-    const errData = await res.json().catch(() => ({}));
-    return { status: "error", detail: errData.detail || "Booking failed" };
+    return { status: "success", data };
   } catch (err) {
-    console.warn("Backend hotel booking error:", err);
-    return { status: "error", detail: "Booking endpoint temporarily unreachable" };
+    console.error(`[API Error] bookHotelRoom failed for ${hotelId}:`, err.message);
+    return { status: "error", detail: err.message || "Booking failed" };
   }
 }
 
 export async function updateHotelBookingStatus(bookingId, status, declineReason = null) {
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      ...getAuthHeaders()
-    };
-    const res = await fetch(`${API_BASE_URL}/hotels/bookings/${encodeURIComponent(bookingId)}/status`, {
+    const data = await apiRequest(`/hotels/bookings/${encodeURIComponent(bookingId)}/status`, {
       method: "PATCH",
-      headers,
+      requiresAuth: true,
       body: JSON.stringify({ status, decline_reason: declineReason })
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:hotel_status_changed', { detail: { bookingId, status, data } }));
-      }
-      return { status: "success", data };
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:hotel_status_changed', { detail: { bookingId, status, data } }));
     }
+    return { status: "success", data };
   } catch (err) {
-    console.warn("Backend update booking status error:", err);
+    console.error(`[API Error] updateHotelBookingStatus failed for ${bookingId}:`, err.message);
+    throw err;
   }
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('yatrasetu:hotel_status_changed', { detail: { bookingId, status } }));
-  }
-  return { status: "success", fallback: true };
 }
 
 export async function fetchMyHotelBookings() {
   try {
-    const res = await fetch(`${API_BASE_URL}/hotels/tourist/bookings`, {
-      headers: getAuthHeaders()
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest('/hotels/tourist/bookings', { requiresAuth: true });
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("Backend fetch tourist bookings error:", err);
+    console.error("[API Error] fetchMyHotelBookings failed:", err.message);
+    if (DEMO_MODE) return [];
+    throw err;
   }
-  return [];
 }
 
 // ==========================================================================
 // REAL-TIME SOS DISTRESS ALERTS CLIENT HELPERS
 // ==========================================================================
 
+/** @deprecated [DEVELOPMENT/DEMO ONLY] Mock active SOS alerts dataset. Real requests query live backend /sos/active. */
 export const MOCK_ACTIVE_SOS_ALERTS = [
   {
     id: "SOS-1001",
@@ -2343,21 +2443,14 @@ export const MOCK_ACTIVE_SOS_ALERTS = [
 
 export async function fetchActiveSOSAlerts() {
   try {
-    const res = await fetch(`${API_BASE_URL}/sos/active`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data?.alerts)) return data.alerts;
-    }
-    if (!DEMO_MODE) {
-      throw new Error(`Failed to fetch SOS alerts: HTTP ${res.status}`);
-    }
+    const data = await apiRequest('/sos/active');
+    if (Array.isArray(data?.alerts)) return data.alerts;
+    return [];
   } catch (err) {
-    console.warn("[SOS] Error fetching active alerts:", err);
-    if (!DEMO_MODE) {
-      throw err;
-    }
+    console.error("[API Error] fetchActiveSOSAlerts failed:", err.message);
+    if (DEMO_MODE) return MOCK_ACTIVE_SOS_ALERTS;
+    throw err;
   }
-  return MOCK_ACTIVE_SOS_ALERTS;
 }
 
 // ============================================================================
@@ -2519,13 +2612,10 @@ export function checkRoomConflictLocal(roomNumber, reqInStr, reqOutStr, excludeB
 // 1. Fetch All 50 Hotel Rooms
 export async function fetchHotelRooms(hotelId = 'H001') {
   try {
-    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/rooms`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) return data;
-    }
+    const data = await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/rooms`);
+    if (Array.isArray(data) && data.length > 0) return data;
   } catch (err) {
-    console.warn("Fallback fetchHotelRooms:", err);
+    console.warn("fetchHotelRooms backend fallback:", err.message);
   }
   return getLocalRooms();
 }
@@ -2544,13 +2634,10 @@ export async function checkHotelRoomAvailability({ hotelId = 'H001', checkIn, ch
     if (roomNumber) {
       params.append('room_number', String(roomNumber));
     }
-    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/availability?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/availability?${params.toString()}`);
+    if (Array.isArray(data)) return data;
   } catch (err) {
-    console.warn("Using local availability check:", err);
+    console.warn("Using local availability check:", err.message);
   }
 
   // Resilient Local Fallback Check
@@ -2607,12 +2694,9 @@ export async function calculateDynamicPrice({
     if (roomNumber) params.append('room_number', String(roomNumber));
     if (multiplierOverride) params.append('multiplier_override', String(multiplierOverride));
 
-    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/calculate-price?${params.toString()}`);
-    if (res.ok) {
-      return await res.json();
-    }
+    return await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/calculate-price?${params.toString()}`);
   } catch (err) {
-    console.warn('Fallback calculateDynamicPrice:', err);
+    console.warn('Fallback calculateDynamicPrice:', err.message);
   }
 
   // Client-side exact calculation matching backend
@@ -2654,8 +2738,8 @@ export async function calculateDynamicPrice({
 // 3. Create Pilgrim Booking Request (Status: "pending")
 export async function createBookingRequest(payload) {
   const reqPayload = {
-    hotel_id: payload.hotel_id || 'H001',
-    tourist_id: payload.tourist_id || 'T001',
+    hotel_id: payload.hotel_id,
+    tourist_id: payload.tourist_id,
     room_id: payload.room_id || `R${payload.room_number}`,
     room_number: String(payload.room_number),
     room_type: payload.room_type || 'Deluxe',
@@ -2671,27 +2755,23 @@ export async function createBookingRequest(payload) {
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}/booking-requests`, {
+    const created = await apiRequest('/booking-requests', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(reqPayload)
     });
-    if (res.ok) {
-      const created = await res.json();
-      const requests = getLocalRequests();
-      requests.unshift(created);
-      saveLocalRequests(requests);
-      broadcastHotelEvent({ type: 'REQUEST_CREATED', request: created });
-      return created;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'Room is already booked for the requested period.');
-    }
+    const requests = getLocalRequests();
+    requests.unshift(created);
+    saveLocalRequests(requests);
+    broadcastHotelEvent({ type: 'REQUEST_CREATED', request: created });
+    return created;
   } catch (err) {
-    if (err.message && (err.message.includes('already booked') || err.message.includes('Conflict'))) {
+    if (err.status === 409 || (err.message && (err.message.includes('already booked') || err.message.includes('Conflict')))) {
       throw err;
     }
-    console.warn("Using local store for createBookingRequest:", err);
+    console.warn("Using local store for createBookingRequest:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
   // Local fallback
@@ -2757,17 +2837,14 @@ export async function createBookingRequest(payload) {
 // 4. Fetch Hotel Booking Requests for Hotel Owner
 export async function fetchHotelBookingRequests(hotelId = 'H001', statusFilter = null) {
   try {
-    const url = `${API_BASE_URL}/hotels/${hotelId}/booking-requests${statusFilter ? `?status_filter=${statusFilter}` : ''}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        saveLocalRequests(data);
-        return data;
-      }
+    const endpoint = `/hotels/${encodeURIComponent(hotelId)}/booking-requests${statusFilter ? `?status_filter=${statusFilter}` : ''}`;
+    const data = await apiRequest(endpoint);
+    if (Array.isArray(data)) {
+      saveLocalRequests(data);
+      return data;
     }
   } catch (err) {
-    console.warn("Fallback fetchHotelBookingRequests:", err);
+    console.warn("fetchHotelBookingRequests backend fallback:", err.message);
   }
 
   const requests = getLocalRequests();
@@ -2784,14 +2861,10 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
     const params = new URLSearchParams();
     if (guestName) params.append('guest_name', guestName);
     if (touristId) params.append('tourist_id', touristId);
-    const url = `${API_BASE_URL}/booking-requests/user?${params.toString()}`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest(`/booking-requests/user?${params.toString()}`);
+    if (Array.isArray(data)) return data;
   } catch (err) {
-    console.warn("Fallback fetchUserBookingRequests:", err);
+    console.warn("fetchUserBookingRequests backend fallback:", err.message);
   }
 
   const requests = getLocalRequests();
@@ -2804,28 +2877,22 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
 // 6. Accept Booking Request (Owner Action with Overlap Re-check)
 export async function acceptBookingRequest(requestId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/booking-requests/${requestId}/accept`, {
+    const updated = await apiRequest(`/booking-requests/${encodeURIComponent(requestId)}/accept`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      }
+      requiresAuth: true
     });
-    if (res.ok) {
-      const updated = await res.json();
-      const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
-      saveLocalRequests(requests);
-      broadcastHotelEvent({ type: 'REQUEST_ACCEPTED', request: updated });
-      return updated;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'ROOM NO LONGER AVAILABLE.');
-    }
+    const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
+    saveLocalRequests(requests);
+    broadcastHotelEvent({ type: 'REQUEST_ACCEPTED', request: updated });
+    return updated;
   } catch (err) {
-    if (err.message && (err.message.includes('NO LONGER AVAILABLE') || err.message.includes('already booked'))) {
+    if (err.status === 409 || (err.message && (err.message.includes('NO LONGER AVAILABLE') || err.message.includes('already booked')))) {
       throw err;
     }
-    console.warn("Fallback acceptBookingRequest:", err);
+    console.warn("acceptBookingRequest backend fallback:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
   // Local fallback with strict owner verification
@@ -2866,27 +2933,20 @@ export async function acceptBookingRequest(requestId) {
 // 7. Decline Booking Request (Owner Action with Reason)
 export async function declineBookingRequest(requestId, reason = 'Room unavailable') {
   try {
-    const res = await fetch(`${API_BASE_URL}/booking-requests/${requestId}/decline`, {
+    const updated = await apiRequest(`/booking-requests/${encodeURIComponent(requestId)}/decline`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders()
-      },
+      requiresAuth: true,
       body: JSON.stringify({ reason })
     });
-    if (res.ok) {
-      const updated = await res.json();
-      const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
-      saveLocalRequests(requests);
-      broadcastHotelEvent({ type: 'REQUEST_DECLINED', request: updated });
-      return updated;
-    } else {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || 'Failed to decline request.');
-    }
+    const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
+    saveLocalRequests(requests);
+    broadcastHotelEvent({ type: 'REQUEST_DECLINED', request: updated });
+    return updated;
   } catch (err) {
-    if (err.message && !err.message.includes('fetch')) throw err;
-    console.warn("Fallback declineBookingRequest:", err);
+    console.warn("declineBookingRequest backend fallback:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
   const requests = getLocalRequests();
@@ -2905,10 +2965,9 @@ export async function declineBookingRequest(requestId, reason = 'Room unavailabl
 // 8. Fetch Booking by Booking ID or Request ID
 export async function fetchBookingById(bookingId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}`);
-    if (res.ok) return await res.json();
+    return await apiRequest(`/bookings/${encodeURIComponent(bookingId)}`);
   } catch (err) {
-    console.warn("Fallback fetchBookingById:", err);
+    console.warn("fetchBookingById backend fallback:", err.message);
   }
   const requests = getLocalRequests();
   const req = requests.find(r => r.booking_id === bookingId || r.id === bookingId);
@@ -2920,18 +2979,19 @@ export async function fetchBookingById(bookingId) {
 // 9. Cancel Booking Request (Pilgrim or Owner Action)
 export async function cancelBookingRequest(requestId) {
   try {
-    const res = await fetch(`${API_BASE_URL}/booking-requests/${requestId}/cancel`, {
-      method: 'PATCH'
+    const updated = await apiRequest(`/booking-requests/${encodeURIComponent(requestId)}/cancel`, {
+      method: 'PATCH',
+      requiresAuth: true
     });
-    if (res.ok) {
-      const updated = await res.json();
-      const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
-      saveLocalRequests(requests);
-      broadcastHotelEvent({ type: 'REQUEST_CANCELLED', request: updated });
-      return updated;
-    }
+    const requests = getLocalRequests().map(r => (r.id === requestId || r.booking_id === requestId) ? updated : r);
+    saveLocalRequests(requests);
+    broadcastHotelEvent({ type: 'REQUEST_CANCELLED', request: updated });
+    return updated;
   } catch (err) {
-    console.warn("Fallback cancelBookingRequest:", err);
+    console.warn("cancelBookingRequest backend fallback:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
   const requests = getLocalRequests();
@@ -2958,13 +3018,10 @@ export async function fetchHotelRoomSlots(hotelId = 'H001', date = null, roomNum
     const params = new URLSearchParams();
     if (date) params.append('date', date);
     if (roomNumber) params.append('room_number', roomNumber);
-    const res = await fetch(`${API_BASE_URL}/hotels/${hotelId}/room-slots?${params.toString()}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data)) return data;
-    }
+    const data = await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/room-slots?${params.toString()}`);
+    if (Array.isArray(data)) return data;
   } catch (err) {
-    console.warn("Fallback fetchHotelRoomSlots:", err);
+    console.warn("fetchHotelRoomSlots backend fallback:", err.message);
   }
 
   const allSlots = getLocalRoomSlots();
@@ -3014,24 +3071,20 @@ export function getHotelLiveMetrics() {
  * Persists status="ACKNOWLEDGED" to Supabase public.sos_alerts table.
  */
 export async function dispatchSOSAlert(alertId, notes = null) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders()
-  };
-  const res = await fetch(`${API_BASE_URL}/sos/${encodeURIComponent(alertId)}/dispatch`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ status: "ACKNOWLEDGED", notes })
-  });
-  if (res.ok) {
-    const data = await res.json();
+  try {
+    const data = await apiRequest(`/sos/${encodeURIComponent(alertId)}/dispatch`, {
+      method: "POST",
+      requiresAuth: true,
+      body: JSON.stringify({ status: "ACKNOWLEDGED", notes })
+    });
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('yatrasetu:sos_triggered', { detail: data }));
     }
     return data;
+  } catch (err) {
+    console.error(`[API Error] dispatchSOSAlert failed for ${alertId}:`, err.message);
+    throw err;
   }
-  const errData = await res.json().catch(() => ({}));
-  throw new Error(errData.detail || `SOS Dispatch failed with HTTP ${res.status}`);
 }
 
 // ==========================================================================
@@ -3039,11 +3092,7 @@ export async function dispatchSOSAlert(alertId, notes = null) {
 // ==========================================================================
 
 export async function activateEmergencyReroute(siteId, extraData = {}) {
-  const targetSiteId = siteId || "TS001";
-  const headers = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders()
-  };
+  const targetSiteId = siteId ? toCanonicalSiteId(siteId) : "TS001";
   const payload = {
     site_id: targetSiteId,
     diverted_tourists: extraData.diverted_tourists || 350,
@@ -3053,24 +3102,17 @@ export async function activateEmergencyReroute(siteId, extraData = {}) {
   };
 
   try {
-    const res = await fetch(`${API_BASE_URL}/alerts/reroute/activate`, {
+    const data = await apiRequest('/alerts/reroute/activate', {
       method: "POST",
-      headers,
+      requiresAuth: true,
       body: JSON.stringify(payload)
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: data }));
-      }
-      return data;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: data }));
     }
-    const errData = await res.json().catch(() => ({}));
-    if (!DEMO_MODE) {
-      throw new Error(errData.detail || `Activation failed with HTTP ${res.status}`);
-    }
+    return data;
   } catch (err) {
-    console.warn("activateEmergencyReroute notice:", err);
+    console.error("[API Error] activateEmergencyReroute failed:", err.message);
     if (!DEMO_MODE) {
       throw err;
     }
@@ -3100,29 +3142,19 @@ export async function activateEmergencyReroute(siteId, extraData = {}) {
 }
 
 export async function deactivateEmergencyReroute(siteId = null, reason = "Situation normalized") {
-  const headers = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders()
-  };
+  const canonicalId = siteId ? toCanonicalSiteId(siteId) : null;
   try {
-    const res = await fetch(`${API_BASE_URL}/alerts/reroute/deactivate`, {
+    const data = await apiRequest('/alerts/reroute/deactivate', {
       method: "POST",
-      headers,
-      body: JSON.stringify({ site_id: siteId, reason })
+      requiresAuth: true,
+      body: JSON.stringify({ site_id: canonicalId, reason })
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
-      }
-      return data;
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', { detail: { is_active: false } }));
     }
-    const errData = await res.json().catch(() => ({}));
-    if (!DEMO_MODE) {
-      throw new Error(errData.detail || `Deactivation failed with HTTP ${res.status}`);
-    }
+    return data;
   } catch (err) {
-    console.warn("deactivateEmergencyReroute notice:", err);
+    console.error("[API Error] deactivateEmergencyReroute failed:", err.message);
     if (!DEMO_MODE) {
       throw err;
     }
@@ -3135,17 +3167,14 @@ export async function deactivateEmergencyReroute(siteId = null, reason = "Situat
 }
 
 export async function fetchActiveRerouteAlert(siteId = null) {
+  const canonicalId = siteId ? toCanonicalSiteId(siteId) : null;
   try {
-    const url = siteId
-      ? `${API_BASE_URL}/alerts/reroute?site_id=${encodeURIComponent(siteId)}`
-      : `${API_BASE_URL}/alerts/reroute`;
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      return data;
-    }
+    const endpoint = canonicalId
+      ? `/alerts/reroute?site_id=${encodeURIComponent(canonicalId)}`
+      : `/alerts/reroute`;
+    return await apiRequest(endpoint);
   } catch (err) {
-    console.warn("fetchActiveRerouteAlert notice:", err);
+    console.error("[API Error] fetchActiveRerouteAlert failed:", err.message);
   }
   return { is_active: false, alert: null };
 }
@@ -3160,18 +3189,12 @@ export async function fetchActiveRerouteAlert(siteId = null) {
  */
 export async function fetchFleetSchedules() {
   try {
-    const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.routes) return data.routes;
-    }
-    if (!DEMO_MODE) {
-      throw new Error(`Failed to fetch fleet schedules: HTTP ${res.status}`);
-    }
+    const data = await apiRequest('/fleet/schedules');
+    if (data?.routes) return data.routes;
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("[Fleet] Backend fetch error:", err);
+    console.error("[API Error] fetchFleetSchedules failed:", err.message);
     if (!DEMO_MODE) {
       throw err;
     }
@@ -3192,24 +3215,20 @@ export async function fetchFleetSchedules() {
  * @returns {Object} API response
  */
 export async function saveFleetSchedules(routes) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...getAuthHeaders()
-  };
-  const res = await fetch(`${API_BASE_URL}/fleet/schedules`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ routes }),
-  });
-  if (res.ok) {
-    const data = await res.json();
+  try {
+    const data = await apiRequest('/fleet/schedules', {
+      method: "POST",
+      requiresAuth: true,
+      body: JSON.stringify({ routes }),
+    });
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('yatrasetu:fleet_updated', { detail: data }));
     }
     return data;
+  } catch (err) {
+    console.error("[API Error] saveFleetSchedules failed:", err.message);
+    throw err;
   }
-  const errData = await res.json().catch(() => ({}));
-  throw new Error(errData.detail || `Failed to save fleet schedule: HTTP ${res.status}`);
 }
 
 /**
@@ -3218,18 +3237,12 @@ export async function saveFleetSchedules(routes) {
  */
 export async function fetchInboundBuses() {
   try {
-    const res = await fetch(`${API_BASE_URL}/fleet/schedules/inbound`, {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.routes) return data.routes;
-    }
-    if (!DEMO_MODE) {
-      throw new Error(`Failed to fetch inbound buses: HTTP ${res.status}`);
-    }
+    const data = await apiRequest('/fleet/schedules/inbound');
+    if (data?.routes) return data.routes;
+    if (Array.isArray(data)) return data;
+    return [];
   } catch (err) {
-    console.warn("[Fleet] Inbound fetch error:", err);
+    console.error("[API Error] fetchInboundBuses failed:", err.message);
     if (!DEMO_MODE) {
       throw err;
     }
@@ -3247,15 +3260,13 @@ import defaultAgencyProfile from '../data/travel_agency/travel_agency_profile.js
 
 export async function fetchTravelAgencyProfile() {
   try {
-    const res = await fetch(`${API_BASE_URL}/fleet/agency-profile`, {
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.data) return data.data;
-    }
+    const data = await apiRequest('/fleet/agency-profile');
+    if (data?.data) return data.data;
+    if (data && typeof data === 'object') return data;
+    return defaultAgencyProfile;
   } catch (err) {
-    console.warn("[Fleet] Agency profile endpoint fallback:", err);
+    console.error("[API Error] fetchTravelAgencyProfile failed:", err.message);
+    if (DEMO_MODE) return defaultAgencyProfile;
+    throw err;
   }
-  return defaultAgencyProfile;
 }

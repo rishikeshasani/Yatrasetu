@@ -1,168 +1,260 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../components/tourist/TouristDashboard.css';
-
-// Modular Tourist Components
 import LanguageSelector from '../components/tourist/LanguageSelector';
 import DestinationGrid from '../components/tourist/DestinationGrid';
 import DestinationDetailsModal from '../components/tourist/DestinationDetailsModal';
 import HotelBookingModal from '../components/tourist/HotelBookingModal';
 
-// Restored Core Person 2 Subsystems
+// Person 2 & 3 Real Subsystems
 import LiveCrowdCard from '../components/LiveCrowdCard';
 import PilgrimAdvisory from '../components/PilgrimAdvisory';
 import SafetyAlerts from '../components/SafetyAlerts';
 import LocalVendors from '../components/LocalVendors';
 import TeamTracker from '../components/TeamTracker';
-import { fetchHotels, createBookingRequest, fetchMyHotelBookings } from '../api/api';
+import {
+  fetchHotels,
+  createBookingRequest,
+  fetchMyHotelBookings,
+  fetchUserBookingRequests,
+  fetchHotelRooms,
+  toCanonicalSiteId
+} from '../api/api';
 import { getShrineAccommodations } from '../utils/shrineImages';
 
 export default function TouristDashboard({
   sites = [],
-  selectedSiteId,
-  selectedSite,
-  onSelectSite,
-  densityMap = {},
-  currentDensity,
-  currentForecast,
-  currentPrediction,
-  currentAlternatives,
-  safetyInfo,
+  activeSite = null,
+  onSelectSite = () => {},
+  density = null,
+  forecast = null,
+  current24hForecast = null,
+  currentQueueForecast = null,
+  alternatives = [],
   alerts = [],
+  rerouteEvent = null,
   vendors = [],
-  activeAlternateRoute,
-  pendingPunyaReward = 0,
-  routeStatus = 'IDLE',
-  completedRouteIds = [],
-  onSelectRoute,
-  onCompleteArrival,
-  onSwitchBack,
-  onOpenSOS,
-  onOpenWallet,
-  walletPoints = 260,
-  activeRerouteAlert = null,
-  currentUser,
-  onShowToast
+  currentUser = null,
+  onTriggerSOS = () => {},
+  onShowToast = () => {},
+  onLogout = () => {}
 }) {
   const { t } = useTranslation();
 
-  // Active Shrine Resolution
-  const activeSite = useMemo(() => {
-    return selectedSite || sites.find((s) => s.id === selectedSiteId) || sites[0] || null;
-  }, [selectedSite, sites, selectedSiteId]);
+  // Search & Filter State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTag, setSelectedTag] = useState('ALL');
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
-  const activeDensity = currentDensity || (activeSite ? densityMap[activeSite.id] : null);
+  // Focus shrine state
+  const [focusShrine, setFocusShrine] = useState(null);
 
-  // Destination Details Modal State
-  const [detailSite, setDetailSite] = useState(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
-  // Hotels State & Room Booking
+  // Hotels State & Room Booking (Teammate feature + Phase 3 integration)
   const [hotels, setHotels] = useState([]);
+  const [isLoadingHotels, setIsLoadingHotels] = useState(false);
   const [bookingHotelId, setBookingHotelId] = useState(null);
-  const [bookingSuccess, setBookingSuccess] = useState(null);
   const [selectedHotelForBooking, setSelectedHotelForBooking] = useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadHotelsAndBookings() {
-      try {
-        const [hotelList, myBookings] = await Promise.all([
-          fetchHotels(),
-          fetchMyHotelBookings()
-        ]);
-        if (!isMounted) return;
-        if (Array.isArray(hotelList)) {
-          setHotels(hotelList);
-        }
-        if (Array.isArray(myBookings) && myBookings.length > 0) {
-          const latest = myBookings[0];
-          setBookingSuccess((prev) => ({
-            bookingId: latest.id,
-            hotelName: latest.hotel_name || 'Shrine Pilgrimage Lodge',
-            roomType: latest.room_type || 'Standard Deluxe',
-            price: latest.total_price || 1200,
-            status: latest.status || 'confirmed'
-          }));
-        }
-      } catch {
-        // Fallback gracefully
+  // User Bookings & Requests Tracker (Phase 3 feature)
+  const [myBookingsList, setMyBookingsList] = useState([]);
+  const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
+
+  // Load Hotels from Backend
+  const loadHotels = useCallback(async () => {
+    setIsLoadingHotels(true);
+    try {
+      const list = await fetchHotels();
+      if (Array.isArray(list)) {
+        setHotels(list);
       }
+    } catch (err) {
+      console.warn('Error loading hotels:', err.message);
+    } finally {
+      setIsLoadingHotels(false);
     }
-    loadHotelsAndBookings();
-
-    const handleStatusChanged = (e) => {
-      const { bookingId, status } = e.detail || {};
-      setBookingSuccess((prev) => {
-        if (!prev) return prev;
-        if (!bookingId || prev.bookingId === bookingId) {
-          return { ...prev, status: status || 'confirmed' };
-        }
-        return prev;
-      });
-    };
-
-    window.addEventListener('yatrasetu:hotel_status_changed', handleStatusChanged);
-    const pollInterval = setInterval(loadHotelsAndBookings, 5000);
-
-    return () => {
-      isMounted = false;
-      window.removeEventListener('yatrasetu:hotel_status_changed', handleStatusChanged);
-      clearInterval(pollInterval);
-    };
   }, []);
 
-  // Match real hotel records to the selected pilgrimage site stably and deterministically
-  const displayedHotels = useMemo(() => {
-    const sId = activeSite?.id || activeSite?.site_id || 'TS001';
-    const sName = activeSite?.name || 'Kedarnath Temple';
-    const canonicalLodges = getShrineAccommodations(sId, sName);
+  // Load Tourist Bookings & Requests (Dual Feed)
+  const loadTouristBookings = useCallback(async () => {
+    setIsRefreshingBookings(true);
+    try {
+      const touristId = currentUser?.id || currentUser?.user_id;
+      const guestName = currentUser?.full_name || currentUser?.name;
 
-    if (!hotels || hotels.length === 0) {
-      return canonicalLodges;
+      const [confirmedBookings, bookingRequests] = await Promise.all([
+        fetchMyHotelBookings().catch(() => []),
+        fetchUserBookingRequests(guestName, touristId).catch(() => [])
+      ]);
+
+      const merged = [];
+      const seenIds = new Set();
+
+      // 1. Pending/Declined/Confirmed requests from /booking-requests/user
+      if (Array.isArray(bookingRequests)) {
+        for (const req of bookingRequests) {
+          const key = req.booking_id || req.id;
+          if (key && !seenIds.has(key)) {
+            seenIds.add(key);
+            merged.push({
+              id: req.id,
+              booking_id: req.booking_id || req.id,
+              hotel_id: req.hotel_id,
+              hotel_name: req.hotel_name || 'Shrine Pilgrimage Lodge',
+              room_number: req.room_number,
+              room_type: req.room_type,
+              status: (req.status || 'pending').toUpperCase(),
+              check_in: req.check_in_datetime || req.check_in,
+              check_out: req.check_out_datetime || req.check_out,
+              total_price: req.price || req.total_amount || 1200,
+              created_at: req.created_at
+            });
+          }
+        }
+      }
+
+      // 2. Confirmed hotel bookings from /hotels/tourist/bookings
+      if (Array.isArray(confirmedBookings)) {
+        for (const b of confirmedBookings) {
+          const key = b.id;
+          if (key && !seenIds.has(key)) {
+            seenIds.add(key);
+            merged.push({
+              id: b.id,
+              booking_id: b.id,
+              hotel_id: b.hotel_id,
+              hotel_name: b.hotel_name || 'Shrine Pilgrimage Lodge',
+              room_number: b.room_number || 'Standard',
+              room_type: b.room_type || 'Deluxe',
+              status: (b.status || 'confirmed').toUpperCase(),
+              check_in: b.check_in,
+              check_out: b.check_out,
+              total_price: b.total_price || 1200,
+              created_at: b.created_at
+            });
+          }
+        }
+      }
+
+      setMyBookingsList(merged);
+    } catch (err) {
+      console.warn('Error loading tourist bookings:', err.message);
+    } finally {
+      setIsRefreshingBookings(false);
     }
+  }, [currentUser]);
 
-    const sLat = activeSite?.latitude;
-    const sLon = activeSite?.longitude;
+  useEffect(() => {
+    loadHotels();
+    loadTouristBookings();
 
-    const STOP_WORDS = new Set(['temple', 'mandir', 'shrine', 'the', 'and', 'ghat', 'sansthan', 'parisar', 'corridor', 'path', 'main', 'zone']);
-    const clean = (str) => (str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
-    const siteTokens = clean(sName)
-      .split(/\s+/)
-      .filter((t) => t.length > 3 && !STOP_WORDS.has(t));
+    // 5-second automatic polling for live booking status changes
+    const pollTimer = setInterval(() => {
+      loadTouristBookings();
+    }, 5000);
+
+    return () => clearInterval(pollTimer);
+  }, [loadHotels, loadTouristBookings]);
+
+  // Synchronize focus shrine with activeSite
+  useEffect(() => {
+    if (activeSite) {
+      setFocusShrine(activeSite);
+    } else if (sites && sites.length > 0) {
+      setFocusShrine(sites[0]);
+    }
+  }, [activeSite, sites]);
+
+  // Filter canonical shrines (TS001 through TS025)
+  const canonicalSites = useMemo(() => {
+    return (sites || []).filter((s) => s && s.id && /^TS\d{3}$/i.test(s.id));
+  }, [sites]);
+
+  const filteredSites = useMemo(() => {
+    return canonicalSites.filter((site) => {
+      const q = searchTerm.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (site.name && site.name.toLowerCase().includes(q)) ||
+        (site.city && site.city.toLowerCase().includes(q)) ||
+        (site.state && site.state.toLowerCase().includes(q)) ||
+        (site.deity && site.deity.toLowerCase().includes(q));
+
+      const matchTag =
+        selectedTag === 'ALL' ||
+        (site.category && site.category.toUpperCase() === selectedTag) ||
+        (site.tags && site.tags.some((t) => t.toUpperCase() === selectedTag));
+
+      return matchSearch && matchTag;
+    });
+  }, [canonicalSites, searchTerm, selectedTag]);
+
+  // Filter accommodations for the selected shrine using teammate's multi-factor matching
+  const displayedHotels = useMemo(() => {
+    if (!hotels || hotels.length === 0) return [];
+    if (!activeSite) return hotels.slice(0, 6);
+
+    const sId = activeSite.id ? String(activeSite.id).toUpperCase() : '';
+    const sName = activeSite.name ? activeSite.name.toLowerCase() : '';
+    const sLat = activeSite.latitude;
+    const sLon = activeSite.longitude;
+
+    const canonicalLodges = getShrineAccommodations(activeSite.id, activeSite.name);
 
     const getDistKm = (lat1, lon1, lat2, lon2) => {
-      const R = 6371.0;
+      const R = 6371;
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
       const dLon = ((lon2 - lon1) * Math.PI) / 180;
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
 
-    // 1. Direct site_id relationship
-    const idMatched = hotels.filter((h) => h.site_id && (h.site_id === sId || h.site_id === activeSite?.id));
+    const clean = (str) =>
+      str ? str.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim() : '';
+
+    const stopWords = new Set(['temple', 'mandir', 'shri', 'shree', 'the', 'dham']);
+    const siteTokens = clean(sName)
+      .split(/\s+/)
+      .filter((w) => w.length > 3 && !stopWords.has(w));
+
+    // 1. Exact site_id match
+    const idMatched = hotels.filter(
+      (h) => h.site_id && String(h.site_id).toUpperCase() === sId
+    );
 
     // 2. Geographic proximity within 35 km
-    const geoMatched = (sLat != null && sLon != null) ? hotels.filter((h) => {
-      if (h.latitude != null && h.longitude != null) {
-        return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 35.0;
-      }
-      return false;
-    }) : [];
+    const geoMatched =
+      sLat != null && sLon != null
+        ? hotels.filter((h) => {
+            if (h.latitude != null && h.longitude != null) {
+              return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 35.0;
+            }
+            return false;
+          })
+        : [];
 
     // 3. Name token match
-    const tokenMatched = siteTokens.length > 0 ? hotels.filter((h) => {
-      const hText = `${clean(h.name)} ${clean(h.address)}`;
-      return siteTokens.some((tok) => hText.includes(tok));
-    }) : [];
+    const tokenMatched =
+      siteTokens.length > 0
+        ? hotels.filter((h) => {
+            const hText = `${clean(h.name)} ${clean(h.address)}`;
+            return siteTokens.some((tok) => hText.includes(tok));
+          })
+        : [];
 
-    // Combined matched live hotels + canonical lodges (canonical lodges ensure full authentic coverage for all 25 shrines)
-    const combined = [...idMatched, ...geoMatched, ...tokenMatched, ...canonicalLodges];
+    const combined = [
+      ...idMatched,
+      ...geoMatched,
+      ...tokenMatched,
+      ...canonicalLodges
+    ];
 
-    // Deduplicate by clean normalized name so identical copies never duplicate or fluctuate
     const seenNames = new Set();
     const deduplicated = [];
     combined.forEach((h) => {
@@ -176,366 +268,412 @@ export default function TouristDashboard({
     return deduplicated.slice(0, 6);
   }, [hotels, activeSite]);
 
+  // Teammate HotelBookingModal Handlers
   const handleOpenBookingModal = (hotel) => {
     setSelectedHotelForBooking(hotel);
     setIsBookingModalOpen(true);
   };
 
   const handleConfirmBooking = async (bookingPayload) => {
-    setBookingHotelId(bookingPayload.hotel_id);
+    // Ensure authenticated tourist ID and hotel ID are strictly populated
+    const touristId = currentUser?.id || currentUser?.user_id || bookingPayload.tourist_id;
+    const hotelId = selectedHotelForBooking?.id || bookingPayload.hotel_id;
+
+    const refinedPayload = {
+      ...bookingPayload,
+      hotel_id: hotelId,
+      tourist_id: touristId
+    };
+
+    setBookingHotelId(refinedPayload.hotel_id);
     try {
-      const result = await createBookingRequest(bookingPayload);
+      const result = await createBookingRequest(refinedPayload);
       setBookingSuccess({
         bookingId: result.booking_id || result.id,
         hotelName: selectedHotelForBooking?.name || 'Shrine Pilgrimage Lodge',
-        roomType: result.room_type || bookingPayload.room_type,
-        price: result.total_amount || result.price || bookingPayload.price,
-        checkIn: bookingPayload.check_in_datetime || bookingPayload.check_in,
-        checkOut: bookingPayload.check_out_datetime || bookingPayload.check_out,
-        guestCount: bookingPayload.guest_count,
+        roomType: result.room_type || refinedPayload.room_type,
+        price: result.total_amount || result.price || refinedPayload.price,
+        checkIn: refinedPayload.check_in_datetime || refinedPayload.check_in,
+        checkOut: refinedPayload.check_out_datetime || refinedPayload.check_out,
+        guestCount: refinedPayload.guest_count,
         status: result.status || 'pending'
       });
 
       if (onShowToast) {
-        onShowToast(`📩 Reservation Request Sent to ${selectedHotelForBooking?.name || 'Hotel'}!`);
+        onShowToast(`📩 Reservation Request Sent to ${selectedHotelForBooking?.name || 'Hotel'} (PENDING)!`);
       }
 
-      const freshHotels = await fetchHotels();
-      if (Array.isArray(freshHotels)) setHotels(freshHotels);
+      // Reload both hotels and user bookings immediately
+      await Promise.all([loadHotels(), loadTouristBookings()]);
       return result;
     } catch (err) {
-      alert("Booking error: " + (err.message || "Please try again."));
+      alert('Booking error: ' + (err.message || 'Please try again.'));
       throw err;
     } finally {
       setBookingHotelId(null);
     }
   };
 
-
-  const handleOpenDetails = (site) => {
-    setDetailSite(site);
-    setIsDetailModalOpen(true);
-  };
-
-  const scrollToSection = (sectionId) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const currentDisplayShrine = focusShrine || activeSite || canonicalSites[0];
 
   return (
-    <div className="tourist-dashboard-flow" id="tourist-home">
-      {/* 1. RESTORED SUB-HEADER / WELCOME STRIP */}
-      <div className="tourist-header-actions-strip">
-        <div className="header-strip-left">
-          <span className="tourist-mode-pill">
-            <span className="live-radar-dot"></span>
-            <span>PILGRIM PORTAL • SIH 2026</span>
-          </span>
-          <div className="quick-nav-pills desktop-only" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem' }}>
-            <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-crowd-status')}>
-              👥 Crowd &amp; Wait Time
-            </button>
-            <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-destinations')}>
-              🏛️ Explore 25
-            </button>
-            <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-alternatives')}>
-              ✨ AI Advisory
-            </button>
-            <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-safety')}>
-              🛡️ Safety &amp; SOS
-            </button>
-            <button type="button" className="btn-quick-nav" onClick={() => scrollToSection('tourist-hotels')}>
-              🏨 Lodging
-            </button>
+    <div className="tourist-dashboard-root" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+      {/* 1. HEADER & LIVE NAVIGATION */}
+      <header className="tourist-header" style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: '#FFFFFF',
+        borderBottom: '1px solid #E2E8F0',
+        padding: '0.75rem 1.5rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, #FF6B00 0%, #D97706 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FFFFFF',
+            fontWeight: '900',
+            fontSize: '1.2rem'
+          }}>
+            🕉️
           </div>
-        </div>
-
-        <div className="header-strip-right" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <LanguageSelector compact={false} />
-          <button
-            type="button"
-            className="wallet-strip-btn"
-            onClick={onOpenWallet}
-            title="Open Green Pilgrim Wallet"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              background: '#ECFDF5',
-              border: '1px solid #10B981',
-              color: '#065F46',
-              padding: '0.35rem 0.85rem',
-              borderRadius: '999px',
-              fontSize: '0.82rem',
-              fontWeight: '800',
-              cursor: 'pointer'
-            }}
-          >
-            <span>🌿</span>
-            <span>{walletPoints} Pts</span>
-            {pendingPunyaReward > 0 && (
-              <span style={{ background: '#FEF3C7', color: '#B45309', padding: '0.1rem 0.4rem', borderRadius: '999px', fontSize: '0.72rem', border: '1px solid #FDE68A' }}>
-                +{pendingPunyaReward} pending
-              </span>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* REAL-TIME GOVERNMENT EMERGENCY REROUTE ALERT BANNER */}
-      {activeRerouteAlert && (
-        <div style={{
-          background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 50%, #B91C1C 100%)',
-          border: '2px solid #F87171',
-          borderRadius: '16px',
-          padding: '16px 20px',
-          color: '#FFFFFF',
-          marginBottom: '1.25rem',
-          boxShadow: '0 8px 24px rgba(185, 28, 28, 0.35)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: 1, minWidth: '280px' }}>
-              <span style={{ fontSize: '30px', lineHeight: 1 }}>🚨</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                  <span style={{
-                    background: '#EF4444',
-                    color: '#FFFFFF',
-                    fontWeight: '800',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    letterSpacing: '0.6px',
-                    textTransform: 'uppercase'
-                  }}>
-                    GOVERNMENT EMERGENCY DIVERSION ORDER
-                  </span>
-                  <span style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    fontWeight: '600'
-                  }}>
-                    CORRIDOR: {activeRerouteAlert.site_name || activeRerouteAlert.site_id}
-                  </span>
-                  <span style={{
-                    background: '#FEF08A',
-                    color: '#854D0E',
-                    fontSize: '11px',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    fontWeight: '700'
-                  }}>
-                    {activeRerouteAlert.crowd_status || 'CRITICAL'} CONGESTION
-                  </span>
-                </div>
-
-                <h3 style={{ margin: '0 0 6px 0', fontSize: '17px', fontWeight: '700', color: '#FFF' }}>
-                  Mandatory Crowd Diversion Advisory for {activeRerouteAlert.site_name || 'Shrine Corridor'}
-                </h3>
-                <p style={{ margin: '0 0 10px 0', fontSize: '13px', lineHeight: '1.5', color: '#FEE2E2' }}>
-                  {activeRerouteAlert.notes || 'Emergency crowd diversion order active. Direct darshan queues are temporarily restricted. Please follow AI-suggested alternate sister shrine corridors.'}
-                </p>
-
-                {/* Sister Shrine Alternatives */}
-                {Array.isArray(activeRerouteAlert.alternative_routes) && activeRerouteAlert.alternative_routes.length > 0 && (
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
-                    {activeRerouteAlert.alternative_routes.map((alt, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => onSelectRoute && onSelectRoute({
-                          alternative_id: alt.alternative_id || alt.name,
-                          name: alt.name,
-                          darshan_wait_time_mins: alt.darshan_wait_time_mins || 15,
-                          distance_km: alt.distance_km || 20,
-                          saved_wait_minutes: 180,
-                          punya_points: 25
-                        })}
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.18)',
-                          border: '1px solid rgba(255, 255, 255, 0.35)',
-                          borderRadius: '8px',
-                          color: '#FFFFFF',
-                          padding: '6px 12px',
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        ➔ Divert to {alt.name} (~{alt.darshan_wait_time_mins || 15}m wait)
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. CURRENT SELECTED DESTINATION & LIVE CROWD CARD (FRONT AND CENTER) */}
-      <div id="tourist-crowd-status">
-        <div id="crowd-intelligence">
-          {activeSite && (
-            <LiveCrowdCard
-              site={activeSite}
-              density={activeDensity}
-              forecast={currentForecast}
-              prediction={currentPrediction}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* 3. DESTINATION EXPLORER (25 SHRINE CARDS WITH LOCAL IMAGES) */}
-      <div id="tourist-destinations">
-        <div id="smart-destinations">
-          <DestinationGrid
-            sites={sites}
-            densityMap={densityMap}
-            selectedSiteId={selectedSiteId}
-            onSelectSite={(id) => {
-              onSelectSite(id);
-              scrollToSection('tourist-crowd-status');
-            }}
-            onViewDetails={handleOpenDetails}
-          />
-        </div>
-      </div>
-
-      {/* 4. DESTINATION DETAILS MODAL (WITH LARGER IMAGE) */}
-      <DestinationDetailsModal
-        site={detailSite}
-        density={detailSite ? densityMap[detailSite.id] : null}
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
-        onSelectForMonitoring={(siteId) => {
-          onSelectSite(siteId);
-          scrollToSection('tourist-crowd-status');
-        }}
-      />
-
-      {/* 5. AI PILGRIM ADVISORY & DYNAMIC ALTERNATIVE ROUTE RECOMMENDATION */}
-      <div id="tourist-alternatives">
-        <div id="how-it-works">
-          {activeSite && (
-            <PilgrimAdvisory
-              currentSite={activeSite}
-              density={activeDensity}
-              forecast={currentForecast}
-              prediction={currentPrediction}
-              alternativesData={currentAlternatives}
-              activeAlternateRoute={activeAlternateRoute}
-              pendingPunyaReward={pendingPunyaReward}
-              routeStatus={routeStatus}
-              completedRouteIds={completedRouteIds}
-              onSelectRoute={onSelectRoute}
-              onCompleteArrival={onCompleteArrival}
-              onSwitchBack={onSwitchBack}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* 6. YATRA DAL GROUP TRACKER */}
-      {activeSite && (
-        <TeamTracker
-          currentSite={activeSite}
-          siteId={selectedSiteId}
-        />
-      )}
-
-      {/* 7. SAFETY ADVISORIES, EMERGENCY SOS & SDRF CONTACTS */}
-      <div id="tourist-safety">
-        <div id="safety">
-          {activeSite && (
-            <SafetyAlerts
-              alerts={alerts}
-              safetyInfo={safetyInfo}
-              currentSite={activeSite}
-              onOpenSOS={onOpenSOS}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* 8. GREEN PILGRIM WALLET SUMMARY BANNER */}
-      <div
-        className="tourist-wallet-summary-box"
-        onClick={onOpenWallet}
-        style={{
-          background: 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-          border: '1px solid #6EE7B7',
-          borderRadius: '1.15rem',
-          padding: '1.25rem 1.6rem',
-          marginTop: '1.5rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.08)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontSize: '2rem' }}>🌿</span>
           <div>
-            <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#065F46' }}>
-              Green Pilgrim Punya Wallet: {walletPoints} Points Active
-            </h4>
-            <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#047857' }}>
-              {pendingPunyaReward > 0
-                ? `🎁 +${pendingPunyaReward} Punya Points pending verified GPS arrival at ${activeAlternateRoute?.name || 'alternate destination'}.`
-                : 'Help balance holy sanctum footfall! Earn +25 Punya Points on every verified alternative route arrival.'}
+            <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#0F172A', letterSpacing: '-0.02em' }}>
+              YatraSetu <span style={{ color: '#FF6B00', fontSize: '0.85rem', fontWeight: '700' }}>Pilgrim Portal</span>
+            </h1>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: '#64748B' }}>
+              Smart India Hackathon 2026 • Real-Time Connected Architecture
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenWallet}
-          style={{
-            background: '#059669',
-            color: '#FFFFFF',
-            border: 'none',
-            padding: '0.65rem 1.25rem',
-            borderRadius: '0.65rem',
-            fontSize: '0.85rem',
-            fontWeight: '700',
-            cursor: 'pointer',
-            boxShadow: '0 2px 6px rgba(5, 150, 105, 0.25)'
-          }}
-        >
-          Open Wallet &amp; Rewards →
-        </button>
-      </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {/* Active Role Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: '#F1F5F9',
+            padding: '0.35rem 0.75rem',
+            borderRadius: '999px',
+            border: '1px solid #CBD5E1'
+          }}>
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: '#10B981',
+              boxShadow: '0 0 6px #10B981'
+            }} />
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155' }}>
+              {currentUser?.email ? currentUser.email.split('@')[0] : 'Tourist Devotee'}
+            </span>
+            <span style={{
+              fontSize: '0.65rem',
+              fontWeight: '800',
+              color: '#FF6B00',
+              background: '#FFF7ED',
+              padding: '0.15rem 0.45rem',
+              borderRadius: '999px',
+              border: '1px solid #FFEDD5',
+              textTransform: 'uppercase'
+            }}>
+              {currentUser?.role || 'TOURIST'}
+            </span>
+          </div>
 
-      {/* 9. VERIFIED SHRINES LODGES & ACCOMMODATIONS */}
-      <div id="tourist-hotels" className="tourist-hotels-section" style={{ marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+          <LanguageSelector />
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{
+              padding: '0.4rem 0.85rem',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              color: '#DC2626',
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '0.5rem',
+              cursor: 'pointer'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* 2. GOVERNMENT TRAVEL REROUTING BANNER */}
+      {rerouteEvent && rerouteEvent.active && (
         <div style={{
-          background: '#FFFFFF',
-          borderRadius: '1.15rem',
-          border: '1px solid #E2E8F0',
-          padding: '1.6rem',
-          boxShadow: '0 4px 14px rgba(0,0,0,0.03)'
+          background: 'linear-gradient(90deg, #B45309 0%, #D97706 100%)',
+          color: '#FFFFFF',
+          padding: '0.85rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '1.6rem' }}>🏨</span>
+          <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800' }}>
+              ACTIVE DIVERSION ORDER: {rerouteEvent.target_site_name || 'Pilgrimage Corridor'}
+            </h4>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', opacity: 0.95 }}>
+              {rerouteEvent.reason || 'High crowd congestion. Authorities recommend visiting alternative designated shrines below.'}
+            </p>
+          </div>
+          <span style={{
+            background: 'rgba(255,255,255,0.2)',
+            padding: '0.25rem 0.65rem',
+            borderRadius: '999px',
+            fontSize: '0.75rem',
+            fontWeight: '800'
+          }}>
+            GOVERNMENT COMMAND ACTIVE
+          </span>
+        </div>
+      )}
+
+      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem' }}>
+        {/* 3. SEARCH & CANONICAL SHRINES (TS001 - TS025) */}
+        <section style={{ marginBottom: '2rem' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            marginBottom: '1rem',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#0F172A' }}>
+                Sacred Temples &amp; Shrines
+              </h2>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#64748B' }}>
+                Displaying 25 official pilgrimage destinations across Bharat with live crowd intelligence.
+              </p>
+            </div>
+
+            {/* Search Input */}
+            <div style={{ display: 'flex', gap: '0.5rem', minWidth: '320px' }}>
+              <input
+                type="text"
+                placeholder="Search shrine, deity, city, or state..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '0.6rem 1rem',
+                  fontSize: '0.85rem',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '0.65rem',
+                  outline: 'none',
+                  background: '#FFFFFF'
+                }}
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    padding: '0.6rem 0.85rem',
+                    background: '#F1F5F9',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: '0.65rem',
+                    cursor: 'pointer',
+                    fontSize: '0.8rem',
+                    fontWeight: '700'
+                  }}
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Categories */}
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>
+            {['ALL', 'JYOTIRLINGA', 'CHAR DHAM', 'SHAKTIPEETH', 'HILL SHRINE', 'COASTAL', 'HERITAGE'].map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(tag)}
+                style={{
+                  padding: '0.4rem 0.9rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  borderRadius: '999px',
+                  border: selectedTag === tag ? '1px solid #FF6B00' : '1px solid #E2E8F0',
+                  background: selectedTag === tag ? '#FF6B00' : '#FFFFFF',
+                  color: selectedTag === tag ? '#FFFFFF' : '#64748B',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+
+          {/* Canonical Destination Grid */}
+          <DestinationGrid
+            sites={filteredSites}
+            selectedSite={activeSite || currentDisplayShrine}
+            onSelectSite={(site) => {
+              onSelectSite(site);
+              setFocusShrine(site);
+            }}
+            onViewDetails={(site) => {
+              setFocusShrine(site);
+              setIsDetailsModalOpen(true);
+            }}
+          />
+        </section>
+
+        {/* 4. SELECTED SHRINE FOCUS & LIVE CROWD INTELLIGENCE */}
+        {currentDisplayShrine && (
+          <section style={{
+            background: '#FFFFFF',
+            borderRadius: '1rem',
+            padding: '1.5rem',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+            marginBottom: '2rem'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              borderBottom: '1px solid #F1F5F9',
+              paddingBottom: '1rem',
+              marginBottom: '1.5rem',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.18rem', fontWeight: '800', color: '#0F172A' }}>
-                  {t('hotels.title')}
-                </h3>
-                <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
-                  {t('hotels.subtitle')} {activeSite?.name || 'shrine'}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    color: '#FF6B00',
+                    background: '#FFF7ED',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '999px',
+                    border: '1px solid #FFEDD5'
+                  }}>
+                    {currentDisplayShrine.id}
+                  </span>
+                  <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '900', color: '#0F172A' }}>
+                    {currentDisplayShrine.name}
+                  </h2>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>
+                  📍 {currentDisplayShrine.city}, {currentDisplayShrine.state} • Deity: <strong>{currentDisplayShrine.deity || 'Sacred Pilgrimage'}</strong>
                 </p>
               </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsDetailsModalOpen(true)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    color: '#334155',
+                    background: '#F8FAFC',
+                    border: '1px solid #CBD5E1',
+                    borderRadius: '0.55rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📖 Full Shrine Guide
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTriggerSOS(currentDisplayShrine)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '800',
+                    color: '#FFFFFF',
+                    background: '#DC2626',
+                    border: 'none',
+                    borderRadius: '0.55rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🚨 Emergency SOS
+                </button>
+              </div>
+            </div>
+
+            {/* LIVE CROWD CARD & ML PREDICTIONS */}
+            <LiveCrowdCard
+              site={currentDisplayShrine}
+              density={density}
+              forecast={forecast}
+              current24hForecast={current24hForecast}
+              queueForecast={currentQueueForecast}
+            />
+          </section>
+        )}
+
+        {/* 5. ALTERNATIVE DESTINATIONS & SISTER SHRINES */}
+        {currentDisplayShrine && (
+          <section style={{ marginBottom: '2rem' }}>
+            <PilgrimAdvisory
+              alternatives={alternatives}
+              activeSite={currentDisplayShrine}
+              onSelectAlternative={(alt) => {
+                const matched = canonicalSites.find(
+                  (s) => s.id === alt.alternative_site_id || s.name === alt.alternative_site_name
+                );
+                if (matched) {
+                  onSelectSite(matched);
+                  setFocusShrine(matched);
+                }
+              }}
+            />
+          </section>
+        )}
+
+        {/* 6. VERIFIED ACCOMMODATIONS & ROOM BOOKING */}
+        <section style={{
+          background: '#FFFFFF',
+          borderRadius: '1rem',
+          padding: '1.5rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.25rem',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
+                Verified Yatri Accommodations &amp; Ashrams
+              </h3>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
+                Directly synchronized with real hotel inventory near {currentDisplayShrine?.name || 'shrine'}.
+              </p>
             </div>
             <span style={{
               fontSize: '0.75rem',
@@ -546,16 +684,17 @@ export default function TouristDashboard({
               borderRadius: '999px',
               border: '1px solid #A7F3D0'
             }}>
-              {t('hotels.verifiedBadge')}
+              ✓ Verified Lodges &amp; Real-time Rooms
             </span>
           </div>
 
+          {/* Booking Notice Banner */}
           {bookingSuccess && (
             <div style={{
               background: bookingSuccess.status === 'confirmed' ? '#ECFDF5' : bookingSuccess.status === 'declined' ? '#FEF2F2' : '#FFFBEB',
               border: `1px solid ${bookingSuccess.status === 'confirmed' ? '#10B981' : bookingSuccess.status === 'declined' ? '#EF4444' : '#F59E0B'}`,
-              borderRadius: '0.85rem',
-              padding: '0.95rem 1.25rem',
+              borderRadius: '0.75rem',
+              padding: '0.85rem 1.25rem',
               marginBottom: '1.25rem',
               display: 'flex',
               justifyContent: 'space-between',
@@ -564,41 +703,31 @@ export default function TouristDashboard({
               <div>
                 <h4 style={{
                   margin: 0,
-                  color: bookingSuccess.status === 'confirmed' ? '#065F46' : bookingSuccess.status === 'declined' ? '#991B1B' : '#92400E',
-                  fontSize: '0.92rem'
+                  fontSize: '0.9rem',
+                  fontWeight: '800',
+                  color: bookingSuccess.status === 'confirmed' ? '#065F46' : bookingSuccess.status === 'declined' ? '#991B1B' : '#92400E'
                 }}>
-                  {bookingSuccess.status === 'confirmed' && `✅ ${t('hotels.bookingSuccess') || 'Booking Confirmed!'} ${bookingSuccess.hotelName}`}
-                  {bookingSuccess.status === 'pending' && `⏳ Room Requested — Awaiting Lodge Verification at ${bookingSuccess.hotelName}`}
-                  {bookingSuccess.status === 'declined' && `⚠️ Reservation Request Declined — ${bookingSuccess.hotelName}`}
+                  {bookingSuccess.status === 'confirmed' && `✅ Booking Confirmed: ${bookingSuccess.hotelName}`}
+                  {bookingSuccess.status === 'pending' && `⏳ Reservation Requested — Awaiting Lodge Confirmation at ${bookingSuccess.hotelName}`}
+                  {bookingSuccess.status === 'declined' && `⚠️ Reservation Request Declined: ${bookingSuccess.hotelName}`}
                 </h4>
                 <p style={{
                   margin: '0.25rem 0 0',
-                  color: bookingSuccess.status === 'confirmed' ? '#047857' : bookingSuccess.status === 'declined' ? '#B91C1C' : '#B45309',
-                  fontSize: '0.8rem'
+                  fontSize: '0.8rem',
+                  color: bookingSuccess.status === 'confirmed' ? '#047857' : bookingSuccess.status === 'declined' ? '#B91C1C' : '#B45309'
                 }}>
-                  Booking ID: <code style={{ fontWeight: 'bold' }}>{bookingSuccess.bookingId}</code> • {bookingSuccess.roomType} • ₹{bookingSuccess.price} 
-                  {bookingSuccess.status === 'pending' ? ' (Transmitted to Hotel Partner Portal)' : ' (Saved in Supabase)'}
+                  Booking Ref: <strong>{bookingSuccess.bookingId}</strong> • {bookingSuccess.roomType} • ₹{bookingSuccess.price} (Real-time Synced)
                 </p>
-                {bookingSuccess.checkIn && bookingSuccess.checkOut && (
-                  <p style={{
-                    margin: '0.2rem 0 0',
-                    fontSize: '0.78rem',
-                    color: bookingSuccess.status === 'confirmed' ? '#065F46' : '#78350F',
-                    fontWeight: '600'
-                  }}>
-                    📅 Stay: {new Date(bookingSuccess.checkIn).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} → {new Date(bookingSuccess.checkOut).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} {bookingSuccess.guestCount ? `• ${bookingSuccess.guestCount} Devotee(s)` : ''}
-                  </p>
-                )}
               </div>
               <button
+                type="button"
                 onClick={() => setBookingSuccess(null)}
                 style={{
-                  background: 'transparent',
+                  background: 'none',
                   border: 'none',
+                  fontSize: '1.2rem',
                   cursor: 'pointer',
-                  color: bookingSuccess.status === 'confirmed' ? '#065F46' : bookingSuccess.status === 'declined' ? '#991B1B' : '#92400E',
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem'
+                  color: '#64748B'
                 }}
               >
                 ✕
@@ -606,39 +735,41 @@ export default function TouristDashboard({
             </div>
           )}
 
+          {/* Hotels Cards Grid */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '1.15rem'
+            gap: '1rem'
           }}>
-            {(displayedHotels.length > 0 ? displayedHotels : (hotels.length > 0 ? hotels.slice(0, 6) : [
-              { id: 'h1', name: 'Kedarnath Himalayan Inn & Ashrams', address: 'Temple Path, Zone B', price_per_night: 1200, rating: 4.8 },
-              { id: 'h2', name: 'GMVN Kedarnath Tourist Rest House', address: 'Helipad Approach Road', price_per_night: 850, rating: 4.6 },
-              { id: 'h3', name: 'Badrinath Yatri Niwas & Bhavan', address: 'Main Temple Gate #2', price_per_night: 950, rating: 4.7 }
-            ])).map((h) => {
+            {displayedHotels.map((h) => {
               const firstRoom = h.rooms?.[0];
-              const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
               const price = firstRoom?.price_per_night || h.price_per_night || 1200;
+              const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
 
               return (
-                <div key={h.id} style={{
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '0.85rem',
-                  padding: '1.1rem',
-                  background: '#F8FAFC',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between'
-                }}>
+                <div
+                  key={h.id}
+                  style={{
+                    border: '1px solid #E2E8F0',
+                    borderRadius: '0.75rem',
+                    padding: '1.1rem',
+                    background: '#F8FAFC',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
+                  }}
+                >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
-                      <h4 style={{ margin: 0, fontSize: '0.92rem', fontWeight: '800', color: '#0F172A' }}>{h.name}</h4>
+                      <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>
+                        {h.name}
+                      </h4>
                       <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#D97706', background: '#FEF3C7', padding: '0.12rem 0.45rem', borderRadius: '5px' }}>
                         ★ {h.rating || '4.8'}
                       </span>
                     </div>
                     <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.78rem', color: '#64748B' }}>
-                      📍 {h.address || 'Near Sacred Pilgrimage Sector'}
+                      📍 {h.address || 'Near Sacred Pilgrimage Corridor'}
                     </p>
                     {availCount != null && (
                       <span style={{ fontSize: '0.75rem', color: availCount > 0 ? '#059669' : '#DC2626', fontWeight: '700' }}>
@@ -649,10 +780,10 @@ export default function TouristDashboard({
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #E2E8F0' }}>
                     <div>
-                      <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#0F172A' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: '900', color: '#0F172A' }}>
                         ₹{price}
                       </span>
-                      <span style={{ fontSize: '0.72rem', color: '#64748B' }}> {t('hotels.perNight')}</span>
+                      <span style={{ fontSize: '0.72rem', color: '#64748B' }}> / night</span>
                     </div>
 
                     <button
@@ -663,32 +794,180 @@ export default function TouristDashboard({
                         background: '#059669',
                         color: '#FFFFFF',
                         border: 'none',
-                        padding: '0.45rem 0.85rem',
+                        padding: '0.45rem 0.9rem',
                         borderRadius: '0.55rem',
-                        fontSize: '0.78rem',
+                        fontSize: '0.8rem',
                         fontWeight: '700',
                         cursor: 'pointer'
                       }}
                     >
-                      {bookingHotelId === h.id ? 'Booking...' : t('hotels.bookRoom')}
+                      {bookingHotelId === h.id ? 'Connecting...' : 'Book Room'}
                     </button>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* 10. VOCAL FOR LOCAL TEMPLE BAZAAR */}
-      {activeSite && (
-        <LocalVendors
-          vendors={vendors}
-          siteName={activeSite.name}
+        {/* 7. MY YATRA BOOKING STATUS (LIVE LIFECYCLE TRACKER) */}
+        <section style={{
+          background: '#FFFFFF',
+          borderRadius: '1rem',
+          padding: '1.5rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+          marginBottom: '2rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '1.25rem',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
+                My Yatra Booking Status
+              </h3>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
+                Real-time booking lifecycle status synced from FastAPI and Hotel Owner portal.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={loadTouristBookings}
+              disabled={isRefreshingBookings}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.45rem 0.85rem',
+                fontSize: '0.78rem',
+                fontWeight: '700',
+                color: '#334155',
+                background: '#F1F5F9',
+                border: '1px solid #CBD5E1',
+                borderRadius: '0.55rem',
+                cursor: 'pointer'
+              }}
+            >
+              🔄 {isRefreshingBookings ? 'Refreshing...' : 'Refresh Status'}
+            </button>
+          </div>
+
+          {myBookingsList.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '2rem 1rem',
+              color: '#94A3B8',
+              border: '2px dashed #E2E8F0',
+              borderRadius: '0.75rem'
+            }}>
+              <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: '600' }}>
+                No active bookings or requests found.
+              </p>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem' }}>
+                Select an accommodation above to transmit your first yatra reservation request.
+              </p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                <thead>
+                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Booking Ref</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Accommodation</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Room / Type</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Dates</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Amount</th>
+                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Lifecycle Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myBookingsList.map((b) => {
+                    const statusColor =
+                      b.status === 'CONFIRMED'
+                        ? { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' }
+                        : b.status === 'DECLINED'
+                        ? { text: '#991B1B', bg: '#FEF2F2', border: '#FECACA' }
+                        : { text: '#92400E', bg: '#FFFBEB', border: '#FDE68A' };
+
+                    return (
+                      <tr key={b.booking_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: '800', color: '#0F172A' }}>
+                          {b.booking_id}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>
+                          {b.hotel_name}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                          #{b.room_number || '101'} • {b.room_type || 'Standard'}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
+                          {b.check_in ? new Date(b.check_in).toLocaleDateString() : 'N/A'} →{' '}
+                          {b.check_out ? new Date(b.check_out).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#0F172A' }}>
+                          ₹{b.total_price}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '0.2rem 0.65rem',
+                            borderRadius: '999px',
+                            fontSize: '0.72rem',
+                            fontWeight: '800',
+                            color: statusColor.text,
+                            background: statusColor.bg,
+                            border: `1px solid ${statusColor.border}`
+                          }}>
+                            {b.status === 'CONFIRMED' && '✓ CONFIRMED'}
+                            {b.status === 'PENDING' && '⏳ PENDING REVIEW'}
+                            {b.status === 'DECLINED' && '✕ DECLINED'}
+                            {!['CONFIRMED', 'PENDING', 'DECLINED'].includes(b.status) && b.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* 8. MY YATRA TEAM TRACKER (HONEST NOTICE) */}
+        <section style={{ marginBottom: '2rem' }}>
+          <TeamTracker />
+        </section>
+
+        {/* 9. SAFETY ALERTS & EMERGENCY SERVICES */}
+        <section style={{ marginBottom: '2rem' }}>
+          <SafetyAlerts alerts={alerts} activeSite={currentDisplayShrine} />
+        </section>
+
+        {/* 10. LOCAL VENDORS & PILGRIM BAZAAR */}
+        {currentDisplayShrine && (
+          <section style={{ marginBottom: '2rem' }}>
+            <LocalVendors vendors={vendors} siteName={currentDisplayShrine.name} />
+          </section>
+        )}
+      </main>
+
+      {/* 11. SHRINE DETAILS MODAL */}
+      {isDetailsModalOpen && currentDisplayShrine && (
+        <DestinationDetailsModal
+          site={currentDisplayShrine}
+          density={density}
+          forecast={forecast}
+          onClose={() => setIsDetailsModalOpen(false)}
         />
       )}
 
-      {/* Interactive Hotel Booking & Date/Time Selection Modal */}
+      {/* 12. TEAMMATE'S INTERACTIVE HOTEL BOOKING MODAL */}
       <HotelBookingModal
         isOpen={isBookingModalOpen}
         hotel={selectedHotelForBooking}

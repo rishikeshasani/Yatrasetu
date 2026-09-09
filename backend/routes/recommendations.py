@@ -21,6 +21,13 @@ def parse_crowd_percentage(val_str):
 def list_sites():
     return supabase.table("sites").select("*").execute().data
 
+@router.get("/sites/{site_id}")
+def get_site(site_id: str):
+    res = supabase.table("sites").select("*").eq("id", site_id).execute().data
+    if not res:
+        raise HTTPException(status_code=404, detail="Site not found")
+    return res[0]
+
 @router.get("/sites/{site_id}/alternatives")
 def get_alternatives(site_id: str):
     # 1. Fetch main site details to verify it exists

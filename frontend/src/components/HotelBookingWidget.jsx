@@ -11,19 +11,34 @@ import {
 import './HotelBookingWidget.css';
 
 export default function HotelBookingWidget({ currentUser, onShowToast }) {
+  const today = new Date();
+  const plusTwoDays = new Date(today);
+  plusTwoDays.setDate(today.getDate() + 2);
+  const defaultCheckIn = today.toISOString().split('T')[0];
+  const defaultCheckOut = plusTwoDays.toISOString().split('T')[0];
+
   // 1. Hotel & Room state
-  const [hotelId, setHotelId] = useState('H001');
+  const [hotelId, setHotelId] = useState(currentUser?.hotel_id || '');
   const [allRooms, setAllRooms] = useState([]);
-  const [selectedRoomNumber, setSelectedRoomNumber] = useState('204');
-  const [guestName, setGuestName] = useState(currentUser?.name || 'Anita Sharma');
+  const [selectedRoomNumber, setSelectedRoomNumber] = useState('');
+  const [guestName, setGuestName] = useState(currentUser?.full_name || currentUser?.name || 'Pilgrim Devotee');
   const [guests, setGuests] = useState(2);
   const [specialRequest, setSpecialRequest] = useState('');
 
   // 2. Datetime state
-  const [checkInDate, setCheckInDate] = useState('2026-09-05');
+  const [checkInDate, setCheckInDate] = useState(defaultCheckIn);
   const [checkInTime, setCheckInTime] = useState('14:00');
-  const [checkOutDate, setCheckOutDate] = useState('2026-09-07');
+  const [checkOutDate, setCheckOutDate] = useState(defaultCheckOut);
   const [checkOutTime, setCheckOutTime] = useState('11:00');
+
+  useEffect(() => {
+    if (currentUser?.full_name || currentUser?.name) {
+      setGuestName(prev => (prev === 'Pilgrim Devotee' || !prev) ? (currentUser.full_name || currentUser.name) : prev);
+    }
+    if (currentUser?.hotel_id) {
+      setHotelId(currentUser.hotel_id);
+    }
+  }, [currentUser]);
 
   // 2B. Dynamic Hourly Pricing state
   const [livePricing, setLivePricing] = useState({
@@ -212,7 +227,7 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
     try {
       const payload = {
         hotel_id: hotelId,
-        tourist_id: 'T001',
+        tourist_id: currentUser?.id || currentUser?.user_id || '',
         room_id: selectedRoomObj.room_id || `R${selectedRoomNumber}`,
         room_number: String(selectedRoomNumber),
         room_type: selectedRoomObj.room_type || 'Deluxe',
@@ -372,7 +387,7 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
                 type="text"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
-                placeholder="e.g. Anita Sharma"
+                placeholder="e.g. Rahul Verma"
                 className="field-input"
                 required
               />

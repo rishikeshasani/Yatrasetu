@@ -315,9 +315,9 @@ export default function PilgrimAdvisory({
       {recommendations.length === 0 ? (
         <div className="pilgrim-advisory-empty-box">
           <div className="empty-icon-circle">ℹ️</div>
-          <h4 className="empty-title">No Alternative Recommendations Available</h4>
+          <h4 className="empty-title">No Alternative Destinations Available</h4>
           <p className="empty-desc">
-            No alternative recommendation is currently available for this destination. Please follow standard temple queue protocols at {siteName}.
+            No alternative destinations are currently available. Please follow standard temple queue protocols at {siteName}.
           </p>
         </div>
       ) : (

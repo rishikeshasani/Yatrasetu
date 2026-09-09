@@ -292,6 +292,7 @@ def get_site_density(site_id: str):
                 "site_id": site_id,
                 "site_name": site_name,
                 "people_count": people_count,
+                "capacity": capacity,
                 "occupancy_percentage": occupancy,
                 "status": status,
                 "relative_surge_alert": crowd_ml_service.check_relative_surge(site_id, people_count, capacity=capacity),
@@ -307,6 +308,7 @@ def get_site_density(site_id: str):
             "site_id": site_id,
             "site_name": site_name,
             "people_count": cached["people_count"],
+            "capacity": capacity,
             "occupancy_percentage": cached["occupancy_percentage"],
             "status": cached["status"],
             "relative_surge_alert": cached.get("relative_surge_alert"),
@@ -320,6 +322,7 @@ def get_site_density(site_id: str):
         "site_id": site_id,
         "site_name": site_name,
         "people_count": people_count,
+        "capacity": capacity,
         "occupancy_percentage": occupancy,
         "status": status,
         "relative_surge_alert": {

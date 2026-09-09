@@ -1,44 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { fetchSiteScheduleInsights, fetchSiteMLForecast } from '../api/api';
+import { fetchSiteScheduleInsights, fetchSite24hForecast } from '../api/api';
 import { getShrineImage } from '../utils/shrineImages';
 
-export default function LiveCrowdCard({ site, density, forecast, prediction }) {
+export default function LiveCrowdCard({ site, density, forecast, prediction, current24hForecast, queueForecast }) {
   if (!site) return null;
 
   const [scheduleInsights, setScheduleInsights] = useState(null);
-  const [mlForecast, setMlForecast] = useState(null);
-  const [simulatedSurge, setSimulatedSurge] = useState(false);
+  const [internal24hForecast, setInternal24hForecast] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     if (site?.id) {
       fetchSiteScheduleInsights(site.id).then((res) => {
-        if (res) setScheduleInsights(res);
-      });
-      fetchSiteMLForecast(site.id).then((res) => {
-        if (res?.forecasts) setMlForecast(res.forecasts);
-      });
+        if (isMounted && res) setScheduleInsights(res);
+      }).catch(() => {});
+
+      if (!current24hForecast) {
+        fetchSite24hForecast(site.id).then((res) => {
+          if (isMounted && res?.forecasts) setInternal24hForecast(res.forecasts);
+        }).catch(() => {});
+      }
     }
-  }, [site?.id]);
+    return () => {
+      isMounted = false;
+    };
+  }, [site?.id, current24hForecast]);
 
-  const basePeopleCount = density?.people_count ?? 0;
-  const capacity = site?.capacity || 3000;
-  const rawOccupancy = density?.occupancy_percentage ?? (capacity > 0 ? Math.round((basePeopleCount / capacity) * 100) : 0);
+  const activeForecasts = current24hForecast?.forecasts || internal24hForecast || [];
 
-  const occupancy = simulatedSurge ? 94 : rawOccupancy;
-  const peopleCount = simulatedSurge ? Math.max(Math.round(capacity * 0.94), 2820) : basePeopleCount;
-  const rawStatus = density?.status || (occupancy < 50 ? 'NORMAL' : occupancy < 75 ? 'MODERATE' : occupancy < 90 ? 'HIGH' : 'CRITICAL');
-  const status = simulatedSurge ? 'CRITICAL' : rawStatus;
+  const peopleCount = density?.people_count ?? 0;
+  const capacity = density?.capacity || site?.capacity || 2500;
+  const rawOccupancy = density?.occupancy_percentage ?? (capacity > 0 ? Math.round((peopleCount / capacity) * 100) : 0);
+  const occupancy = Math.min(Math.max(rawOccupancy, 0), 100);
 
-  const waitMins = simulatedSurge ? 120 : (forecast?.queue_forecast?.estimated_current_wait_mins ?? 35);
-  const normalWait = forecast?.queue_forecast?.normal_wait_mins ?? 25;
-  const peakWait = forecast?.queue_forecast?.peak_wait_mins ?? 120;
-  const queueSys = forecast?.queue_forecast?.queue_management_system || 'Automated Queue Corridors';
-  const fastTrack = forecast?.queue_forecast?.fast_track_details || 'Priority counters available for seniors and families';
+  // Authoritative status from backend (<50% NORMAL, 50-<75% MODERATE, 75-<90% HIGH, >=90% CRITICAL)
+  const status = density?.status || (occupancy < 50 ? 'NORMAL' : occupancy < 75 ? 'MODERATE' : occupancy < 90 ? 'HIGH' : 'CRITICAL');
+  const lastUpdated = density?.last_updated || 'Live Synchronized';
 
-  const seasonalContext = forecast?.seasonal_context;
-  const predictedCount = prediction?.predicted_next_count;
+  // Queue forecast from GET /sites/{site_id}/crowd-forecast
+  const queueData = queueForecast?.queue_forecast || forecast?.queue_forecast;
+  const waitMins = queueData?.estimated_current_wait_mins ?? Math.max(15, Math.round((occupancy / 100) * 90));
+  const normalWait = queueData?.normal_wait_mins ?? 25;
+  const peakWait = queueData?.peak_wait_mins ?? 120;
+  const queueSys = queueData?.queue_management_system || 'Automated Token Corridors';
+  const fastTrack = queueData?.fast_track_details || 'Priority counters available for seniors and families';
+
+  const seasonalContext = forecast?.seasonal_context || queueForecast?.seasonal_context;
   const relativeSurge = density?.relative_surge_alert;
-  const isSurgeActive = Boolean(relativeSurge?.is_relative_surge || simulatedSurge);
+  const isSurgeActive = Boolean(relativeSurge?.is_relative_surge);
 
   const getStatusTheme = (s) => {
     switch (s) {
@@ -157,43 +166,26 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
-      {/* 3. DYNAMIC CROWD CONDITION ADVISORY & SIMULATION CONTROL */}
+      {/* 3. DYNAMIC CROWD CONDITION ADVISORY */}
       <div className={`surge-monitor-banner ${isSurgeActive ? 'surge-active' : 'surge-normal'}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <div className="surge-banner-left" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
           <span className="surge-icon">{isSurgeActive ? '🚨' : '🛡️'}</span>
           <div className="surge-text">
             <div className="surge-title">
               {isSurgeActive
-                ? 'Dynamic Surge Anomaly: CRITICAL SURGE DETECTED'
-                : 'Darshan Queue Flow: Smooth & Manageable'}
+                ? 'Dynamic Surge Anomaly: UNEXPECTED RUSH DETECTED'
+                : 'Darshan Queue Flow: Smooth & Orderly'}
             </div>
             <div className="surge-sub">
               {isSurgeActive
-                ? (relativeSurge?.message || 'Unscheduled spike: High visitor influx above historical baseline for this hour.')
-                : 'Queues are moving at steady pace. Ideal window for peaceful darshan and rituals.'}
+                ? (relativeSurge?.message || 'High visitor influx above historical baseline for this hour.')
+                : 'Queues are moving at an orderly pace. Ideal window for peaceful darshan and sacred rituals.'}
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          className={`surge-simulate-btn ${simulatedSurge ? 'sim-active' : ''}`}
-          onClick={() => setSimulatedSurge(!simulatedSurge)}
-          style={{
-            marginLeft: 'auto',
-            padding: '0.5rem 1rem',
-            background: simulatedSurge ? '#DC2626' : '#2563EB',
-            color: '#FFFFFF',
-            border: 'none',
-            borderRadius: '0.5rem',
-            fontWeight: 700,
-            fontSize: '0.85rem',
-            cursor: 'pointer',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {simulatedSurge ? '🔄 Reset to Normal' : '⚡ Simulate Spike Alert'}
-        </button>
+        <div style={{ fontSize: '0.75rem', color: isSurgeActive ? '#991B1B' : '#047857', fontWeight: 700, background: isSurgeActive ? '#FEE2E2' : '#D1FAE5', padding: '0.35rem 0.75rem', borderRadius: '6px' }}>
+          Z-Score Baseline: {relativeSurge?.z_score != null ? `${relativeSurge.z_score.toFixed(2)}σ` : 'Normal'}
+        </div>
       </div>
 
       {/* 4. DUAL HERO METRICS: CROWD STATUS & WAIT TIME */}
@@ -202,7 +194,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         <div className="metric-card occupancy-gauge-card" style={{ borderColor: theme.border }}>
           <div className="card-top-row">
             <div className="card-title-wrap">
-              <span className="metric-header-title">Current Crowd</span>
+              <span className="metric-header-title">CURRENT CROWD STATUS</span>
               <span className="metric-sub-label">Live sanctum condition</span>
             </div>
             <span className={`status-pill-big ${theme.badge}`}>
@@ -234,29 +226,32 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
               </svg>
               <div className="radial-meter-text">
                 <span className="occupancy-pct-number" style={{ color: theme.color }}>
-                  {status === 'NORMAL' ? 'LOW' : status === 'MODERATE' ? 'MOD' : status === 'HIGH' ? 'HIGH' : 'MAX'}
+                  {occupancy}%
                 </span>
                 <span className="occupancy-pct-sub">{status}</span>
               </div>
             </div>
 
-            {/* Clear, Sanitized Pilgrim Advice */}
+            {/* Clear Authoritative Headcount and Status Details */}
             <div className="headcount-details">
               <div className="stat-box-highlight">
                 <span className="stat-highlight-num" style={{ color: theme.color }}>
-                  {theme.icon} {status === 'NORMAL' ? 'Optimal Flow' : status === 'MODERATE' ? 'Moderate Rush' : status === 'HIGH' ? 'Heavy Rush' : 'Peak Congestion'}
+                  {peopleCount.toLocaleString()} / {capacity.toLocaleString()}
                 </span>
-                <span className="stat-highlight-label">Sanctum Footfall Condition</span>
+                <span className="stat-highlight-label">Official Sanctum Capacity ({occupancy}%)</span>
               </div>
 
               <div className="stat-line">
-                <span className="stat-muted">Advice:</span>
-                <strong className="stat-bold">
-                  {status === 'NORMAL' && 'Good time for peaceful darshan'}
-                  {status === 'MODERATE' && 'Steady queues — moving normally'}
-                  {status === 'HIGH' && 'Heavy crowd — consider an alternate destination'}
-                  {status === 'CRITICAL' && 'Extreme rush — rerouting strongly advised'}
+                <span className="stat-muted">Condition:</span>
+                <strong className="stat-bold" style={{ color: theme.color }}>
+                  {theme.icon} {status} ({occupancy}%)
                 </strong>
+              </div>
+              <div className="stat-line">
+                <span className="stat-muted">Last Updated:</span>
+                <span className="stat-desc" style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                  🕒 {lastUpdated}
+                </span>
               </div>
               <div className="stat-line">
                 <span className="stat-muted">Recommendation:</span>
@@ -276,11 +271,11 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         <div className="metric-card queue-telemetry-card">
           <div className="card-top-row">
             <div className="card-title-wrap">
-              <span className="metric-header-title">Estimated Darshan Wait Time</span>
+              <span className="metric-header-title">QUEUE / WAIT ESTIMATE</span>
               <span className="metric-sub-label">From queue entrance to sanctum</span>
             </div>
             <span className="wait-time-tag">
-              ⏱️ AI Queue Estimation
+              ⏱️ Queue Forecast
             </span>
           </div>
 
@@ -391,23 +386,28 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
         </div>
       )}
 
-      {/* 7. EXPECTED DAILY CROWD TREND */}
-      {mlForecast && mlForecast.length > 0 && (
-        <div className="ml-forecast-card">
-          <div className="ml-forecast-header">
-            <div className="ml-forecast-title-row">
-              <span style={{ fontSize: '1.25rem' }}>📈</span>
-              <h3 className="ml-forecast-title">
-                Expected Daily Crowd Trend
+      {/* 7. AI-POWERED 24-HOUR CROWD MONITORING */}
+      <div className="ml-forecast-card">
+        <div className="ml-forecast-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div className="ml-forecast-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.4rem' }}>📈</span>
+            <div>
+              <h3 className="ml-forecast-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
+                AI-Powered Crowd Intelligence
               </h3>
+              <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
+                Combines crowd observations, historical crowd patterns and forecasting logic to estimate future congestion.
+              </p>
             </div>
-            <span className="ml-badge-tag">
-              📊 Today's Pattern
-            </span>
           </div>
+          <span className="ml-badge-tag" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '0.25rem 0.65rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
+            📊 24-Hour Crowd Monitoring
+          </span>
+        </div>
 
+        {activeForecasts && activeForecasts.length > 0 ? (
           <div className="ml-forecast-track">
-            {mlForecast.slice(0, 12).map((item, idx) => {
+            {activeForecasts.slice(0, 12).map((item, idx) => {
               const itemColor =
                 item.status === 'CRITICAL'
                   ? '#DC2626'
@@ -455,8 +455,12 @@ export default function LiveCrowdCard({ site, density, forecast, prediction }) {
               );
             })}
           </div>
-        </div>
-      )}
+        ) : (
+          <div style={{ padding: '1.75rem', textAlign: 'center', color: '#64748B', fontSize: '0.85rem' }}>
+            ⏳ 24-hour crowd forecast is compiling for {site.name}. Check back shortly.
+          </div>
+        )}
+      </div>
     </section>
   );
 }

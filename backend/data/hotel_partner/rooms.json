@@ -51,8 +51,8 @@
     "floor": 1,
     "capacity": 2,
     "status": "available",
-    "current_booking_id": null,
-    "next_available_time": "2026-09-04T10:00:00"
+    "current_booking_id": "YC-48206",
+    "next_available_time": "2026-09-13T22:25:44"
   },
   {
     "room_id": "R106",
@@ -62,8 +62,8 @@
     "floor": 1,
     "capacity": 2,
     "status": "occupied",
-    "current_booking_id": "YC-48106",
-    "next_available_time": "2026-09-05T09:00:00"
+    "current_booking_id": "YC-48207",
+    "next_available_time": "2026-09-13T22:31:12"
   },
   {
     "room_id": "R107",
@@ -271,8 +271,8 @@
     "floor": 2,
     "capacity": 2,
     "status": "check_out",
-    "current_booking_id": "YC-48195",
-    "next_available_time": "2026-09-04T18:00:00"
+    "current_booking_id": "YC-48205",
+    "next_available_time": "2026-09-21T11:00:00"
   },
   {
     "room_id": "R206",

@@ -1,15 +1,15 @@
 {
-  "id": "e34dbc01-5d38-4477-b567-ba1890b5b426",
+  "id": "e925b031-5fff-4fe8-952b-e2bbc18b2881",
   "site_id": "TS001",
   "site_name": "Kedarnath Temple",
-  "crowd_status": "HIGH",
-  "occupancy_percentage": 87.0,
-  "people_count": 11310,
+  "crowd_status": "MODERATE",
+  "occupancy_percentage": 65.4,
+  "people_count": 8500,
   "alert_type": "EMERGENCY_REROUTE",
   "status": "RESOLVED",
-  "diverted_tourists": 350,
-  "partner_buses": 14,
-  "partner_hotels": 22,
+  "diverted_tourists": 400,
+  "partner_buses": 15,
+  "partner_hotels": 20,
   "alternative_routes": [
     {
       "alternative_id": "ALT001",
@@ -19,7 +19,9 @@
       "longitude": 79.2198,
       "distance_km": 42.0,
       "travel_time_mins": 360,
+      "crowd_percentage": 5,
       "relative_crowd_percentage": 5,
+      "crowd_savings": "95% less crowded",
       "why_visit": "Serene spiritual atmosphere, untouched Bugyal (alpine meadow) views of Chaukhamba peaks, zero queue time",
       "best_time_to_visit": "May - June, September - October",
       "road_connectivity": "Motorable road till Ransi village + 16 km scenic mountain trek path"
@@ -32,14 +34,16 @@
       "longitude": 78.9839,
       "distance_km": 25.0,
       "travel_time_mins": 90,
+      "crowd_percentage": 12,
       "relative_crowd_percentage": 12,
+      "crowd_savings": "88% less crowded",
       "why_visit": "Site of divine Shiva-Parvati wedding with perpetual sacred flame (Akhand Dhuni); peaceful darshan without long queues",
       "best_time_to_visit": "April - June, September - November",
       "road_connectivity": "All-weather motorable road connected from Sonprayag"
     }
   ],
-  "notes": "Emergency diversion active for Kedarnath corridor.",
-  "activated_by": "usr_govt_command",
-  "activated_at": "2026-09-05T08:05:54.566073+00:00",
-  "resolved_at": "2026-09-05T08:05:56.090610+00:00"
+  "notes": "Automated diversion active for Kedarnath Temple due to MODERATE congestion.",
+  "activated_by": "cc1da22b-6636-4e35-bd41-95d6eae7ac67",
+  "activated_at": "2026-09-09T16:27:31.798408+00:00",
+  "resolved_at": "2026-09-09T16:27:32.666014+00:00"
 }
