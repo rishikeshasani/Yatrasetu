@@ -18,19 +18,28 @@ import {
   createBookingRequest,
   fetchMyHotelBookings,
   fetchUserBookingRequests,
-  fetchActiveRerouteAlert
+  fetchActiveRerouteAlert,
+  toCanonicalSiteId,
+  MOCK_DENSITY
 } from '../api/api';
 import { getShrineAccommodations } from '../utils/shrineImages';
 
 export default function TouristDashboard({
   sites = [],
   activeSite = null,
+  selectedSite = null,
+  selectedSiteId = null,
   onSelectSite = () => {},
   density = null,
+  currentDensity = null,
+  densityMap = {},
   forecast = null,
+  currentForecast = null,
   current24hForecast = null,
   currentQueueForecast = null,
+  currentPrediction = null,
   alternatives = [],
+  currentAlternatives = [],
   alerts = [],
   rerouteEvent = null,
   activeRerouteAlert = null,
@@ -425,6 +434,29 @@ export default function TouristDashboard({
     return shrine;
   }, [focusShrine, activeSite, canonicalSites, sites]);
 
+  const effectiveDensity = useMemo(() => {
+    const shrineId = currentDisplayShrine?.id;
+    if (!shrineId) return density || currentDensity || null;
+
+    if (density && (density.site_id === shrineId || density.id === shrineId)) {
+      return density;
+    }
+    if (currentDensity && (currentDensity.site_id === shrineId || currentDensity.id === shrineId)) {
+      return currentDensity;
+    }
+    if (densityMap) {
+      if (densityMap[shrineId]) return densityMap[shrineId];
+      const canonical = toCanonicalSiteId ? toCanonicalSiteId(shrineId) : shrineId;
+      if (densityMap[canonical]) return densityMap[canonical];
+    }
+    const canonicalId = toCanonicalSiteId ? toCanonicalSiteId(shrineId) : shrineId;
+    if (MOCK_DENSITY) {
+      if (MOCK_DENSITY[canonicalId]) return MOCK_DENSITY[canonicalId];
+      if (MOCK_DENSITY[shrineId]) return MOCK_DENSITY[shrineId];
+    }
+    return density || currentDensity || null;
+  }, [density, currentDensity, densityMap, currentDisplayShrine]);
+
   return (
     <div className="tourist-dashboard-root" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       {/* 1. HEADER & LIVE NAVIGATION */}
@@ -735,10 +767,11 @@ export default function TouristDashboard({
             {/* LIVE CROWD CARD & ML PREDICTIONS */}
             <LiveCrowdCard
               site={currentDisplayShrine}
-              density={density}
-              forecast={forecast}
+              density={effectiveDensity}
+              forecast={forecast || currentForecast}
               current24hForecast={current24hForecast}
-              queueForecast={currentQueueForecast}
+              queueForecast={currentQueueForecast || currentForecast || forecast}
+              prediction={currentPrediction}
             />
           </section>
         )}

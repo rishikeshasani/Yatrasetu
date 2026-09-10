@@ -347,7 +347,33 @@ export const MOCK_DENSITY = {
     "occupancy_percentage": 48.0,
     "status": "NORMAL",
     "last_updated": "Just now"
-  }
+  },
+  // Canonical TS001 - TS025 Direct Index Mappings
+  "TS001": { "site_id": "TS001", "site_name": "Kedarnath Temple", "people_count": 11336, "occupancy_percentage": 87.2, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS002": { "site_id": "TS002", "site_name": "Badrinath Temple", "people_count": 7680, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS003": { "site_id": "TS003", "site_name": "Kashi Vishwanath Temple", "people_count": 112800, "occupancy_percentage": 94.0, "status": "CRITICAL", "last_updated": "Live Telemetry" },
+  "TS004": { "site_id": "TS004", "site_name": "Shri Ram Janmabhoomi Mandir", "people_count": 72000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS005": { "site_id": "TS005", "site_name": "Shri Mata Vaishno Devi Shrine", "people_count": 24000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS006": { "site_id": "TS006", "site_name": "Tirumala Venkateswara Temple", "people_count": 40800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS007": { "site_id": "TS007", "site_name": "Shree Jagannath Temple", "people_count": 43200, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS008": { "site_id": "TS008", "site_name": "Mahakaleshwar Jyotirlinga Temple", "people_count": 36000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS009": { "site_id": "TS009", "site_name": "Golden Temple (Sri Harmandir Sahib)", "people_count": 48000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS010": { "site_id": "TS010", "site_name": "Meenakshi Sundareswarar Temple", "people_count": 21600, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS011": { "site_id": "TS011", "site_name": "Ramanathaswamy Temple", "people_count": 24000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS012": { "site_id": "TS012", "site_name": "Shree Somnath Jyotirlinga Temple", "people_count": 28800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS013": { "site_id": "TS013", "site_name": "Shri Saibaba Sansthan Temple", "people_count": 38400, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS014": { "site_id": "TS014", "site_name": "Sabarimala Sree Dharma Sastha Temple", "people_count": 42000, "occupancy_percentage": 52.5, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS015": { "site_id": "TS015", "site_name": "Har Ki Pauri Ghat & Mansa Devi", "people_count": 82000, "occupancy_percentage": 54.6, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS016": { "site_id": "TS016", "site_name": "Triveni Sangam & Kumbh Mela Grounds", "people_count": 110000, "occupancy_percentage": 55.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS017": { "site_id": "TS017", "site_name": "Bankey Bihari Temple & Prem Mandir", "people_count": 46000, "occupancy_percentage": 65.7, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS018": { "site_id": "TS018", "site_name": "Taj Mahal & Agra Fort Corridor", "people_count": 32000, "occupancy_percentage": 45.7, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS019": { "site_id": "TS019", "site_name": "Amber Palace & Hawa Mahal Complex", "people_count": 26000, "occupancy_percentage": 47.2, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS020": { "site_id": "TS020", "site_name": "Qutub Minar & Mehrauli Complex", "people_count": 10560, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS021": { "site_id": "TS021", "site_name": "Ajanta and Ellora Rock-Cut Caves", "people_count": 8640, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS022": { "site_id": "TS022", "site_name": "Group of Monuments at Hampi", "people_count": 9600, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS023": { "site_id": "TS023", "site_name": "Pangong Tso Lake & Hemis Monastery", "people_count": 2880, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS024": { "site_id": "TS024", "site_name": "Rohtang Pass & Solang Valley Zone", "people_count": 576, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS025": { "site_id": "TS025", "site_name": "Maa Kamakhya Devalaya", "people_count": 16800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" }
 };
 
 /** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd forecast dataset. Real requests query live backend crowd forecast. */

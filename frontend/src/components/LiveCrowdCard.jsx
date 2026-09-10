@@ -49,52 +49,68 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
   const relativeSurge = density?.relative_surge_alert;
   const isSurgeActive = Boolean(relativeSurge?.is_relative_surge);
 
-  const getStatusTheme = (s) => {
-    switch (s) {
-      case 'CRITICAL':
-        return {
-          badge: 'status-critical',
-          color: '#DC2626',
-          bg: '#FEF2F2',
-          border: '#FECACA',
-          icon: '🚨',
-          label: 'CRITICAL CONGESTION',
-          desc: 'High bottleneck risk. Temple gate pacing and alternate routes active.'
-        };
-      case 'HIGH':
-        return {
-          badge: 'status-high',
-          color: '#EA580C',
-          bg: '#FFF7ED',
-          border: '#FFEDD5',
-          icon: '⚠️',
-          label: 'HIGH DENSITY',
-          desc: 'Queue moving with delays. Consider recommended off-peak alternative spots.'
-        };
-      case 'MODERATE':
-        return {
-          badge: 'status-moderate',
-          color: '#D97706',
-          bg: '#FFFBEB',
-          border: '#FEF3C7',
-          icon: '⚡',
-          label: 'MODERATE RUSH',
-          desc: 'Steady darshan flow with moderate waiting lines.'
-        };
-      default:
-        return {
-          badge: 'status-normal',
-          color: '#059669',
-          bg: '#ECFDF5',
-          border: '#A7F3D0',
-          icon: '✅',
-          label: 'NORMAL / OPTIMAL',
-          desc: 'Smooth queue flow. Excellent time for peaceful darshan and rituals.'
-        };
+  const getQualitativeTheme = (occ, s) => {
+    if (occ >= 90 || s === 'CRITICAL') {
+      return {
+        level: 'Very High',
+        label: 'VERY HIGH',
+        gaugePercentage: Math.max(90, Math.min(100, occ || 95)),
+        stageIndex: 3,
+        badge: 'status-critical',
+        color: '#DC2626',
+        bg: '#FEF2F2',
+        border: '#FECACA',
+        icon: '🚨',
+        influxText: 'Very High Congestion / Surge',
+        desc: 'High bottleneck risk. Temple gate pacing and alternate routes active.'
+      };
     }
+    if (occ >= 70 || s === 'HIGH') {
+      return {
+        level: 'High',
+        label: 'HIGH',
+        gaugePercentage: Math.max(70, Math.min(89, occ || 78)),
+        stageIndex: 2,
+        badge: 'status-high',
+        color: '#EA580C',
+        bg: '#FFF7ED',
+        border: '#FFEDD5',
+        icon: '⚠️',
+        influxText: 'High Density Influx',
+        desc: 'Queue moving with delays. Consider recommended off-peak alternative spots.'
+      };
+    }
+    if (occ >= 40 || s === 'MODERATE') {
+      return {
+        level: 'Medium',
+        label: 'MEDIUM',
+        gaugePercentage: Math.max(40, Math.min(69, occ || 55)),
+        stageIndex: 1,
+        badge: 'status-moderate',
+        color: '#D97706',
+        bg: '#FFFBEB',
+        border: '#FEF3C7',
+        icon: '⚡',
+        influxText: 'Moderate Darshan Rush',
+        desc: 'Steady darshan flow with moderate waiting lines.'
+      };
+    }
+    return {
+      level: 'Low',
+      label: 'LOW',
+      gaugePercentage: Math.max(15, Math.min(39, occ || 25)),
+      stageIndex: 0,
+      badge: 'status-normal',
+      color: '#059669',
+      bg: '#ECFDF5',
+      border: '#A7F3D0',
+      icon: '✅',
+      influxText: 'Low Influx / Optimal Flow',
+      desc: 'Smooth queue flow. Excellent time for peaceful darshan and rituals.'
+    };
   };
 
-  const theme = getStatusTheme(status);
+  const theme = getQualitativeTheme(occupancy, status);
 
   return (
     <section className="live-crowd-section">
@@ -190,20 +206,20 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
 
       {/* 4. DUAL HERO METRICS: CROWD STATUS & WAIT TIME */}
       <div className="metrics-grid">
-        {/* Metric 1: Current Crowd Status */}
+        {/* Metric 1: Current Crowd Status (Qualitative: Low, Medium, High, Very High) */}
         <div className="metric-card occupancy-gauge-card" style={{ borderColor: theme.border }}>
           <div className="card-top-row">
             <div className="card-title-wrap">
               <span className="metric-header-title">CURRENT CROWD STATUS</span>
-              <span className="metric-sub-label">Live sanctum condition</span>
+              <span className="metric-sub-label">Live sanctum crowd level</span>
             </div>
             <span className={`status-pill-big ${theme.badge}`}>
-              {theme.icon} {theme.label}
+              {theme.icon} {theme.level}
             </span>
           </div>
 
           <div className="occupancy-display-box">
-            {/* Visual Crowd Flow Meter */}
+            {/* Visual Qualitative Crowd Flow Meter */}
             <div className="radial-meter-container">
               <svg className="radial-meter-svg" viewBox="0 0 120 120">
                 <circle
@@ -221,30 +237,128 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                   strokeWidth="10"
                   stroke={theme.color}
                   strokeDasharray={314}
-                  strokeDashoffset={314 - (314 * Math.min(Math.max(occupancy, 0), 100)) / 100}
+                  strokeDashoffset={314 - (314 * theme.gaugePercentage) / 100}
                 />
               </svg>
               <div className="radial-meter-text">
-                <span className="occupancy-pct-number" style={{ color: theme.color }}>
-                  {occupancy}%
+                <span
+                  className="occupancy-pct-number"
+                  style={{
+                    color: theme.color,
+                    fontSize: theme.level === 'Very High' ? '1.05rem' : '1.35rem',
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    lineHeight: 1.1
+                  }}
+                >
+                  {theme.level}
                 </span>
-                <span className="occupancy-pct-sub">{status}</span>
+                <span className="occupancy-pct-sub" style={{ fontSize: '0.65rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', marginTop: '3px' }}>
+                  Crowd Status
+                </span>
               </div>
             </div>
 
-            {/* Clear Authoritative Headcount and Status Details */}
+            {/* Qualitative Capacity & Dynamic Stepper Indicator */}
             <div className="headcount-details">
-              <div className="stat-box-highlight">
-                <span className="stat-highlight-num" style={{ color: theme.color }}>
-                  {peopleCount.toLocaleString()} / {capacity.toLocaleString()}
-                </span>
-                <span className="stat-highlight-label">Official Sanctum Capacity ({occupancy}%)</span>
+              <div
+                className="stat-box-highlight"
+                style={{
+                  background: theme.bg,
+                  border: `1.5px solid ${theme.border}`,
+                  borderRadius: '0.75rem',
+                  padding: '0.85rem 1rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.55rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Sanctum Capacity Level
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.82rem',
+                      fontWeight: 900,
+                      color: theme.color,
+                      background: '#FFFFFF',
+                      padding: '0.2rem 0.65rem',
+                      borderRadius: '999px',
+                      border: `1.5px solid ${theme.border}`,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+                    }}
+                  >
+                    {theme.icon} {theme.level}
+                  </span>
+                </div>
+
+                {/* Dynamic 4-Tier Qualitative Level Bar */}
+                <div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      gap: '5px',
+                      height: '10px',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      background: '#E2E8F0',
+                      padding: '2px'
+                    }}
+                  >
+                    {['Low', 'Medium', 'High', 'Very High'].map((lvl, idx) => {
+                      const isActive = idx <= theme.stageIndex;
+                      const isCurrent = idx === theme.stageIndex;
+                      const lvlColor =
+                        idx === 0 ? '#059669' : idx === 1 ? '#D97706' : idx === 2 ? '#EA580C' : '#DC2626';
+                      return (
+                        <div
+                          key={lvl}
+                          title={`Level: ${lvl}`}
+                          style={{
+                            height: '100%',
+                            borderRadius: '3px',
+                            backgroundColor: isActive ? lvlColor : '#CBD5E1',
+                            opacity: isActive ? 1 : 0.4,
+                            transition: 'all 0.5s ease',
+                            boxShadow: isCurrent ? `0 0 6px ${lvlColor}99` : 'none'
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(4, 1fr)',
+                      marginTop: '0.3rem',
+                      textAlign: 'center',
+                      fontSize: '0.68rem',
+                      fontWeight: 700
+                    }}
+                  >
+                    <span style={{ color: theme.stageIndex === 0 ? '#059669' : '#94A3B8' }}>Low</span>
+                    <span style={{ color: theme.stageIndex === 1 ? '#D97706' : '#94A3B8' }}>Medium</span>
+                    <span style={{ color: theme.stageIndex === 2 ? '#EA580C' : '#94A3B8' }}>High</span>
+                    <span style={{ color: theme.stageIndex === 3 ? '#DC2626' : '#94A3B8' }}>Very High</span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.76rem', color: '#475569', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>Sanctum Influx:</span>
+                  <strong style={{ color: theme.color }}>{theme.influxText}</strong>
+                </div>
               </div>
 
               <div className="stat-line">
                 <span className="stat-muted">Condition:</span>
                 <strong className="stat-bold" style={{ color: theme.color }}>
-                  {theme.icon} {status} ({occupancy}%)
+                  {theme.icon} {theme.level}
                 </strong>
               </div>
               <div className="stat-line">
@@ -445,11 +559,11 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                       }}
                     ></div>
                   </div>
-                  <strong className="ml-pct-label" style={{ color: itemColor }}>
-                    {item.occupancy_percentage}%
+                  <strong className="ml-pct-label" style={{ color: itemColor, fontSize: '0.75rem', fontWeight: 800 }}>
+                    {item.status === 'CRITICAL' ? 'Very High' : item.status === 'HIGH' ? 'High' : item.status === 'MODERATE' ? 'Medium' : 'Low'}
                   </strong>
-                  <span className="ml-count-label" style={{ fontWeight: 600, color: itemColor }}>
-                    {item.status}
+                  <span className="ml-count-label" style={{ fontWeight: 600, color: '#64748B', fontSize: '0.68rem' }}>
+                    {item.occupancy_percentage}% Influx
                   </span>
                 </div>
               );
