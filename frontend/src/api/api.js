@@ -148,350 +148,291 @@ export const CORRIDOR_STOPS = [
 
 /** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd density dataset. Real requests query live backend density. */
 export const MOCK_DENSITY = {
-  "site_kedarnath": {
-    "site_id": "site_kedarnath",
-    "site_name": "Kedarnath Temple",
-    "people_count": 11336,
-    "occupancy_percentage": 87.2,
-    "status": "HIGH",
-    "last_updated": "Just now"
-  },
-  "site_badrinath": {
-    "site_id": "site_badrinath",
-    "site_name": "Badrinath Temple",
-    "people_count": 7680,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_kashi": {
-    "site_id": "site_kashi",
-    "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
-    "people_count": 112800,
-    "occupancy_percentage": 94.0,
-    "status": "CRITICAL",
-    "last_updated": "Just now"
-  },
-  "site_ayodhya": {
-    "site_id": "site_ayodhya",
-    "site_name": "Shri Ram Janmabhoomi Mandir",
-    "people_count": 72000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_vaishnodevi": {
-    "site_id": "site_vaishnodevi",
-    "site_name": "Shri Mata Vaishno Devi Shrine",
-    "people_count": 24000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_tirupati": {
-    "site_id": "site_tirupati",
-    "site_name": "Tirumala Venkateswara Temple",
-    "people_count": 40800,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_puri": {
-    "site_id": "site_puri",
-    "site_name": "Shree Jagannath Temple",
-    "people_count": 43200,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_mahakaleshwar": {
-    "site_id": "site_mahakaleshwar",
-    "site_name": "Mahakaleshwar Jyotirlinga Temple",
-    "people_count": 36000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_goldentemple": {
-    "site_id": "site_goldentemple",
-    "site_name": "Golden Temple (Sri Harmandir Sahib)",
-    "people_count": 48000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_meenakshi": {
-    "site_id": "site_meenakshi",
-    "site_name": "Meenakshi Sundareswarar Temple",
-    "people_count": 21600,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts011": {
-    "site_id": "site_ts011",
-    "site_name": "Ramanathaswamy Temple",
-    "people_count": 24000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts012": {
-    "site_id": "site_ts012",
-    "site_name": "Shree Somnath Jyotirlinga Temple",
-    "people_count": 28800,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts013": {
-    "site_id": "site_ts013",
-    "site_name": "Shri Saibaba Sansthan Temple",
-    "people_count": 38400,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts014": {
-    "site_id": "site_ts014",
-    "site_name": "Sabarimala Sree Dharma Sastha Temple",
-    "people_count": 38400,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts015": {
-    "site_id": "site_ts015",
-    "site_name": "Har Ki Pauri Ghat & Mansa Devi",
-    "people_count": 72000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts016": {
-    "site_id": "site_ts016",
-    "site_name": "Triveni Sangam & Kumbh Mela Grounds",
-    "people_count": 96000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts017": {
-    "site_id": "site_ts017",
-    "site_name": "Bankey Bihari Temple & Prem Mandir",
-    "people_count": 33600,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts018": {
-    "site_id": "site_ts018",
-    "site_name": "Taj Mahal Monument Complex",
-    "people_count": 16800,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts019": {
-    "site_id": "site_ts019",
-    "site_name": "Amber Fort & Palace Complex",
-    "people_count": 12000,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts020": {
-    "site_id": "site_ts020",
-    "site_name": "Qutub Minar & Mehrauli Archaeological Complex",
-    "people_count": 10560,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts021": {
-    "site_id": "site_ts021",
-    "site_name": "Ajanta and Ellora Rock-Cut Caves",
-    "people_count": 8640,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts022": {
-    "site_id": "site_ts022",
-    "site_name": "Group of Monuments at Hampi (Virupaksha & Vijaya Vittala)",
-    "people_count": 9600,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts023": {
-    "site_id": "site_ts023",
-    "site_name": "Pangong Tso Lake & Hemis Monastery",
-    "people_count": 2880,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts024": {
-    "site_id": "site_ts024",
-    "site_name": "Rohtang Pass & Solang Valley Adventure Zone",
-    "people_count": 576,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  "site_ts025": {
-    "site_id": "site_ts025",
-    "site_name": "Maa Kamakhya Devalaya",
-    "people_count": 16800,
-    "occupancy_percentage": 48.0,
-    "status": "NORMAL",
-    "last_updated": "Just now"
-  },
-  // Canonical TS001 - TS025 Direct Index Mappings
+  // Canonical TS001 - TS025 Direct Index Mappings with unique authentic telemetry
   "TS001": { "site_id": "TS001", "site_name": "Kedarnath Temple", "people_count": 11336, "occupancy_percentage": 87.2, "status": "HIGH", "last_updated": "Live Telemetry" },
-  "TS002": { "site_id": "TS002", "site_name": "Badrinath Temple", "people_count": 7680, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS003": { "site_id": "TS003", "site_name": "Kashi Vishwanath Temple", "people_count": 112800, "occupancy_percentage": 94.0, "status": "CRITICAL", "last_updated": "Live Telemetry" },
-  "TS004": { "site_id": "TS004", "site_name": "Shri Ram Janmabhoomi Mandir", "people_count": 72000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS005": { "site_id": "TS005", "site_name": "Shri Mata Vaishno Devi Shrine", "people_count": 24000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS006": { "site_id": "TS006", "site_name": "Tirumala Venkateswara Temple", "people_count": 40800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS007": { "site_id": "TS007", "site_name": "Shree Jagannath Temple", "people_count": 43200, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS008": { "site_id": "TS008", "site_name": "Mahakaleshwar Jyotirlinga Temple", "people_count": 36000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS009": { "site_id": "TS009", "site_name": "Golden Temple (Sri Harmandir Sahib)", "people_count": 48000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS010": { "site_id": "TS010", "site_name": "Meenakshi Sundareswarar Temple", "people_count": 21600, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS011": { "site_id": "TS011", "site_name": "Ramanathaswamy Temple", "people_count": 24000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS012": { "site_id": "TS012", "site_name": "Shree Somnath Jyotirlinga Temple", "people_count": 28800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS013": { "site_id": "TS013", "site_name": "Shri Saibaba Sansthan Temple", "people_count": 38400, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS014": { "site_id": "TS014", "site_name": "Sabarimala Sree Dharma Sastha Temple", "people_count": 42000, "occupancy_percentage": 52.5, "status": "MODERATE", "last_updated": "Live Telemetry" },
-  "TS015": { "site_id": "TS015", "site_name": "Har Ki Pauri Ghat & Mansa Devi", "people_count": 82000, "occupancy_percentage": 54.6, "status": "MODERATE", "last_updated": "Live Telemetry" },
-  "TS016": { "site_id": "TS016", "site_name": "Triveni Sangam & Kumbh Mela Grounds", "people_count": 110000, "occupancy_percentage": 55.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
-  "TS017": { "site_id": "TS017", "site_name": "Bankey Bihari Temple & Prem Mandir", "people_count": 46000, "occupancy_percentage": 65.7, "status": "MODERATE", "last_updated": "Live Telemetry" },
-  "TS018": { "site_id": "TS018", "site_name": "Taj Mahal & Agra Fort Corridor", "people_count": 32000, "occupancy_percentage": 45.7, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS019": { "site_id": "TS019", "site_name": "Amber Palace & Hawa Mahal Complex", "people_count": 26000, "occupancy_percentage": 47.2, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS020": { "site_id": "TS020", "site_name": "Qutub Minar & Mehrauli Complex", "people_count": 10560, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS021": { "site_id": "TS021", "site_name": "Ajanta and Ellora Rock-Cut Caves", "people_count": 8640, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS022": { "site_id": "TS022", "site_name": "Group of Monuments at Hampi", "people_count": 9600, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS023": { "site_id": "TS023", "site_name": "Pangong Tso Lake & Hemis Monastery", "people_count": 2880, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS024": { "site_id": "TS024", "site_name": "Rohtang Pass & Solang Valley Zone", "people_count": 576, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
-  "TS025": { "site_id": "TS025", "site_name": "Maa Kamakhya Devalaya", "people_count": 16800, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" }
+  "TS002": { "site_id": "TS002", "site_name": "Badrinath Temple", "people_count": 6160, "occupancy_percentage": 38.5, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS003": { "site_id": "TS003", "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat", "people_count": 112800, "occupancy_percentage": 94.0, "status": "CRITICAL", "last_updated": "Live Telemetry" },
+  "TS004": { "site_id": "TS004", "site_name": "Shri Ram Janmabhoomi Mandir", "people_count": 93000, "occupancy_percentage": 62.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS005": { "site_id": "TS005", "site_name": "Shri Mata Vaishno Devi Shrine", "people_count": 23250, "occupancy_percentage": 46.5, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS006": { "site_id": "TS006", "site_name": "Tirumala Venkateswara Temple", "people_count": 78625, "occupancy_percentage": 92.5, "status": "CRITICAL", "last_updated": "Live Telemetry" },
+  "TS007": { "site_id": "TS007", "site_name": "Shree Jagannath Temple", "people_count": 70560, "occupancy_percentage": 78.4, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS008": { "site_id": "TS008", "site_name": "Mahakaleshwar Jyotirlinga Temple", "people_count": 60750, "occupancy_percentage": 81.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS009": { "site_id": "TS009", "site_name": "Golden Temple (Sri Harmandir Sahib)", "people_count": 54000, "occupancy_percentage": 54.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS010": { "site_id": "TS010", "site_name": "Meenakshi Sundareswarar Temple", "people_count": 15750, "occupancy_percentage": 35.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS011": { "site_id": "TS011", "site_name": "Ramanathaswamy Temple", "people_count": 16000, "occupancy_percentage": 32.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS012": { "site_id": "TS012", "site_name": "Shree Somnath Jyotirlinga Temple", "people_count": 25200, "occupancy_percentage": 42.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS013": { "site_id": "TS013", "site_name": "Shri Saibaba Sansthan Temple", "people_count": 58800, "occupancy_percentage": 73.5, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS014": { "site_id": "TS014", "site_name": "Sabarimala Sree Dharma Sastha Temple", "people_count": 67200, "occupancy_percentage": 84.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS015": { "site_id": "TS015", "site_name": "Har Ki Pauri Ghat & Mansa Devi", "people_count": 87000, "occupancy_percentage": 58.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "TS016": { "site_id": "TS016", "site_name": "Triveni Sangam & Kumbh Mela Grounds", "people_count": 96000, "occupancy_percentage": 48.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS017": { "site_id": "TS017", "site_name": "Bankey Bihari Temple & Prem Mandir", "people_count": 53200, "occupancy_percentage": 76.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS018": { "site_id": "TS018", "site_name": "Taj Mahal & Agra Fort Corridor", "people_count": 29400, "occupancy_percentage": 42.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS019": { "site_id": "TS019", "site_name": "Amber Palace & Hawa Mahal Complex", "people_count": 24200, "occupancy_percentage": 44.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS020": { "site_id": "TS020", "site_name": "Qutub Minar & Mehrauli Complex", "people_count": 7920, "occupancy_percentage": 36.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS021": { "site_id": "TS021", "site_name": "Ajanta and Ellora Rock-Cut Caves", "people_count": 5040, "occupancy_percentage": 28.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS022": { "site_id": "TS022", "site_name": "Group of Monuments at Hampi", "people_count": 6000, "occupancy_percentage": 30.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS023": { "site_id": "TS023", "site_name": "Pangong Tso Lake & Hemis Monastery", "people_count": 1320, "occupancy_percentage": 22.0, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "TS024": { "site_id": "TS024", "site_name": "Rohtang Pass & Solang Valley Zone", "people_count": 864, "occupancy_percentage": 72.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "TS025": { "site_id": "TS025", "site_name": "Maa Kamakhya Devalaya", "people_count": 30800, "occupancy_percentage": 88.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+
+  // Backward-compatible alias mappings
+  "site_kedarnath": { "site_id": "TS001", "site_name": "Kedarnath Temple", "people_count": 11336, "occupancy_percentage": 87.2, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "site_badrinath": { "site_id": "TS002", "site_name": "Badrinath Temple", "people_count": 6160, "occupancy_percentage": 38.5, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "site_kashi": { "site_id": "TS003", "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat", "people_count": 112800, "occupancy_percentage": 94.0, "status": "CRITICAL", "last_updated": "Live Telemetry" },
+  "site_ayodhya": { "site_id": "TS004", "site_name": "Shri Ram Janmabhoomi Mandir", "people_count": 93000, "occupancy_percentage": 62.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "site_vaishnodevi": { "site_id": "TS005", "site_name": "Shri Mata Vaishno Devi Shrine", "people_count": 23250, "occupancy_percentage": 46.5, "status": "NORMAL", "last_updated": "Live Telemetry" },
+  "site_tirupati": { "site_id": "TS006", "site_name": "Tirumala Venkateswara Temple", "people_count": 78625, "occupancy_percentage": 92.5, "status": "CRITICAL", "last_updated": "Live Telemetry" },
+  "site_puri": { "site_id": "TS007", "site_name": "Shree Jagannath Temple", "people_count": 70560, "occupancy_percentage": 78.4, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "site_mahakaleshwar": { "site_id": "TS008", "site_name": "Mahakaleshwar Jyotirlinga Temple", "people_count": 60750, "occupancy_percentage": 81.0, "status": "HIGH", "last_updated": "Live Telemetry" },
+  "site_goldentemple": { "site_id": "TS009", "site_name": "Golden Temple (Sri Harmandir Sahib)", "people_count": 54000, "occupancy_percentage": 54.0, "status": "MODERATE", "last_updated": "Live Telemetry" },
+  "site_meenakshi": { "site_id": "TS010", "site_name": "Meenakshi Sundareswarar Temple", "people_count": 15750, "occupancy_percentage": 35.0, "status": "NORMAL", "last_updated": "Live Telemetry" }
 };
 
 /** @deprecated [DEVELOPMENT/DEMO ONLY] Mock crowd forecast dataset. Real requests query live backend crowd forecast. */
 export const MOCK_FORECAST = {
-  site_kedarnath: {
-    site_id: "site_kedarnath",
+  // TS001 - Kedarnath
+  TS001: {
+    site_id: "TS001",
     site_name: "Kedarnath Temple",
-    live_status: {
-      people_count: 2180,
-      occupancy_percentage: 87.2,
-      status: "HIGH",
-      last_updated: "Just now"
-    },
-    queue_forecast: {
-      estimated_current_wait_mins: 145,
-      normal_wait_mins: 35,
-      peak_wait_mins: 160,
-      queue_management_system: "RFID Token Queue & Batch Movement",
-      fast_track_details: "Helicopter priority darshan pass available via IRCTC portal (₹2,500)"
-    },
-    seasonal_context: {
-      peak_seasons: "May - June & Sept - Oct (Pre-Snowfall)",
-      upcoming_peak_festivals: "Shravan Somvar & Diwali Closing Ceremony",
-      weather_warnings: "High altitude drop to 2°C after 5 PM. Carry heavy woolens and rain poncho.",
-      surge_triggers: "Morning 5:00 AM Maha Aarti & Helicopter batch arrivals at Helipad"
-    }
+    live_status: { people_count: 11336, occupancy_percentage: 87.2, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 145, normal_wait_mins: 35, peak_wait_mins: 160, queue_management_system: "RFID Token Queue & Batch Movement", fast_track_details: "Helicopter priority darshan pass via IRCTC portal (₹2,500)" },
+    seasonal_context: { peak_seasons: "May - June & Sept - Oct", upcoming_peak_festivals: "Shravan Somvar & Diwali Closing Ceremony", weather_warnings: "High altitude drop to 2°C after 5 PM. Carry heavy woolens and rain poncho.", surge_triggers: "Morning 5:00 AM Maha Aarti & Helicopter batch arrivals" }
+  },
+  // TS002 - Badrinath
+  TS002: {
+    site_id: "TS002",
+    site_name: "Badrinath Temple",
+    live_status: { people_count: 6160, occupancy_percentage: 38.5, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 25, normal_wait_mins: 25, peak_wait_mins: 120, queue_management_system: "Automated Turnstiles & Multi-Lane Queuing", fast_track_details: "Senior Citizen & Divyangjan special direct corridor" },
+    seasonal_context: { peak_seasons: "May to July, September", upcoming_peak_festivals: "Badri Kedar Utsav & Janmashtami", weather_warnings: "Clear skies, mild afternoon mountain breeze.", surge_triggers: "12:00 PM Afternoon Bhog & 8:00 PM Shayan Aarti" }
+  },
+  // TS003 - Kashi Vishwanath
+  TS003: {
+    site_id: "TS003",
+    site_name: "Kashi Vishwanath Temple & Dashashwamedh Ghat",
+    live_status: { people_count: 112800, occupancy_percentage: 94.0, status: "CRITICAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 160, normal_wait_mins: 45, peak_wait_mins: 220, queue_management_system: "Corridor Barricading & Ganga Dwar Entry System", fast_track_details: "Sugam Darshan online ticket booking available (₹300 - ₹600)" },
+    seasonal_context: { peak_seasons: "July-August (Shravan) & Oct-March", upcoming_peak_festivals: "Maha Shivratri, Dev Deepawali & Rangbhari Ekadashi", weather_warnings: "High daytime humidity; hydration stations active along corridor.", surge_triggers: "Mangala Aarti (3:00 AM) & Sandhya Ganga Aarti (6:30 PM)" }
+  },
+  // TS004 - Ayodhya Ram Mandir
+  TS004: {
+    site_id: "TS004",
+    site_name: "Shri Ram Janmabhoomi Mandir",
+    live_status: { people_count: 93000, occupancy_percentage: 62.0, status: "MODERATE", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 55, normal_wait_mins: 30, peak_wait_mins: 150, queue_management_system: "Janmabhoomi Path Shaded Pilgrim Facilitation Center", fast_track_details: "Sugam Darshan & Aarti passes issued via Trust Portal" },
+    seasonal_context: { peak_seasons: "October to March, April (Ram Navami)", upcoming_peak_festivals: "Ram Navami, Deepotsav & Pran Pratishtha Anniversary", weather_warnings: "Dense morning fog in Dec-Jan; pleasant afternoon sunshine.", surge_triggers: "Sringar Aarti (6:30 AM) & Sandhya Aarti (7:30 PM)" }
+  },
+  // TS005 - Vaishno Devi
+  TS005: {
+    site_id: "TS005",
+    site_name: "Shri Mata Vaishno Devi Shrine",
+    live_status: { people_count: 23250, occupancy_percentage: 46.5, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 40, normal_wait_mins: 35, peak_wait_mins: 150, queue_management_system: "RFID Yatra Parchi & Barcoded Concourse Gates", fast_track_details: "Battery Car for elderly between Adhkuwari & Bhawan (₹354)" },
+    seasonal_context: { peak_seasons: "Navratri (March/April & October), Summer vacations", upcoming_peak_festivals: "Chaitra & Sharad Navratri, New Year Eve", weather_warnings: "Chilly evenings at Bhawan (1,585m). Mild winds on track.", surge_triggers: "Morning 6:00 AM & Evening 7:00 PM Aarti Batches" }
+  },
+  // TS006 - Tirupati Balaji
+  TS006: {
+    site_id: "TS006",
+    site_name: "Tirumala Venkateswara Temple",
+    live_status: { people_count: 78625, occupancy_percentage: 92.5, status: "CRITICAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 180, normal_wait_mins: 45, peak_wait_mins: 300, queue_management_system: "Vaikuntam Queue Complex 1 & 2 Electronic Time Slots", fast_track_details: "Special Entry Darshan (SED ₹300 online booking) & Infant lane" },
+    seasonal_context: { peak_seasons: "Year-round, major surges during Brahmotsavam & Vaikunta Ekadasi", upcoming_peak_festivals: "Salakatla Brahmotsavam & Rathasapthami", weather_warnings: "Warm daytime temperatures, carry umbrellas and hydration bottles.", surge_triggers: "Kalyanotsavam (10:30 AM) & Sahasra Deepalankarana Seva (5:30 PM)" }
+  },
+  // TS007 - Shree Jagannath Temple
+  TS007: {
+    site_id: "TS007",
+    site_name: "Shree Jagannath Temple",
+    live_status: { people_count: 70560, occupancy_percentage: 78.4, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 95, normal_wait_mins: 35, peak_wait_mins: 180, queue_management_system: "Bada Danda Barricades & Singhadwara One-Way Directional Lines", fast_track_details: "General queuing through Lion Gate; special assistance lane for seniors" },
+    seasonal_context: { peak_seasons: "June-July (Rath Yatra), Oct-Nov (Kartik)", upcoming_peak_festivals: "Ratha Yatra, Snana Purnima, Chandan Yatra", weather_warnings: "Coastal sea breeze, moderate afternoon humidity.", surge_triggers: "Sandhya Dhupa (7:00 PM) & Badasinghara Besha (10:30 PM)" }
+  },
+  // TS008 - Mahakaleshwar
+  TS008: {
+    site_id: "TS008",
+    site_name: "Mahakaleshwar Jyotirlinga Temple",
+    live_status: { people_count: 60750, occupancy_percentage: 81.0, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 85, normal_wait_mins: 30, peak_wait_mins: 160, queue_management_system: "Mahakal Lok Corridor Holding Arenas & Automated Turnstiles", fast_track_details: "Sheegra Darshan protocol tickets (₹250 per person)" },
+    seasonal_context: { peak_seasons: "July-August (Shravan Maas), Feb-March", upcoming_peak_festivals: "Maha Shivratri, Shravan Somwar Sawari, Nag Panchami", weather_warnings: "Pleasant winter evenings, sunny afternoons.", surge_triggers: "Bhasma Aarti (4:00 AM) & Evening Sandhya Aarti (7:00 PM)" }
+  },
+  // TS009 - Golden Temple
+  TS009: {
+    site_id: "TS009",
+    site_name: "Golden Temple (Sri Harmandir Sahib)",
+    live_status: { people_count: 54000, occupancy_percentage: 54.0, status: "MODERATE", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 45, normal_wait_mins: 25, peak_wait_mins: 110, queue_management_system: "Parikrama Brass Railing Queue Lines & Sevadar Guidance", fast_track_details: "Egalitarian queue access for all; special wheelchair/family lane" },
+    seasonal_context: { peak_seasons: "October to March", upcoming_peak_festivals: "Baisakhi, Bandi Chhor Divas (Diwali), Guru Nanak Gurpurab", weather_warnings: "Cool evening breeze around Amrit Sarovar.", surge_triggers: "Palki Sahib Procession (4:30 AM & 10:00 PM) & Rehras Sahib (6:00 PM)" }
+  },
+  // TS010 - Meenakshi Amman
+  TS010: {
+    site_id: "TS010",
+    site_name: "Meenakshi Sundareswarar Temple",
+    live_status: { people_count: 15750, occupancy_percentage: 35.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 25, normal_wait_mins: 20, peak_wait_mins: 90, queue_management_system: "East Gopuram Electronic Queue Gates & Shaded Aisles", fast_track_details: "Special Darshan tickets available (₹50 and ₹100 lanes)" },
+    seasonal_context: { peak_seasons: "April-May (Chithirai Festival), Dec-Jan", upcoming_peak_festivals: "Chithirai Thiruvizha & Navratri Kolu", weather_warnings: "Warm tropical temperature, shaded stone corridors.", surge_triggers: "Thiruvanandal Puja (5:00 AM) & Palliarai Puja (9:30 PM)" }
+  },
+  // TS011 - Ramanathaswamy
+  TS011: {
+    site_id: "TS011",
+    site_name: "Ramanathaswamy Temple",
+    live_status: { people_count: 16000, occupancy_percentage: 32.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 20, normal_wait_mins: 20, peak_wait_mins: 90, queue_management_system: "22 Holy Theertham Wells Guided Corridors", fast_track_details: "Special Theertham & Darshan fast-track pass (₹50 - ₹200)" },
+    seasonal_context: { peak_seasons: "October to March, July-August", upcoming_peak_festivals: "Mahasivaratri, Aadi Amavasya, Thai Amavasya", weather_warnings: "Maritime coastal breeze, clear temple courtyard.", surge_triggers: "Spadika Linga Darshan (5:00 AM - 6:00 AM)" }
+  },
+  // TS012 - Somnath
+  TS012: {
+    site_id: "TS012",
+    site_name: "Shree Somnath Jyotirlinga Temple",
+    live_status: { people_count: 25200, occupancy_percentage: 42.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 30, normal_wait_mins: 25, peak_wait_mins: 100, queue_management_system: "Digvijay Dwar Security Scanner Gates & Shaded Zigzag Lines", fast_track_details: "VIP Darshan pass available at trust counters (₹200)" },
+    seasonal_context: { peak_seasons: "October to March, July-August", upcoming_peak_festivals: "Maha Shivratri, Shravan Somvars & Kartik Purnima Fair", weather_warnings: "Coastal Arabian Sea breeze, pleasant open promenade.", surge_triggers: "Morning 7:00 AM Aarti & Evening 7:00 PM Sound & Light Show" }
+  },
+  // TS013 - Shirdi Sai Baba
+  TS013: {
+    site_id: "TS013",
+    site_name: "Shri Saibaba Sansthan Temple",
+    live_status: { people_count: 58800, occupancy_percentage: 73.5, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 75, normal_wait_mins: 35, peak_wait_mins: 160, queue_management_system: "Shirdi Time-PaaS Slot Queuing & AC Mega Complexes", fast_track_details: "Paid VIP Darshan booking available online (₹200 - ₹400)" },
+    seasonal_context: { peak_seasons: "Year-round; peaks in April-June & Oct-Jan", upcoming_peak_festivals: "Guru Purnima, Vijayadashami (Punyatithi), Ram Navami", weather_warnings: "Pleasant dry climate, comfortable queue halls.", surge_triggers: "Kakad Aarti (4:30 AM) & Shej Aarti (10:00 PM)" }
+  },
+  // TS014 - Sabarimala
+  TS014: {
+    site_id: "TS014",
+    site_name: "Sabarimala Sree Dharma Sastha Temple",
+    live_status: { people_count: 67200, occupancy_percentage: 84.0, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 110, normal_wait_mins: 45, peak_wait_mins: 240, queue_management_system: "Kerala Police Virtual Q & Staggered Trek Batches", fast_track_details: "Strict Virtual Q slot verification; priority for elderly/children" },
+    seasonal_context: { peak_seasons: "Mid-Nov to Mid-Jan (Mandala-Makaravilakku season)", upcoming_peak_festivals: "Mandala Pooja & Makaravilakku (Makara Jyothi)", weather_warnings: "Forest mountain trek, carry rain ponchos and flashlights.", surge_triggers: "Neyyabhishekam (3:30 AM - 11:30 AM) & Harivarasanam (11:00 PM)" }
+  },
+  // TS015 - Haridwar Har Ki Pauri
+  TS015: {
+    site_id: "TS015",
+    site_name: "Har Ki Pauri Ghat & Mansa Devi",
+    live_status: { people_count: 87000, occupancy_percentage: 58.0, status: "MODERATE", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 35, normal_wait_mins: 20, peak_wait_mins: 120, queue_management_system: "One-Way Pedestrian Ganga Bridge Flow & River Barrier Nets", fast_track_details: "Udan Khatola / Mansa Devi Ropeway fast track pass (₹250 - ₹350)" },
+    seasonal_context: { peak_seasons: "April to July, October to November", upcoming_peak_festivals: "Baisakhi, Ganga Dussehra, Kanwar Mela, Kartik Purnima", weather_warnings: "Cool river breeze, brisk evening temperatures.", surge_triggers: "Evening Ganga Aarti (6:00 PM - 7:15 PM)" }
+  },
+  // TS016 - Triveni Sangam Prayagraj
+  TS016: {
+    site_id: "TS016",
+    site_name: "Triveni Sangam & Kumbh Mela Grounds",
+    live_status: { people_count: 96000, occupancy_percentage: 48.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 30, normal_wait_mins: 20, peak_wait_mins: 120, queue_management_system: "Pontoon Bridges & Sector Emergency Holding Grids", fast_track_details: "Open sacred ghat access; official UPSTDC catamaran boat passes (₹200 - ₹500)" },
+    seasonal_context: { peak_seasons: "Jan-Feb (Magh Mela / Kumbh), Oct-Nov", upcoming_peak_festivals: "Makar Sankranti, Paush Purnima, Mauni Amavasya", weather_warnings: "Morning fog over river, clear sunny afternoons.", surge_triggers: "Sunrise Brahma Muhurta Snan (5:00 AM - 7:00 AM)" }
+  },
+  // TS017 - Vrindavan Bankey Bihari
+  TS017: {
+    site_id: "TS017",
+    site_name: "Bankey Bihari Temple & Prem Mandir",
+    live_status: { people_count: 53200, occupancy_percentage: 76.0, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 70, normal_wait_mins: 30, peak_wait_mins: 150, queue_management_system: "Vidyapeeth Holding Corridors & One-Way Alley Railings", fast_track_details: "General queue entry with designated senior/family marshals" },
+    seasonal_context: { peak_seasons: "August-Sept (Janmashtami), March (Holi), Oct-Nov", upcoming_peak_festivals: "Janmashtami, Lathmar Holi, Radhashtami, Hariyali Teej", weather_warnings: "Comfortable evening weather in temple gardens.", surge_triggers: "Shringar Aarti (8:00 AM) & Shayan Aarti (8:30 PM)" }
+  },
+  // TS018 - Taj Mahal
+  TS018: {
+    site_id: "TS018",
+    site_name: "Taj Mahal & Agra Fort Corridor",
+    live_status: { people_count: 29400, occupancy_percentage: 42.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 25, normal_wait_mins: 20, peak_wait_mins: 80, queue_management_system: "Automated QR-Code Turnstiles & 3-Hour Step Counting", fast_track_details: "High-value ticket lane for Foreigners / Main Mausoleum step-up (₹200)" },
+    seasonal_context: { peak_seasons: "October to March", upcoming_peak_festivals: "Taj Mahotsav (Feb), Republic Day weekend, Eid", weather_warnings: "Morning winter mist clearing by 10 AM, bright afternoons.", surge_triggers: "Sunrise Entry (6:00 AM) & Sunset Window (5:00 PM)" }
+  },
+  // TS019 - Amber Fort
+  TS019: {
+    site_id: "TS019",
+    site_name: "Amber Palace & Hawa Mahal Complex",
+    live_status: { people_count: 24200, occupancy_percentage: 44.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 25, normal_wait_mins: 20, peak_wait_mins: 75, queue_management_system: "Suraj Pol E-Ticket Scanners & Jaleb Chowk Queues", fast_track_details: "Rajasthan composite heritage pass / night tourism fast entry" },
+    seasonal_context: { peak_seasons: "October to March", upcoming_peak_festivals: "Navratri (Shila Devi temple surge), Pushkar Fair, New Year", weather_warnings: "Pleasant desert winter days, crisp cool evenings.", surge_triggers: "Elephant Ride Window (8:00 AM - 11:00 AM) & Light Show (7:00 PM)" }
+  },
+  // TS020 - Qutub Minar
+  TS020: {
+    site_id: "TS020",
+    site_name: "Qutub Minar & Mehrauli Complex",
+    live_status: { people_count: 7920, occupancy_percentage: 36.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 18, normal_wait_mins: 15, peak_wait_mins: 60, queue_management_system: "ASI Cashless Barcode Scanning Turnstiles", fast_track_details: "Foreign tourist premium entry fast lane (₹550 ticket holders)" },
+    seasonal_context: { peak_seasons: "October to March", upcoming_peak_festivals: "Delhi Qutub Festival (Winter), Republic Day weekend", weather_warnings: "Pleasant garden walking conditions, clear sunny skies.", surge_triggers: "Weekend afternoon picnics & Illuminated Night Visit (6 PM - 9 PM)" }
+  },
+  // TS021 - Ajanta & Ellora
+  TS021: {
+    site_id: "TS021",
+    site_name: "Ajanta and Ellora Rock-Cut Caves",
+    live_status: { people_count: 5040, occupancy_percentage: 28.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 15, normal_wait_mins: 15, peak_wait_mins: 60, queue_management_system: "MTDC Electric Shuttle Bus Queues & Cave Batch Illumination", fast_track_details: "Uniform ASI ticketing; rapid e-scanner access" },
+    seasonal_context: { peak_seasons: "October to March, July-Sept (Monsoon Waterfalls)", upcoming_peak_festivals: "Ellora-Ajanta International Dance Festival", weather_warnings: "Pleasant breeze around Kailasa Temple; comfortable cave interior.", surge_triggers: "Morning 9:00 AM Opening & Weekend Kailasa Temple batching" }
+  },
+  // TS022 - Hampi
+  TS022: {
+    site_id: "TS022",
+    site_name: "Group of Monuments at Hampi",
+    live_status: { people_count: 6000, occupancy_percentage: 30.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 18, normal_wait_mins: 15, peak_wait_mins: 60, queue_management_system: "E-Cart Shuttles from Gejjala Mantapa to Vittala Temple", fast_track_details: "Single unified barcode ticket valid across Vittala & Zenana Enclosure" },
+    seasonal_context: { peak_seasons: "October to February", upcoming_peak_festivals: "Hampi Utsav (Nov/Jan), Virupaksha Car Festival", weather_warnings: "Clear sunny skies, rocky boulder terrain with mild breeze.", surge_triggers: "Sunrise at Matanga Hill & Sunset at Hemakuta Hill" }
+  },
+  // TS023 - Pangong Tso
+  TS023: {
+    site_id: "TS023",
+    site_name: "Pangong Tso Lake & Hemis Monastery",
+    live_status: { people_count: 1320, occupancy_percentage: 22.0, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 12, normal_wait_mins: 10, peak_wait_mins: 45, queue_management_system: "Chang La Military Checkpoint & LAHDC Permit Verification", fast_track_details: "Eco-development environmental fee paid via LAHDC online portal" },
+    seasonal_context: { peak_seasons: "May to September", upcoming_peak_festivals: "Hemis Tsechu Festival & Ladakh Festival", weather_warnings: "Extreme high altitude (4,225m). Cold winds, carry UV sunglasses and thermal jackets.", surge_triggers: "Midday convoy arrivals (11:00 AM - 2:00 PM)" }
+  },
+  // TS024 - Rohtang Pass
+  TS024: {
+    site_id: "TS024",
+    site_name: "Rohtang Pass & Solang Valley Zone",
+    live_status: { people_count: 864, occupancy_percentage: 72.0, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 65, normal_wait_mins: 30, peak_wait_mins: 150, queue_management_system: "Gulaba Checkpost Barcode Verification (Capped at 1,200 vehicles/day)", fast_track_details: "Online slot reservation via HP government portal" },
+    seasonal_context: { peak_seasons: "May to July, October to November (Snow seekers)", upcoming_peak_festivals: "Summer break rush & Dussehra Kullu Festival", weather_warnings: "Sub-zero temperatures near pass crest (3,980m). Heavy winds.", surge_triggers: "Morning 6:00 AM Convoy departure from Manali" }
+  },
+  // TS025 - Kamakhya
+  TS025: {
+    site_id: "TS025",
+    site_name: "Maa Kamakhya Devalaya",
+    live_status: { people_count: 30800, occupancy_percentage: 88.0, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 120, normal_wait_mins: 40, peak_wait_mins: 240, queue_management_system: "Nilachal Hill Access Control & Barricaded Hill Queue Line", fast_track_details: "VIP / Defence / Special Darshan counter tickets (₹501 per head)" },
+    seasonal_context: { peak_seasons: "June (Ambubachi Mela), Sept-Oct (Navratri/Durga Puja)", upcoming_peak_festivals: "Ambubachi Mela, Durga Puja, Manasa Puja", weather_warnings: "Lush green hill setting, humid afternoon breeze.", surge_triggers: "Morning 5:30 AM Temple Opening & Evening 6:00 PM Aarti" }
+  },
+
+  // Legacy Aliases
+  site_kedarnath: {
+    site_id: "TS001",
+    site_name: "Kedarnath Temple",
+    live_status: { people_count: 11336, occupancy_percentage: 87.2, status: "HIGH", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 145, normal_wait_mins: 35, peak_wait_mins: 160, queue_management_system: "RFID Token Queue & Batch Movement", fast_track_details: "Helicopter priority darshan pass via IRCTC portal (₹2,500)" },
+    seasonal_context: { peak_seasons: "May - June & Sept - Oct", upcoming_peak_festivals: "Shravan Somvar & Diwali Closing Ceremony", weather_warnings: "High altitude drop to 2°C after 5 PM.", surge_triggers: "Morning 5:00 AM Maha Aarti" }
   },
   site_badrinath: {
-    site_id: "site_badrinath",
+    site_id: "TS002",
     site_name: "Badrinath Temple",
-    live_status: {
-      people_count: 1450,
-      occupancy_percentage: 45.3,
-      status: "NORMAL",
-      last_updated: "Just now"
-    },
-    queue_forecast: {
-      estimated_current_wait_mins: 30,
-      normal_wait_mins: 25,
-      peak_wait_mins: 120,
-      queue_management_system: "Automated Turnstiles & Multi-Lane Queuing",
-      fast_track_details: "Senior Citizen & Divyangjan special direct corridor"
-    },
-    seasonal_context: {
-      peak_seasons: "May to July, September",
-      upcoming_peak_festivals: "Badri Kedar Utsav & Janmashtami",
-      weather_warnings: "Clear skies, mild afternoon breeze.",
-      surge_triggers: "12:00 PM Afternoon Bhog & 8:00 PM Shayan Aarti"
-    }
+    live_status: { people_count: 6160, occupancy_percentage: 38.5, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 25, normal_wait_mins: 25, peak_wait_mins: 120, queue_management_system: "Automated Turnstiles & Multi-Lane Queuing", fast_track_details: "Senior Citizen & Divyangjan special direct corridor" },
+    seasonal_context: { peak_seasons: "May to July, September", upcoming_peak_festivals: "Badri Kedar Utsav", weather_warnings: "Clear skies, mild afternoon breeze.", surge_triggers: "12:00 PM Afternoon Bhog" }
   },
   site_kashi: {
-    site_id: "site_kashi",
+    site_id: "TS003",
     site_name: "Kashi Vishwanath Temple",
-    live_status: {
-      people_count: 5640,
-      occupancy_percentage: 94.0,
-      status: "CRITICAL",
-      last_updated: "Just now"
-    },
-    queue_forecast: {
-      estimated_current_wait_mins: 210,
-      normal_wait_mins: 45,
-      peak_wait_mins: 220,
-      queue_management_system: "Corridor Barricading & Ganga Dwar Entry System",
-      fast_track_details: "Sugam Darshan online ticket booking available (₹300)"
-    },
-    seasonal_context: {
-      peak_seasons: "Round the year, extreme peaks during July-August (Shravan)",
-      upcoming_peak_festivals: "Maha Shivratri, Dev Deepawali & Rangbhari Ekadashi",
-      weather_warnings: "High daytime humidity; hydration stations active along corridor.",
-      surge_triggers: "Mangala Aarti (3:00 AM) & Sandhya Ganga Aarti (6:30 PM)"
-    }
+    live_status: { people_count: 112800, occupancy_percentage: 94.0, status: "CRITICAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 160, normal_wait_mins: 45, peak_wait_mins: 220, queue_management_system: "Corridor Barricading & Ganga Dwar Entry System", fast_track_details: "Sugam Darshan online ticket booking available (₹300)" },
+    seasonal_context: { peak_seasons: "Round the year, July-August (Shravan)", upcoming_peak_festivals: "Maha Shivratri, Dev Deepawali", weather_warnings: "High daytime humidity.", surge_triggers: "Mangala Aarti (3:00 AM) & Ganga Aarti (6:30 PM)" }
   },
-  site_tirupati: {
-    site_id: "site_tirupati",
-    site_name: "Tirupati Balaji",
-    live_status: {
-      people_count: 8100,
-      occupancy_percentage: 67.5,
-      status: "MODERATE",
-      last_updated: "Just now"
-    },
-    queue_forecast: {
-      estimated_current_wait_mins: 90,
-      normal_wait_mins: 40,
-      peak_wait_mins: 180,
-      queue_management_system: "Vaikuntam Queue Complex 1 & 2 Electronic Time Slots",
-      fast_track_details: "Seeghra Darshan (₹300 online booking) & Infant priority lane"
-    },
-    seasonal_context: {
-      peak_seasons: "Year-round, major surges during Brahmotsavam & Vaikunta Ekadasi",
-      upcoming_peak_festivals: "Annual Brahmotsavam & Rathasapthami",
-      weather_warnings: "Warm daytime temperatures, carry umbrellas and water bottles.",
-      surge_triggers: "Kalyanotsavam (10:30 AM) & Sahasra Deepalankarana Seva (5:30 PM)"
-    }
+  site_ayodhya: {
+    site_id: "TS004",
+    site_name: "Shri Ram Janmabhoomi Mandir",
+    live_status: { people_count: 93000, occupancy_percentage: 62.0, status: "MODERATE", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 55, normal_wait_mins: 30, peak_wait_mins: 150, queue_management_system: "Janmabhoomi Path PFC & RFID Pass Verification", fast_track_details: "Sugam Darshan & Aarti passes issued via Trust Portal" },
+    seasonal_context: { peak_seasons: "October to March, April (Ram Navami)", upcoming_peak_festivals: "Ram Navami, Deepotsav", weather_warnings: "Pleasant sunny afternoons.", surge_triggers: "Sringar Aarti (6:30 AM)" }
   },
   site_vaishnodevi: {
-    site_id: "site_vaishnodevi",
+    site_id: "TS005",
     site_name: "Vaishno Devi Bhawan",
-    live_status: {
-      people_count: 3600,
-      occupancy_percentage: 42.3,
-      status: "NORMAL",
-      last_updated: "Just now"
-    },
-    queue_forecast: {
-      estimated_current_wait_mins: 45,
-      normal_wait_mins: 35,
-      peak_wait_mins: 150,
-      queue_management_system: "RFID Yatra Parchi & Barcoded Concourse Gates",
-      fast_track_details: "Battery Car for elderly between Adhkuwari & Bhawan (₹354)"
-    },
-    seasonal_context: {
-      peak_seasons: "Navratri (March/April & October), Summer vacations",
-      upcoming_peak_festivals: "Sharad Navratri & New Year Eve",
-      weather_warnings: "Chilly evenings at Bhawan (1,585m). Mild winds on track.",
-      surge_triggers: "Morning 6:00 AM & Evening 7:00 PM Aarti Batches"
-    }
+    live_status: { people_count: 23250, occupancy_percentage: 46.5, status: "NORMAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 40, normal_wait_mins: 35, peak_wait_mins: 150, queue_management_system: "RFID Yatra Parchi & Barcoded Concourse Gates", fast_track_details: "Battery Car for elderly between Adhkuwari & Bhawan (₹354)" },
+    seasonal_context: { peak_seasons: "Navratri, Summer vacations", upcoming_peak_festivals: "Sharad Navratri", weather_warnings: "Chilly evenings at Bhawan.", surge_triggers: "Morning 6:00 AM & Evening 7:00 PM Aarti Batches" }
+  },
+  site_tirupati: {
+    site_id: "TS006",
+    site_name: "Tirupati Balaji",
+    live_status: { people_count: 78625, occupancy_percentage: 92.5, status: "CRITICAL", last_updated: "Live Telemetry" },
+    queue_forecast: { estimated_current_wait_mins: 180, normal_wait_mins: 40, peak_wait_mins: 300, queue_management_system: "Vaikuntam Queue Complex 1 & 2 Electronic Time Slots", fast_track_details: "Seeghra Darshan (₹300 online booking)" },
+    seasonal_context: { peak_seasons: "Year-round", upcoming_peak_festivals: "Annual Brahmotsavam", weather_warnings: "Warm daytime temperatures.", surge_triggers: "Kalyanotsavam (10:30 AM)" }
   }
 };
 

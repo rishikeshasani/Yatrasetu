@@ -60,7 +60,13 @@ if os.path.exists(CROWD_CSV_PATH):
                         "people_count": people,
                         "occupancy_percentage": occ,
                         "normal_wait": norm_wait,
-                        "peak_wait": peak_wait
+                        "peak_wait": peak_wait,
+                        "qms": row.get("queue_management_system", "Automated Queue Corridors"),
+                        "fast_track": row.get("fast_track_details_cost", "Priority counter available") if row.get("fast_track_available") == "Yes" else "Standard queuing",
+                        "peak_seasons": row.get("peak_season_months", "Peak seasons"),
+                        "upcoming_festivals": row.get("peak_dates_and_festivals", "Seasonal Utsav"),
+                        "weather_warnings": row.get("weather_context_and_seasonality", "Comfortable weather"),
+                        "surge_triggers": row.get("surge_trigger_factors", "Aarti and weekend breaks")
                     }
     except Exception as e:
         print(f"Error loading crowd baseline fallback: {e}")
@@ -392,12 +398,12 @@ def get_crowd_forecast(site_id: str):
         b = SITE_BASELINE_FALLBACK[canonical_id]
         normal_wait = b.get("normal_wait", 25)
         peak_wait = b.get("peak_wait", 120)
-        qms = "Barricaded Queue Corridor"
-        fast_track = "Senior & Divyang priority counter available"
-        peak_seasons = "Summer & Festivals"
-        upcoming_festivals = "Upcoming Temple Utsav"
-        weather_warnings = "Comfortable conditions for darshan."
-        surge_triggers = "Morning & Evening Aarti"
+        qms = b.get("qms", "Barricaded Queue Corridor")
+        fast_track = b.get("fast_track", "Senior & Divyang priority counter available")
+        peak_seasons = b.get("peak_seasons", "Summer & Festivals")
+        upcoming_festivals = b.get("upcoming_festivals", "Upcoming Temple Utsav")
+        weather_warnings = b.get("weather_warnings", "Comfortable conditions for darshan.")
+        surge_triggers = b.get("surge_triggers", "Morning & Evening Aarti")
     else:
         normal_wait = 25
         peak_wait = 120
