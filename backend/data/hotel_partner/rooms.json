@@ -18,7 +18,7 @@
     "floor": 1,
     "capacity": 2,
     "status": "occupied",
-    "current_booking_id": "YC-48207",
+    "current_booking_id": "YC-48208",
     "next_available_time": "2026-09-12T05:30:00+00:00"
   },
   {
@@ -29,8 +29,8 @@
     "floor": 1,
     "capacity": 2,
     "status": "occupied",
-    "current_booking_id": "YC-48208",
-    "next_available_time": "2026-09-12T05:30:00+00:00"
+    "current_booking_id": "YC-48207",
+    "next_available_time": "2026-09-13T05:30:00+00:00"
   },
   {
     "room_id": "R104",

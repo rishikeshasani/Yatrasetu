@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   fetchHotels,
   fetchHotelOwnerBookings,
@@ -13,6 +13,7 @@ import {
   saveFleetSchedules,
   updateHotelBookingStatus
 } from '../api/api';
+import { HOTELS_50_DATA } from '../data/hotels50';
 import './HotelDashboard.css';
 
 // SVG QR Code generator component as a resilient, instant, self-contained QR renderer
@@ -178,10 +179,26 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
   // Alerts
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
+  // Initial hotel resolution from 50 verified hotels
+  const resolveCurrentHotel = () => {
+    if (!currentUser) return HOTELS_50_DATA?.hotels?.[0] || null;
+    const userEmail = (currentUser.email || '').toLowerCase();
+    return (
+      HOTELS_50_DATA?.hotels?.find(h => currentUser.hotel_id && h.id === currentUser.hotel_id) ||
+      HOTELS_50_DATA?.hotels?.find(h => currentUser.id && (h.owner_id === currentUser.id || h.owner_id === currentUser.user_id || h.id === currentUser.id)) ||
+      HOTELS_50_DATA?.hotels?.find(h => currentUser.email && h.email?.toLowerCase() === userEmail) ||
+      HOTELS_50_DATA?.hotels?.find(h => currentUser.business_name && h.name?.toLowerCase().includes(currentUser.business_name.toLowerCase())) ||
+      HOTELS_50_DATA?.hotels?.[0] ||
+      null
+    );
+  };
+
   // Real Backend Data
-  const [backendHotel, setBackendHotel] = useState(null);
+  const [backendHotel, setBackendHotel] = useState(resolveCurrentHotel);
   const [backendBookings, setBackendBookings] = useState([]);
   const [isLoadingBackend, setIsLoadingBackend] = useState(false);
+
+  const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1';
 
   // Animate counter
   const [displayTouristsCount, setDisplayTouristsCount] = useState(120);
@@ -200,7 +217,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
   // Load incoming booking requests
   const loadBookingRequests = async () => {
-    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'H001';
+    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1';
     try {
       const data = await fetchHotelBookingRequests(activeHotelId);
       setBookingRequests(data || []);
@@ -224,7 +241,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
       sep7: addDays(now, 3)
     };
     const targetDate = dateMap[selectedSlotDay] || addDays(now, 1);
-    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'H001';
+    const activeHotelId = backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1';
     try {
       const data = await fetchHotelRoomSlots(activeHotelId, targetDate);
       setRoomSlotsData(data || []);
@@ -235,6 +252,8 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
 
   // Initial load
   useEffect(() => {
+    const h = resolveCurrentHotel();
+    if (h) setBackendHotel(h);
     loadBookingRequests();
     loadRoomSlots();
 
@@ -258,7 +277,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
       unsubscribe();
       clearInterval(pollTimer);
     };
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     loadRoomSlots();
@@ -280,8 +299,9 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
         if (Array.isArray(hotelsList) && hotelsList.length > 0) {
           const userEmail = (currentUser?.email || '').toLowerCase();
           const matched =
-            hotelsList.find(h => currentUser?.id && (h.owner_id === currentUser.id || h.owner_id === currentUser.user_id)) ||
             hotelsList.find(h => currentUser?.hotel_id && h.id === currentUser.hotel_id) ||
+            hotelsList.find(h => currentUser?.id && (h.owner_id === currentUser.id || h.owner_id === currentUser.user_id || h.id === currentUser.id)) ||
+            hotelsList.find(h => currentUser?.email && h.email?.toLowerCase() === userEmail) ||
             hotelsList.find(h => currentUser?.business_name && h.name.toLowerCase().includes(currentUser.business_name.toLowerCase())) ||
             (userEmail.includes('badrinath') ? hotelsList.find(h => h.name.toLowerCase().includes('badrinath')) : null) ||
             (userEmail.includes('kashi') || userEmail.includes('ganga') ? hotelsList.find(h => h.name.toLowerCase().includes('kashi') || h.name.toLowerCase().includes('ganga')) : null) ||
@@ -711,7 +731,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                 <circle cx="12" cy="10" r="3" />
               </svg>
-              <span>{backendHotel?.address ? backendHotel.address.split(',')[0] : 'Main Temple Path'}</span>
+              <span>{backendHotel?.site_name ? `${backendHotel.site_name} · ` : ''}{backendHotel?.address || 'Main Temple Path'}</span>
             </div>
           </div>
 

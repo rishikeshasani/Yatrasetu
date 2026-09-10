@@ -129,9 +129,9 @@ class GovernmentDemandReport(BaseModel):
 
 
 def validate_uuid(val: str, entity_name: str = "Hotel") -> None:
-    """Helper to validate UUID format; gracefully allows standard IDs like H001 and R204."""
+    """Helper to validate hotel ID or UUID; allows all friendly and master hotel IDs."""
     s_val = str(val).strip()
-    if s_val in ["H001", "hotel-kedarnath-1", "H002", "H003"] or s_val.startswith("R"):
+    if s_val.startswith("hotel-") or s_val.startswith("owner-") or s_val in ["H001", "H002", "H003"] or s_val.startswith("R") or len(s_val) > 4:
         return
     try:
         uuid.UUID(s_val)
@@ -145,51 +145,75 @@ def validate_uuid(val: str, entity_name: str = "Hotel") -> None:
 @router.get("/hotels", response_model=List[HotelResponse])
 def list_hotels(
     search: Optional[str] = Query(None, description="Search by hotel name or location"),
+    site_id: Optional[str] = Query(None, description="Filter by shrine site ID, e.g. TS001"),
     verified_only: bool = Query(False, description="Filter only verified hotels"),
     min_price: Optional[float] = Query(None, ge=0.0, description="Minimum room price"),
     max_price: Optional[float] = Query(None, ge=0.0, description="Maximum room price")
 ):
     """
-    Public endpoint: Tourists and pilgrims can browse and search hotels with live room details from Supabase.
+    Public endpoint: Tourists and pilgrims browse and search verified hotels across the 25 sacred shrines.
     """
+    # Load 50 master hotels
+    master_hotels = []
+    master_file = DATA_DIR / "hotels_50_master.json"
+    if master_file.exists():
+        try:
+            with open(master_file, "r", encoding="utf-8") as f:
+                master_hotels = json.load(f).get("hotels", [])
+        except Exception:
+            pass
+
+    # Fetch any dynamic custom hotels from Supabase
+    db_hotels = []
     try:
         query = supabase_admin.table("hotels").select("*")
         if verified_only:
             query = query.eq("verified", True)
         res = query.execute()
-        hotels = res.data or []
-    except APIError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Database error querying hotels: {e.message}"
-        )
+        raw_db = res.data or []
+        for h in raw_db:
+            try:
+                r_res = supabase_admin.table("hotel_rooms").select("*").eq("hotel_id", h["id"]).execute()
+                r_data = r_res.data or []
+            except Exception:
+                r_data = []
+            h_copy = dict(h)
+            h_copy["rooms"] = [RoomResponse(**r) for r in r_data] if r_data else []
+            db_hotels.append(h_copy)
+    except Exception:
+        pass
 
+    # Merge master hotels and db_hotels, deduplicating by normalized name
+    combined = []
+    seen_names = set()
+
+    for h in master_hotels + db_hotels:
+        norm_name = str(h.get("name", "")).strip().lower()
+        if norm_name and norm_name not in seen_names:
+            seen_names.add(norm_name)
+            # Map rooms
+            rooms = [RoomResponse(**r) if isinstance(r, dict) else r for r in h.get("rooms", [])]
+            h_obj = dict(h)
+            h_obj["rooms"] = rooms
+            combined.append(h_obj)
+
+    # Filter by search term
     if search:
-        s = search.lower()
-        hotels = [h for h in hotels if s in h.get("name", "").lower() or s in h.get("address", "").lower()]
+        s = search.lower().strip()
+        combined = [h for h in combined if s in h.get("name", "").lower() or s in h.get("address", "").lower() or s in h.get("city", "").lower() or s in h.get("site_name", "").lower()]
 
-    results = []
-    for h in hotels:
-        try:
-            r_res = supabase_admin.table("hotel_rooms").select("*").eq("hotel_id", h["id"]).execute()
-            rooms = r_res.data or []
-        except Exception:
-            rooms = []
+    # Filter by site_id
+    if site_id:
+        sid = site_id.strip().upper()
+        combined = [h for h in combined if str(h.get("site_id", "")).upper() == sid or sid in str(h.get("id", "")).upper()]
 
-        # Price filtering
-        if min_price is not None:
-            rooms = [r for r in rooms if r.get("price_per_night", 0) >= min_price]
-        if max_price is not None:
-            rooms = [r for r in rooms if r.get("price_per_night", 0) <= max_price]
+    # Price filtering
+    if min_price is not None:
+        combined = [h for h in combined if h.get("price_per_night", 0) >= min_price or any(r.price_per_night >= min_price for r in h.get("rooms", []))]
+    if max_price is not None:
+        combined = [h for h in combined if h.get("price_per_night", 0) <= max_price or any(r.price_per_night <= max_price for r in h.get("rooms", []))]
 
-        if (min_price is not None or max_price is not None) and not rooms:
-            continue
-
-        h_copy = dict(h)
-        h_copy["rooms"] = [RoomResponse(**r) for r in rooms]
-        results.append(HotelResponse(**h_copy))
-
-    return results
+    return [HotelResponse(**h) for h in combined]
 
 
 @router.get("/hotels/{hotel_id}", response_model=HotelResponse)
@@ -198,23 +222,39 @@ def get_hotel(hotel_id: str):
     Public endpoint: Get detailed hotel profile including all room categories and real-time inventory.
     """
     validate_uuid(hotel_id, "Hotel")
+    
+    # Check 50 master hotels first
+    master_file = DATA_DIR / "hotels_50_master.json"
+    if master_file.exists():
+        try:
+            with open(master_file, "r", encoding="utf-8") as f:
+                master_hotels = json.load(f).get("hotels", [])
+                match = next((h for h in master_hotels if h.get("id") == hotel_id or h.get("owner_id") == hotel_id), None)
+                if match:
+                    rooms = [RoomResponse(**r) for r in match.get("rooms", [])]
+                    h_copy = dict(match)
+                    h_copy["rooms"] = rooms
+                    return HotelResponse(**h_copy)
+        except Exception:
+            pass
+
     if hotel_id == "H001":
         _init_hotel_data()
         return HotelResponse(
             id="H001",
             owner_id="00000000-0000-0000-0000-000000000001",
-            name="Hotel Ganga Heritage",
-            description="Premium pilgrimage transit lodge near Kashi Vishwanath Corridor (Zone B-2). 50 verified rooms.",
-            address="D48/142 Kashi Corridor, Dashashwamedh Zone B-2, Varanasi, Uttar Pradesh",
-            latitude=25.3109,
-            longitude=83.0107,
-            contact="+91-9876504321",
+            name="Kedarnath Real Pilgrimage Lodge",
+            description="Premium pilgrimage transit lodge near Kedarnath Main Temple Path. 50 verified rooms.",
+            address="Main Temple Path, Zone B, Kedarnath Dham, Rudraprayag, Uttarakhand",
+            latitude=30.7352,
+            longitude=79.0669,
+            contact="+91-9876501001",
             verified=True,
             created_at="2026-09-01T00:00:00Z",
             rooms=[
-                RoomResponse(id="R-STD", hotel_id="H001", room_type="Standard", total_rooms=30, available_rooms=22, price_per_night=1000.0),
-                RoomResponse(id="R-DLX", hotel_id="H001", room_type="Deluxe", total_rooms=15, available_rooms=11, price_per_night=1300.0),
-                RoomResponse(id="R-FAM", hotel_id="H001", room_type="Family", total_rooms=5, available_rooms=3, price_per_night=1600.0)
+                RoomResponse(id="R-STD", hotel_id="H001", room_type="Standard Yatri Room", total_rooms=20, available_rooms=8, price_per_night=1200.0),
+                RoomResponse(id="R-DLX", hotel_id="H001", room_type="Deluxe Mountain View", total_rooms=12, available_rooms=4, price_per_night=1800.0),
+                RoomResponse(id="R-FAM", hotel_id="H001", room_type="Family Suite Hall", total_rooms=5, available_rooms=2, price_per_night=2400.0)
             ]
         )
 

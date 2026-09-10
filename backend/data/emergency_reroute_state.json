@@ -2,11 +2,11 @@
   "id": "c61f74ed-db10-4a4f-9b58-ba49d83077e0",
   "site_id": "TS001",
   "site_name": "Kedarnath Temple",
-  "crowd_status": "NORMAL",
-  "occupancy_percentage": 0.9,
-  "people_count": 120,
+  "crowd_status": "CRITICAL",
+  "occupancy_percentage": 95.0,
+  "people_count": 12350,
   "alert_type": "EMERGENCY_REROUTE",
-  "status": "RESOLVED",
+  "status": "ACTIVE",
   "diverted_tourists": 350,
   "partner_buses": 14,
   "partner_hotels": 22,
@@ -45,5 +45,5 @@
   "notes": "Emergency diversion active for Kedarnath corridor.",
   "activated_by": "usr_govt_command",
   "activated_at": "2026-09-10T02:04:22.510392+00:00",
-  "resolved_at": "2026-09-10T02:04:23.508508+00:00"
+  "resolved_at": null
 }

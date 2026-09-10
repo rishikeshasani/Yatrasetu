@@ -361,8 +361,8 @@ export default function TouristDashboard({
       }
     });
 
-    return deduplicated.slice(0, 6);
-  }, [hotels, activeSite, focusShrine, canonicalSites]);
+    return deduplicated.slice(0, 2);
+  }, [hotels, activeSite]);
 
   // Teammate HotelBookingModal Handlers
   const handleOpenBookingModal = (hotel) => {
@@ -870,7 +870,7 @@ export default function TouristDashboard({
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '1rem'
           }}>
-            {displayedHotels.map((h) => {
+            {displayedHotels.slice(0, 2).map((h) => {
               const firstRoom = h.rooms?.[0];
               const price = firstRoom?.price_per_night || h.price_per_night || 1200;
               const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
