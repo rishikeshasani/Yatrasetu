@@ -1515,10 +1515,10 @@ def get_user_booking_requests(
 ):
     _init_hotel_data()
     results = _REQUESTS_DATA
-    if guest_name:
-        results = [r for r in results if guest_name.lower() in r["guest_name"].lower()]
     if tourist_id:
         results = [r for r in results if r.get("tourist_id") == tourist_id]
+    elif guest_name:
+        results = [r for r in results if guest_name.lower() in r["guest_name"].lower()]
     return [BookingRequestResponse(**r) for r in results]
 
 

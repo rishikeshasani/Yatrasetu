@@ -1,23 +1,93 @@
 import { useState } from 'react';
 import { checkLocationSafety } from '../api/api';
 
-export default function SafetyAlerts({ alerts, safetyInfo, currentSite, onOpenSOS }) {
-  const [checkingSafety, setCheckingSafety] = useState(false);
-  const [safetyCheckResult, setSafetyCheckResult] = useState(null);
+export default function SafetyAlerts({ alerts, safetyInfo, currentSite, activeSite, onOpenSOS }) {
+  const [scanState, setScanState] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
+  const [scanError, setScanError] = useState(null);
+  const [scanResult, setScanResult] = useState(null);
 
-  const handleGeofenceCheck = async () => {
-    setCheckingSafety(true);
-    setSafetyCheckResult(null);
-    try {
-      const lat = currentSite?.latitude || 30.7352;
-      const lon = currentSite?.longitude || 79.0669;
-      const res = await checkLocationSafety(lat, lon);
-      setSafetyCheckResult(res);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCheckingSafety(false);
+  const resolvedSite = activeSite || currentSite;
+
+  const handleGeofenceCheck = () => {
+    // 1. Pre-flight check: Insecure context
+    if (typeof window !== 'undefined' && !window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setScanError({
+        title: 'Location access requires HTTPS or localhost',
+        message: 'Browser geolocation requires a secure context (HTTPS or localhost). Please open this portal securely to enable device GPS scanning.'
+      });
+      setScanState('error');
+      return;
     }
+
+    // 2. Pre-flight check: Geolocation support
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setScanError({
+        title: 'GPS not supported',
+        message: 'GPS is not supported by this browser.'
+      });
+      setScanState('error');
+      return;
+    }
+
+    setScanState('loading');
+    setScanError(null);
+    setScanResult(null);
+
+    // 3. Request real browser / device GPS coordinates (one-time scan)
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+        const accuracy = position.coords.accuracy;
+
+        console.log("GPS acquired:", {
+          latitude,
+          longitude,
+          accuracy: accuracy != null && !isNaN(accuracy) ? `${Math.round(accuracy)} meters` : 'N/A'
+        });
+
+        try {
+          const res = await checkLocationSafety(latitude, longitude, accuracy);
+          setScanResult({
+            ...res,
+            accuracy: accuracy != null && !isNaN(accuracy) ? Math.round(accuracy) : null,
+            scannedAt: 'Just now'
+          });
+          setScanState('success');
+        } catch (apiErr) {
+          console.error("[Geofence Evaluation Error]:", apiErr);
+          setScanError({
+            title: 'Unable to evaluate your current location',
+            message: 'Could not reach the safety evaluation service to verify geofence conditions. Please try again.'
+          });
+          setScanState('error');
+        }
+      },
+      (geoErr) => {
+        console.warn("[GPS Error]:", geoErr);
+        let title = 'Location Error';
+        let message = "We couldn't determine your current GPS position. Please try again.";
+
+        if (geoErr.code === 1 || geoErr.code === geoErr.PERMISSION_DENIED) {
+          title = 'Location permission denied';
+          message = 'Please allow location access in your browser/device settings and try again.';
+        } else if (geoErr.code === 2 || geoErr.code === geoErr.POSITION_UNAVAILABLE) {
+          title = 'Location unavailable';
+          message = "We couldn't determine your current GPS position. Please try again.";
+        } else if (geoErr.code === 3 || geoErr.code === geoErr.TIMEOUT) {
+          title = 'Location request timed out';
+          message = 'Please make sure location services are enabled and try again.';
+        }
+
+        setScanError({ title, message });
+        setScanState('error');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
@@ -144,24 +214,79 @@ export default function SafetyAlerts({ alerts, safetyInfo, currentSite, onOpenSO
 
           <button
             type="button"
-            className="geofence-scan-btn"
+            className={`geofence-scan-btn ${scanState === 'loading' ? 'is-scanning' : ''}`}
             onClick={handleGeofenceCheck}
-            disabled={checkingSafety}
+            disabled={scanState === 'loading'}
           >
-            {checkingSafety ? (
-              <span>🛰️ Scanning Geofence Coordinates...</span>
+            {scanState === 'loading' ? (
+              <span className="scan-btn-content">
+                <span className="scan-spinner">⟳</span> Getting your GPS location...
+              </span>
+            ) : scanState === 'error' ? (
+              <span className="scan-btn-content">
+                <span>🔄 Try Again</span>
+              </span>
             ) : (
-              <span>🛰️ Scan My Current GPS Zone</span>
+              <span className="scan-btn-content">
+                <span>🛰️ Scan My Current GPS Zone</span>
+              </span>
             )}
           </button>
 
-          {safetyCheckResult && (
-            <div className={`scan-result-box ${safetyCheckResult.in_danger_zone ? 'risk-found' : 'safe-zone'}`}>
+          {/* State 1: Initial (Location not scanned) */}
+          {scanState === 'idle' && (
+            <div className="scan-result-box unscanned">
               <div className="scan-result-header">
-                <span className="result-icon">{safetyCheckResult.in_danger_zone ? '⚠️' : '✅'}</span>
-                <strong>{safetyCheckResult.in_danger_zone ? `Congestion Zone: ${safetyCheckResult.zone_name}` : 'Safe Green Zone'}</strong>
+                <span className="result-icon">📍</span>
+                <strong>Location not scanned</strong>
               </div>
-              <p className="scan-result-msg">{safetyCheckResult.message}</p>
+              <p className="scan-result-msg">Tap the button above to check your current GPS zone.</p>
+            </div>
+          )}
+
+          {/* State 2: Error (Permission denied / Unavailable / Timeout / Evaluation failure) */}
+          {scanState === 'error' && scanError && (
+            <div className="scan-result-box error-zone">
+              <div className="scan-result-header">
+                <span className="result-icon">📍</span>
+                <strong>{scanError.title}</strong>
+              </div>
+              <p className="scan-result-msg">{scanError.message}</p>
+            </div>
+          )}
+
+          {/* State 3: Success Result (Safe / Caution / High Risk) */}
+          {scanState === 'success' && scanResult && (
+            <div className={`scan-result-box ${
+              scanResult.status === 'HIGH_RISK' || scanResult.in_danger_zone
+                ? 'risk-found'
+                : scanResult.status === 'CAUTION'
+                ? 'caution-zone'
+                : 'safe-zone'
+            }`}>
+              <div className="scan-result-header">
+                <span className="result-icon">
+                  {scanResult.status === 'HIGH_RISK' || scanResult.in_danger_zone
+                    ? '🔴'
+                    : scanResult.status === 'CAUTION'
+                    ? '🟡'
+                    : '🟢'}
+                </span>
+                <strong>
+                  {scanResult.status === 'HIGH_RISK' || scanResult.in_danger_zone
+                    ? (scanResult.zone_name ? `High-Risk Zone: ${scanResult.zone_name}` : 'High-Risk Zone')
+                    : scanResult.status === 'CAUTION'
+                    ? (scanResult.zone_name ? `Caution Zone: ${scanResult.zone_name}` : 'Caution Zone')
+                    : 'Safe Green Zone'}
+                </strong>
+              </div>
+              <p className="scan-result-msg">{scanResult.message}</p>
+              <div className="scan-result-footer">
+                <span className="scan-timestamp">Last checked: {scanResult.scannedAt || 'Just now'}</span>
+                {scanResult.accuracy != null && (
+                  <span className="scan-accuracy">Accuracy: ±{scanResult.accuracy} m</span>
+                )}
+              </div>
             </div>
           )}
         </div>

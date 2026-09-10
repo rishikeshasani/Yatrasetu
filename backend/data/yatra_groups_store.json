@@ -1,0 +1,80 @@
+{
+  "groups": [
+    {
+      "id": "78316edc-bbb2-42cb-b487-94d468f152a5",
+      "group_name": "Kedarnath Family Yatra",
+      "site_id": "TS001",
+      "site_name": "Kedarnath Temple",
+      "yatra_date": "2026-10-15",
+      "join_code": "CY3FZ4",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ARCHIVED",
+      "created_at": "2026-09-10T02:03:14.599685+00:00",
+      "updated_at": "2026-09-10T02:03:14.599685+00:00"
+    },
+    {
+      "id": "21c15803-56e5-4509-8a3d-fc4c9a412f48",
+      "group_name": "Kedarnath Family Yatra",
+      "site_id": "TS001",
+      "site_name": "Kedarnath Temple",
+      "yatra_date": "2026-09-11",
+      "join_code": "7CGZGN",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ARCHIVED",
+      "created_at": "2026-09-10T02:07:16.498405+00:00",
+      "updated_at": "2026-09-10T02:07:16.498405+00:00"
+    },
+    {
+      "id": "e42a9a84-3a54-4dbc-a5fa-ccc40c3b2530",
+      "group_name": "Kedarnath Family Yatra",
+      "site_id": "TS001",
+      "site_name": "Kedarnath Temple",
+      "yatra_date": "2026-09-11",
+      "join_code": "H6Z26H",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ARCHIVED",
+      "created_at": "2026-09-10T02:09:38.700019+00:00",
+      "updated_at": "2026-09-10T02:09:38.700019+00:00"
+    },
+    {
+      "id": "148186c3-ae0f-4fb9-99a1-6eb99c232b10",
+      "group_name": "Kedarnath Family Yatra",
+      "site_id": "TS001",
+      "site_name": "Kedarnath Temple",
+      "yatra_date": "2026-09-11",
+      "join_code": "3QV55Y",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ARCHIVED",
+      "created_at": "2026-09-10T15:19:43.427214+00:00",
+      "updated_at": "2026-09-10T15:19:43.427214+00:00"
+    }
+  ],
+  "members": [],
+  "locations": [],
+  "alerts": [
+    {
+      "id": "fb885a41-9cdc-434c-b324-b2f87b51e63b",
+      "group_id": "78316edc-bbb2-42cb-b487-94d468f152a5",
+      "user_id": "fda78085-b3a8-4f5b-b25e-84cd54e94b6f",
+      "user_name": "Pooja Sharma",
+      "alert_type": "MEDICAL",
+      "message": "High-altitude breathlessness near base camp.",
+      "status": "RESOLVED",
+      "created_at": "2026-09-10T02:03:21.671845+00:00",
+      "resolved_at": "2026-09-10T02:03:24.502450+00:00",
+      "resolved_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293"
+    },
+    {
+      "id": "b9cd0e23-32cd-4c47-951f-14fb2b9432aa",
+      "group_id": "e42a9a84-3a54-4dbc-a5fa-ccc40c3b2530",
+      "user_id": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "user_name": "tourist_demo",
+      "alert_type": "EMERGENCY",
+      "message": "Devotee feeling dizzy near Bhairon temple, need water.",
+      "status": "RESOLVED",
+      "created_at": "2026-09-10T02:09:45.956646+00:00",
+      "resolved_at": "2026-09-10T02:10:12.321828+00:00",
+      "resolved_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293"
+    }
+  ]
+}

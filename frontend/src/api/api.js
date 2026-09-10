@@ -1350,16 +1350,6 @@ export const SITE_METADATA = {
 };
 
 export const SITE_ID_ALIASES = {
-  TS001: 'site_kedarnath',
-  TS002: 'site_badrinath',
-  TS003: 'site_kashi',
-  TS004: 'site_ayodhya',
-  TS005: 'site_vaishnodevi',
-  TS006: 'site_tirupati',
-  TS010: 'site_meenakshi',
-  TS011: 'site_ts011',
-  TS015: 'site_ts015',
-  TS016: 'site_ts016',
   site_kedarnath: 'TS001',
   site_badrinath: 'TS002',
   site_kashi: 'TS003',
@@ -1416,11 +1406,11 @@ export const SITE_ID_ALIASES = {
 export function toCanonicalSiteId(siteId) {
   if (!siteId) return 'TS001';
   const str = String(siteId).trim();
+  const upper = str.toUpperCase();
+  if (/^TS\d{3}$/i.test(upper)) return upper;
   const lower = str.toLowerCase();
   if (SITE_ID_ALIASES[lower]) return SITE_ID_ALIASES[lower];
   if (SITE_ID_ALIASES[str]) return SITE_ID_ALIASES[str];
-  const upper = str.toUpperCase();
-  if (upper.startsWith('TS') || upper.startsWith('SITE')) return upper;
   return upper;
 }
 
@@ -1635,20 +1625,21 @@ export async function fetchSafetyInfo(siteId) {
 /**
  * Check Geofence & Crowd Hazard for Specific GPS Coordinates (POST /check-safety)
  */
-export async function checkLocationSafety(latitude, longitude) {
+export async function checkLocationSafety(latitude, longitude, accuracy = null) {
   try {
+    const payload = {
+      latitude: Number(latitude),
+      longitude: Number(longitude)
+    };
+    if (accuracy !== null && accuracy !== undefined && !isNaN(accuracy)) {
+      payload.accuracy = Number(accuracy);
+    }
     return await apiRequest('/check-safety', {
       method: "POST",
-      body: JSON.stringify({ latitude: Number(latitude), longitude: Number(longitude) })
+      body: JSON.stringify(payload)
     });
   } catch (err) {
     console.error("[API Error] checkLocationSafety failed:", err.message);
-    if (DEMO_MODE) {
-      return {
-        in_danger_zone: false,
-        message: "You are currently in a safe area."
-      };
-    }
     throw err;
   }
 }
@@ -2865,13 +2856,20 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
     if (Array.isArray(data)) return data;
   } catch (err) {
     console.warn("fetchUserBookingRequests backend fallback:", err.message);
+    if (!DEMO_MODE) {
+      throw err;
+    }
   }
 
+  // Local fallback only when DEMO_MODE=true with strict user identity isolation
   const requests = getLocalRequests();
-  if (guestName) {
-    return requests.filter(r => r.guest_name.toLowerCase().includes(guestName.toLowerCase()));
+  if (touristId) {
+    return requests.filter(r => r.tourist_id === touristId);
   }
-  return requests;
+  if (guestName) {
+    return requests.filter(r => r.guest_name && r.guest_name.toLowerCase().includes(guestName.toLowerCase()));
+  }
+  return [];
 }
 
 // 6. Accept Booking Request (Owner Action with Overlap Re-check)
@@ -3270,3 +3268,105 @@ export async function fetchTravelAgencyProfile() {
     throw err;
   }
 }
+
+// ============================================================================
+// YATRA GROUPS & MY YATRA TEAM API MODULE
+// ============================================================================
+
+export async function createYatraGroup(payload) {
+  return await apiRequest('/yatra-groups', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    requiresAuth: true
+  });
+}
+
+export async function fetchMyYatraGroup() {
+  return await apiRequest('/yatra-groups/my', {
+    requiresAuth: true
+  });
+}
+
+export async function fetchYatraGroupById(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}`, {
+    requiresAuth: true
+  });
+}
+
+export async function joinYatraGroup(joinCode) {
+  return await apiRequest('/yatra-groups/join', {
+    method: 'POST',
+    body: JSON.stringify({ join_code: joinCode }),
+    requiresAuth: true
+  });
+}
+
+export async function leaveYatraGroup(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/leave`, {
+    method: 'POST',
+    requiresAuth: true
+  });
+}
+
+export async function fetchGroupMembers(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/members`, {
+    requiresAuth: true
+  });
+}
+
+export async function removeGroupMember(groupId, memberId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/members/${encodeURIComponent(memberId)}`, {
+    method: 'DELETE',
+    requiresAuth: true
+  });
+}
+
+export async function updateMemberLocation(groupId, coords) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/location`, {
+    method: 'POST',
+    body: JSON.stringify({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      accuracy: coords.accuracy || null
+    }),
+    requiresAuth: true
+  });
+}
+
+export async function disableLocationSharing(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/location-sharing`, {
+    method: 'DELETE',
+    requiresAuth: true
+  });
+}
+
+export async function fetchGroupLocations(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/locations`, {
+    requiresAuth: true
+  });
+}
+
+export async function triggerGroupAlert(groupId, payload = {}) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/alerts`, {
+    method: 'POST',
+    body: JSON.stringify({
+      alert_type: payload.alert_type || 'EMERGENCY',
+      message: payload.message || 'Devotee requires immediate assistance.'
+    }),
+    requiresAuth: true
+  });
+}
+
+export async function fetchGroupAlerts(groupId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/alerts`, {
+    requiresAuth: true
+  });
+}
+
+export async function resolveGroupAlert(groupId, alertId) {
+  return await apiRequest(`/yatra-groups/${encodeURIComponent(groupId)}/alerts/${encodeURIComponent(alertId)}/resolve`, {
+    method: 'POST',
+    requiresAuth: true
+  });
+}
+

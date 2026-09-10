@@ -273,8 +273,9 @@ export default function App() {
     };
   }, [selectedSiteId]);
 
-  const handleSelectSite = (siteId) => {
-    setSelectedSiteId(siteId);
+  const handleSelectSite = (siteOrId) => {
+    const sId = typeof siteOrId === 'object' && siteOrId ? siteOrId.id : siteOrId;
+    setSelectedSiteId(sId);
     if (routeStatus === 'ACTIVE') {
       setPendingPunyaReward(0);
       setActiveAlternateRoute(null);
@@ -558,6 +559,7 @@ export default function App() {
                 activeRerouteAlert={activeRerouteAlert}
                 currentUser={currentUser}
                 onShowToast={showToast}
+                onLogout={handleLogout}
               />
             )}
 

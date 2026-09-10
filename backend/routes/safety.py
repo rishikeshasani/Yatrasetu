@@ -19,8 +19,9 @@ class SOSRequest(BaseModel):
     user_id: Optional[str] = Field(None, description="Optional legacy user ID; ignored in favor of verified JWT identity")
 
 class LocationCheck(BaseModel):
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90.0, le=90.0, description="Latitude between -90 and 90")
+    longitude: float = Field(..., ge=-180.0, le=180.0, description="Longitude between -180 and 180")
+    accuracy: Optional[float] = Field(None, ge=0.0, description="Optional GPS accuracy in meters")
 
 def get_distance(lat1, lon1, lat2, lon2):
     R = 6371000
@@ -645,29 +646,115 @@ def get_alerts():
 
 @router.post("/check-safety")
 def check_safety(loc: LocationCheck):
-    zones = supabase.table("safety_zones").select("*").execute().data
-    sites = supabase.table("sites").select("*").execute().data
+    # 1. Fetch safety zones from database
+    try:
+        zones_res = supabase.table("safety_zones").select("*").execute()
+        zones = zones_res.data if zones_res.data is not None else []
+    except Exception as e:
+        print(f"Database error querying safety_zones in /check-safety: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geofence evaluation service temporarily unavailable. Database connection failed."
+        )
+
+    # 2. Fetch registered sites from database
+    try:
+        sites_res = supabase.table("sites").select("*").execute()
+        sites = sites_res.data if sites_res.data is not None else []
+    except Exception as e:
+        print(f"Database error querying sites in /check-safety: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Geofence evaluation service temporarily unavailable. Sites data inaccessible."
+        )
+
+    # If database is connected but safety_zones table has no records, use documented baseline zones
+    if not zones:
+        zones = [
+            {"id": 1, "name": "Main Temple Entry Gate", "latitude": 20.1, "longitude": 85.8, "radius_meters": 200, "risk_level": "HIGH"},
+            {"id": 2, "name": "Kedarnath Sanctum Gate #1", "latitude": 30.7346, "longitude": 79.0669, "radius_meters": 500, "risk_level": "HIGH"}
+        ]
+
+    # 3. Check active emergency reroute
+    reroute = get_active_reroute_from_db()
+
+    # 4. Evaluate actual coordinates against configured geofence zones
+    matched_danger_zone = None
+    matched_caution_zone = None
 
     for zone in zones:
         dist = get_distance(loc.latitude, loc.longitude, zone["latitude"], zone["longitude"])
-        if dist <= zone["radius_meters"]:
-            # User is in geofence. Check crowd status of nearest site.
-            nearest_site, latest_obs, people_count, occupancy, status = get_nearest_site_with_status(
+        radius = float(zone.get("radius_meters", 200))
+        # Account for GPS accuracy radius if provided (cap buffer to 100m)
+        accuracy_buffer = min(float(loc.accuracy or 0.0), 100.0)
+        effective_radius = radius + (accuracy_buffer if accuracy_buffer > 0 else 0.0)
+
+        if dist <= effective_radius:
+            nearest_site, latest_obs, people_count, occupancy, crowd_status = get_nearest_site_with_status(
                 zone["latitude"], zone["longitude"], sites
             )
+            site_id = nearest_site["id"] if nearest_site else None
+            zone_risk = (zone.get("risk_level") or "NORMAL").upper()
 
-            # Warn only if status is HIGH or CRITICAL
-            if status in ("HIGH", "CRITICAL"):
-                safety_info = get_site_safety_info(nearest_site["id"])
-                return {
+            # Check if an emergency reroute is active for this site
+            is_site_rerouted = bool(reroute and reroute.get("site_id") == site_id and reroute.get("status") == "ACTIVE")
+
+            # High-Risk Conditions:
+            # - Active emergency reroute at site
+            # - Crowd status HIGH or CRITICAL
+            # - Configured zone risk is HIGH/CRITICAL and crowd is heavy (occupancy >= 75%)
+            if is_site_rerouted or crowd_status in ("HIGH", "CRITICAL") or (zone_risk in ("HIGH", "CRITICAL") and occupancy >= 75.0):
+                safety_info = get_site_safety_info(site_id) if site_id else None
+                msg = f"⚠️ High crowd density ({occupancy}%) detected near {zone['name']}. Please use the suggested alternate route."
+                if is_site_rerouted:
+                    msg = f"🚨 EMERGENCY REROUTE ACTIVE near {zone['name']}. High crowd bottleneck. Follow diversion pathways."
+
+                matched_danger_zone = {
                     "in_danger_zone": True,
+                    "status": "HIGH_RISK",
+                    "risk_level": "HIGH",
                     "zone_name": zone["name"],
-                    "risk_level": zone["risk_level"],
-                    "message": f"⚠️ High crowd density ({occupancy}%) detected near {zone['name']}. Please use the suggested alternate route.",
-                    "emergency_info": safety_info
+                    "message": msg,
+                    "emergency_info": safety_info,
+                    "occupancy_percentage": occupancy,
+                    "distance_meters": round(dist, 1)
                 }
+                break  # Highest risk takes precedence
 
-    return {"in_danger_zone": False, "message": "You are in a safe area."}
+            # Caution Conditions:
+            # - Crowd status MODERATE
+            # - Configured zone risk CAUTION or MODERATE
+            # - Occupancy between 50% and 75%
+            elif crowd_status == "MODERATE" or zone_risk in ("CAUTION", "MODERATE") or (50.0 <= occupancy < 75.0):
+                if not matched_caution_zone:
+                    safety_info = get_site_safety_info(site_id) if site_id else None
+                    matched_caution_zone = {
+                        "in_danger_zone": False,
+                        "status": "CAUTION",
+                        "risk_level": "CAUTION",
+                        "zone_name": zone["name"],
+                        "message": f"🟡 Caution: Moderate crowd density ({occupancy}%) detected near {zone['name']}. Crowd conditions may require extra caution.",
+                        "emergency_info": safety_info,
+                        "occupancy_percentage": occupancy,
+                        "distance_meters": round(dist, 1)
+                    }
+
+    if matched_danger_zone:
+        return matched_danger_zone
+
+    if matched_caution_zone:
+        return matched_caution_zone
+
+    return {
+        "in_danger_zone": False,
+        "status": "SAFE",
+        "risk_level": "SAFE",
+        "zone_name": None,
+        "message": "You are in a safe area. No active crowd bottlenecks or hazard zones detected near your GPS location.",
+        "emergency_info": None,
+        "occupancy_percentage": None,
+        "distance_meters": None
+    }
 
 @router.get("/sites/{site_id}/safety-info")
 def get_safety_info(site_id: str):

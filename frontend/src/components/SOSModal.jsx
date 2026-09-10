@@ -118,7 +118,7 @@ export default function SOSModal({
 
       // 2. Dispatch to backend
       setLoadingPhase('Transmitting distress beacon to emergency network...');
-      const userId = currentUser?.user_id || 'pilgrim_demo_user';
+      const userId = currentUser?.user_id || currentUser?.id || 'pilgrim_demo_user';
 
       const res = await triggerSOS(userId, lat, lon, typeObj.label, {
         site_id: currentSite?.id,

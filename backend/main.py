@@ -9,6 +9,7 @@ from routes.recommendations import router as recommendations_router
 from routes.safety import router as safety_router
 from routes.vendors import router as vendors_router
 from routes.wallet import router as wallet_router
+from routes.groups import router as groups_router
 
 app = FastAPI(title="YatraSetu Backend")
 
@@ -42,6 +43,7 @@ app.include_router(recommendations_router)
 app.include_router(safety_router)
 app.include_router(vendors_router)
 app.include_router(wallet_router)
+app.include_router(groups_router)
 
 @app.get("/")
 def home():

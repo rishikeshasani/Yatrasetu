@@ -12,13 +12,13 @@ import PilgrimAdvisory from '../components/PilgrimAdvisory';
 import SafetyAlerts from '../components/SafetyAlerts';
 import LocalVendors from '../components/LocalVendors';
 import TeamTracker from '../components/TeamTracker';
+import BookingCard from '../components/BookingCard';
 import {
   fetchHotels,
   createBookingRequest,
   fetchMyHotelBookings,
   fetchUserBookingRequests,
-  fetchHotelRooms,
-  toCanonicalSiteId
+  fetchActiveRerouteAlert
 } from '../api/api';
 import { getShrineAccommodations } from '../utils/shrineImages';
 
@@ -33,8 +33,10 @@ export default function TouristDashboard({
   alternatives = [],
   alerts = [],
   rerouteEvent = null,
+  activeRerouteAlert = null,
   vendors = [],
   currentUser = null,
+  onOpenSOS = () => {},
   onTriggerSOS = () => {},
   onShowToast = () => {},
   onLogout = () => {}
@@ -57,9 +59,15 @@ export default function TouristDashboard({
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(null);
 
-  // User Bookings & Requests Tracker (Phase 3 feature)
+  // User Bookings & Requests Tracker
   const [myBookingsList, setMyBookingsList] = useState([]);
   const [isRefreshingBookings, setIsRefreshingBookings] = useState(false);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState(null);
+  const [isBookingsModalOpen, setIsBookingsModalOpen] = useState(false);
+
+  // Active Government Reroute state
+  const [activeReroute, setActiveReroute] = useState(null);
 
   // Load Hotels from Backend
   const loadHotels = useCallback(async () => {
@@ -76,74 +84,137 @@ export default function TouristDashboard({
     }
   }, []);
 
-  // Load Tourist Bookings & Requests (Dual Feed)
+  // Load Tourist Bookings & Requests (Dual Feed: Requests + Confirmed Bookings)
   const loadTouristBookings = useCallback(async () => {
+    // If unauthenticated, do not display arbitrary or demo bookings
+    if (!currentUser) {
+      setMyBookingsList([]);
+      setBookingsLoading(false);
+      setBookingsError(null);
+      return;
+    }
+
     setIsRefreshingBookings(true);
     try {
       const touristId = currentUser?.id || currentUser?.user_id;
       const guestName = currentUser?.full_name || currentUser?.name;
 
-      const [confirmedBookings, bookingRequests] = await Promise.all([
-        fetchMyHotelBookings().catch(() => []),
-        fetchUserBookingRequests(guestName, touristId).catch(() => [])
+      const [confirmedBookingsRes, bookingRequestsRes] = await Promise.allSettled([
+        fetchMyHotelBookings(),
+        fetchUserBookingRequests(guestName, touristId)
       ]);
+
+      if (confirmedBookingsRes.status === 'rejected' && bookingRequestsRes.status === 'rejected') {
+        const errorDetail = confirmedBookingsRes.reason?.message || bookingRequestsRes.reason?.message;
+        console.warn('Both booking endpoints failed:', errorDetail);
+        setBookingsError("My bookings couldn't be loaded.");
+        return;
+      }
+
+      const confirmedBookings = confirmedBookingsRes.status === 'fulfilled' && Array.isArray(confirmedBookingsRes.value)
+        ? confirmedBookingsRes.value
+        : [];
+      const bookingRequests = bookingRequestsRes.status === 'fulfilled' && Array.isArray(bookingRequestsRes.value)
+        ? bookingRequestsRes.value
+        : [];
 
       const merged = [];
       const seenIds = new Set();
 
       // 1. Pending/Declined/Confirmed requests from /booking-requests/user
-      if (Array.isArray(bookingRequests)) {
-        for (const req of bookingRequests) {
-          const key = req.booking_id || req.id;
-          if (key && !seenIds.has(key)) {
-            seenIds.add(key);
-            merged.push({
-              id: req.id,
-              booking_id: req.booking_id || req.id,
-              hotel_id: req.hotel_id,
-              hotel_name: req.hotel_name || 'Shrine Pilgrimage Lodge',
-              room_number: req.room_number,
-              room_type: req.room_type,
-              status: (req.status || 'pending').toUpperCase(),
-              check_in: req.check_in_datetime || req.check_in,
-              check_out: req.check_out_datetime || req.check_out,
-              total_price: req.price || req.total_amount || 1200,
-              created_at: req.created_at
-            });
-          }
+      for (const req of bookingRequests) {
+        // Strictly verify request belongs to this authenticated tourist
+        const matchesTouristId = touristId && req.tourist_id && req.tourist_id === touristId;
+        const matchesGuestName = guestName && req.guest_name && req.guest_name.toLowerCase() === guestName.toLowerCase();
+        if (touristId && !matchesTouristId && !matchesGuestName) {
+          continue;
+        }
+
+        const key = req.booking_id || req.id;
+        if (key && !seenIds.has(key)) {
+          seenIds.add(key);
+          merged.push({
+            id: req.id,
+            booking_id: req.booking_id || req.id,
+            hotel_id: req.hotel_id,
+            hotel_name: req.hotel_name || 'Shrine Pilgrimage Lodge',
+            room_number: req.room_number,
+            room_type: req.room_type,
+            status: (req.status || 'pending').toUpperCase(),
+            check_in: req.check_in_datetime || req.check_in,
+            check_out: req.check_out_datetime || req.check_out,
+            check_in_datetime: req.check_in_datetime || req.check_in,
+            check_out_datetime: req.check_out_datetime || req.check_out,
+            total_price: req.price !== undefined ? req.price : (req.total_amount || 1200),
+            created_at: req.created_at,
+            updated_at: req.updated_at,
+            decline_reason: req.decline_reason
+          });
         }
       }
 
       // 2. Confirmed hotel bookings from /hotels/tourist/bookings
-      if (Array.isArray(confirmedBookings)) {
-        for (const b of confirmedBookings) {
-          const key = b.id;
-          if (key && !seenIds.has(key)) {
-            seenIds.add(key);
-            merged.push({
-              id: b.id,
-              booking_id: b.id,
-              hotel_id: b.hotel_id,
-              hotel_name: b.hotel_name || 'Shrine Pilgrimage Lodge',
-              room_number: b.room_number || 'Standard',
-              room_type: b.room_type || 'Deluxe',
-              status: (b.status || 'confirmed').toUpperCase(),
-              check_in: b.check_in,
-              check_out: b.check_out,
-              total_price: b.total_price || 1200,
-              created_at: b.created_at
-            });
-          }
+      for (const b of confirmedBookings) {
+        // Strictly verify it belongs to this tourist
+        if (touristId && b.tourist_id && b.tourist_id !== touristId && !touristId.startsWith('00000000-')) {
+          continue;
+        }
+
+        const key = b.booking_id || b.id;
+        if (key && !seenIds.has(key)) {
+          seenIds.add(key);
+          merged.push({
+            id: b.id,
+            booking_id: b.booking_id || b.id,
+            hotel_id: b.hotel_id,
+            hotel_name: b.hotel_name || 'Shrine Pilgrimage Lodge',
+            room_number: b.room_number || 'Standard',
+            room_type: b.room_type || 'Deluxe',
+            status: (b.status || 'confirmed').toUpperCase(),
+            check_in: b.check_in,
+            check_out: b.check_out,
+            check_in_datetime: b.check_in,
+            check_out_datetime: b.check_out,
+            total_price: b.total_price || 1200,
+            created_at: b.created_at
+          });
         }
       }
 
+      // Sort by creation timestamp (newest first). Safely handle missing timestamps.
+      merged.sort((a, b) => {
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : (a.check_in ? new Date(a.check_in).getTime() : 0);
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : (b.check_in ? new Date(b.check_in).getTime() : 0);
+        return timeB - timeA;
+      });
+
       setMyBookingsList(merged);
+      setBookingsError(null);
     } catch (err) {
       console.warn('Error loading tourist bookings:', err.message);
+      setBookingsError("My bookings couldn't be loaded.");
     } finally {
       setIsRefreshingBookings(false);
+      setBookingsLoading(false);
     }
   }, [currentUser]);
+
+  // Prevent background scroll and handle Escape key when View All modal is open
+  useEffect(() => {
+    if (!isBookingsModalOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsBookingsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = origOverflow;
+    };
+  }, [isBookingsModalOpen]);
 
   useEffect(() => {
     loadHotels();
@@ -156,6 +227,31 @@ export default function TouristDashboard({
 
     return () => clearInterval(pollTimer);
   }, [loadHotels, loadTouristBookings]);
+
+  // Authoritative Government Reroute synchronization
+  useEffect(() => {
+    let isMounted = true;
+    const checkReroute = async () => {
+      try {
+        const res = await fetchActiveRerouteAlert();
+        if (isMounted) {
+          if (res && res.is_active && res.alert) {
+            setActiveReroute(res.alert);
+          } else {
+            setActiveReroute(null);
+          }
+        }
+      } catch (err) {
+        console.warn('Error checking active reroute:', err);
+      }
+    };
+    checkReroute();
+    const timer = setInterval(checkReroute, 4000);
+    return () => {
+      isMounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   // Synchronize focus shrine with activeSite
   useEffect(() => {
@@ -192,15 +288,15 @@ export default function TouristDashboard({
 
   // Filter accommodations for the selected shrine using teammate's multi-factor matching
   const displayedHotels = useMemo(() => {
-    if (!hotels || hotels.length === 0) return [];
-    if (!activeSite) return hotels.slice(0, 6);
+    const targetSite = focusShrine || activeSite || canonicalSites[0];
+    const canonicalLodges = targetSite ? getShrineAccommodations(targetSite.id, targetSite.name) : [];
+    if (!hotels || hotels.length === 0) return canonicalLodges;
+    if (!targetSite) return hotels.slice(0, 6);
 
-    const sId = activeSite.id ? String(activeSite.id).toUpperCase() : '';
-    const sName = activeSite.name ? activeSite.name.toLowerCase() : '';
-    const sLat = activeSite.latitude;
-    const sLon = activeSite.longitude;
-
-    const canonicalLodges = getShrineAccommodations(activeSite.id, activeSite.name);
+    const sId = targetSite.id ? String(targetSite.id).toUpperCase() : '';
+    const sName = targetSite.name ? targetSite.name.toLowerCase() : '';
+    const sLat = targetSite.latitude;
+    const sLon = targetSite.longitude;
 
     const getDistKm = (lat1, lon1, lat2, lon2) => {
       const R = 6371;
@@ -266,7 +362,7 @@ export default function TouristDashboard({
     });
 
     return deduplicated.slice(0, 6);
-  }, [hotels, activeSite]);
+  }, [hotels, activeSite, focusShrine, canonicalSites]);
 
   // Teammate HotelBookingModal Handlers
   const handleOpenBookingModal = (hotel) => {
@@ -314,7 +410,20 @@ export default function TouristDashboard({
     }
   };
 
-  const currentDisplayShrine = focusShrine || activeSite || canonicalSites[0];
+  const handleFindAccommodation = () => {
+    const el = document.getElementById('verified-accommodations-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const currentDisplayShrine = useMemo(() => {
+    let shrine = focusShrine || activeSite || canonicalSites[0];
+    if (typeof shrine === 'string') {
+      shrine = canonicalSites.find(s => s && s.id === shrine) || (sites && sites.find(s => s && s.id === shrine)) || canonicalSites[0];
+    }
+    return shrine;
+  }, [focusShrine, activeSite, canonicalSites, sites]);
 
   return (
     <div className="tourist-dashboard-root" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
@@ -414,7 +523,7 @@ export default function TouristDashboard({
       </header>
 
       {/* 2. GOVERNMENT TRAVEL REROUTING BANNER */}
-      {rerouteEvent && rerouteEvent.active && (
+      {(activeReroute || (rerouteEvent && rerouteEvent.active)) && (
         <div style={{
           background: 'linear-gradient(90deg, #B45309 0%, #D97706 100%)',
           color: '#FFFFFF',
@@ -427,10 +536,10 @@ export default function TouristDashboard({
           <span style={{ fontSize: '1.5rem' }}>⚠️</span>
           <div style={{ flex: 1 }}>
             <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800' }}>
-              ACTIVE DIVERSION ORDER: {rerouteEvent.target_site_name || 'Pilgrimage Corridor'}
+              ACTIVE DIVERSION ORDER: {(activeReroute?.site_name || activeReroute?.target_site_name || rerouteEvent?.target_site_name || 'Pilgrimage Corridor')}
             </h4>
             <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', opacity: 0.95 }}>
-              {rerouteEvent.reason || 'High crowd congestion. Authorities recommend visiting alternative designated shrines below.'}
+              {(activeReroute?.notes || activeReroute?.reason || rerouteEvent?.reason || 'High crowd congestion. Authorities recommend visiting alternative designated shrines below.')}
             </p>
           </div>
           <span style={{
@@ -531,12 +640,15 @@ export default function TouristDashboard({
           <DestinationGrid
             sites={filteredSites}
             selectedSite={activeSite || currentDisplayShrine}
-            onSelectSite={(site) => {
-              onSelectSite(site);
-              setFocusShrine(site);
+            onSelectSite={(siteOrId) => {
+              const sId = typeof siteOrId === 'object' && siteOrId ? siteOrId.id : siteOrId;
+              const siteObj = typeof siteOrId === 'object' && siteOrId ? siteOrId : (canonicalSites.find(s => s && s.id === siteOrId) || sites.find(s => s && s.id === siteOrId));
+              onSelectSite(sId);
+              setFocusShrine(siteObj || sId);
             }}
-            onViewDetails={(site) => {
-              setFocusShrine(site);
+            onViewDetails={(siteOrId) => {
+              const siteObj = typeof siteOrId === 'object' && siteOrId ? siteOrId : (canonicalSites.find(s => s && s.id === siteOrId) || sites.find(s => s && s.id === siteOrId));
+              setFocusShrine(siteObj || siteOrId);
               setIsDetailsModalOpen(true);
             }}
           />
@@ -603,7 +715,7 @@ export default function TouristDashboard({
                 </button>
                 <button
                   type="button"
-                  onClick={() => onTriggerSOS(currentDisplayShrine)}
+                  onClick={() => (onOpenSOS ? onOpenSOS() : onTriggerSOS(currentDisplayShrine))}
                   style={{
                     padding: '0.5rem 1rem',
                     fontSize: '0.8rem',
@@ -650,15 +762,32 @@ export default function TouristDashboard({
           </section>
         )}
 
-        {/* 6. VERIFIED ACCOMMODATIONS & ROOM BOOKING */}
-        <section style={{
-          background: '#FFFFFF',
-          borderRadius: '1rem',
-          padding: '1.5rem',
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
-          marginBottom: '2rem'
-        }}>
+        {/* 6. SAFETY ALERTS & EMERGENCY SERVICES */}
+        <section style={{ marginBottom: '2rem' }}>
+          <SafetyAlerts alerts={alerts} activeSite={currentDisplayShrine} onOpenSOS={onOpenSOS || onTriggerSOS} />
+        </section>
+
+        {/* 7. MY YATRA TEAM TRACKER */}
+        <section style={{ marginBottom: '2rem' }}>
+          <TeamTracker
+            currentUser={currentUser}
+            currentSite={currentDisplayShrine}
+            onShowToast={onShowToast}
+          />
+        </section>
+
+        {/* 8. VERIFIED ACCOMMODATIONS & ROOM BOOKING */}
+        <section
+          id="verified-accommodations-section"
+          style={{
+            background: '#FFFFFF',
+            borderRadius: '1rem',
+            padding: '1.5rem',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+            marginBottom: '2rem'
+          }}
+        >
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -810,7 +939,7 @@ export default function TouristDashboard({
           </div>
         </section>
 
-        {/* 7. MY YATRA BOOKING STATUS (LIVE LIFECYCLE TRACKER) */}
+        {/* 9. MY YATRA BOOKINGS (CLEAN COMPACT CARDS & LIFECYCLE TRACKER) */}
         <section style={{
           background: '#FFFFFF',
           borderRadius: '1rem',
@@ -819,6 +948,7 @@ export default function TouristDashboard({
           boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
           marginBottom: '2rem'
         }}>
+          {/* Section Header */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -829,124 +959,175 @@ export default function TouristDashboard({
           }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
-                My Yatra Booking Status
+                My Yatra Bookings
               </h3>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
-                Real-time booking lifecycle status synced from FastAPI and Hotel Owner portal.
+                Track your accommodation requests and confirmed stays.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={loadTouristBookings}
-              disabled={isRefreshingBookings}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.45rem 0.85rem',
-                fontSize: '0.78rem',
-                fontWeight: '700',
-                color: '#334155',
-                background: '#F1F5F9',
-                border: '1px solid #CBD5E1',
-                borderRadius: '0.55rem',
-                cursor: 'pointer'
-              }}
-            >
-              🔄 {isRefreshingBookings ? 'Refreshing...' : 'Refresh Status'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              {/* View All Bookings button when > 3 bookings */}
+              {myBookingsList.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setIsBookingsModalOpen(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.45rem 0.85rem',
+                    fontSize: '0.78rem',
+                    fontWeight: '700',
+                    color: '#FF6B00',
+                    background: '#FFF7ED',
+                    border: '1px solid #FFEDD5',
+                    borderRadius: '0.55rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  📋 View All Bookings ({myBookingsList.length})
+                </button>
+              )}
+
+              {/* Real API Refresh Status Button */}
+              <button
+                type="button"
+                onClick={loadTouristBookings}
+                disabled={isRefreshingBookings}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.85rem',
+                  fontSize: '0.78rem',
+                  fontWeight: '700',
+                  color: '#334155',
+                  background: '#F1F5F9',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '0.55rem',
+                  cursor: isRefreshingBookings ? 'not-allowed' : 'pointer',
+                  opacity: isRefreshingBookings ? 0.7 : 1,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span style={{
+                  display: 'inline-block',
+                  animation: isRefreshingBookings ? 'spin 1s linear infinite' : 'none'
+                }}>🔄</span>
+                {isRefreshingBookings ? 'Refreshing...' : 'Refresh Status'}
+              </button>
+            </div>
           </div>
 
-          {myBookingsList.length === 0 ? (
+          {/* Body States: Loading, Error, Empty, or Cards Grid */}
+          {bookingsLoading && myBookingsList.length === 0 && !bookingsError ? (
+            <div style={{
+              padding: '2.5rem 1rem',
+              textAlign: 'center',
+              color: '#64748B',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.75rem'
+            }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                border: '3px solid #E2E8F0',
+                borderTopColor: '#FF6B00',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite'
+              }} />
+              <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                Loading your bookings...
+              </div>
+            </div>
+          ) : bookingsError ? (
             <div style={{
               textAlign: 'center',
-              padding: '2rem 1rem',
-              color: '#94A3B8',
-              border: '2px dashed #E2E8F0',
-              borderRadius: '0.75rem'
+              padding: '2rem 1.5rem',
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              borderRadius: '0.75rem',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.75rem'
             }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: '600' }}>
-                No active bookings or requests found.
+              <div style={{ fontSize: '1.4rem' }}>⚠️</div>
+              <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#991B1B' }}>
+                My bookings couldn't be loaded.
+              </div>
+              <button
+                type="button"
+                onClick={loadTouristBookings}
+                disabled={isRefreshingBookings}
+                style={{
+                  padding: '0.45rem 1.1rem',
+                  fontSize: '0.8rem',
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                  background: '#DC2626',
+                  border: 'none',
+                  borderRadius: '0.55rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Retry
+              </button>
+            </div>
+          ) : myBookingsList.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '2.5rem 1.5rem',
+              color: '#64748B',
+              border: '2px dashed #E2E8F0',
+              borderRadius: '0.75rem',
+              background: '#F8FAFC',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>🏨</div>
+              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: '#0F172A' }}>
+                My Yatra Bookings
+              </h4>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>
+                You don't have any accommodation bookings yet.
               </p>
-              <p style={{ margin: '0.25rem 0 0', fontSize: '0.78rem' }}>
-                Select an accommodation above to transmit your first yatra reservation request.
-              </p>
+              <button
+                type="button"
+                onClick={handleFindAccommodation}
+                style={{
+                  marginTop: '0.6rem',
+                  padding: '0.5rem 1.2rem',
+                  fontSize: '0.82rem',
+                  fontWeight: '700',
+                  color: '#FFFFFF',
+                  background: '#FF6B00',
+                  border: 'none',
+                  borderRadius: '0.55rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(255, 107, 0, 0.2)'
+                }}
+              >
+                Find Accommodation
+              </button>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
-                <thead>
-                  <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', textAlign: 'left' }}>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Booking Ref</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Accommodation</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Room / Type</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Dates</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Amount</th>
-                    <th style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#475569' }}>Lifecycle Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myBookingsList.map((b) => {
-                    const statusColor =
-                      b.status === 'CONFIRMED'
-                        ? { text: '#065F46', bg: '#ECFDF5', border: '#A7F3D0' }
-                        : b.status === 'DECLINED'
-                        ? { text: '#991B1B', bg: '#FEF2F2', border: '#FECACA' }
-                        : { text: '#92400E', bg: '#FFFBEB', border: '#FDE68A' };
-
-                    return (
-                      <tr key={b.booking_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: '800', color: '#0F172A' }}>
-                          {b.booking_id}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#334155' }}>
-                          {b.hotel_name}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
-                          #{b.room_number || '101'} • {b.room_type || 'Standard'}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', color: '#475569' }}>
-                          {b.check_in ? new Date(b.check_in).toLocaleDateString() : 'N/A'} →{' '}
-                          {b.check_out ? new Date(b.check_out).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem', fontWeight: '700', color: '#0F172A' }}>
-                          ₹{b.total_price}
-                        </td>
-                        <td style={{ padding: '0.75rem 1rem' }}>
-                          <span style={{
-                            display: 'inline-block',
-                            padding: '0.2rem 0.65rem',
-                            borderRadius: '999px',
-                            fontSize: '0.72rem',
-                            fontWeight: '800',
-                            color: statusColor.text,
-                            background: statusColor.bg,
-                            border: `1px solid ${statusColor.border}`
-                          }}>
-                            {b.status === 'CONFIRMED' && '✓ CONFIRMED'}
-                            {b.status === 'PENDING' && '⏳ PENDING REVIEW'}
-                            {b.status === 'DECLINED' && '✕ DECLINED'}
-                            {!['CONFIRMED', 'PENDING', 'DECLINED'].includes(b.status) && b.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '1rem'
+            }}>
+              {myBookingsList.slice(0, 3).map((b) => (
+                <BookingCard key={b.booking_id || b.id} booking={b} />
+              ))}
             </div>
           )}
-        </section>
-
-        {/* 8. MY YATRA TEAM TRACKER (HONEST NOTICE) */}
-        <section style={{ marginBottom: '2rem' }}>
-          <TeamTracker />
-        </section>
-
-        {/* 9. SAFETY ALERTS & EMERGENCY SERVICES */}
-        <section style={{ marginBottom: '2rem' }}>
-          <SafetyAlerts alerts={alerts} activeSite={currentDisplayShrine} />
         </section>
 
         {/* 10. LOCAL VENDORS & PILGRIM BAZAAR */}
@@ -975,6 +1156,129 @@ export default function TouristDashboard({
         onConfirmBooking={handleConfirmBooking}
         currentUser={currentUser}
       />
+
+      {/* 13. VIEW ALL BOOKINGS MODAL */}
+      {isBookingsModalOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="all-bookings-modal-title"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsBookingsModalOpen(false);
+            }
+          }}
+        >
+          <div style={{
+            background: '#FFFFFF',
+            borderRadius: '1rem',
+            maxWidth: '920px',
+            width: '100%',
+            maxHeight: '88vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid #E2E8F0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#F8FAFC'
+            }}>
+              <div>
+                <h3 id="all-bookings-modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
+                  My Yatra Bookings History
+                </h3>
+                <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
+                  Complete record of your accommodation requests and stays ({myBookingsList.length} total)
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBookingsModalOpen(false)}
+                aria-label="Close modal"
+                style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '0.5rem',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#64748B',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div style={{
+              padding: '1.5rem',
+              overflowY: 'auto',
+              flex: 1
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gap: '1rem'
+              }}>
+                {myBookingsList.map((b) => (
+                  <BookingCard key={b.booking_id || b.id} booking={b} />
+                ))}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '0.85rem 1.5rem',
+              borderTop: '1px solid #E2E8F0',
+              background: '#F8FAFC',
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                type="button"
+                onClick={() => setIsBookingsModalOpen(false)}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: '700',
+                  color: '#334155',
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '0.55rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

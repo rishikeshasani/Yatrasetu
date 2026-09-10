@@ -174,7 +174,7 @@ export default function TravelCompanyDashboard({ showToast }) {
       )}
 
       {/* HIMALAYA YATRA TRAVELS: PARTNER CONSOLE & DEMAND CALCULATOR (3 CORE FEATURES) */}
-      <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} />
+      <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
 
       {/* ====================================================== */}
       {/* FLEET SCHEDULE ADJUSTMENT MODAL                        */}
