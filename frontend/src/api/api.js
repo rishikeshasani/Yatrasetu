@@ -2822,7 +2822,7 @@ export async function createBookingRequest(payload) {
 }
 
 // 4. Fetch Hotel Booking Requests for Hotel Owner
-export async function fetchHotelBookingRequests(hotelId = 'H001', statusFilter = null) {
+export async function fetchHotelBookingRequests(hotelId = 'hotel-kedarnath-1', statusFilter = null) {
   try {
     const endpoint = `/hotels/${encodeURIComponent(hotelId)}/booking-requests${statusFilter ? `?status_filter=${statusFilter}` : ''}`;
     const data = await apiRequest(endpoint);
@@ -2835,7 +2835,16 @@ export async function fetchHotelBookingRequests(hotelId = 'H001', statusFilter =
   }
 
   const requests = getLocalRequests();
-  let filtered = requests.filter(r => r.hotel_id === hotelId || hotelId === 'H001');
+  const hid = String(hotelId || '').trim().toLowerCase();
+  let filtered = requests.filter(r => {
+    const rHid = String(r.hotel_id || '').trim().toLowerCase();
+    if (!rHid) return false;
+    if (rHid === hid) return true;
+    if ((hid === 'h001' || hid === 'hotel-kedarnath-1') && (rHid === 'h001' || rHid === 'hotel-kedarnath-1')) {
+      return true;
+    }
+    return false;
+  });
   if (statusFilter && statusFilter.toLowerCase() !== 'all') {
     filtered = filtered.filter(r => r.status.toLowerCase() === statusFilter.toLowerCase());
   }

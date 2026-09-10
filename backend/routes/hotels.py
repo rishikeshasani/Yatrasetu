@@ -1532,13 +1532,20 @@ def get_hotel_booking_requests(
     status_filter: Optional[str] = Query(None, description="pending | confirmed | declined | cancelled | ALL")
 ):
     _init_hotel_data()
-    filtered = [
-        r for r in _REQUESTS_DATA 
-        if r.get("hotel_id") == hotel_id 
-        or hotel_id in ["H001", "hotel-kedarnath-1", "ALL", "all"]
-        or str(r.get("hotel_id", "")).lower() in ["h001", "hotel-kedarnath-1", str(hotel_id).lower()]
-        or len(str(hotel_id)) > 10
-    ]
+    hid = str(hotel_id).strip().lower()
+
+    def matches_hotel(r):
+        r_hid = str(r.get("hotel_id", "")).strip().lower()
+        if not r_hid:
+            return False
+        if r_hid == hid:
+            return True
+        # Standard alias: H001 <-> hotel-kedarnath-1
+        if hid in ["h001", "hotel-kedarnath-1"] and r_hid in ["h001", "hotel-kedarnath-1"]:
+            return True
+        return False
+
+    filtered = [r for r in _REQUESTS_DATA if matches_hotel(r)]
     if status_filter and status_filter.lower() != "all":
         filtered = [r for r in filtered if r["status"].lower() == status_filter.lower()]
     return [BookingRequestResponse(**r) for r in filtered]

@@ -257,13 +257,21 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
     loadBookingRequests();
     loadRoomSlots();
 
-    // Subscribe to cross-tab updates
+    // Subscribe to cross-tab updates with strict hotel ID matching
     const unsubscribe = subscribeToHotelUpdates((event) => {
-      loadBookingRequests();
-      loadRoomSlots();
-      if (event.type === 'REQUEST_CREATED') {
-        if (showToast) {
-          showToast(`🔔 New Booking Request from ${event.request.guest_name} (Room #${event.request.room_number})`);
+      const currentHotelId = String(backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1').trim().toLowerCase();
+      const eventHotelId = String(event.request?.hotel_id || '').trim().toLowerCase();
+
+      const isTargetHotel = !eventHotelId || eventHotelId === currentHotelId ||
+        ((currentHotelId === 'h001' || currentHotelId === 'hotel-kedarnath-1') && (eventHotelId === 'h001' || eventHotelId === 'hotel-kedarnath-1'));
+
+      if (isTargetHotel) {
+        loadBookingRequests();
+        loadRoomSlots();
+        if (event.type === 'REQUEST_CREATED') {
+          if (showToast) {
+            showToast(`🔔 New Booking Request from ${event.request.guest_name} (Room #${event.request.room_number})`);
+          }
         }
       }
     });
@@ -277,11 +285,11 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
       unsubscribe();
       clearInterval(pollTimer);
     };
-  }, [currentUser]);
+  }, [currentUser, backendHotel?.id]);
 
   useEffect(() => {
     loadRoomSlots();
-  }, [selectedSlotDay]);
+  }, [selectedSlotDay, backendHotel?.id]);
 
   // Fetch real hotel data on mount & listen to live booking events
   useEffect(() => {
@@ -311,42 +319,13 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
           setBackendHotel(matched);
         }
         if (Array.isArray(ownerBookings)) {
-          setBackendBookings(ownerBookings);
-          if (ownerBookings.length > 0) {
-            const mappedRequests = ownerBookings.map((b, idx) => ({
-              id: b.id,
-              booking_id: b.id.slice(0, 8).toUpperCase(),
-              hotel_id: b.hotel_id,
-              room_id: b.room_id,
-              room_number: `20${(idx % 8) + 1}`,
-              guest_name: b.tourist_id && b.tourist_id.startsWith('0000') ? 'Ramesh Sharma (Pilgrim)' : `Yatri Pilgrim (${b.tourist_id?.slice(0, 6) || 'Devotee'})`,
-              guest_count: b.guests || 2,
-              room_type: b.room_type || 'Standard Deluxe',
-              check_in: b.check_in,
-              check_out: b.check_out,
-              price: b.total_price || 1200,
-              status: b.status || 'confirmed',
-              created_at: b.created_at || new Date().toISOString(),
-              decline_reason: null
-            }));
-            setBookingRequestsList((prev) => {
-              const existingMap = new Map(prev.map(r => [r.id, r]));
-              let hasNew = false;
-              mappedRequests.forEach(m => {
-                if (!existingMap.has(m.id)) {
-                  hasNew = true;
-                  existingMap.set(m.id, m);
-                } else {
-                  const item = existingMap.get(m.id);
-                  if (item) item.status = m.status;
-                }
-              });
-              if (hasNew && showToast) {
-                showToast(`🔔 New Pilgrim Booking: ${mappedRequests[0].guest_name} arriving for Kedarnath Yatra!`);
-              }
-              return Array.from(existingMap.values());
-            });
-          }
+          const currentHotelId = String(backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1').trim().toLowerCase();
+          const filteredBookings = ownerBookings.filter(b => {
+            const bHid = String(b.hotel_id || '').trim().toLowerCase();
+            return !bHid || bHid === currentHotelId ||
+              ((currentHotelId === 'h001' || currentHotelId === 'hotel-kedarnath-1') && (bHid === 'h001' || bHid === 'hotel-kedarnath-1'));
+          });
+          setBackendBookings(filteredBookings);
         }
         if (rerouteAlert && typeof rerouteAlert.is_active === 'boolean') {
           setState(prev => ({
@@ -365,9 +344,14 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
     }
     loadData();
 
-    // Auto-refresh when tourist books room or on 6-second heartbeat
-    const handleHotelBooked = () => {
-      loadData();
+    // Auto-refresh only when THIS hotel is booked or on 6-second heartbeat
+    const handleHotelBooked = (e) => {
+      const bookedHotelId = String(e?.detail?.hotelId || e?.detail?.hotel_id || '').trim().toLowerCase();
+      const currentHotelId = String(backendHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1').trim().toLowerCase();
+      if (!bookedHotelId || bookedHotelId === currentHotelId ||
+        ((currentHotelId === 'h001' || currentHotelId === 'hotel-kedarnath-1') && (bookedHotelId === 'h001' || bookedHotelId === 'hotel-kedarnath-1'))) {
+        loadData();
+      }
     };
     const handleRerouteEvent = (e) => {
       const active = Boolean(e?.detail?.is_active);
@@ -389,7 +373,7 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
       window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
       clearInterval(pollInterval);
     };
-  }, [currentUser]);
+  }, [currentUser, backendHotel?.id]);
 
   // Animate counter when incomingTourists changes
   useEffect(() => {
