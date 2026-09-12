@@ -166,9 +166,10 @@ def get_current_user(
         role = "government"
         gov_subrole = "police_official"
 
-    # Default government_subrole for government role
-    if role == "government" and not gov_subrole:
-        gov_subrole = "government_official"
+    # Ensure government role normalizes safely: police_official stays police_official, everything else normalizes to government_official
+    if role == "government":
+        if gov_subrole != "police_official":
+            gov_subrole = "government_official"
 
     full_name = (profile_data.get("full_name") if profile_data else None) or user_meta.get("full_name")
     created_at = profile_data.get("created_at") if profile_data else None

@@ -1911,16 +1911,6 @@ export const DEMO_CREDENTIALS = {
     phone: "+91-1352712112",
     jurisdiction: "Sacred Pilgrimage Corridors & Shrines (TS001–TS025)",
     department: "Law Enforcement & Tactical Crowd Safety Division"
-  },
-  municipal: {
-    email: "municipal_command@yatrasetu.org",
-    role: "government",
-    government_subrole: "other_government_official",
-    full_name: "Haridwar Municipal Corporation & Inter-Agency Coordination",
-    badge: "MUNICIPAL & INTER-AGENCY",
-    phone: "+91-1334220000",
-    department: "Municipal Services & Health Sanitation Coordination",
-    jurisdiction: "Sacred Pilgrim Ghats & Municipal Zones"
   }
 };
 export const TEST_ACCOUNT_PASSWORD = import.meta.env.VITE_TEST_ACCOUNT_PASSWORD || 'DemoPassword123!';
@@ -1954,8 +1944,8 @@ export async function loginUser(email, password) {
         resolvedRole = 'government';
         resolvedSubrole = 'police_official';
       }
-      if (resolvedRole === 'government' && !resolvedSubrole) {
-        resolvedSubrole = 'government_official';
+      if (resolvedRole === 'government') {
+        resolvedSubrole = resolvedSubrole === 'police_official' ? 'police_official' : 'government_official';
       }
 
       const userObj = {
@@ -2058,8 +2048,8 @@ export async function signupUser(email, password, fullName, role = "tourist", go
       payloadRole = 'government';
       payloadSubrole = 'police_official';
     }
-    if (payloadRole === 'government' && !payloadSubrole) {
-      payloadSubrole = 'government_official';
+    if (payloadRole === 'government') {
+      payloadSubrole = payloadSubrole === 'police_official' ? 'police_official' : 'government_official';
     }
 
     const payload = {
@@ -2138,8 +2128,8 @@ export async function fetchMe() {
       resolvedRole = 'government';
       resolvedSubrole = 'police_official';
     }
-    if (resolvedRole === 'government' && !resolvedSubrole) {
-      resolvedSubrole = 'government_official';
+    if (resolvedRole === 'government') {
+      resolvedSubrole = resolvedSubrole === 'police_official' ? 'police_official' : 'government_official';
     }
 
     const updatedUser = {

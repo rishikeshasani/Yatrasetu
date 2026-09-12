@@ -26,19 +26,18 @@ export default function Navbar({
   const getRoleDisplayName = (role, subrole = null) => {
     switch (role) {
       case 'government':
-        if (subrole === 'police_official') return 'Government (Police Command)';
-        if (subrole === 'other_government_official') return 'Government (Inter-Agency)';
-        return 'Government Administration';
+        if (subrole === 'police_official') return t('roles.govPoliceDisplayName', 'Government (Police Command)');
+        return t('roles.govAdminDisplayName', 'Government Administration');
       case 'police':
-        return 'Government (Police Command)';
+        return t('roles.govPoliceDisplayName', 'Government (Police Command)');
       case 'hotel':
-        return 'Hotel Partner';
+        return t('roles.hotelDisplayName', 'Hotel Partner');
       case 'travel_company':
-        return 'Travel Company';
+        return t('roles.travelDisplayName', 'Travel Company');
       case 'vendor':
-        return 'Local Vendor';
+        return t('roles.vendorDisplayName', 'Local Vendor');
       case 'tourist':
-        return 'Tourist';
+        return t('roles.touristDisplayName', 'Tourist');
       default:
         return 'Unauthorized Role';
     }
@@ -49,9 +48,6 @@ export default function Navbar({
       case 'government':
         if (subrole === 'police_official') {
           return { bg: '#0B192C', border: '#3B82F6', text: '#93C5FD', badgeBg: '#1E3A8A', badgeText: 'POLICE HQ' };
-        }
-        if (subrole === 'other_government_official') {
-          return { bg: '#EFF6FF', border: '#6366F1', text: '#4338CA', badgeBg: '#4F46E5', badgeText: 'INTER-AGENCY' };
         }
         return { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF', badgeBg: '#1D4ED8', badgeText: 'GOVT' };
       case 'police':
@@ -75,55 +71,45 @@ export default function Navbar({
 
     if (role === 'hotel') {
       return [
-        { label: 'Dashboard', target: 'hotel-dashboard' },
-        { label: 'Rooms', target: 'hotel-rooms' },
-        { label: 'Bookings', target: 'hotel-bookings' },
-        { label: 'Occupancy', target: 'hotel-occupancy' }
+        { label: t('nav.dashboard', 'Dashboard'), target: 'hotel-dashboard' },
+        { label: t('nav.rooms', 'Rooms'), target: 'hotel-rooms' },
+        { label: t('nav.bookings', 'Bookings'), target: 'hotel-bookings' },
+        { label: t('nav.occupancy', 'Occupancy'), target: 'hotel-occupancy' }
       ];
     }
 
     if (role === 'travel_company') {
       return [
-        { label: 'Dashboard', target: 'travel-dashboard' },
-        { label: 'Trips', target: 'travel-trips' },
-        { label: 'Groups', target: 'travel-groups' },
-        { label: 'Crowd Alerts', target: 'travel-crowd-alerts' },
-        { label: 'Routes', target: 'travel-routes' }
+        { label: t('nav.dashboard', 'Dashboard'), target: 'travel-dashboard' },
+        { label: t('nav.trips', 'Trips'), target: 'travel-trips' },
+        { label: t('nav.groups', 'Groups'), target: 'travel-groups' },
+        { label: t('nav.crowdAlerts', 'Crowd Alerts'), target: 'travel-crowd-alerts' },
+        { label: t('nav.routes', 'Routes'), target: 'travel-routes' }
       ];
     }
 
     if (role === 'government') {
       if (subrole === 'police_official') {
         return [
-          { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
-          { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
-          { label: 'Crowd Surge Alerts', target: 'gov-surge-alerts', tabId: 'surge-alerts' },
-          { label: '👮 Police & Crowd Simulation', target: 'gov-police-simulation', tabId: 'police-simulation' },
-          { label: 'Emergency Response', target: 'gov-emergency-response', tabId: 'emergency-response' },
-          { label: 'Traffic & Route Control', target: 'gov-traffic-control', tabId: 'traffic-control' },
-          { label: 'SOS / Distress Response', target: 'gov-sos-response', tabId: 'sos-response' },
-          { label: 'Safety Zones', target: 'gov-safety-zones', tabId: 'safety-zones' },
-          { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
-        ];
-      }
-
-      if (subrole === 'other_government_official') {
-        return [
-          { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
-          { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
-          { label: 'Alerts & Safety', target: 'gov-alerts-safety', tabId: 'alerts-safety' },
-          { label: 'Emergency Rerouting', target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
-          { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
+          { label: t('nav.overview', 'Overview'), target: 'gov-overview', tabId: 'overview' },
+          { label: t('nav.liveCrowdMonitoring', 'Live Crowd Monitoring'), target: 'gov-live-crowd', tabId: 'live-crowd' },
+          { label: t('nav.surgeAlerts', 'Crowd Surge Alerts'), target: 'gov-surge-alerts', tabId: 'surge-alerts' },
+          { label: `👮 ${t('nav.policeSimulation', 'Police & Crowd Simulation')}`, target: 'gov-police-simulation', tabId: 'police-simulation' },
+          { label: t('nav.emergencyResponse', 'Emergency Response'), target: 'gov-emergency-response', tabId: 'emergency-response' },
+          { label: t('nav.trafficControl', 'Traffic & Route Control'), target: 'gov-traffic-control', tabId: 'traffic-control' },
+          { label: t('nav.sosResponse', 'SOS / Distress Response'), target: 'gov-sos-response', tabId: 'sos-response' },
+          { label: t('nav.safetyZones', 'Safety Zones'), target: 'gov-safety-zones', tabId: 'safety-zones' },
+          { label: t('nav.reportsAnalytics', 'Reports / Analytics'), target: 'gov-reports-analytics', tabId: 'reports-analytics' }
         ];
       }
 
       // Default: Civil Administration (government_official)
       return [
-        { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
-        { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
-        { label: 'Alerts & Safety', target: 'gov-alerts-safety', tabId: 'alerts-safety' },
-        { label: 'Emergency Rerouting', target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
-        { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
+        { label: t('nav.overview', 'Overview'), target: 'gov-overview', tabId: 'overview' },
+        { label: t('nav.liveCrowdMonitoring', 'Live Crowd Monitoring'), target: 'gov-live-crowd', tabId: 'live-crowd' },
+        { label: t('nav.alertsSafety', 'Alerts & Safety'), target: 'gov-alerts-safety', tabId: 'alerts-safety' },
+        { label: t('nav.emergencyRerouting', 'Emergency Rerouting'), target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
+        { label: t('nav.reportsAnalytics', 'Reports / Analytics'), target: 'gov-reports-analytics', tabId: 'reports-analytics' }
       ];
     }
 

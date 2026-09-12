@@ -286,7 +286,7 @@ def test_13_anti_spoofing():
 
 
 def test_government_subrole_rbac():
-    print("\n--- 9. Testing Government Subrole Classifications (police_official vs government_official vs other) ---")
+    print("\n--- 9. Testing Government Subrole Classifications (police_official vs government_official) ---")
     gov_police_user = AuthenticatedUser(
         id="gov-police-123",
         email="police_subrole@yatrasetu.org",
@@ -300,13 +300,6 @@ def test_government_subrole_rbac():
         role="government",
         government_subrole="government_official",
         full_name="District Magistrate Office"
-    )
-    gov_other_user = AuthenticatedUser(
-        id="gov-other-123",
-        email="other_subrole@yatrasetu.org",
-        role="government",
-        government_subrole="other_government_official",
-        full_name="Municipal Coordination Office"
     )
 
     # 1. gov with police_official CAN access simulation
@@ -325,11 +318,10 @@ def test_government_subrole_rbac():
     assert res.status_code == 403, f"Expected 403 for gov/government_official on simulation, got {res.status_code}"
     print("PASS: Government with government_official classification is blocked from simulation (403 Forbidden)")
 
-    # 3. gov with other_government_official CANNOT access simulation (403)
-    app.dependency_overrides[get_current_user] = lambda: gov_other_user
-    res = client.get("/police/crowd-simulations")
-    assert res.status_code == 403, f"Expected 403 for gov/other_government_official on simulation, got {res.status_code}"
-    print("PASS: Government with other_government_official is blocked from simulation (403 Forbidden)")
+    # 3. gov with government_official CAN access civil administration endpoint
+    res_gov_only = client.get("/auth/roles/government-only")
+    assert res_gov_only.status_code == 200, f"Expected 200 for gov/government_official on /auth/roles/government-only, got {res_gov_only.status_code}"
+    print("PASS: Government with government_official classification can access /auth/roles/government-only (200 OK)")
 
     # 4. gov with police_official CAN access /auth/roles/police-only
     app.dependency_overrides[get_current_user] = lambda: gov_police_user
@@ -352,6 +344,12 @@ def test_government_subrole_rbac():
         res = client.post("/sos/sos-test/dispatch", json={"status": "ACKNOWLEDGED", "notes": "PCR-07 En route"})
         assert res.status_code == 200, f"Expected 200 for gov/police_official on SOS dispatch, got {res.status_code}"
         print("PASS: Government with police_official classification can dispatch SOS (200 OK)")
+
+    # 7. gov with government_official CANNOT access SOS tactical dispatch (403)
+    app.dependency_overrides[get_current_user] = lambda: gov_civil_user
+    res_sos_gov = client.post("/sos/sos-test/dispatch", json={"status": "ACKNOWLEDGED", "notes": "Civil admin attempt"})
+    assert res_sos_gov.status_code == 403, f"Expected 403 for gov/government_official on SOS dispatch, got {res_sos_gov.status_code}"
+    print("PASS: Government with government_official classification is blocked from SOS tactical dispatch (403 Forbidden)")
 
 
 if __name__ == "__main__":

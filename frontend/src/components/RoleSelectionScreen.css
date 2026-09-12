@@ -884,12 +884,6 @@
   background: #DBEAFE;
 }
 
-.gov-card-subrole-btn.municipal:hover {
-  border-color: #6366F1;
-  color: #4338CA;
-  background: #EEF2FF;
-}
-
 /* --------------------------------------------------------------------------
    Government Classification / Command Selector on VIEW 2 Login Form
    -------------------------------------------------------------------------- */
@@ -919,7 +913,7 @@
 
 .gov-subrole-cards-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.65rem;
 }
 
@@ -984,11 +978,6 @@
 .subrole-card-pill.police {
   background: #FEF3C7;
   color: #B45309;
-}
-
-.subrole-card-pill.municipal {
-  background: #E0E7FF;
-  color: #4338CA;
 }
 
 .subrole-card-name {

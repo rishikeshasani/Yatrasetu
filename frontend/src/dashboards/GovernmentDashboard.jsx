@@ -10,7 +10,8 @@ import {
   fetchCrowdSimulations,
   deleteCrowdSimulation,
   dispatchPoliceSOSAlert,
-  fetchPoliceSOSStatus
+  fetchPoliceSOSStatus,
+  getAuthToken
 } from '../api/api';
 import { supabase } from '../supabaseClient';
 import './GovernmentDashboard.css';
@@ -47,8 +48,7 @@ export default function GovernmentDashboard({
   // Classification Resolution
   const subrole = currentUser?.government_subrole || (currentUser?.role === 'police' ? 'police_official' : 'government_official');
   const isPoliceOfficial = subrole === 'police_official';
-  const isOtherGovOfficial = subrole === 'other_government_official';
-  const isCivilOfficial = !isPoliceOfficial && !isOtherGovOfficial;
+  const isCivilOfficial = !isPoliceOfficial;
 
   // Navigation Tabs:
   // Police Official: 'overview' | 'live-crowd' | 'surge-alerts' | 'police-simulation' | 'emergency-response' | 'traffic-control' | 'sos-response' | 'safety-zones' | 'reports-analytics'
@@ -367,17 +367,20 @@ export default function GovernmentDashboard({
     let isMounted = true;
 
     async function loadGovtData() {
+      if (!getAuthToken()) return;
       setIsLoadingSOS(true);
       try {
         const [alerts, report] = await Promise.all([
           fetchActiveSOSAlerts(),
           fetchGovernmentOccupancyReport()
         ]);
-        if (!isMounted) return;
+        if (!isMounted || !getAuthToken()) return;
         setSosAlerts(alerts || []);
         setHotelReport(report);
       } catch (err) {
-        console.error('Error loading government dashboard data:', err);
+        if (getAuthToken() && isMounted) {
+          console.error('Error loading government dashboard data:', err);
+        }
       } finally {
         if (isMounted) setIsLoadingSOS(false);
       }
@@ -561,8 +564,6 @@ export default function GovernmentDashboard({
               <span className="gov-brand-dept">
                 {isPoliceOfficial
                   ? 'Police & Law Enforcement Operations Center'
-                  : isOtherGovOfficial
-                  ? 'Municipal & Inter-Agency Coordination Center'
                   : 'Government Operations Center'}
               </span>
             </div>
@@ -579,11 +580,6 @@ export default function GovernmentDashboard({
             {isPoliceOfficial && (
               <span className="police-badge-gold" style={{ border: '1px solid #F59E0B', background: 'rgba(245,158,11,0.15)', color: '#FBBF24', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
                 🛡️ POLICE &amp; LAW ENFORCEMENT HQ
-              </span>
-            )}
-            {isOtherGovOfficial && (
-              <span style={{ border: '1px solid #6366F1', background: 'rgba(99,102,241,0.15)', color: '#818CF8', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
-                🌐 INTER-AGENCY COORDINATION
               </span>
             )}
             {isCivilOfficial && (

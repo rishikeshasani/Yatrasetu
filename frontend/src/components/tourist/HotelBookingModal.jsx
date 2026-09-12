@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Helper to format Date to 'YYYY-MM-DDTHH:mm' for datetime-local input
@@ -508,7 +508,7 @@ export default function HotelBookingModal({
                 cursor: 'pointer'
               }}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
 
             <button
@@ -537,7 +537,7 @@ export default function HotelBookingModal({
               ) : (
                 <>
                   <span>✓</span>
-                  <span>Confirm &amp; Send Booking Request</span>
+                  <span>{t('common.confirm')}</span>
                 </>
               )}
             </button>

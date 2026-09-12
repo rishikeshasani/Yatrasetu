@@ -33,6 +33,12 @@ class UserRole(str, Enum):
     POLICE = "police"
 
 
+ALLOWED_GOVERNMENT_SUBROLES = {
+    "government_official",
+    "police_official",
+}
+
+
 # --------------------------------------------------------------------------
 # Pydantic Request & Response Models
 # --------------------------------------------------------------------------
@@ -41,7 +47,19 @@ class SignupRequest(BaseModel):
     password: str = Field(..., min_length=6, description="Password (at least 6 characters)")
     full_name: str = Field(..., min_length=1, description="Full name of the user")
     role: UserRole = Field(UserRole.TOURIST, description="User role: tourist, hotel, travel_company, government, police")
-    government_subrole: Optional[str] = Field("government_official", description="Classification for government accounts: government_official, police_official, other_government_official")
+    government_subrole: Optional[str] = Field("government_official", description="Classification for government accounts: government_official, police_official")
+
+    @field_validator("government_subrole")
+    @classmethod
+    def validate_government_subrole(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            clean_subrole = v.strip().lower()
+            if clean_subrole not in ALLOWED_GOVERNMENT_SUBROLES:
+                raise ValueError(
+                    f"Invalid government subrole '{v}'. Allowed values: {sorted(list(ALLOWED_GOVERNMENT_SUBROLES))}"
+                )
+            return clean_subrole
+        return "government_official"
 
     @field_validator("email")
     @classmethod
@@ -129,6 +147,11 @@ def signup(data: SignupRequest):
     subrole_value = None
     if role_value == "government":
         subrole_value = data.government_subrole or "government_official"
+        if subrole_value not in ALLOWED_GOVERNMENT_SUBROLES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid government subrole '{subrole_value}'. Allowed values: {sorted(list(ALLOWED_GOVERNMENT_SUBROLES))}"
+            )
     elif role_value == "police":
         # Normalize legacy police registration to government + police_official
         role_value = "government"
@@ -346,8 +369,9 @@ def login(data: LoginRequest):
         role = "government"
         gov_subrole = "police_official"
 
-    if role == "government" and not gov_subrole:
-        gov_subrole = "government_official"
+    if role == "government":
+        if gov_subrole != "police_official":
+            gov_subrole = "government_official"
 
     # If profile record was missing, synchronize it
     if not profile_data:

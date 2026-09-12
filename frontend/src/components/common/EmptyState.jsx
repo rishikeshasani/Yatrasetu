@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Standardized YatraSetu EmptyState Component
@@ -6,13 +7,16 @@ import React from 'react';
  */
 export default function EmptyState({
   icon = '📋',
-  title = 'No Data Available',
-  description = 'There are currently no records to display.',
+  title = null,
+  description = null,
   action = null,
   theme = 'light',
   className = '',
   style = {}
 }) {
+  const { t } = useTranslation();
+  const resolvedTitle = title || t('common.noData', 'No Data Available');
+  const resolvedDescription = description || t('common.noRecords', 'There are currently no records to display.');
   const isDark = theme === 'dark';
 
   return (
@@ -44,7 +48,7 @@ export default function EmptyState({
           color: isDark ? '#F1F5F9' : '#1E293B'
         }}
       >
-        {title}
+        {resolvedTitle}
       </h4>
       <p
         style={{
@@ -55,7 +59,7 @@ export default function EmptyState({
           lineHeight: 1.4
         }}
       >
-        {description}
+        {resolvedDescription}
       </p>
       {action && <div>{action}</div>}
     </div>

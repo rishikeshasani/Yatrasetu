@@ -93,7 +93,7 @@ export default function App() {
       }
       // Re-verify token with backend in background
       fetchMe().then((freshUser) => {
-        if (!isMounted) return;
+        if (!isMounted || !getAuthToken()) return;
         if (freshUser && freshUser.role) {
           const freshRole = freshUser.role === 'police' ? 'government' : freshUser.role;
           setCurrentUser(freshUser);
@@ -320,7 +320,9 @@ export default function App() {
 
     const normalizedUser = rawRole === 'police'
       ? { ...user, role: 'government', government_subrole: 'police_official' }
-      : user;
+      : (authRole === 'government'
+          ? { ...user, role: 'government', government_subrole: user.government_subrole === 'police_official' ? 'police_official' : 'government_official' }
+          : user);
 
     setCurrentUser(normalizedUser);
     if (['tourist', 'government', 'hotel', 'travel_company'].includes(authRole)) {
@@ -333,10 +335,8 @@ export default function App() {
       showToast(`🏪 Welcome ${user.business_name}! Local Temple Vendor portal active.`);
       setIsProfileOpen(true);
     } else if (authRole === 'government') {
-      if (user.government_subrole === 'police_official') {
+      if (normalizedUser.government_subrole === 'police_official') {
         showToast(`👮 Welcome ${user.full_name}! Government Command Center (Police & Law Enforcement HQ) authorized.`);
-      } else if (user.government_subrole === 'other_government_official') {
-        showToast(`🏛️ Welcome ${user.full_name}! Government Command Center (Municipal & Inter-Agency Coordination) authorized.`);
       } else {
         showToast(`🏛️ Welcome ${user.full_name}! Government Command Center (Civil Administration) authorized.`);
       }

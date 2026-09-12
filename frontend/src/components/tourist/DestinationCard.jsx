@@ -57,7 +57,7 @@ export default function DestinationCard({
         <span className="card-category-badge">{category}</span>
         <span className={`card-status-badge ${statusClass}`}>
           <span className="badge-bullet"></span>
-          {status}
+          {t(`crowdSummary.${status.toLowerCase()}`, status)}
         </span>
 
         {/* Bottom Overlay Info */}
@@ -138,7 +138,7 @@ export default function DestinationCard({
           title="Set as Active Monitoring Shrine"
         >
           <span>{isSelected ? '✓' : '⚡'}</span>
-          <span>{isSelected ? 'Monitoring' : t('grid.monitorLive')}</span>
+          <span>{isSelected ? t('crowdSummary.monitoring', 'Monitoring') : t('grid.monitorLive', 'Monitor Live')}</span>
         </button>
       </div>
     </div>

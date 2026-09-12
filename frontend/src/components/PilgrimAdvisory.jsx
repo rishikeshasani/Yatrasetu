@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getShrineImage } from '../utils/shrineImages';
 
 /**
@@ -47,6 +48,7 @@ export default function PilgrimAdvisory({
   onCompleteArrival,
   onSwitchBack
 }) {
+  const { t } = useTranslation();
   const [selectedAltIndex, setSelectedAltIndex] = useState(0);
   const [userCoords, setUserCoords] = useState(null);
   const [gpsStatus, setGpsStatus] = useState('initializing'); // 'active' | 'denied' | 'unavailable' | 'unsupported'
@@ -154,15 +156,15 @@ export default function PilgrimAdvisory({
         <div className="advisory-header-left">
           <div className="advisory-pill-row">
             <span className="advisory-badge-pill">
-              <span className="sparkle-icon">✨</span> AI Dynamic Advisory
+              <span className="sparkle-icon">✨</span> {t('advisory.badge')}
             </span>
             {redistributionNeeded ? (
               <span className="advisory-surge-pill">
-                <span className="pulse-warning-dot"></span> Congestion Alert Active
+                <span className="pulse-warning-dot"></span> {t('advisory.congestionAlert')}
               </span>
             ) : (
               <span className="advisory-optimal-pill">
-                <span className="check-dot">✓</span> Crowd Flow Manageable
+                <span className="check-dot">✓</span> {t('advisory.conditionsManageable')}
               </span>
             )}
           </div>
@@ -227,7 +229,7 @@ export default function PilgrimAdvisory({
               onClick={handleSimulateArrival}
               title="Simulates pilgrim arriving within 200m of destination for demo testing"
             >
-              <span className="btn-icon">📍</span> Demo: Simulate Arrival
+              {t('advisory.simulateArrival')}
             </button>
 
             {/* Switch back to original site */}
@@ -237,7 +239,7 @@ export default function PilgrimAdvisory({
               onClick={onSwitchBack}
               title="Cancel alternate route and return to main shrine"
             >
-              Switch Back to {siteName}
+              {t('advisory.switchBack')} ({siteName})
             </button>
           </div>
         </div>
@@ -269,7 +271,7 @@ export default function PilgrimAdvisory({
               onClick={onSwitchBack}
               title="Return view to main shrine (earned points are preserved)"
             >
-              Return to {siteName}
+              {t('advisory.switchBack')} ({siteName})
             </button>
           </div>
         </div>
@@ -520,7 +522,7 @@ export default function PilgrimAdvisory({
                         onClick={handleSimulateArrival}
                         title="Simulate arrival within 200m"
                       >
-                        📍 Demo: Simulate Arrival
+                        {t('advisory.simulateArrival')}
                       </button>
                     )}
 
@@ -540,7 +542,7 @@ export default function PilgrimAdvisory({
                         </>
                       ) : (
                         <>
-                          <span className="cta-icon">🧭</span> Switch to Alternate Route
+                          <span className="cta-icon">🧭</span> {t('advisory.switchCta')}
                         </>
                       )}
                     </button>

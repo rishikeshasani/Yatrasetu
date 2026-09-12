@@ -559,7 +559,7 @@ export default function TouristDashboard({
               cursor: 'pointer'
             }}
           >
-            Logout
+            {t('nav.logout', 'Logout')}
           </button>
         </div>
       </header>
@@ -675,7 +675,7 @@ export default function TouristDashboard({
                     cursor: 'pointer'
                   }}
                 >
-                  📖 Full Shrine Guide
+                  📖 {t('details.fullShrineGuide', 'Full Shrine Guide')}
                 </button>
                 <button
                   type="button"
@@ -691,7 +691,7 @@ export default function TouristDashboard({
                     cursor: 'pointer'
                   }}
                 >
-                  🚨 Emergency SOS
+                  🚨 {t('details.emergencySOS', 'Emergency SOS')}
                 </button>
               </div>
             </div>
@@ -764,10 +764,10 @@ export default function TouristDashboard({
           }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
-                Verified Yatri Accommodations &amp; Ashrams
+                {t('hotels.title', 'Verified Yatri Accommodations & Ashrams')}
               </h3>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
-                Directly synchronized with real hotel inventory near {currentDisplayShrine?.name || 'shrine'}.
+                {t('hotels.subtitle', 'Official temple ashrams, GMVN rest houses, and verified hospitality partners near')} {currentDisplayShrine?.name || 'shrine'}.
               </p>
             </div>
             <span style={{
@@ -779,7 +779,7 @@ export default function TouristDashboard({
               borderRadius: '999px',
               border: '1px solid #A7F3D0'
             }}>
-              ✓ Verified Lodges &amp; Real-time Rooms
+              {t('hotels.verifiedBadge', '✓ Official YatraSetu Verified')}
             </span>
           </div>
 
@@ -896,7 +896,7 @@ export default function TouristDashboard({
                         cursor: 'pointer'
                       }}
                     >
-                      {bookingHotelId === h.id ? 'Connecting...' : 'Book Room'}
+                      {bookingHotelId === h.id ? t('common.loading', 'Connecting...') : t('hotels.bookRoom', 'Book Room')}
                     </button>
                   </div>
                 </div>

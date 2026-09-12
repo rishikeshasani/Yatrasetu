@@ -49,7 +49,7 @@ export default function RoleSelectionScreen({
   const ROLES_DATA = [
     {
       id: 'government',
-      name: t('roles.govtTitle', 'Government & Administration'),
+      name: t('roles.govtTitle', 'Government'),
       badge: t('roles.govtBadge', 'NATIONAL COMMAND CENTER'),
       iconEmoji: '🏛️',
       iconSvg: (
@@ -63,11 +63,15 @@ export default function RoleSelectionScreen({
           <polygon points="12 2 2 8 22 8 12 2" />
         </svg>
       ),
-      description: t('roles.govtDesc', 'Unified command center for Civil Administration, Police Operations, and Multi-Agency Safety.'),
+      description: t('roles.govtDesc', 'Monitor crowds, safety, alerts and emergency rerouting.'),
       actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.govtTitle', 'Government')}`,
       colorClass: 'role-government',
       accentColor: '#1D4ED8',
-      features: ['Civil Administration & Tourism Logistics', 'Police Law Enforcement & Crowd Simulations', 'Emergency Highway Rerouting & Safety Operations']
+      features: [
+        t('roles.featGovt1', 'Civil Administration & Tourism Logistics'),
+        t('roles.featGovt2', 'Police Law Enforcement & Crowd Simulations'),
+        t('roles.featGovt3', 'Emergency Highway Rerouting & Safety Operations')
+      ]
     },
     {
       id: 'hotel',
@@ -90,7 +94,11 @@ export default function RoleSelectionScreen({
       actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.hotelTitle', 'Hotel')}`,
       colorClass: 'role-hotel',
       accentColor: '#D97706',
-      features: ['Dynamic QR Check-In Terminal', 'Automated Surge Pricing Layer', 'Inbound Fleet & Highway Route Demand']
+      features: [
+        t('roles.featHotel1', 'Dynamic QR Check-In Terminal'),
+        t('roles.featHotel2', 'Automated Surge Pricing Layer'),
+        t('roles.featHotel3', 'Inbound Fleet & Highway Route Demand')
+      ]
     },
     {
       id: 'travel_company',
@@ -111,12 +119,16 @@ export default function RoleSelectionScreen({
       actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.travelTitle', 'Travel Company')}`,
       colorClass: 'role-travel',
       accentColor: '#7C3AED',
-      features: ['Char Dham Sacred Circuits', 'Fleet Rerouting & Bus Schedules', 'Multi-Shrine Fleet Intelligence']
+      features: [
+        t('roles.featTravel1', 'Char Dham Sacred Circuits'),
+        t('roles.featTravel2', 'Fleet Rerouting & Bus Schedules'),
+        t('roles.featTravel3', 'Multi-Shrine Fleet Intelligence')
+      ]
     },
     {
       id: 'tourist',
       name: t('roles.touristTitle', 'Tourist / Pilgrim'),
-      badge: t('roles.touristBadge', 'DEVOTEE & PILGRIM'),
+      badge: t('roles.touristBadge', 'SACRED YATRI PORTAL'),
       iconEmoji: '🎒',
       iconSvg: (
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -126,11 +138,15 @@ export default function RoleSelectionScreen({
           <path d="M10 14h4" />
         </svg>
       ),
-      description: t('roles.touristDesc', 'Explore destinations, crowd status, forecasts, safety and hotels.'),
+      description: t('roles.touristDesc', 'Explore 25 shrines, live crowd telemetry, and verified stays.'),
       actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.touristTitle', 'Tourist')}`,
       colorClass: 'role-tourist',
       accentColor: '#EA580C',
-      features: ['Live 25 Shrines Telemetry', 'Punya Green Wallet & Rewards', 'Verified Lodges & 1-Click SOS']
+      features: [
+        t('roles.featTourist1', 'Live 25 Shrines Telemetry'),
+        t('roles.featTourist2', 'Punya Green Wallet & Rewards'),
+        t('roles.featTourist3', 'Verified Lodges & 1-Click SOS')
+      ]
     }
   ];
 
@@ -157,7 +173,7 @@ export default function RoleSelectionScreen({
     setPassword('');
 
     if (roleId === 'government') {
-      const chosenSubrole = subrole || governmentSubrole || 'government_official';
+      const chosenSubrole = subrole === 'police_official' ? 'police_official' : 'government_official';
       setGovernmentSubrole(chosenSubrole);
     }
 
@@ -168,26 +184,24 @@ export default function RoleSelectionScreen({
 
   // Switch government classification inside login form
   const handleSelectSubrole = (newSubrole) => {
-    setGovernmentSubrole(newSubrole);
+    setGovernmentSubrole(newSubrole === 'police_official' ? 'police_official' : 'government_official');
     setErrorMsg('');
     setInfoMsg('');
   };
 
   // Fast-track evaluation helper (only invoked via explicit SIH evaluation controls)
   const handleQuickFillEvaluation = (targetRole, subrole = null) => {
-    const roleId = targetRole === 'police' || targetRole === 'municipal' ? 'government' : targetRole;
+    const roleId = targetRole === 'police' ? 'government' : targetRole;
     setSelectedRole(roleId);
     setCurrentView('login');
     setAuthMode('signin');
     setErrorMsg('');
 
     if (roleId === 'government') {
-      const actualSubrole = subrole || (targetRole === 'police' ? 'police_official' : targetRole === 'municipal' ? 'other_government_official' : 'government_official');
+      const actualSubrole = subrole === 'police_official' || targetRole === 'police' ? 'police_official' : 'government_official';
       setGovernmentSubrole(actualSubrole);
       if (actualSubrole === 'police_official') {
         setEmail(DEMO_CREDENTIALS.police?.email || 'police_command@yatrasetu.org');
-      } else if (actualSubrole === 'other_government_official') {
-        setEmail(DEMO_CREDENTIALS.municipal?.email || 'municipal_command@yatrasetu.org');
       } else {
         setEmail(DEMO_CREDENTIALS.government?.email || 'govt_command@yatrasetu.org');
       }
@@ -414,10 +428,6 @@ export default function RoleSelectionScreen({
         <main className="role-selection-main">
           {/* Hero Heading Section */}
           <div className="role-hero-section">
-            <div className="role-badge-pill">
-              <span>🏛️</span>
-              <span>{t('roles.nationalBadge', 'National Sacred Corridor Portal')}</span>
-            </div>
             <h1 className="role-main-title">{t('roles.loginAs', 'Login As')}</h1>
             <p className="role-main-subtitle">
               {t('roles.selectRole', 'Select your role to access your authorized dashboard')}
@@ -457,7 +467,7 @@ export default function RoleSelectionScreen({
 
                   {role.id === 'government' && (
                     <div className="gov-card-classification-picker">
-                      <div className="gov-card-picker-label">Choose Command Classification:</div>
+                      <div className="gov-card-picker-label">{t('roles.chooseClassification', 'Choose Command Classification:')}</div>
                       <div className="gov-card-picker-btns">
                         <button
                           type="button"
@@ -467,7 +477,7 @@ export default function RoleSelectionScreen({
                             handleSelectRole('government', 'government_official');
                           }}
                         >
-                          <span>🏛️</span> Civil
+                          <span>🏛️</span> {t('roles.civilSubrole', 'Civil / Government Official')}
                         </button>
                         <button
                           type="button"
@@ -477,17 +487,7 @@ export default function RoleSelectionScreen({
                             handleSelectRole('government', 'police_official');
                           }}
                         >
-                          <span>👮</span> Police HQ
-                        </button>
-                        <button
-                          type="button"
-                          className="gov-card-subrole-btn municipal"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectRole('government', 'other_government_official');
-                          }}
-                        >
-                          <span>🌐</span> Municipal
+                          <span>🛡️</span> {t('roles.policeSubrole', 'Police HQ')}
                         </button>
                       </div>
                     </div>
@@ -572,13 +572,6 @@ export default function RoleSelectionScreen({
                   <button
                     type="button"
                     className="quick-eval-chip"
-                    onClick={() => handleQuickDemo('municipal')}
-                  >
-                    🌐 Demo Govt (Municipal)
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-eval-chip"
                     onClick={() => handleQuickDemo('hotel')}
                   >
                     🏨 Demo Hotel
@@ -609,7 +602,7 @@ export default function RoleSelectionScreen({
                 className="login-back-btn"
               >
                 <span>←</span>
-                <span>Back to &quot;Login as&quot;</span>
+                <span>{t('roles.backToLoginAs', 'Back to "Login as"')}</span>
               </button>
 
               <span className="login-role-tag" style={{ color: currentRoleMeta.accentColor }}>
@@ -628,7 +621,7 @@ export default function RoleSelectionScreen({
                     ? `Create ${currentRoleMeta.name} Account`
                     : authMode === 'aadhaar'
                     ? 'Pilgrim Aadhaar e-KYC Verification'
-                    : `Login as ${currentRoleMeta.name}`}
+                    : `${t('roles.loginAs', 'Login as')} ${currentRoleMeta.name}`}
                 </h2>
                 <p className="login-desc">{currentRoleMeta.description}</p>
               </div>
@@ -641,14 +634,14 @@ export default function RoleSelectionScreen({
                 onClick={() => { setAuthMode('signin'); setErrorMsg(''); setInfoMsg(''); }}
                 className={`mode-tab-btn ${authMode === 'signin' ? 'active' : ''}`}
               >
-                🔑 Sign In
+                🔑 {t('roles.signInTab', 'Sign In')}
               </button>
               <button
                 type="button"
                 onClick={() => { setAuthMode('signup'); setErrorMsg(''); setInfoMsg(''); }}
                 className={`mode-tab-btn ${authMode === 'signup' ? 'active' : ''}`}
               >
-                📝 Register
+                📝 {t('roles.registerTab', 'Register')}
               </button>
               {selectedRole === 'tourist' && (
                 <button
@@ -656,7 +649,7 @@ export default function RoleSelectionScreen({
                   onClick={() => { setAuthMode('aadhaar'); setAadhaarStep(1); setErrorMsg(''); setInfoMsg(''); }}
                   className={`mode-tab-btn ${authMode === 'aadhaar' ? 'active' : ''}`}
                 >
-                  🪪 Aadhaar OTP
+                  🪪 {t('roles.aadhaarTab', 'Aadhaar OTP')}
                 </button>
               )}
             </div>
@@ -681,8 +674,8 @@ export default function RoleSelectionScreen({
                 {selectedRole === 'government' && (
                   <div className="gov-subrole-selector-wrap">
                     <div className="gov-subrole-label-bar">
-                      <label className="gov-subrole-title-label">Government Classification / Command *</label>
-                      <span className="gov-subrole-hint">Choose authorized operational jurisdiction</span>
+                      <label className="gov-subrole-title-label">{t('roles.govClassificationLabel', 'Government Classification / Command *')}</label>
+                      <span className="gov-subrole-hint">{t('roles.govClassificationHint', 'Choose authorized operational jurisdiction')}</span>
                     </div>
 
                     <div className="gov-subrole-cards-grid">
@@ -695,11 +688,11 @@ export default function RoleSelectionScreen({
                           <span className="subrole-card-icon">🏛️</span>
                           <span className="subrole-card-pill civil">CIVIL ADMIN</span>
                         </div>
-                        <div className="subrole-card-name">Civil Administration</div>
-                        <div className="subrole-card-desc">District Magistrate • DEOC • Corridor Administration</div>
-                        <div className="subrole-card-scope">Public Safety &amp; Civil Desk</div>
+                        <div className="subrole-card-name">{t('roles.civilAdminTitle', 'Civil Administration')}</div>
+                        <div className="subrole-card-desc">{t('roles.civilAdminDesc', 'District Magistrate • DEOC • Corridor Administration')}</div>
+                        <div className="subrole-card-scope">{t('roles.civilAdminScope', 'Public Safety & Civil Desk')}</div>
                         {governmentSubrole === 'government_official' && (
-                          <div className="subrole-card-selected-marker">✓ Selected</div>
+                          <div className="subrole-card-selected-marker">✓ {t('roles.selectedMarker', 'Selected')}</div>
                         )}
                       </button>
 
@@ -712,28 +705,11 @@ export default function RoleSelectionScreen({
                           <span className="subrole-card-icon">🛡️</span>
                           <span className="subrole-card-pill police">POLICE HQ</span>
                         </div>
-                        <div className="subrole-card-name">Police Official</div>
-                        <div className="subrole-card-desc">Police HQ • SDRF • Crowd Surge Defense</div>
-                        <div className="subrole-card-scope">Law Enforcement &amp; Tactical Dispatch</div>
+                        <div className="subrole-card-name">{t('roles.policeOfficialTitle', 'Police Official')}</div>
+                        <div className="subrole-card-desc">{t('roles.policeOfficialDesc', 'Police HQ • SDRF • Crowd Surge Defense')}</div>
+                        <div className="subrole-card-scope">{t('roles.policeOfficialScope', 'Law Enforcement & Tactical Dispatch')}</div>
                         {governmentSubrole === 'police_official' && (
-                          <div className="subrole-card-selected-marker">✓ Selected</div>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`gov-subrole-select-card ${governmentSubrole === 'other_government_official' ? 'active' : ''}`}
-                        onClick={() => handleSelectSubrole('other_government_official')}
-                      >
-                        <div className="subrole-card-top-row">
-                          <span className="subrole-card-icon">🌐</span>
-                          <span className="subrole-card-pill municipal">MUNICIPAL</span>
-                        </div>
-                        <div className="subrole-card-name">Other Govt Official</div>
-                        <div className="subrole-card-desc">Municipal Services • Inter-Agency Protocols</div>
-                        <div className="subrole-card-scope">Sanitation, Health &amp; Civic Amenities</div>
-                        {governmentSubrole === 'other_government_official' && (
-                          <div className="subrole-card-selected-marker">✓ Selected</div>
+                          <div className="subrole-card-selected-marker">✓ {t('roles.selectedMarker', 'Selected')}</div>
                         )}
                       </button>
                     </div>
@@ -822,16 +798,6 @@ export default function RoleSelectionScreen({
                           <span>👮 Quick-Fill: Police &amp; Law Enforcement HQ</span>
                           <span className="demo-email-hint">(SDRF &amp; Police Headquarters Command)</span>
                         </button>
-                        <button
-                          type="button"
-                          disabled={isLoading}
-                          onClick={() => handleQuickFillEvaluation('government', 'other_government_official')}
-                          className="auth-demo-quick-btn"
-                          style={{ borderColor: '#6366F1' }}
-                        >
-                          <span>🌐 Quick-Fill: Municipal &amp; Inter-Agency</span>
-                          <span className="demo-email-hint">(Municipal Services Command)</span>
-                        </button>
                       </div>
                     ) : (
                       <button
@@ -906,7 +872,6 @@ export default function RoleSelectionScreen({
                     >
                       <option value="government_official">Civil Administration (District Magistrate / DEOC)</option>
                       <option value="police_official">Police / Law Enforcement Field Command (SDRF / Police HQ)</option>
-                      <option value="other_government_official">Municipal / Inter-Agency Coordination</option>
                     </select>
                   </div>
                 )}
