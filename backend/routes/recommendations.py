@@ -36,33 +36,11 @@ def get_alternatives(site_id: str):
         raise HTTPException(status_code=404, detail="Site not found")
     site = site_data[0]
 
-    # 2. Get the site's current crowd status using existing crowd-density logic
-    from routes.crowd import latest_observations
-    if site_id in latest_observations:
-        cached = latest_observations[site_id]
-        people_count = cached["people_count"]
-        occupancy_percentage = cached["occupancy_percentage"]
-        status = cached["status"]
-    else:
-        obs = supabase.table("crowd_observations")\
-            .select("*").eq("site_id", site_id)\
-            .order("id", desc=True).limit(1).execute().data
-
-        if obs:
-            people_count = obs[0]["people_count"]
-            occupancy_percentage = round((people_count / site["capacity"]) * 100, 1)
-        else:
-            people_count = 0
-            occupancy_percentage = 0.0
-
-        if occupancy_percentage < 50:
-            status = "NORMAL"
-        elif occupancy_percentage < 75:
-            status = "MODERATE"
-        elif occupancy_percentage < 90:
-            status = "HIGH"
-        else:
-            status = "CRITICAL"
+    # 2. Get the site's current crowd status using unified resolve_site_crowd_state
+    from routes.crowd import resolve_site_crowd_state
+    crowd_state = resolve_site_crowd_state(site_id)
+    occupancy_percentage = crowd_state["occupancy_percentage"]
+    status = crowd_state["status"]
 
     # 3. Load and filter alternatives from CSV
     recommendations = []
@@ -104,6 +82,7 @@ def get_alternatives(site_id: str):
     return {
         "site_id": site_id,
         "site_name": site["name"],
+        "current_occupancy": occupancy_percentage,
         "current_occupancy_percentage": occupancy_percentage,
         "current_status": status,
         "redistribution_needed": redistribution_needed,

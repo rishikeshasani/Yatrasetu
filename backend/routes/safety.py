@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel, Field
 from database import supabase, supabase_admin
-from dependencies import get_current_user, require_role, AuthenticatedUser
+from dependencies import get_current_user, require_role, require_police_operations, AuthenticatedUser
 
 router = APIRouter()
 
@@ -122,12 +122,12 @@ class SOSDispatchPayload(BaseModel):
 def dispatch_sos_alert(
     alert_id: str,
     payload: Optional[SOSDispatchPayload] = None,
-    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+    current_user: AuthenticatedUser = Depends(require_police_operations)
 ):
     """
-    Government Emergency Command SOS Dispatch Endpoint:
-    - Protected: Verified JWT with role='government' required.
-    - Security: Authenticated Government officer identity enforced.
+    Police Command SOS Dispatch Endpoint:
+    - Protected: Verified JWT with role='police' required (Government/Tourist/Hotel -> 403 Forbidden).
+    - Security: Authenticated Police officer identity enforced.
     - Database: Updates public.sos_alerts record status in Supabase.
     - Status Constraint: Maps dispatch to 'ACKNOWLEDGED' to respect CHECK (status IN ('ACTIVE', 'ACKNOWLEDGED', 'RESOLVED')).
     - Response: Confirms dispatch and returns persisted record details.
@@ -182,6 +182,26 @@ def dispatch_sos_alert(
         "dispatched_by": current_user.id,
         "dispatched_at": now_iso
     }
+
+@router.get("/sos/{alert_id}/status")
+def get_sos_alert_status(
+    alert_id: str,
+    current_user: AuthenticatedUser = Depends(require_police_operations)
+):
+    """
+    Police Command Endpoint: Returns current status of an SOS alert.
+    - Protected: Authenticated Police officers ONLY (Government/Tourist/Hotel -> 403 Forbidden).
+    """
+    try:
+        res = supabase_admin.table("sos_alerts").select("*").eq("id", alert_id).execute()
+        if res.data and len(res.data) > 0:
+            return res.data[0]
+    except Exception:
+        pass
+    for item in LOCAL_ACTIVE_SOS:
+        if item.get("id") == alert_id:
+            return item
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="SOS alert not found.")
 
 @router.get("/sos/active")
 def get_active_sos():
@@ -284,30 +304,14 @@ def get_nearest_site_with_status(zone_lat, zone_lon, sites):
     if not nearest_site:
         return None, None, 0, 0.0, "NORMAL"
 
-    # Get latest observation
-    obs_data = supabase.table("crowd_observations")\
-        .select("*").eq("site_id", nearest_site["id"])\
-        .order("id", desc=True).limit(1).execute().data
+    # Use canonical backend crowd resolver
+    from routes.crowd import resolve_site_crowd_state
+    crowd_state = resolve_site_crowd_state(nearest_site["id"])
+    people_count = crowd_state["people_count"]
+    occupancy = crowd_state["occupancy_percentage"]
+    status = crowd_state["status"]
 
-    if not obs_data:
-        return nearest_site, None, 0, 0.0, "NORMAL"
-
-    latest_obs = obs_data[0]
-    people_count = latest_obs["people_count"]
-    capacity = nearest_site["capacity"]
-    occupancy = round((people_count / capacity) * 100, 1)
-
-    # Determine status
-    if occupancy < 50:
-        status = "NORMAL"
-    elif occupancy < 75:
-        status = "MODERATE"
-    elif occupancy < 90:
-        status = "HIGH"
-    else:
-        status = "CRITICAL"
-
-    return nearest_site, latest_obs, people_count, occupancy, status
+    return nearest_site, crowd_state, people_count, occupancy, status
 
 def get_site_safety_info(site_id: str):
     """Fetches emergency/safety info for a site with graceful fallback if table or record doesn't exist."""
@@ -438,11 +442,11 @@ def resolve_sister_alternatives(site_id: str):
 @router.post("/alerts/reroute/activate")
 def activate_emergency_reroute(
     data: RerouteActivateRequest,
-    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+    current_user: AuthenticatedUser = Depends(require_role(["government", "police"]))
 ):
     """
     Activates an Emergency Reroute Event for a congested shrine.
-    - Protected: Only users with verified JWT role='government' can activate.
+    - Protected: Users with verified JWT role='government' or 'police' can activate.
     - Dynamic Validation: Validates site_id against public.sites table.
     - Source of Truth: Persists to public.emergency_reroutes in Supabase.
     - Genuine Alternatives: Queries get_alternatives(site_id) for sister shrine destinations.
@@ -463,28 +467,12 @@ def activate_emergency_reroute(
     site_name = site_obj.get("name", resolved_site_id)
     capacity = site_obj.get("capacity", 13000)
 
-    # 2. Get latest crowd observation & occupancy
-    people_count = 12350
-    try:
-        from routes.crowd import latest_observations
-        if resolved_site_id in latest_observations:
-            people_count = latest_observations[resolved_site_id]["people_count"]
-        else:
-            obs = supabase.table("crowd_observations").select("*").eq("site_id", resolved_site_id).order("id", desc=True).limit(1).execute()
-            if obs.data and len(obs.data) > 0:
-                people_count = obs.data[0]["people_count"]
-    except Exception:
-        pass
-
-    occupancy = round((people_count / capacity) * 100, 1)
-    if occupancy < 50:
-        crowd_status = "NORMAL"
-    elif occupancy < 75:
-        crowd_status = "MODERATE"
-    elif occupancy < 90:
-        crowd_status = "HIGH"
-    else:
-        crowd_status = "CRITICAL"
+    # 2. Authoritative crowd state from canonical resolver
+    from routes.crowd import resolve_site_crowd_state
+    crowd_state = resolve_site_crowd_state(resolved_site_id)
+    people_count = crowd_state["people_count"]
+    occupancy = crowd_state["occupancy_percentage"]
+    crowd_status = crowd_state["status"]
 
     # 3. Retrieve genuine alternatives from recommendations engine
     recommendations = resolve_sister_alternatives(resolved_site_id)
@@ -540,11 +528,11 @@ def activate_emergency_reroute(
 @router.post("/alerts/reroute/deactivate")
 def deactivate_emergency_reroute(
     data: RerouteDeactivateRequest,
-    current_user: AuthenticatedUser = Depends(require_role(["government"]))
+    current_user: AuthenticatedUser = Depends(require_role(["government", "police"]))
 ):
     """
     Deactivates / resolves an active emergency reroute.
-    - Protected: Only users with verified JWT role='government' can deactivate.
+    - Protected: Users with verified JWT role='government' or 'police' can deactivate.
     - Updates status='RESOLVED' in Supabase emergency_reroutes.
     """
     now_iso = datetime.now(timezone.utc).isoformat()
@@ -638,7 +626,7 @@ def get_alerts():
                 "message": f"⚠️ High crowd density ({occupancy}%) detected near {zone['name']}. Avoid this area.",
                 "people_count": people_count,
                 "occupancy_percentage": occupancy,
-                "timestamp": latest_obs["timestamp"] if latest_obs else None,
+                "timestamp": latest_obs.get("timestamp") or latest_obs.get("last_updated") if latest_obs else None,
                 "emergency_info": safety_info
             })
 

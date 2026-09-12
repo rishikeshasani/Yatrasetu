@@ -144,3 +144,7 @@ ehthumbs_vista.db
 *~
 
 /Yatrasetu/
+
+# Test artifacts & screenshots
+e2e_artifacts/
+backend/e2e_artifacts/

@@ -1,5 +1,6 @@
 /* YatraSetu Global Styles & Design Tokens */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Rozha+One&display=swap');
+@import './components/common/DesignTokens.css';
 
 :root {
   /* Brand Spiritual Colors */

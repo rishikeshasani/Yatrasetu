@@ -1,11 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { saveFleetSchedules, fetchFleetSchedules, fetchActiveRerouteAlert } from '../api/api';
+import { saveFleetSchedules, fetchFleetSchedules, fetchActiveRerouteAlert, fetchAlternatives } from '../api/api';
 import TravelAgencyConsole from '../components/TravelAgencyConsole';
+import StatusBadge from '../components/common/StatusBadge';
 
-export default function TravelCompanyDashboard({ showToast }) {
+export default function TravelCompanyDashboard({
+  sites = [],
+  densityMap = {},
+  selectedSiteId = 'TS001',
+  onSelectSite,
+  showToast,
+  externalTab
+}) {
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeReroute, setActiveReroute] = useState(null);
+  const [activeSiteId, setActiveSiteId] = useState(selectedSiteId || 'TS001');
+  const [alternativesData, setAlternativesData] = useState(null);
+  const [isLoadingAlts, setIsLoadingAlts] = useState(false);
+
+  useEffect(() => {
+    if (selectedSiteId) {
+      setActiveSiteId(selectedSiteId);
+    }
+  }, [selectedSiteId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoadingAlts(true);
+    fetchAlternatives(activeSiteId)
+      .then((data) => {
+        if (isMounted) {
+          setAlternativesData(data);
+          setIsLoadingAlts(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsLoadingAlts(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [activeSiteId]);
+
   const [fleetRoutes, setFleetRoutes] = useState([
     { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
     { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, occupancy: 100, type: 'Sleeper', status: 'FULL' },
@@ -91,6 +127,40 @@ export default function TravelCompanyDashboard({ showToast }) {
     };
   };
 
+  const currentSite = sites.find((s) => s.id === activeSiteId) || {
+    id: activeSiteId,
+    name: activeSiteId === 'TS001' ? 'Kedarnath Temple' : activeSiteId,
+    capacity: 10000,
+    state: 'Uttarakhand'
+  };
+  const currentDensity = densityMap[activeSiteId] || {
+    people_count: 4800,
+    occupancy_percentage: 48,
+    status: 'NORMAL',
+    wait_time_minutes: 25,
+    source: 'demo_simulation'
+  };
+  const peopleCount = currentDensity.people_count ?? 0;
+  const capacity = currentDensity.capacity || currentSite.capacity || 10000;
+  const occPct = currentDensity.occupancy_percentage ?? Math.round((peopleCount / capacity) * 100);
+  const status = currentDensity.status || (occPct >= 90 ? 'CRITICAL' : occPct >= 75 ? 'HIGH' : occPct >= 50 ? 'MODERATE' : 'NORMAL');
+  const waitMins = currentDensity.wait_time_minutes ?? (occPct >= 90 ? 540 : occPct >= 75 ? 360 : occPct >= 50 ? 120 : 25);
+  const source = currentDensity.source || 'demo_simulation';
+
+  const getTheme = (st) => {
+    switch (st) {
+      case 'CRITICAL':
+        return { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', badgeBg: '#FEE2E2', icon: '🚨' };
+      case 'HIGH':
+        return { color: '#EA580C', bg: '#FFF7ED', border: '#FFEDD5', badgeBg: '#FFEDD5', icon: '⚠️' };
+      case 'MODERATE':
+        return { color: '#D97706', bg: '#FFFBEB', border: '#FEF3C7', badgeBg: '#FEF3C7', icon: '⚡' };
+      default:
+        return { color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', badgeBg: '#D1FAE5', icon: '✅' };
+    }
+  };
+  const currentTheme = getTheme(status);
+
   return (
     <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0 0 2rem' }}>
 
@@ -173,6 +243,195 @@ export default function TravelCompanyDashboard({ showToast }) {
         </div>
       )}
 
+      {/* ====================================================== */}
+      {/* DESTINATION CONGESTION & SISTER SHRINE REROUTING       */}
+      {/* ====================================================== */}
+      <section style={{ margin: '1.25rem 1.5rem', backgroundColor: '#FFFFFF', borderRadius: '0.85rem', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+        {/* Section Header */}
+        <div style={{ background: 'linear-gradient(135deg, #1E3A8A 0%, #1E40AF 100%)', padding: '1rem 1.5rem', color: '#FFF', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.3rem' }}>🧭</span>
+              <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, letterSpacing: '0.02em' }}>
+                DESTINATION CONGESTION &amp; ROUTE REROUTING INTELLIGENCE
+              </h2>
+            </div>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: '#BFDBFE' }}>
+              Canonical real-time crowd occupancy, queue wait times, and authoritative sister shrine alternatives
+            </p>
+          </div>
+
+          {/* Destination Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#E2E8F0' }}>Inspect Shrine:</label>
+            <select
+              value={activeSiteId}
+              onChange={(e) => {
+                const newId = e.target.value;
+                setActiveSiteId(newId);
+                if (onSelectSite) onSelectSite(newId);
+              }}
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                color: '#FFF',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '0.4rem 0.75rem',
+                borderRadius: '0.4rem',
+                fontSize: '0.88rem',
+                fontWeight: 600,
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              {(sites.length > 0 ? sites : [
+                { id: 'TS001', name: 'Kedarnath Temple' },
+                { id: 'TS003', name: 'Badrinath Temple' },
+                { id: 'TS006', name: 'Gangotri Temple' },
+                { id: 'TS008', name: 'Yamunotri Temple' },
+                { id: 'TS015', name: 'Har Ki Pauri, Haridwar' }
+              ]).map((s) => (
+                <option key={s.id} value={s.id} style={{ color: '#0F172A', backgroundColor: '#FFF' }}>
+                  {s.id}: {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Content Body: 2 Columns */}
+        <div style={{ padding: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+          {/* Left Card: Selected Destination Live Congestion */}
+          <div style={{ border: `1.5px solid ${currentTheme.border}`, borderRadius: '0.75rem', padding: '1.25rem', backgroundColor: currentTheme.bg }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {currentSite.id} · {currentSite.city || currentSite.state || 'Sacred Site'}
+                </span>
+                <h3 style={{ margin: '0.2rem 0 0', fontSize: '1.25rem', fontWeight: 800, color: '#0F172A' }}>
+                  {currentSite.name}
+                </h3>
+              </div>
+              <StatusBadge
+                status={status}
+                theme="light"
+                size="sm"
+                pulse={status === 'CRITICAL'}
+                label={`${currentTheme.icon} ${status}`}
+              />
+            </div>
+
+            {/* Occupancy Progress */}
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.35rem' }}>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Sanctum Congestion:</span>
+                <span style={{ fontWeight: 800, color: currentTheme.color }}>{occPct}% Capacity</span>
+              </div>
+              <div style={{ width: '100%', height: '10px', backgroundColor: 'rgba(0,0,0,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(100, occPct)}%`, height: '100%', backgroundColor: currentTheme.color, transition: 'width 0.4s ease' }} />
+              </div>
+            </div>
+
+            {/* Key Metrics Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div style={{ backgroundColor: '#FFF', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>Live Headcount</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginTop: '0.15rem' }}>
+                  {peopleCount.toLocaleString()} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748B' }}>/ {(capacity).toLocaleString()}</span>
+                </div>
+              </div>
+              <div style={{ backgroundColor: '#FFF', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '0.72rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 700 }}>Est. Darshan Queue</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0F172A', marginTop: '0.15rem' }}>
+                  ⏱️ {waitMins} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748B' }}>mins</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Source Attribution & Operator Advice */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid rgba(0,0,0,0.08)', fontSize: '0.78rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <span style={{ color: '#64748B' }}>
+                Telemetry Source:{' '}
+                <strong style={{ color: '#0F172A' }}>
+                  {source === 'yolo_video'
+                    ? '🎥 YOLO AI Detection'
+                    : source === 'live_telemetry'
+                    ? '📡 Live Telemetry'
+                    : source === 'historical_baseline'
+                    ? '📊 Historical Baseline'
+                    : '⚙️ Demo Simulation'}
+                </strong>
+              </span>
+              <span style={{ color: status === 'CRITICAL' || status === 'HIGH' ? '#DC2626' : '#059669', fontWeight: 700 }}>
+                {status === 'CRITICAL' || status === 'HIGH' ? '⚠️ Rerouting Advisable' : '✓ Normal Transit'}
+              </span>
+            </div>
+          </div>
+
+          {/* Right Column: Authoritative Sister Shrines / Alternatives */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#1E293B', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span>🏔️ Authoritative Sister Shrines for Rerouting</span>
+                <span style={{ fontSize: '0.75rem', backgroundColor: '#EFF6FF', color: '#2563EB', padding: '0.15rem 0.5rem', borderRadius: '999px', fontWeight: 600 }}>
+                  {alternativesData?.recommendations?.length || 0} registered
+                </span>
+              </h4>
+              <span style={{ fontSize: '0.75rem', color: '#64748B' }}>data/alternatives.csv</span>
+            </div>
+
+            {isLoadingAlts ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B', fontSize: '0.88rem' }}>
+                Loading verified sister shrine corridors...
+              </div>
+            ) : (!alternativesData?.recommendations || alternativesData.recommendations.length === 0) ? (
+              <div style={{ padding: '1.5rem', textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '0.5rem', border: '1px solid #E2E8F0', color: '#64748B', fontSize: '0.85rem' }}>
+                No designated sister shrines within 50km for {currentSite.name}. Fleet must maintain scheduled pilgrim holding zones.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '380px', overflowY: 'auto' }}>
+                {alternativesData.recommendations.map((alt, idx) => (
+                  <div key={alt.alternative_id || idx} style={{ border: '1px solid #E2E8F0', borderRadius: '0.5rem', padding: '0.85rem 1rem', backgroundColor: '#FAFAFA', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ flex: 1, minWidth: '220px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem' }}>{alt.name}</span>
+                        <span style={{ fontSize: '0.72rem', backgroundColor: '#E2E8F0', color: '#475569', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>{alt.type || 'Sister Shrine'}</span>
+                        <span style={{ fontSize: '0.72rem', backgroundColor: '#DCFCE7', color: '#15803D', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>{alt.crowd_savings || 'Less Crowded'}</span>
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748B', marginTop: '0.2rem' }}>
+                        📍 {alt.distance_km} km · ⏱️ {alt.travel_time_mins} mins away · 🛣️ <span style={{ color: '#2563EB', fontWeight: 600 }}>{alt.road_connectivity || 'NH Highway Open'}</span>
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#334155', marginTop: '0.25rem', fontStyle: 'italic' }}>
+                        "{alt.why_visit}"
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (showToast) {
+                          showToast(`🚌 [Fleet Directive] Sister shrine rerouting suggested: Diverting passenger overflow to ${alt.name} (${alt.crowd_savings}).`);
+                        }
+                      }}
+                      style={{
+                        backgroundColor: '#EFF6FF',
+                        color: '#1D4ED8',
+                        border: '1px solid #BFDBFE',
+                        padding: '0.4rem 0.75rem',
+                        borderRadius: '0.4rem',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Plan Tour Divert ➔
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* HIMALAYA YATRA TRAVELS: PARTNER CONSOLE & DEMAND CALCULATOR (3 CORE FEATURES) */}
       <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
 
@@ -220,7 +479,12 @@ export default function TravelCompanyDashboard({ showToast }) {
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
                             <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: '#6B7280', background: '#E5E7EB', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>{route.id}</span>
-                            <span style={{ fontWeight: 'bold', fontSize: '0.85rem', color: statusColor, background: statusBg, border: `1px solid ${statusColor}`, padding: '0.15rem 0.5rem', borderRadius: '4px' }}>{route.status}</span>
+                            <StatusBadge
+                              status={route.status === 'FULL' ? 'CRITICAL' : route.status === 'HIGH DEMAND' ? 'HIGH' : route.status === 'RETURN' ? 'PENDING' : 'NORMAL'}
+                              theme="light"
+                              size="xs"
+                              label={route.status}
+                            />
                           </div>
                           <p style={{ margin: '0 0 0.15rem', fontWeight: 'bold', color: '#111827', fontSize: '1rem' }}>
                             📍 {route.from} → {route.to}

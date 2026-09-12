@@ -41,7 +41,16 @@ export function getAuthHeaders() {
 export function loadUserSession() {
   try {
     const saved = localStorage.getItem("yatrasetu_user");
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    const user = JSON.parse(saved);
+    if (user && user.role === 'police') {
+      user.role = 'government';
+      user.government_subrole = 'police_official';
+    }
+    if (user && user.role === 'government' && !user.government_subrole) {
+      user.government_subrole = 'government_official';
+    }
+    return user;
   } catch (err) {
     console.warn("Could not load user session from localStorage:", err);
     return null;
@@ -1472,6 +1481,15 @@ export async function fetchSiteDensity(siteId) {
 }
 
 export async function fetchAllSiteDensities(sites = []) {
+  try {
+    const batch = await apiRequest('/sites/density');
+    if (batch && typeof batch === 'object' && Object.keys(batch).length > 0) {
+      return batch;
+    }
+  } catch (batchErr) {
+    console.warn("Batch /sites/density query failed, using per-site fallback:", batchErr.message);
+  }
+
   if (!Array.isArray(sites) || sites.length === 0) return {};
   try {
     const entries = await Promise.all(
@@ -1857,10 +1875,11 @@ export const DEMO_CREDENTIALS = {
   government: {
     email: "govt_command@yatrasetu.org",
     role: "government",
+    government_subrole: "government_official",
     full_name: "Uttarakhand State Pilgrimage Command Center (DM Rudraprayag)",
     phone: "+91-1352481070",
     department: "Department of Disaster Management & Temple Affairs",
-    badge: "COMMAND CENTER",
+    badge: "CIVIL ADMINISTRATION",
     jurisdiction: "Uttarakhand & National Sacred Corridors"
   },
   hotel: {
@@ -1881,6 +1900,27 @@ export const DEMO_CREDENTIALS = {
     badge: "TOUR OPERATOR",
     fleet_size: "24 Luxury Buses & 40 Trek Guides",
     active_circuits: ["Char Dham", "Braj Bhoomi", "Varanasi Heritage"]
+  },
+  police: {
+    email: "police_command@yatrasetu.org",
+    role: "government",
+    government_subrole: "police_official",
+    full_name: "Uttarakhand State Police & SDRF Command",
+    badge: "POLICE & LAW ENFORCEMENT",
+    rank: "Superintendent of Police (Law & Order)",
+    phone: "+91-1352712112",
+    jurisdiction: "Sacred Pilgrimage Corridors & Shrines (TS001–TS025)",
+    department: "Law Enforcement & Tactical Crowd Safety Division"
+  },
+  municipal: {
+    email: "municipal_command@yatrasetu.org",
+    role: "government",
+    government_subrole: "other_government_official",
+    full_name: "Haridwar Municipal Corporation & Inter-Agency Coordination",
+    badge: "MUNICIPAL & INTER-AGENCY",
+    phone: "+91-1334220000",
+    department: "Municipal Services & Health Sanitation Coordination",
+    jurisdiction: "Sacred Pilgrim Ghats & Municipal Zones"
   }
 };
 export const TEST_ACCOUNT_PASSWORD = import.meta.env.VITE_TEST_ACCOUNT_PASSWORD || 'DemoPassword123!';
@@ -1897,6 +1937,27 @@ export async function loginUser(email, password) {
       if (data?.access_token) {
         localStorage.setItem("yatrasetu_token", data.access_token);
       }
+
+      const rawRole = data.user?.role || data.profile?.role;
+      if (!rawRole) {
+        return {
+          status: "error",
+          detail: "Authenticated account has no assigned role in profile. Please contact system administrator."
+        };
+      }
+
+      let resolvedRole = rawRole;
+      let resolvedSubrole = data.user?.government_subrole || data.profile?.government_subrole;
+
+      // Backward-compatibility: if role is police, normalize to government + police_official
+      if (resolvedRole === 'police') {
+        resolvedRole = 'government';
+        resolvedSubrole = 'police_official';
+      }
+      if (resolvedRole === 'government' && !resolvedSubrole) {
+        resolvedSubrole = 'government_official';
+      }
+
       const userObj = {
         id: data.user?.id || data.user?.owner_id || data.profile?.owner_id || `USER-${Date.now()}`,
         user_id: data.user?.id || data.user?.owner_id || data.profile?.owner_id || `USER-${Date.now()}`,
@@ -1907,7 +1968,8 @@ export async function loginUser(email, password) {
         email: data.user?.email || email,
         full_name: data.user?.full_name || data.profile?.full_name || email.split("@")[0],
         business_name: data.user?.business_name || data.profile?.business_name || data.user?.full_name,
-        role: data.user?.role || data.profile?.role || "tourist",
+        role: resolvedRole,
+        government_subrole: resolvedSubrole,
         punya_points: data.user?.punya_points || 260,
         phone: data.user?.phone || data.profile?.phone,
         badge: data.user?.badge || data.profile?.badge,
@@ -1988,24 +2050,57 @@ export async function loginUser(email, password) {
   };
 }
 
-export async function signupUser(email, password, fullName, role = "tourist") {
+export async function signupUser(email, password, fullName, role = "tourist", governmentSubrole = null) {
   try {
+    let payloadRole = role;
+    let payloadSubrole = governmentSubrole;
+    if (payloadRole === 'police') {
+      payloadRole = 'government';
+      payloadSubrole = 'police_official';
+    }
+    if (payloadRole === 'government' && !payloadSubrole) {
+      payloadSubrole = 'government_official';
+    }
+
+    const payload = {
+      email,
+      password,
+      full_name: fullName,
+      role: payloadRole
+    };
+    if (payloadSubrole) {
+      payload.government_subrole = payloadSubrole;
+    }
+
     const res = await fetch(`${API_BASE_URL}/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, full_name: fullName, role })
+      body: JSON.stringify(payload)
     });
     if (res.ok) {
       const data = await res.json();
       if (data?.access_token) {
         localStorage.setItem("yatrasetu_token", data.access_token);
       }
+
+      const rawRole = data.user?.role || data.profile?.role || payloadRole;
+      let resolvedRole = rawRole;
+      let resolvedSubrole = data.user?.government_subrole || data.profile?.government_subrole || payloadSubrole;
+      if (resolvedRole === 'police') {
+        resolvedRole = 'government';
+        resolvedSubrole = 'police_official';
+      }
+      if (resolvedRole === 'government' && !resolvedSubrole) {
+        resolvedSubrole = 'government_official';
+      }
+
       const userObj = {
         id: data.user?.id,
         user_id: data.user?.id,
         email: data.user?.email || email,
         full_name: data.user?.full_name || fullName,
-        role: data.user?.role || role,
+        role: resolvedRole,
+        government_subrole: resolvedSubrole,
         punya_points: 260,
         token: data.access_token
       };
@@ -2031,12 +2126,29 @@ export async function fetchMe() {
   }
   try {
     const data = await apiRequest('/auth/me', { requiresAuth: true });
+    const rawRole = data.role || data.profile?.role;
+    if (!rawRole) {
+      console.warn("fetchMe: user profile has no assigned role.");
+      return null;
+    }
+
+    let resolvedRole = rawRole;
+    let resolvedSubrole = data.government_subrole || data.profile?.government_subrole;
+    if (resolvedRole === 'police') {
+      resolvedRole = 'government';
+      resolvedSubrole = 'police_official';
+    }
+    if (resolvedRole === 'government' && !resolvedSubrole) {
+      resolvedSubrole = 'government_official';
+    }
+
     const updatedUser = {
       id: data.id,
       user_id: data.id,
       email: data.email,
       full_name: data.full_name || data.profile?.full_name,
-      role: data.role || data.profile?.role || "tourist",
+      role: resolvedRole,
+      government_subrole: resolvedSubrole,
       created_at: data.created_at,
       token: token
     };
@@ -3342,3 +3454,61 @@ export async function resolveGroupAlert(groupId, alertId) {
   });
 }
 
+// ============================================================================
+// POLICE COMMAND CROWD SURGE SIMULATION MODULE
+// ============================================================================
+
+export async function createCrowdSimulation(payload) {
+  return await apiRequest('/police/crowd-simulations', {
+    method: 'POST',
+    requiresAuth: true,
+    body: JSON.stringify({
+      site_id: payload.site_id,
+      event_name: payload.event_name || 'Planned Rally / Event',
+      event_date: payload.event_date,
+      event_time: payload.event_time,
+      expected_crowd_increase: Number(payload.expected_crowd_increase),
+      event_duration_hours: payload.event_duration_hours ? Number(payload.event_duration_hours) : 4.0
+    })
+  });
+}
+
+export async function fetchCrowdSimulations() {
+  return await apiRequest('/police/crowd-simulations', {
+    requiresAuth: true
+  });
+}
+
+export async function fetchCrowdSimulation(simulationId) {
+  return await apiRequest(`/police/crowd-simulations/${encodeURIComponent(simulationId)}`, {
+    requiresAuth: true
+  });
+}
+
+export async function deleteCrowdSimulation(simulationId) {
+  return await apiRequest(`/police/crowd-simulations/${encodeURIComponent(simulationId)}`, {
+    method: 'DELETE',
+    requiresAuth: true
+  });
+}
+
+// ============================================================================
+// POLICE TACTICAL SOS DISPATCH HELPERS
+// ============================================================================
+
+export async function dispatchPoliceSOSAlert(alertId, payload = {}) {
+  return await apiRequest(`/sos/${encodeURIComponent(alertId)}/dispatch`, {
+    method: 'POST',
+    requiresAuth: true,
+    body: JSON.stringify({
+      status: payload.status || 'ACKNOWLEDGED',
+      notes: payload.notes || 'Police & SDRF rapid response unit deployed'
+    })
+  });
+}
+
+export async function fetchPoliceSOSStatus(alertId) {
+  return await apiRequest(`/sos/${encodeURIComponent(alertId)}/status`, {
+    requiresAuth: true
+  });
+}

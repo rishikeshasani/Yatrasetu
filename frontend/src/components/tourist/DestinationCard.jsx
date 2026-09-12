@@ -23,7 +23,18 @@ export default function DestinationCard({
   }
 
   const statusClass = `status-${status.toLowerCase()}`;
-  const waitMins = density?.wait_time_minutes || Math.max(15, Math.round((occupancy / 100) * 120));
+  const waitMins = density?.wait_time_minutes != null ? density.wait_time_minutes : Math.max(15, Math.round((occupancy / 100) * 120));
+
+  const SOURCE_CONFIG = {
+    yolo_video: { label: 'YOLO Video', icon: '📹', badgeClass: 'source-yolo' },
+    live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
+    demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
+    historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
+    historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
+  };
+
+  const rawSource = density?.source || 'demo_simulation';
+  const sourceInfo = SOURCE_CONFIG[rawSource] || SOURCE_CONFIG.demo_simulation;
 
   return (
     <div className={`shrine-grid-card ${isSelected ? 'card-selected' : ''}`}>
@@ -90,8 +101,20 @@ export default function DestinationCard({
           <span className="meta-cap">
             ⏱️ Wait: <strong>~{waitMins} min</strong>
           </span>
-          <span className="meta-status-hint" style={{ fontSize: '0.78rem', fontWeight: 600, color: status === 'CRITICAL' ? '#DC2626' : status === 'HIGH' ? '#EA580C' : status === 'MODERATE' ? '#D97706' : '#059669' }}>
+          <span
+            className={`source-badge-pill ${sourceInfo.badgeClass}`}
+            title={`Authoritative Data Source: ${sourceInfo.label}`}
+          >
+            {sourceInfo.icon} {sourceInfo.label}
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem', fontSize: '0.78rem' }}>
+          <span style={{ fontWeight: 600, color: status === 'CRITICAL' ? '#DC2626' : status === 'HIGH' ? '#EA580C' : status === 'MODERATE' ? '#D97706' : '#059669' }}>
             {status === 'NORMAL' ? '✨ Peaceful' : status === 'MODERATE' ? '⚡ Steady Flow' : status === 'HIGH' ? '⚠️ High Rush' : '🚨 Heavy Congestion'}
+          </span>
+          <span style={{ fontSize: '0.74rem', color: '#64748B' }}>
+            Cap: {site.capacity ? site.capacity.toLocaleString() : 'N/A'}
           </span>
         </div>
       </div>

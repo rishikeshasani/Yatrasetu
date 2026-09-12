@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import LanguageSelector from './tourist/LanguageSelector';
 
 export default function Navbar({
@@ -15,42 +16,62 @@ export default function Navbar({
   onToggleView,
   onNavigateSection,
   onLogout,
-  onNavigate
+  onNavigate,
+  activeGovTab
 }) {
+  const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Derive role-specific display info
-  const getRoleDisplayName = (role) => {
+  const getRoleDisplayName = (role, subrole = null) => {
     switch (role) {
       case 'government':
-        return 'Government';
+        if (subrole === 'police_official') return 'Government (Police Command)';
+        if (subrole === 'other_government_official') return 'Government (Inter-Agency)';
+        return 'Government Administration';
+      case 'police':
+        return 'Government (Police Command)';
       case 'hotel':
         return 'Hotel Partner';
       case 'travel_company':
         return 'Travel Company';
       case 'vendor':
         return 'Local Vendor';
-      default:
+      case 'tourist':
         return 'Tourist';
+      default:
+        return 'Unauthorized Role';
     }
   };
 
-  const getRoleBadgeStyle = (role) => {
+  const getRoleBadgeStyle = (role, subrole = null) => {
     switch (role) {
       case 'government':
+        if (subrole === 'police_official') {
+          return { bg: '#0B192C', border: '#3B82F6', text: '#93C5FD', badgeBg: '#1E3A8A', badgeText: 'POLICE HQ' };
+        }
+        if (subrole === 'other_government_official') {
+          return { bg: '#EFF6FF', border: '#6366F1', text: '#4338CA', badgeBg: '#4F46E5', badgeText: 'INTER-AGENCY' };
+        }
         return { bg: '#EFF6FF', border: '#3B82F6', text: '#1E40AF', badgeBg: '#1D4ED8', badgeText: 'GOVT' };
+      case 'police':
+        return { bg: '#0B192C', border: '#3B82F6', text: '#93C5FD', badgeBg: '#1E3A8A', badgeText: 'POLICE HQ' };
       case 'hotel':
         return { bg: '#FEF3C7', border: '#F59E0B', text: '#92400E', badgeBg: '#D97706', badgeText: 'HOTEL' };
       case 'travel_company':
         return { bg: '#F5F3FF', border: '#8B5CF6', text: '#6D28D9', badgeBg: '#7C3AED', badgeText: 'TRAVEL' };
-      default:
+      case 'tourist':
         return { bg: '#ECFDF5', border: '#10B981', text: '#065F46', badgeBg: '#059669', badgeText: 'PILGRIM' };
+      default:
+        return { bg: '#FEF2F2', border: '#EF4444', text: '#991B1B', badgeBg: '#DC2626', badgeText: 'UNAUTHORIZED' };
     }
   };
 
   // Define role-specific navigation lists strictly matching specifications
   const getRoleNavItems = () => {
-    const role = currentUser?.role || activeRole || 'tourist';
+    const rawRole = currentUser?.role || activeRole || 'tourist';
+    const role = rawRole === 'police' ? 'government' : rawRole;
+    const subrole = currentUser?.government_subrole || (rawRole === 'police' ? 'police_official' : 'government_official');
 
     if (role === 'hotel') {
       return [
@@ -72,34 +93,61 @@ export default function Navbar({
     }
 
     if (role === 'government') {
+      if (subrole === 'police_official') {
+        return [
+          { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
+          { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
+          { label: 'Crowd Surge Alerts', target: 'gov-surge-alerts', tabId: 'surge-alerts' },
+          { label: '👮 Police & Crowd Simulation', target: 'gov-police-simulation', tabId: 'police-simulation' },
+          { label: 'Emergency Response', target: 'gov-emergency-response', tabId: 'emergency-response' },
+          { label: 'Traffic & Route Control', target: 'gov-traffic-control', tabId: 'traffic-control' },
+          { label: 'SOS / Distress Response', target: 'gov-sos-response', tabId: 'sos-response' },
+          { label: 'Safety Zones', target: 'gov-safety-zones', tabId: 'safety-zones' },
+          { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
+        ];
+      }
+
+      if (subrole === 'other_government_official') {
+        return [
+          { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
+          { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
+          { label: 'Alerts & Safety', target: 'gov-alerts-safety', tabId: 'alerts-safety' },
+          { label: 'Emergency Rerouting', target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
+          { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
+        ];
+      }
+
+      // Default: Civil Administration (government_official)
       return [
-        { label: 'Command Center', target: 'gov-command-center' },
-        { label: 'Sites', target: 'gov-sites' },
-        { label: 'Crowd Monitoring', target: 'gov-crowd-monitoring' },
-        { label: 'Forecast', target: 'gov-forecast' },
-        { label: 'Emergency Reroute', target: 'gov-emergency-reroute' },
-        { label: 'SOS', target: 'gov-sos' },
-        { label: 'Hotels', target: 'gov-hotels' },
-        { label: 'Agencies', target: 'gov-agencies' }
+        { label: 'Overview', target: 'gov-overview', tabId: 'overview' },
+        { label: 'Live Crowd Monitoring', target: 'gov-live-crowd', tabId: 'live-crowd' },
+        { label: 'Alerts & Safety', target: 'gov-alerts-safety', tabId: 'alerts-safety' },
+        { label: 'Emergency Rerouting', target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
+        { label: 'Reports / Analytics', target: 'gov-reports-analytics', tabId: 'reports-analytics' }
       ];
     }
 
-    // Default: Tourist
-    return [
-      { label: 'Home', target: 'tourist-home' },
-      { label: 'Destinations', target: 'tourist-destinations' },
-      { label: 'Crowd Status', target: 'tourist-crowd-status' },
-      { label: 'Forecast', target: 'tourist-forecast' },
-      { label: 'Alternatives', target: 'tourist-alternatives' },
-      { label: 'Safety', target: 'tourist-safety' },
-      { label: 'Hotels', target: 'tourist-hotels' },
-      { label: 'Wallet', action: 'wallet' },
-      { label: 'SOS', action: 'sos', isDanger: true }
-    ];
+    // Pilgrim / Tourist Navigation
+    if (role === 'tourist') {
+      return [
+        { label: t('nav.home', 'Home'), target: 'tourist-home' },
+        { label: t('nav.destinations', 'Explore 25'), target: 'tourist-destinations' },
+        { label: t('nav.crowdStatus', 'Live Crowd'), target: 'tourist-crowd-status' },
+        { label: t('nav.forecast', 'AI Forecast'), target: 'tourist-forecast' },
+        { label: t('nav.alternatives', 'Alternatives'), target: 'tourist-alternatives' },
+        { label: t('nav.safety', 'Safety & SOS'), target: 'tourist-safety' },
+        { label: t('nav.hotels', 'Hotels'), target: 'tourist-hotels' },
+        { label: t('nav.wallet', 'Wallet'), action: 'wallet' },
+        { label: t('nav.sos', 'Emergency SOS'), action: 'sos', isDanger: true }
+      ];
+    }
+
+    // Invalid / Unrecognized role: do not expose navigation items
+    return [];
   };
 
   const navItems = getRoleNavItems();
-  const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole);
+  const roleStyle = getRoleBadgeStyle(currentUser?.role || activeRole, currentUser?.government_subrole);
 
   const scrollToTargetElement = (element) => {
     if (!element) return false;
@@ -150,10 +198,10 @@ export default function Navbar({
     }
 
     if (onNavigate) {
-      onNavigate(item.target);
+      onNavigate(item.target, item);
     }
 
-    const candidateIds = [item.target, item.target?.replace('tourist-', ''), item.target?.replace('gov-', ''), item.target?.replace('hotel-', ''), item.target?.replace('travel-', '')].filter(Boolean);
+    const candidateIds = [item.target, item.target?.replace('tourist-', ''), item.target?.replace('gov-', ''), item.target?.replace('police-', ''), item.target?.replace('hotel-', ''), item.target?.replace('travel-', '')].filter(Boolean);
 
     for (const id of candidateIds) {
       const el = document.getElementById(id);
@@ -175,7 +223,7 @@ export default function Navbar({
             if (currentView === 'landing') {
               handleNavClick('top');
             } else {
-              const el = document.getElementById('tourist-home') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard') || document.getElementById('gov-command-center');
+              const el = document.getElementById('tourist-home') || document.getElementById('hotel-dashboard') || document.getElementById('travel-dashboard') || document.getElementById('gov-command-center') || document.getElementById('police-command-center');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
               else window.scrollTo({ top: 0, behavior: 'smooth' });
             }
@@ -209,7 +257,7 @@ export default function Navbar({
               className="nav-link-btn"
               onClick={() => handleNavClick('top')}
             >
-              Home
+              {t('nav.home', 'Home')}
             </button>
           </nav>
         ) : (
@@ -218,7 +266,7 @@ export default function Navbar({
               <button
                 key={idx}
                 type="button"
-                className={`role-nav-link-btn ${item.isDanger ? 'nav-link-danger' : ''}`}
+                className={`role-nav-link-btn ${item.isDanger ? 'nav-link-danger' : ''} ${item.tabId && item.tabId === activeGovTab ? 'active' : ''}`}
                 onClick={() => handleItemClick(item)}
                 title={item.label}
               >
@@ -242,7 +290,7 @@ export default function Navbar({
           >
             <span className="view-switch-icon">{currentView === 'landing' ? '⚡' : '🏠'}</span>
             <span className="view-switch-text">
-              {currentView === 'landing' ? 'Live Console' : 'Overview'}
+              {currentView === 'landing' ? t('nav.liveConsole', 'Live Console') : t('nav.overview', 'Overview')}
             </span>
           </button>
 
@@ -266,7 +314,7 @@ export default function Navbar({
                   fontSize: '0.78rem',
                   cursor: 'pointer'
                 }}
-                title={`Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role)})`}
+                title={`Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role, currentUser.government_subrole)})`}
               >
                 <span className="user-short-name">
                   {currentUser.full_name?.split(' ')[0] || 'User'}
@@ -312,7 +360,7 @@ export default function Navbar({
                     <polyline points="16 17 21 12 16 7" />
                     <line x1="21" y1="12" x2="9" y2="12" />
                   </svg>
-                  <span>Logout</span>
+                  <span>{t('nav.logout', 'Logout')}</span>
                 </button>
               )}
             </>
@@ -341,38 +389,42 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Green Pilgrim Wallet */}
-          <button
-            type="button"
-            className="wallet-badge-btn"
-            onClick={onOpenWallet}
-            title="Open Green Pilgrim Wallet"
-          >
-            <span className="coin-icon">🌿</span>
-            <div className="wallet-btn-content">
-              <span className="wallet-points-val">{walletPoints ?? 260}</span>
-              <span className="wallet-points-unit desktop-only">Pts</span>
-            </div>
-            {pendingPoints > 0 && (
-              <span className="pending-pts-chip desktop-only" title="Pending arrival at alternate route">
-                +{pendingPoints}
-              </span>
-            )}
-          </button>
+          {/* Green Pilgrim Wallet - ONLY for Pilgrims / Tourists, NEVER in Government Command */}
+          {(currentUser?.role || activeRole) !== 'government' && (currentUser?.role || activeRole) !== 'police' && (
+            <button
+              type="button"
+              className="wallet-badge-btn"
+              onClick={onOpenWallet}
+              title="Open Green Pilgrim Wallet"
+            >
+              <span className="coin-icon">🌿</span>
+              <div className="wallet-btn-content">
+                <span className="wallet-points-val">{walletPoints ?? 260}</span>
+                <span className="wallet-points-unit desktop-only">Pts</span>
+              </div>
+              {pendingPoints > 0 && (
+                <span className="pending-pts-chip desktop-only" title="Pending arrival at alternate route">
+                  +{pendingPoints}
+                </span>
+              )}
+            </button>
+          )}
 
-          {/* SOS Emergency Distress Beacon */}
-          <button
-            type="button"
-            className="sos-nav-btn"
-            onClick={onOpenSOS}
-            title="Instant 1-Click SOS Emergency"
-          >
-            <span className="sos-pulse-ring"></span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-            </svg>
-            <span className="sos-btn-text">SOS</span>
-          </button>
+          {/* SOS Emergency Distress Beacon - Visually Isolated Action */}
+          <div className="sos-nav-wrapper" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="sos-nav-btn emergency-isolated"
+              onClick={onOpenSOS}
+              title="Instant 1-Click SOS Emergency"
+            >
+              <span className="sos-pulse-ring"></span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              <span className="sos-btn-text">SOS</span>
+            </button>
+          </div>
 
           {/* Mobile Menu Toggle */}
           <button
@@ -392,7 +444,7 @@ export default function Navbar({
           {currentUser && (
             <div className="mobile-user-row" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: '700', fontSize: '0.85rem' }}>
-                Role: <strong>{getRoleDisplayName(currentUser?.role)}</strong>
+                Role: <strong>{getRoleDisplayName(currentUser?.role, currentUser?.government_subrole)}</strong>
               </span>
               <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
                 {currentUser?.full_name || 'User'}
@@ -403,7 +455,7 @@ export default function Navbar({
           <div className="mobile-nav-links">
             {currentView === 'landing' ? (
               <>
-                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>Home</button>
+                <button type="button" className="mobile-nav-link" onClick={() => handleNavClick('top')}>{t('nav.home', 'Home')}</button>
               </>
             ) : (
               navItems.map((item, idx) => (
@@ -426,7 +478,7 @@ export default function Navbar({
                 onToggleView && onToggleView();
               }}
             >
-              {currentView === 'landing' ? '⚡ Open Live Console' : '🏠 Switch to Overview'}
+              {currentView === 'landing' ? `⚡ ${t('nav.liveConsole', 'Open Live Console')}` : `🏠 ${t('nav.overview', 'Switch to Overview')}`}
             </button>
 
             {currentUser && onLogout && (
@@ -450,7 +502,7 @@ export default function Navbar({
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
-                <span>Logout</span>
+                <span>{t('nav.logout', 'Logout')}</span>
               </button>
             )}
           </div>

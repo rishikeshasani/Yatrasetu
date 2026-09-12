@@ -87,7 +87,8 @@ def test_connectivity():
     hotels_res = client.get("/hotels")
     assert hotels_res.status_code == 200
     hotels = hotels_res.json()
-    lodge = next((h for h in hotels if h.get("rooms") and len(h["rooms"]) > 0), hotels[0])
+    owned_hotels = [h for h in hotels if h.get("owner_id") == owner_user_id]
+    lodge = owned_hotels[0] if owned_hotels else next((h for h in hotels if h.get("rooms") and len(h["rooms"]) > 0), hotels[0])
     hotel_id = lodge["id"]
     hotel_name = lodge["name"]
     log(f"Target Hotel: {hotel_name} (ID: {hotel_id})")

@@ -662,13 +662,6 @@ def get_owner_bookings(
         my_hotels = []
 
     if not my_hotels:
-        try:
-            all_h = supabase_admin.table("hotels").select("id, name").execute()
-            my_hotels = all_h.data or []
-        except Exception:
-            my_hotels = []
-
-    if not my_hotels:
         return []
 
     my_hotel_map = {h["id"]: h["name"] for h in my_hotels}
@@ -957,26 +950,6 @@ def calculate_dynamic_hourly_price(
     else:
         site_id = "TS003"  # Kashi Vishwanath for H001
 
-    # Ensure TS003 observation exists matching Kashi Corridor
-    if "TS003" not in latest_observations:
-        latest_observations["TS003"] = {
-            "site_id": "TS003",
-            "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
-            "people_count": 104400,
-            "occupancy_percentage": 87.0,
-            "status": "HIGH",
-            "relative_surge_alert": {
-                "site_id": "TS003",
-                "is_relative_surge": True,
-                "severity": "HIGH",
-                "current_count": 104400,
-                "expected_mean": 80000.0,
-                "z_score": 2.5,
-                "surge_percentage": "+50%",
-                "message": "High pilgrim density in sanctum sanctorum & Godowlia perimeter."
-            },
-            "last_updated": "Just now (Live YOLO CCTV Feed)"
-        }
 
     # 4. Fetch live crowd density
     try:

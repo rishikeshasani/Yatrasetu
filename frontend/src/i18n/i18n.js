@@ -4,6 +4,19 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
+      common: {
+        loading: 'Loading...',
+        error: 'An error occurred',
+        retry: 'Retry',
+        refresh: 'Refresh',
+        close: 'Close',
+        cancel: 'Cancel',
+        confirm: 'Confirm',
+        success: 'Success',
+        save: 'Save',
+        back: 'Back',
+        viewAll: 'View All'
+      },
       nav: {
         home: 'Home',
         destinations: 'Explore 25',
@@ -16,7 +29,9 @@ const resources = {
         sos: 'Emergency SOS',
         roleSelect: 'Role Selection',
         platformOverview: 'Platform Overview',
-        logout: 'Logout'
+        logout: 'Logout',
+        liveConsole: 'Live Console',
+        overview: 'Overview'
       },
       hero: {
         welcomeBadge: 'AI-Powered Sacred Pilgrimage Intelligence',
@@ -113,11 +128,91 @@ const resources = {
         subtitle: 'Real-time weather telemetry, emergency evacuation paths, and instant SOS dispatch',
         emergencySOS: 'Emergency SOS Trigger',
         triggerSOS: 'TRIGGER EMERGENCY SOS'
+      },
+      bookings: {
+        title: 'My Yatra Bookings',
+        subtitle: 'Track your accommodation requests and confirmed stays.',
+        refresh: 'Refresh Status',
+        refreshing: 'Refreshing...',
+        viewAll: 'View All Bookings',
+        allBookingsTitle: 'My Yatra Bookings History',
+        allBookingsSubtitle: 'Complete record of your accommodation requests and stays',
+        noBookings: 'You don’t have any accommodation bookings yet.',
+        findAccommodation: 'Find Accommodation',
+        room: 'Room',
+        checkIn: 'Check-in',
+        checkOut: 'Check-out',
+        guests: 'Guests',
+        viewDetails: 'View Details',
+        bookingId: 'Booking Reference',
+        hotel: 'Accommodation',
+        totalAmount: 'Total Price',
+        status: 'Status',
+        statusPending: 'Pending Review',
+        statusConfirmed: 'Confirmed',
+        statusDeclined: 'Declined',
+        statusCancelled: 'Cancelled',
+        statusCompleted: 'Completed',
+        pendingText: 'Waiting for hotel partner approval.',
+        confirmedText: 'Your accommodation is confirmed.',
+        declinedText: 'The hotel did not approve this request.',
+        cancelledText: 'This booking was cancelled.',
+        completedText: 'Stay completed at accommodation.',
+        loadError: 'My bookings could not be loaded.',
+        retry: 'Retry'
+      },
+      team: {
+        title: 'Yatra Team & Pilgrim Group',
+        subtitle: 'Share live GPS location with your pilgrimage group, coordinate safely, and trigger group SOS.',
+        createGroup: 'Create Team',
+        joinGroup: 'Join Team',
+        groupCode: 'Team Invite Code',
+        groupName: 'Team Name',
+        members: 'Team Members',
+        leader: 'Team Leader',
+        liveLocation: 'Live Location Sharing',
+        distressAlert: 'Emergency Distress Alert',
+        resolveAlert: 'Resolve Alert',
+        leaveGroup: 'Leave Team'
+      },
+      roles: {
+        nationalBadge: 'National Sacred Corridor Portal',
+        loginAs: 'Login As',
+        selectRole: 'Select your role to access your authorized dashboard',
+        introCaption: 'Government Command, Shrine Lodging Partners, Fleet Operators, and Devotee Pilgrims.',
+        govtTitle: 'Government',
+        govtBadge: 'NATIONAL COMMAND CENTER',
+        govtDesc: 'Monitor crowds, safety, alerts and emergency rerouting.',
+        hotelTitle: 'Hotel',
+        hotelBadge: 'SHRINE LODGING PARTNER',
+        hotelDesc: 'Manage rooms, bookings, occupancy and incoming fleet.',
+        travelTitle: 'Travel Company',
+        travelBadge: 'FLEET & TOUR OPERATOR',
+        travelDesc: 'Fleet tracking, pilgrim safety corridors, and group permits.',
+        touristTitle: 'Tourist / Pilgrim',
+        touristBadge: 'SACRED YATRI PORTAL',
+        touristDesc: 'Explore 25 shrines, live crowd telemetry, and verified stays.',
+        continueBtn: 'Continue as',
+        sihBanner: 'Smart India Hackathon 2026 Jury Fast-Track Evaluation',
+        sihDesc: 'Each role provides authentic FastAPI backend JWT authentication with pre-configured credentials.'
       }
     }
   },
   hi: {
     translation: {
+      common: {
+        loading: 'लोड हो रहा है...',
+        error: 'एक त्रुटि हुई',
+        retry: 'पुनः प्रयास करें',
+        refresh: 'ताज़ा करें',
+        close: 'बंद करें',
+        cancel: 'रद्द करें',
+        confirm: 'पुष्टि करें',
+        success: 'सफल',
+        save: 'सहेजें',
+        back: 'वापस',
+        viewAll: 'सभी देखें'
+      },
       nav: {
         home: 'मुख्य पृष्ठ',
         destinations: '25 पवित्र धाम',
@@ -130,7 +225,9 @@ const resources = {
         sos: 'आपातकालीन एसओएस',
         roleSelect: 'भूमिका चयन',
         platformOverview: 'प्लेटफ़ॉर्म विवरण',
-        logout: 'लॉग आउट'
+        logout: 'लॉग आउट',
+        liveConsole: 'लाइव कंसोल',
+        overview: 'प्लेटफ़ॉर्म अवलोकन'
       },
       hero: {
         welcomeBadge: 'एआई-संचालित पवित्र तीर्थ प्रणाली',
@@ -227,11 +324,91 @@ const resources = {
         subtitle: 'मौसम टेलीमेट्री, आपातकालीन निकासी मार्ग और त्वरित एसओएस प्रेषण',
         emergencySOS: 'आपातकालीन एसओएस अलर्ट',
         triggerSOS: 'आपातकालीन एसओएस भेजें'
+      },
+      bookings: {
+        title: 'मेरी यात्रा बुकिंग',
+        subtitle: 'अपने आवास अनुरोधों और पुष्ट बुकिंग की स्थिति देखें।',
+        refresh: 'ताज़ा करें',
+        refreshing: 'ताज़ा हो रहा है...',
+        viewAll: 'सभी बुकिंग देखें',
+        allBookingsTitle: 'यात्रा बुकिंग इतिहास',
+        allBookingsSubtitle: 'आपके सभी आवास अनुरोधों का संपूर्ण रिकॉर्ड',
+        noBookings: 'आपकी अभी कोई आवास बुकिंग नहीं है।',
+        findAccommodation: 'आवास खोजें',
+        room: 'कमरा',
+        checkIn: 'चेक-इन',
+        checkOut: 'चेक-आउट',
+        guests: 'यात्री',
+        viewDetails: 'विवरण देखें',
+        bookingId: 'बुकिंग संदर्भ',
+        hotel: 'आवास',
+        totalAmount: 'कुल मूल्य',
+        status: 'स्थिति',
+        statusPending: 'समीक्षाधीन',
+        statusConfirmed: 'पुष्ट',
+        statusDeclined: 'अस्वीकृत',
+        statusCancelled: 'रद्द',
+        statusCompleted: 'पूर्ण',
+        pendingText: 'होटल भागीदार की मंज़ूरी की प्रतीक्षा है।',
+        confirmedText: 'आपका आवास पुष्ट हो चुका है।',
+        declinedText: 'होटल ने यह अनुरोध स्वीकार नहीं किया।',
+        cancelledText: 'यह बुकिंग रद्द कर दी गई।',
+        completedText: 'आवास पर प्रवास पूर्ण हुआ।',
+        loadError: 'बुकिंग विवरण लोड नहीं हो सका।',
+        retry: 'पुनः प्रयास करें'
+      },
+      team: {
+        title: 'यात्रा दल और तीर्थयात्री सुरक्षा',
+        subtitle: 'अपने दल के साथ लाइव जीपीएस साझा करें और समूह एसओएस का उपयोग करें।',
+        createGroup: 'दल बनाएं',
+        joinGroup: 'दल में शामिल हों',
+        groupCode: 'दल आमंत्रण कोड',
+        groupName: 'दल का नाम',
+        members: 'दल के सदस्य',
+        leader: 'दल प्रमुख',
+        liveLocation: 'लाइव स्थान साझाकरण',
+        distressAlert: 'आपातकालीन दल अलर्ट',
+        resolveAlert: 'अलर्ट हल करें',
+        leaveGroup: 'दल छोड़ें'
+      },
+      roles: {
+        nationalBadge: 'राष्ट्रीय पवित्र तीर्थ गलियारा पोर्टल',
+        loginAs: 'लॉगिन करें',
+        selectRole: 'अपने अधिकृत डैशबोर्ड में प्रवेश के लिए अपनी भूमिका चुनें',
+        introCaption: 'सरकारी कमांड, मंदिर आवास भागीदार, यात्रा ऑपरेटर और श्रद्धालु तीर्थयात्री।',
+        govtTitle: 'सरकार / पुलिस',
+        govtBadge: 'राष्ट्रीय कमांड सेंटर',
+        govtDesc: 'भीड़, सुरक्षा, अलर्ट और आपातकालीन मार्ग परिवर्तन की निगरानी करें।',
+        hotelTitle: 'होटल एवं आश्रम',
+        hotelBadge: 'तीर्थ आवास भागीदार',
+        hotelDesc: 'कमरे, बुकिंग, ऑक्यूपेंसी और आगमन प्रबंधित करें।',
+        travelTitle: 'यात्रा कंपनी',
+        travelBadge: 'फ्लीट एवं टूर ऑपरेटर',
+        travelDesc: 'फ्लीट ट्रैकिंग, तीर्थयात्री सुरक्षा गलियारे और परमिट प्रबंधन।',
+        touristTitle: 'तीर्थयात्री / पर्यटक',
+        touristBadge: 'पवित्र यात्री पोर्टल',
+        touristDesc: '25 धाम, लाइव भीड़ टेलीमेट्री और सत्यापित आवास देखें।',
+        continueBtn: 'के रूप में जारी रखें',
+        sihBanner: 'स्मार्ट इंडिया हैकाथॉन 2026 जूरी त्वरित मूल्यांकन',
+        sihDesc: 'प्रत्येक भूमिका पूर्व-कॉन्फ़िगर किए गए क्रेडेंशियल्स के साथ फास्टएपीआई बैकएंड जेडब्ल्यूटी प्रमाणीकरण प्रदान करती है।'
       }
     }
   },
   te: {
     translation: {
+      common: {
+        loading: 'లోడ్ అవుతోంది...',
+        error: 'ఒక లోపం సంభవించింది',
+        retry: 'మళ్ళీ ప్రయత్నించండి',
+        refresh: 'రిఫ్రెష్',
+        close: 'మూసివేయి',
+        cancel: 'రద్దు చేయి',
+        confirm: 'నిర్ధారించు',
+        success: 'విజయం',
+        save: 'భద్రపరచు',
+        back: 'వెనుకకు',
+        viewAll: 'అన్నీ చూడండి'
+      },
       nav: {
         home: 'హోమ్',
         destinations: '25 క్షేత్రాలు',
@@ -244,7 +421,9 @@ const resources = {
         sos: 'అత్యవసర SOS',
         roleSelect: 'పాత్ర ఎంపిక',
         platformOverview: 'వేదిక సమాచారం',
-        logout: 'లాగ్ అవుట్'
+        logout: 'లాగ్ అవుట్',
+        liveConsole: 'లైవ్ కన్సోల్',
+        overview: 'అవలోకనం'
       },
       hero: {
         welcomeBadge: 'AI ఆధారిత పవిత్ర యాత్రా వ్యవస్థ',
@@ -341,11 +520,91 @@ const resources = {
         subtitle: 'వాతావరణ సమాచారం, అత్యవసర తరలింపు మార్గాలు మరియు తక్షణ SOS సహాయం',
         emergencySOS: 'అత్యవసర SOS హెచ్చరిక',
         triggerSOS: 'అత్యవసర SOS పంపండి'
+      },
+      bookings: {
+        title: 'నా యాత్రా బుకింగ్‌లు',
+        subtitle: 'మీ వసతి అభ్యర్థనలు మరియు ధృవీకరించబడిన బుకింగ్‌లను ట్రాక్ చేయండి.',
+        refresh: 'రిఫ్రెష్',
+        refreshing: 'రిఫ్రెష్ అవుతోంది...',
+        viewAll: 'అన్ని బుకింగ్‌లు చూడండి',
+        allBookingsTitle: 'యాత్రా బుకింగ్ చరిత్ర',
+        allBookingsSubtitle: 'మీ వసతి అభ్యర్థనల పూర్తి సమాచారం',
+        noBookings: 'మీకు ఇంకా ఎలాంటి వసతి బుకింగ్‌లు లేవు.',
+        findAccommodation: 'వసతిని కనుగొనండి',
+        room: 'గది',
+        checkIn: 'చెక్-ఇన్',
+        checkOut: 'చెక్-అవుట్',
+        guests: 'యాత్రికులు',
+        viewDetails: 'వివరాలు చూడండి',
+        bookingId: 'బుకింగ్ రిఫరెన్స్',
+        hotel: 'వసతి గృహం',
+        totalAmount: 'మొత్తం ధర',
+        status: 'స్థితి',
+        statusPending: 'పరిశీలనలో ఉంది',
+        statusConfirmed: 'ధృవీకరించబడింది',
+        statusDeclined: 'తిరస్కరించబడింది',
+        statusCancelled: 'రద్దు చేయబడింది',
+        statusCompleted: 'పూర్తయింది',
+        pendingText: 'హోటల్ భాగస్వామి ఆమోదం కోసం వేచి ఉంది.',
+        confirmedText: 'మీ వసతి ధృవీకరించబడింది.',
+        declinedText: 'హోటల్ ఈ అభ్యర్థనను ఆమోదించలేదు.',
+        cancelledText: 'ఈ బుకింగ్ రద్దు చేయబడింది.',
+        completedText: 'వసతి గృహంలో బస పూర్తయింది.',
+        loadError: 'బుకింగ్‌లను లోడ్ చేయడం సాధ్యపడలేదు.',
+        retry: 'మళ్ళీ ప్రయత్నించండి'
+      },
+      team: {
+        title: 'యాత్రా బృందం & భద్రతా గ్రూప్',
+        subtitle: 'మీ బృందంతో లైవ్ GPS పంచుకోండి మరియు గ్రూప్ అత్యవసర SOS వాడండి.',
+        createGroup: 'బృందాన్ని సృష్టించండి',
+        joinGroup: 'కోడ్‌తో చేరండి',
+        groupCode: 'బృందం ఆహ్వాన కోడ్',
+        groupName: 'బృందం పేరు',
+        members: 'బృందం సభ్యులు',
+        leader: 'బృంద నాయకుడు',
+        liveLocation: 'లైవ్ స్థాన భాగస్వామ్యం',
+        distressAlert: 'అత్యవసర బృంద హెచ్చరిక',
+        resolveAlert: 'పరిష్కరించండి',
+        leaveGroup: 'బృందం నుండి నిష్క్రమించండి'
+      },
+      roles: {
+        nationalBadge: 'జాతీయ పవిత్ర తీర్థయాత్రా పోర్టల్',
+        loginAs: 'లాగిన్ అవ్వండి',
+        selectRole: 'మీ అధీకృత డ్యాష్‌బోర్డును యాక్సెస్ చేయడానికి మీ పాత్రను ఎంచుకోండి',
+        introCaption: 'ప్రభుత్వ కమాండ్, ఆలయ వసతి భాగస్వాములు, ట్రావెల్ ఆపరేటర్లు మరియు భక్తులు.',
+        govtTitle: 'ప్రభుత్వం / పోలీస్',
+        govtBadge: 'జాతీయ కమాండ్ సెంటర్',
+        govtDesc: 'రద్దీ, భద్రత, హెచ్చరికలు మరియు అత్యవసర మార్పులను పర్యవేక్షించండి.',
+        hotelTitle: 'హోటల్ & ఆశ్రమం',
+        hotelBadge: 'తీర్థ వసతి భాగస్వామి',
+        hotelDesc: 'గదులు, బుకింగ్‌లు, ఆక్యుపెన్సీని నిర్వహించండి.',
+        travelTitle: 'ట్రావెల్ కంపెనీ',
+        travelBadge: 'ఫ్లీట్ & టూర్ ఆపరేటర్',
+        travelDesc: 'ఫ్లీట్ ట్రాకింగ్, యాత్రికుల భద్రతా కారిడార్లు మరియు అనుమతులు.',
+        touristTitle: 'యాత్రికుడు / పర్యాటకుడు',
+        touristBadge: 'పవిత్ర యాత్రికుల పోర్టల్',
+        touristDesc: '25 క్షేత్రాలు, ప్రత్యక్ష రద్దీ సమాచారం మరియు ధృవీకరించబడిన వసతి చూడండి.',
+        continueBtn: 'గా కొనసాగించండి',
+        sihBanner: 'స్మార్ట్ ఇండియా హ్యాకథాన్ 2026 మూల్యాంకనం',
+        sihDesc: 'ప్రతి పాత్ర FastAPI బ్యాకెండ్ JWT ప్రామాణీకరణను అందిస్తుంది.'
       }
     }
   },
   ta: {
     translation: {
+      common: {
+        loading: 'ஏற்றுகிறது...',
+        error: 'பிழை ஏற்பட்டது',
+        retry: 'மீண்டும் முயற்சிக்கவும்',
+        refresh: 'புதுப்பி',
+        close: 'மூடு',
+        cancel: 'ரத்து செய்',
+        confirm: 'உறுதிப்படுத்து',
+        success: 'வெற்றி',
+        save: 'சேமி',
+        back: 'பின்செல்',
+        viewAll: 'அனைத்தும் காண்க'
+      },
       nav: {
         home: 'முகப்பு',
         destinations: '25 ஸ்தலங்கள்',
@@ -358,7 +617,9 @@ const resources = {
         sos: 'அவசர SOS',
         roleSelect: 'பணி தேர்வு',
         platformOverview: 'கண்ணோட்டம்',
-        logout: 'வெளியேறு'
+        logout: 'வெளியேறு',
+        liveConsole: 'நேரலை கன்சோல்',
+        overview: 'கண்ணோட்டம்'
       },
       hero: {
         welcomeBadge: 'AI அடிப்படையிலான புண்ணிய யாத்திரை அமைப்பு',
@@ -455,20 +716,109 @@ const resources = {
         subtitle: 'வானிலை தகவல், அவசர கால வெளியேறும் பாதைகள் மற்றும் உடனடி SOS உதவி',
         emergencySOS: 'அவசர SOS எச்சரிக்கை',
         triggerSOS: 'அவசர SOS அனுப்புக'
+      },
+      bookings: {
+        title: 'எனது யாத்திரை முன்பதிவுகள்',
+        subtitle: 'உங்கள் தங்குமிட கோரிக்கைகள் மற்றும் உறுதிசெய்யப்பட்ட பதிவுகளைக் கண்காணிக்கவும்.',
+        refresh: 'புதுப்பி',
+        refreshing: 'புதுப்பிக்கிறது...',
+        viewAll: 'அனைத்து முன்பதிவுகளையும் காண்க',
+        allBookingsTitle: 'யாத்திரை முன்பதிவு வரலாறு',
+        allBookingsSubtitle: 'உங்கள் அனைத்து தங்குமிட முன்பதிவுகளின் முழுமையான பதிவு',
+        noBookings: 'உங்களுக்கு இதுவரை எந்த முன்பதிவும் இல்லை.',
+        findAccommodation: 'தங்குமிடம் கண்டறிக',
+        room: 'அறை',
+        checkIn: 'செக்-இன்',
+        checkOut: 'செக்-அவுட்',
+        guests: 'பக்தர்கள்',
+        viewDetails: 'விவரங்களை காண்க',
+        bookingId: 'முன்பதிவு குறிப்பு',
+        hotel: 'தங்குமிடம்',
+        totalAmount: 'மொத்த தொகை',
+        status: 'நிலை',
+        statusPending: 'பரிசீலனையில் உள்ளது',
+        statusConfirmed: 'உறுதி செய்யப்பட்டது',
+        statusDeclined: 'நிராகரிக்கப்பட்டது',
+        statusCancelled: 'ரத்து செய்யப்பட்டது',
+        statusCompleted: 'நிறைவடைந்தது',
+        pendingText: 'ஹோட்டல் கூட்டாளரின் ஒப்புதலுக்காக காத்திருக்கிறது.',
+        confirmedText: 'உங்கள் தங்குமிடம் உறுதி செய்யப்பட்டது.',
+        declinedText: 'ஹோட்டல் இந்த கோரிக்கையை ஏற்கவில்லை.',
+        cancelledText: 'இந்த முன்பதிவு ரத்து செய்யப்பட்டது.',
+        completedText: 'தங்குமிடம் நிறைவு பெற்றது.',
+        loadError: 'முன்பதிவுகளை ஏற்றுவதில் பிழை ஏற்பட்டது.',
+        retry: 'மீண்டும் முயற்சிக்கவும்'
+      },
+      team: {
+        title: 'யாத்திரை குழு & பாதுகாப்பு',
+        subtitle: 'உங்கள் குழுவுடன் நேரடி GPS பகிருங்கள் மற்றும் அவசர SOS எச்சரிக்கை அனுப்புங்கள்.',
+        createGroup: 'குழுவை உருவாக்கு',
+        joinGroup: 'குறியீட்டுடன் இணை',
+        groupCode: 'குழு அழைப்பு குறியீடு',
+        groupName: 'குழு பெயர்',
+        members: 'குழு உறுப்பினர்கள்',
+        leader: 'குழு தலைவர்',
+        liveLocation: 'நேரடி இருப்பிட பகிர்வு',
+        distressAlert: 'அவசர குழு எச்சரிக்கை',
+        resolveAlert: 'தீர்வு காண்',
+        leaveGroup: 'குழுவிலிருந்து வெளியேறு'
+      },
+      roles: {
+        nationalBadge: 'தேசிய புண்ணிய யாத்திரை தளம்',
+        loginAs: 'உள்நுழைக',
+        selectRole: 'அங்கீகரிக்கப்பட்ட டாஷ்போர்டை அணுக உங்கள் பணியைத் தேர்ந்தெடுக்கவும்',
+        introCaption: 'அரசு கட்டளை, கோயில் தங்குமிட கூட்டாளர்கள், பயண நிர்வாகிகள் மற்றும் யாத்ரீகர்கள்.',
+        govtTitle: 'அரசு / காவல் துறை',
+        govtBadge: 'தேசிய கட்டளை மையம்',
+        govtDesc: 'கூட்டம், பாதுகாப்பு, எச்சரிக்கைகள் மற்றும் அவசர வழிகளை கண்காணிக்கவும்.',
+        hotelTitle: 'ஹோட்டல் & ஆசிரமம்',
+        hotelBadge: 'யாத்திரை தங்குமிட கூட்டாளர்',
+        hotelDesc: 'அறைகள், முன்பதிவுகள் மற்றும் தங்குமிடம் நிர்வகிக்கவும்.',
+        travelTitle: 'பயண நிறுவனம்',
+        travelBadge: 'வாகன & சுற்றுலா நிர்வாகி',
+        travelDesc: 'வாகன கண்காணிப்பு, பாதுகாப்பு பாதைகள் மற்றும் அனுமதி நிர்வாகம்.',
+        touristTitle: 'யாத்ரீகர் / சுற்றுலாப் பயணி',
+        touristBadge: 'புனித யாத்ரீகர் தளம்',
+        touristDesc: '25 ஸ்தலங்கள், நேரடி கூட்டம் மற்றும் சரிபார்க்கப்பட்ட தங்குமிடங்களை காண்க.',
+        continueBtn: 'ஆக தொடரவும்',
+        sihBanner: 'ஸ்மார்ட் இந்தியா ஹேக்கத்தான் 2026 மதிப்பீடு',
+        sihDesc: 'ஒவ்வொரு பணியும் FastAPI JWT அங்கீகாரத்துடன் முன் கட்டமைக்கப்பட்டுள்ளது.'
       }
     }
   }
+};
+
+// Retrieve saved language from localStorage if available, defaulting to 'en'
+const getSavedLanguage = () => {
+  try {
+    const saved = localStorage.getItem('yatrasetu_language');
+    if (saved && ['en', 'hi', 'te', 'ta'].includes(saved)) {
+      return saved;
+    }
+  } catch (e) {
+    console.warn('Unable to read yatrasetu_language from localStorage', e);
+  }
+  return 'en';
 };
 
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en',
+    lng: getSavedLanguage(),
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false
     }
   });
+
+// Persist language changes to localStorage
+i18n.on('languageChanged', (lng) => {
+  try {
+    localStorage.setItem('yatrasetu_language', lng);
+  } catch (e) {
+    console.warn('Unable to save yatrasetu_language to localStorage', e);
+  }
+});
 
 export default i18n;

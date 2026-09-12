@@ -47,6 +47,18 @@
       "status": "ARCHIVED",
       "created_at": "2026-09-10T15:19:43.427214+00:00",
       "updated_at": "2026-09-10T15:19:43.427214+00:00"
+    },
+    {
+      "id": "1e107e7c-0318-4e9a-979a-da3c5b05006f",
+      "group_name": "Kedarnath Family Yatra",
+      "site_id": "TS001",
+      "site_name": "Kedarnath Temple",
+      "yatra_date": "2026-10-15",
+      "join_code": "Q8S2BS",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ARCHIVED",
+      "created_at": "2026-09-11T15:26:17.537400+00:00",
+      "updated_at": "2026-09-11T15:26:17.537400+00:00"
     }
   ],
   "members": [],
@@ -74,6 +86,18 @@
       "status": "RESOLVED",
       "created_at": "2026-09-10T02:09:45.956646+00:00",
       "resolved_at": "2026-09-10T02:10:12.321828+00:00",
+      "resolved_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293"
+    },
+    {
+      "id": "da3399fc-4fa8-4e58-b5d7-21d13128ebba",
+      "group_id": "1e107e7c-0318-4e9a-979a-da3c5b05006f",
+      "user_id": "fda78085-b3a8-4f5b-b25e-84cd54e94b6f",
+      "user_name": "Pooja Sharma",
+      "alert_type": "MEDICAL",
+      "message": "High-altitude breathlessness near base camp.",
+      "status": "RESOLVED",
+      "created_at": "2026-09-11T15:26:25.563101+00:00",
+      "resolved_at": "2026-09-11T15:26:28.893922+00:00",
       "resolved_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293"
     }
   ]

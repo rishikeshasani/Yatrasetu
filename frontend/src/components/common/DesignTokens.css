@@ -1,0 +1,348 @@
+/* ==========================================================================
+   YATRASETU SHARED DESIGN SYSTEM — TOKENS & FOUNDATIONAL CLASSES
+   Unified component language across Tourist, Government, Hotel & Travel
+   ========================================================================== */
+
+:root {
+  /* 1. Spacing Scale */
+  --ys-space-1: 0.25rem;  /* 4px */
+  --ys-space-2: 0.5rem;   /* 8px */
+  --ys-space-3: 0.75rem;  /* 12px */
+  --ys-space-4: 1rem;     /* 16px */
+  --ys-space-5: 1.25rem;  /* 20px */
+  --ys-space-6: 1.5rem;   /* 24px */
+  --ys-space-8: 2rem;     /* 32px */
+  --ys-space-10: 2.5rem;  /* 40px */
+  --ys-space-12: 3rem;    /* 48px */
+
+  /* 2. Typography Scale */
+  --ys-font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --ys-font-sacred: 'Cinzel', serif;
+  --ys-text-2xs: 0.6875rem; /* 11px */
+  --ys-text-xs: 0.75rem;    /* 12px */
+  --ys-text-sm: 0.875rem;   /* 14px */
+  --ys-text-base: 1rem;     /* 16px */
+  --ys-text-lg: 1.125rem;   /* 18px */
+  --ys-text-xl: 1.25rem;    /* 20px */
+  --ys-text-2xl: 1.5rem;    /* 24px */
+  --ys-text-3xl: 1.875rem;  /* 30px */
+
+  /* 3. Border Radii */
+  --ys-radius-xs: 4px;
+  --ys-radius-sm: 6px;
+  --ys-radius-md: 10px;
+  --ys-radius-lg: 14px;
+  --ys-radius-xl: 20px;
+  --ys-radius-full: 9999px;
+
+  /* 4. Shadows & Elevation */
+  --ys-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ys-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ys-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --ys-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+  --ys-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --ys-shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.35);
+
+  /* 5. Semantic Status Colors (Light Theme Baseline) */
+  --ys-status-normal-text: #15803D;
+  --ys-status-normal-bg: #F0FDF4;
+  --ys-status-normal-border: #BBF7D0;
+  --ys-status-normal-dot: #22C55E;
+
+  --ys-status-moderate-text: #B45309;
+  --ys-status-moderate-bg: #FFFBEB;
+  --ys-status-moderate-border: #FDE68A;
+  --ys-status-moderate-dot: #F59E0B;
+
+  --ys-status-high-text: #C2410C;
+  --ys-status-high-bg: #FFF7ED;
+  --ys-status-high-border: #FED7AA;
+  --ys-status-high-dot: #EA580C;
+
+  --ys-status-critical-text: #B91C1C;
+  --ys-status-critical-bg: #FEF2F2;
+  --ys-status-critical-border: #FECACA;
+  --ys-status-critical-dot: #DC2626;
+
+  --ys-status-pending-text: #92400E;
+  --ys-status-pending-bg: #FEF3C7;
+  --ys-status-pending-border: #FCD34D;
+  --ys-status-pending-dot: #D97706;
+
+  --ys-status-confirmed-text: #166534;
+  --ys-status-confirmed-bg: #DCFCE7;
+  --ys-status-confirmed-border: #86EFAC;
+  --ys-status-confirmed-dot: #16A34A;
+
+  --ys-status-declined-text: #991B1B;
+  --ys-status-declined-bg: #FEE2E2;
+  --ys-status-declined-border: #FCA5A5;
+  --ys-status-declined-dot: #DC2626;
+
+  /* 6. Theme: Light (Hotel, Tourist, Travel) */
+  --ys-light-bg: #F8FAFC;
+  --ys-light-surface: #FFFFFF;
+  --ys-light-surface-subtle: #F1F5F9;
+  --ys-light-border: #E2E8F0;
+  --ys-light-border-strong: #CBD5E1;
+  --ys-light-text-primary: #0F172A;
+  --ys-light-text-secondary: #475569;
+  --ys-light-text-muted: #64748B;
+  --ys-light-primary: #D97706;
+  --ys-light-primary-hover: #B45309;
+
+  /* 7. Theme: Dark Authoritative (Government Command Center) */
+  --ys-dark-bg: #0B132B;
+  --ys-dark-surface: #111C38;
+  --ys-dark-surface-subtle: #172346;
+  --ys-dark-surface-elevated: #1E2B4D;
+  --ys-dark-border: #1E293B;
+  --ys-dark-border-strong: #334155;
+  --ys-dark-text-primary: #F8FAFC;
+  --ys-dark-text-secondary: #94A3B8;
+  --ys-dark-text-muted: #64748B;
+  --ys-dark-primary: #3B82F6;
+  --ys-dark-primary-hover: #2563EB;
+}
+
+/* ==========================================================================
+   SHARED COMPONENT UTILITY CLASSES
+   ========================================================================== */
+
+/* Button Hierarchy */
+.ys-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ys-space-2);
+  font-family: var(--ys-font-sans);
+  font-weight: 600;
+  font-size: var(--ys-text-sm);
+  line-height: 1.25;
+  padding: 0.55rem 1rem;
+  border-radius: var(--ys-radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+  user-select: none;
+  min-height: 38px;
+}
+
+.ys-btn:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+.ys-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Primary Action */
+.ys-btn-primary {
+  background-color: #0F172A;
+  color: #FFFFFF;
+  border-color: #0F172A;
+  box-shadow: var(--ys-shadow-xs);
+}
+.ys-btn-primary:hover:not(:disabled) {
+  background-color: #1E293B;
+  border-color: #1E293B;
+  box-shadow: var(--ys-shadow-sm);
+}
+
+.ys-btn-primary.theme-amber {
+  background-color: #D97706;
+  border-color: #D97706;
+  color: #FFFFFF;
+}
+.ys-btn-primary.theme-amber:hover:not(:disabled) {
+  background-color: #B45309;
+  border-color: #B45309;
+}
+
+.ys-btn-primary.theme-blue {
+  background-color: #2563EB;
+  border-color: #2563EB;
+  color: #FFFFFF;
+}
+.ys-btn-primary.theme-blue:hover:not(:disabled) {
+  background-color: #1D4ED8;
+  border-color: #1D4ED8;
+}
+
+/* Secondary Action */
+.ys-btn-secondary {
+  background-color: #FFFFFF;
+  color: #334155;
+  border-color: #CBD5E1;
+  box-shadow: var(--ys-shadow-xs);
+}
+.ys-btn-secondary:hover:not(:disabled) {
+  background-color: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
+}
+
+/* Ghost / Subdued Action */
+.ys-btn-ghost {
+  background-color: transparent;
+  color: #64748B;
+  border-color: transparent;
+}
+.ys-btn-ghost:hover:not(:disabled) {
+  background-color: rgba(100, 116, 139, 0.08);
+  color: #0F172A;
+}
+
+/* Destructive / Emergency Action */
+.ys-btn-emergency {
+  background-color: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.35);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ys-btn-emergency:hover:not(:disabled) {
+  background-color: #B91C1C;
+  border-color: #B91C1C;
+  box-shadow: 0 0 18px rgba(220, 38, 38, 0.5);
+}
+
+/* Card Surface Primitives */
+.ys-card {
+  background-color: var(--ys-light-surface);
+  border: 1px solid var(--ys-light-border);
+  border-radius: var(--ys-radius-md);
+  box-shadow: var(--ys-shadow-xs);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+}
+
+.ys-card-interactive:hover {
+  border-color: var(--ys-light-border-strong);
+  box-shadow: var(--ys-shadow-md);
+}
+
+.ys-card.theme-dark {
+  background-color: var(--ys-dark-surface);
+  border-color: var(--ys-dark-border);
+  color: var(--ys-dark-text-primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25);
+}
+
+.ys-card.theme-dark.ys-card-interactive:hover {
+  border-color: var(--ys-dark-primary);
+  box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.35);
+}
+
+/* Form Controls */
+.ys-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ys-space-1);
+  margin-bottom: var(--ys-space-3);
+}
+
+.ys-label {
+  font-family: var(--ys-font-sans);
+  font-size: var(--ys-text-xs);
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ys-input, .ys-select {
+  font-family: var(--ys-font-sans);
+  font-size: var(--ys-text-sm);
+  color: #0F172A;
+  background-color: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: var(--ys-radius-sm);
+  padding: 0.55rem 0.75rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 38px;
+}
+
+.ys-input:focus, .ys-select:focus {
+  outline: none;
+  border-color: #3B82F6;
+  box-shadow: var(--ys-shadow-focus);
+}
+
+/* Tables */
+.ys-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--ys-radius-md);
+  border: 1px solid var(--ys-light-border);
+  background: #FFFFFF;
+  scrollbar-width: thin;
+}
+
+.ys-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--ys-text-sm);
+  font-family: var(--ys-font-sans);
+}
+
+.ys-th {
+  background-color: #F8FAFC;
+  color: #475569;
+  font-weight: 700;
+  font-size: var(--ys-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #E2E8F0;
+  white-space: nowrap;
+}
+
+.ys-td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #F1F5F9;
+  color: #1E293B;
+}
+
+.ys-tr:hover td {
+  background-color: #F8FAFC;
+}
+
+/* Empty, Loading, and Error State Primitives */
+.ys-state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--ys-space-8) var(--ys-space-4);
+  border-radius: var(--ys-radius-md);
+  border: 1px dashed var(--ys-light-border-strong);
+  background-color: #F8FAFC;
+}
+
+.ys-state-icon {
+  font-size: 2rem;
+  margin-bottom: var(--ys-space-2);
+  line-height: 1;
+}
+
+.ys-state-title {
+  font-size: var(--ys-text-base);
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 var(--ys-space-1);
+}
+
+.ys-state-desc {
+  font-size: var(--ys-text-sm);
+  color: #64748B;
+  margin: 0 0 var(--ys-space-4);
+  max-width: 440px;
+}

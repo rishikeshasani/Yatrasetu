@@ -27,8 +27,8 @@ import { getShrineAccommodations } from '../utils/shrineImages';
 export default function TouristDashboard({
   sites = [],
   activeSite = null,
-  selectedSite = null,
   selectedSiteId = null,
+  selectedSite = null,
   onSelectSite = () => {},
   density = null,
   currentDensity = null,
@@ -40,13 +40,23 @@ export default function TouristDashboard({
   currentPrediction = null,
   alternatives = [],
   currentAlternatives = [],
+  safetyInfo = null,
   alerts = [],
   rerouteEvent = null,
   activeRerouteAlert = null,
   vendors = [],
   currentUser = null,
+  activeAlternateRoute = null,
+  pendingPunyaReward = 0,
+  routeStatus = 'IDLE',
+  completedRouteIds = [],
+  onSelectRoute = () => {},
+  onCompleteArrival = () => {},
+  onSwitchBack = () => {},
+  onOpenWallet = () => {},
   onOpenSOS = () => {},
   onTriggerSOS = () => {},
+  walletPoints = 260,
   onShowToast = () => {},
   onLogout = () => {}
 }) {
@@ -589,89 +599,11 @@ export default function TouristDashboard({
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem' }}>
         {/* 3. SEARCH & CANONICAL SHRINES (TS001 - TS025) */}
         <section style={{ marginBottom: '2rem' }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            marginBottom: '1rem',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '900', color: '#0F172A' }}>
-                Sacred Temples &amp; Shrines
-              </h2>
-              <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#64748B' }}>
-                Displaying 25 official pilgrimage destinations across Bharat with live crowd intelligence.
-              </p>
-            </div>
-
-            {/* Search Input */}
-            <div style={{ display: 'flex', gap: '0.5rem', minWidth: '320px' }}>
-              <input
-                type="text"
-                placeholder="Search shrine, deity, city, or state..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '0.6rem 1rem',
-                  fontSize: '0.85rem',
-                  border: '1px solid #CBD5E1',
-                  borderRadius: '0.65rem',
-                  outline: 'none',
-                  background: '#FFFFFF'
-                }}
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  style={{
-                    padding: '0.6rem 0.85rem',
-                    background: '#F1F5F9',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: '0.65rem',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: '700'
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Filter Categories */}
-          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>
-            {['ALL', 'JYOTIRLINGA', 'CHAR DHAM', 'SHAKTIPEETH', 'HILL SHRINE', 'COASTAL', 'HERITAGE'].map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                onClick={() => setSelectedTag(tag)}
-                style={{
-                  padding: '0.4rem 0.9rem',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  borderRadius: '999px',
-                  border: selectedTag === tag ? '1px solid #FF6B00' : '1px solid #E2E8F0',
-                  background: selectedTag === tag ? '#FF6B00' : '#FFFFFF',
-                  color: selectedTag === tag ? '#FFFFFF' : '#64748B',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-
           {/* Canonical Destination Grid */}
           <DestinationGrid
-            sites={filteredSites}
-            selectedSite={activeSite || currentDisplayShrine}
+            sites={canonicalSites}
+            densityMap={densityMap}
+            selectedSiteId={currentDisplayShrine?.id || activeSite?.id}
             onSelectSite={(siteOrId) => {
               const sId = typeof siteOrId === 'object' && siteOrId ? siteOrId.id : siteOrId;
               const siteObj = typeof siteOrId === 'object' && siteOrId ? siteOrId : (canonicalSites.find(s => s && s.id === siteOrId) || sites.find(s => s && s.id === siteOrId));
@@ -767,7 +699,7 @@ export default function TouristDashboard({
             {/* LIVE CROWD CARD & ML PREDICTIONS */}
             <LiveCrowdCard
               site={currentDisplayShrine}
-              density={effectiveDensity}
+              density={effectiveDensity || currentDensity || density || densityMap[currentDisplayShrine?.id]}
               forecast={forecast || currentForecast}
               current24hForecast={current24hForecast}
               queueForecast={currentQueueForecast || currentForecast || forecast}
@@ -780,17 +712,18 @@ export default function TouristDashboard({
         {currentDisplayShrine && (
           <section style={{ marginBottom: '2rem' }}>
             <PilgrimAdvisory
-              alternatives={alternatives}
-              activeSite={currentDisplayShrine}
-              onSelectAlternative={(alt) => {
-                const matched = canonicalSites.find(
-                  (s) => s.id === alt.alternative_site_id || s.name === alt.alternative_site_name
-                );
-                if (matched) {
-                  onSelectSite(matched);
-                  setFocusShrine(matched);
-                }
-              }}
+              currentSite={currentDisplayShrine}
+              density={currentDensity || density || densityMap[currentDisplayShrine?.id]}
+              forecast={forecast}
+              prediction={currentPrediction}
+              alternativesData={currentAlternatives || (alternatives?.recommendations ? alternatives : { recommendations: alternatives })}
+              activeAlternateRoute={activeAlternateRoute}
+              pendingPunyaReward={pendingPunyaReward}
+              routeStatus={routeStatus}
+              completedRouteIds={completedRouteIds}
+              onSelectRoute={onSelectRoute}
+              onCompleteArrival={onCompleteArrival}
+              onSwitchBack={onSwitchBack}
             />
           </section>
         )}
@@ -992,10 +925,10 @@ export default function TouristDashboard({
           }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
-                My Yatra Bookings
+                {t('bookings.title', 'My Yatra Bookings')}
               </h3>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
-                Track your accommodation requests and confirmed stays.
+                {t('bookings.subtitle', 'Track your accommodation requests and confirmed stays.')}
               </p>
             </div>
 
@@ -1020,7 +953,7 @@ export default function TouristDashboard({
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  📋 View All Bookings ({myBookingsList.length})
+                  📋 {t('bookings.viewAll', 'View All Bookings')} ({myBookingsList.length})
                 </button>
               )}
 
@@ -1049,7 +982,7 @@ export default function TouristDashboard({
                   display: 'inline-block',
                   animation: isRefreshingBookings ? 'spin 1s linear infinite' : 'none'
                 }}>🔄</span>
-                {isRefreshingBookings ? 'Refreshing...' : 'Refresh Status'}
+                {isRefreshingBookings ? t('bookings.refreshing', 'Refreshing...') : t('bookings.refresh', 'Refresh Status')}
               </button>
             </div>
           </div>
@@ -1074,7 +1007,7 @@ export default function TouristDashboard({
                 animation: 'spin 0.8s linear infinite'
               }} />
               <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>
-                Loading your bookings...
+                {t('common.loading', 'Loading your bookings...')}
               </div>
             </div>
           ) : bookingsError ? (
@@ -1091,7 +1024,7 @@ export default function TouristDashboard({
             }}>
               <div style={{ fontSize: '1.4rem' }}>⚠️</div>
               <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#991B1B' }}>
-                My bookings couldn't be loaded.
+                {t('bookings.loadError', "My bookings couldn't be loaded.")}
               </div>
               <button
                 type="button"
@@ -1108,7 +1041,7 @@ export default function TouristDashboard({
                   cursor: 'pointer'
                 }}
               >
-                Retry
+                {t('bookings.retry', 'Retry')}
               </button>
             </div>
           ) : myBookingsList.length === 0 ? (
@@ -1126,10 +1059,10 @@ export default function TouristDashboard({
             }}>
               <div style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>🏨</div>
               <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: '#0F172A' }}>
-                My Yatra Bookings
+                {t('bookings.title', 'My Yatra Bookings')}
               </h4>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>
-                You don't have any accommodation bookings yet.
+                {t('bookings.noBookings', "You don't have any accommodation bookings yet.")}
               </p>
               <button
                 type="button"
@@ -1147,7 +1080,7 @@ export default function TouristDashboard({
                   boxShadow: '0 2px 4px rgba(255, 107, 0, 0.2)'
                 }}
               >
-                Find Accommodation
+                {t('bookings.findAccommodation', 'Find Accommodation')}
               </button>
             </div>
           ) : (
@@ -1238,10 +1171,10 @@ export default function TouristDashboard({
             }}>
               <div>
                 <h3 id="all-bookings-modal-title" style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
-                  My Yatra Bookings History
+                  {t('bookings.allBookingsTitle', 'My Yatra Bookings History')}
                 </h3>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
-                  Complete record of your accommodation requests and stays ({myBookingsList.length} total)
+                  {t('bookings.allBookingsSubtitle', 'Complete record of your accommodation requests and stays')} ({myBookingsList.length} total)
                 </p>
               </div>
               <button

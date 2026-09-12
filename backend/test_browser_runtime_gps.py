@@ -153,9 +153,9 @@ def run_browser_verification():
         def on_res(res):
             if "/check-safety" in res.url:
                 try:
-                    captured_responses.append(res.json())
-                except Exception:
-                    pass
+                    captured_responses.append(json.loads(res.text()))
+                except Exception as ex:
+                    print("on_res error:", ex)
 
         page_pipeline.on("request", on_req)
         page_pipeline.on("response", on_res)

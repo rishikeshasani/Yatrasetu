@@ -224,8 +224,69 @@
 }
 
 /* ==========================================================================
-   2. EMERGENCY ALERT BAR (Immediately Below Header)
+   2. EMERGENCY ALERT BAR / PERSISTENT COMMAND STRIP
    ========================================================================== */
+.gov-persistent-command-strip {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: var(--gov-radius-sm);
+  padding: 10px 16px;
+  border: 1px solid var(--gov-border);
+  background: var(--gov-surface);
+  box-shadow: var(--gov-shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.gov-persistent-command-strip.is-emergency-active {
+  background: #FFF5F5;
+  border-color: #F87171;
+  border-left: 5px solid var(--gov-critical-red);
+}
+
+.gov-persistent-command-strip.is-emergency-normal {
+  border-left: 4px solid var(--gov-normal-green);
+}
+
+.gov-strip-pillars-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.gov-strip-pillar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.gov-strip-pillar-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gov-text-muted);
+  white-space: nowrap;
+}
+
+.gov-strip-pillar-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gov-strip-pillar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--gov-border);
+  flex-shrink: 0;
+}
+
 .gov-emergency-strip {
   border-radius: var(--gov-radius-sm);
   padding: 10px 16px;
@@ -1424,3 +1485,1122 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   POLICE CROWD SURGE SIMULATION MODE (INTERNAL ONLY)
+   ========================================================================== */
+
+.badge-police-sim {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.gov-sim-isolation-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #d97706;
+  border-radius: var(--gov-radius-md);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.sim-isolation-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.sim-isolation-icon {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.sim-isolation-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #92400e;
+  text-transform: uppercase;
+}
+
+.sim-isolation-sub {
+  font-size: 12px;
+  color: #78350f;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.sim-isolation-tag {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #fcd34d;
+  white-space: nowrap;
+}
+
+/* Form Layout */
+.gov-sim-form-container {
+  background: var(--gov-surface-subtle);
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.gov-sim-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 1024px) {
+  .gov-sim-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gov-sim-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gov-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gov-form-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gov-navy-800);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.gov-label-hint {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--gov-text-muted);
+  text-transform: none;
+}
+
+.gov-sim-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gov-border);
+  flex-wrap: wrap;
+}
+
+.sim-footer-disclaimer {
+  font-size: 11.5px;
+  color: var(--gov-text-muted);
+  max-width: 580px;
+  line-height: 1.35;
+}
+
+.sim-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-sim-preset {
+  background: transparent;
+  color: var(--gov-blue-accent);
+  border: 1px dashed var(--gov-blue-border);
+  padding: 7px 12px;
+  border-radius: var(--gov-radius-sm);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-sim-preset:hover {
+  background: var(--gov-blue-bg);
+  border-color: var(--gov-blue-accent);
+}
+
+.sim-run-btn {
+  padding: 8px 18px;
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+/* Simulation Error Alert */
+.gov-sim-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--gov-radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  color: #991b1b;
+  font-size: 12.5px;
+}
+
+/* Dossier Wrap */
+.gov-sim-dossier-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #ffffff;
+  border: 1.5px solid var(--gov-blue-accent);
+  border-radius: var(--gov-radius-lg);
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.08);
+  margin-bottom: 16px;
+  animation: gov-sim-appear 0.25s ease-out;
+}
+
+@keyframes gov-sim-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gov-sim-dossier-header {
+  border-bottom: 1px solid var(--gov-border);
+  padding-bottom: 10px;
+}
+
+.dossier-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dossier-tag {
+  background: var(--gov-blue-accent);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: var(--gov-radius-xs);
+  text-transform: uppercase;
+}
+
+.dossier-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gov-navy-900);
+}
+
+.dossier-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gov-text-secondary);
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+/* Dossier Metrics Grid */
+.gov-sim-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 1200px) {
+  .gov-sim-metrics-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .gov-sim-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.sim-metric-card {
+  background: var(--gov-surface-subtle);
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.smc-label {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--gov-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.smc-val {
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.smc-sub {
+  font-size: 10px;
+  color: var(--gov-text-muted);
+  margin-top: 3px;
+  line-height: 1.25;
+}
+
+/* Two-column subcards */
+.gov-sim-two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 850px) {
+  .gov-sim-two-col-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sim-subcard {
+  background: var(--gov-surface-subtle);
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-subcard.full-width {
+  grid-column: 1 / -1;
+}
+
+.sim-subcard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--gov-border-subtle);
+  padding-bottom: 6px;
+}
+
+.sim-subcard-title {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gov-navy-900);
+  text-transform: uppercase;
+}
+
+/* Traffic Impact Card */
+.sim-traffic-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.traffic-delay-box {
+  background: #ffffff;
+  border: 1px solid var(--gov-border);
+  border-left: 3.5px solid #dc2626;
+  border-radius: var(--gov-radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.td-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--gov-text-muted);
+  text-transform: uppercase;
+}
+
+.td-val {
+  font-size: 17px;
+}
+
+.td-hint {
+  font-size: 11px;
+  color: var(--gov-text-muted);
+}
+
+.traffic-risk-note {
+  font-size: 12px;
+  color: var(--gov-text-secondary);
+  line-height: 1.4;
+  background: #ffffff;
+  border: 1px solid var(--gov-border-subtle);
+  border-radius: var(--gov-radius-sm);
+  padding: 8px 10px;
+}
+
+/* Data Sources Transparency List */
+.sim-data-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ds-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: var(--gov-radius-xs);
+  background: #ffffff;
+  border: 1px solid var(--gov-border-subtle);
+}
+
+.ds-item.active .ds-icon {
+  color: var(--gov-normal-green);
+  font-weight: 800;
+}
+
+.ds-item.future .ds-icon {
+  color: var(--gov-warning-amber);
+  font-weight: 800;
+}
+
+.ds-text {
+  color: var(--gov-navy-800);
+}
+
+/* High Risk Zones */
+.sim-zones-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-zone-item {
+  background: #ffffff;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.szi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.szi-name {
+  font-size: 12px;
+}
+
+.szi-reason {
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.szi-mitigation {
+  font-size: 10.5px;
+  line-height: 1.3;
+  padding-top: 3px;
+  border-top: 1px dashed var(--gov-border-subtle);
+}
+
+/* Low-density alternatives */
+.sim-alts-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-alt-item {
+  background: #ffffff;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sai-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sai-name {
+  font-size: 12px;
+}
+
+.sai-savings {
+  font-size: 11px;
+}
+
+.sai-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  flex-wrap: wrap;
+}
+
+.sai-why {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.sim-empty-note {
+  font-size: 11.5px;
+  color: var(--gov-text-muted);
+  font-style: italic;
+  padding: 10px;
+  text-align: center;
+}
+
+/* Recommendations Grid */
+.sim-recs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .sim-recs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sim-rec-item {
+  background: #ffffff;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gov-navy-900);
+  line-height: 1.4;
+}
+
+.rec-num {
+  background: var(--gov-blue-bg);
+  color: var(--gov-blue-accent);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--gov-blue-border);
+}
+
+.sim-rec-disclaimer {
+  font-size: 11px;
+  color: var(--gov-text-muted);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--gov-border);
+  line-height: 1.4;
+}
+
+/* Simulation History Table */
+.gov-sim-history-section {
+  background: #ffffff;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  padding: 14px 16px;
+}
+
+.sim-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sim-history-title {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gov-navy-900);
+  text-transform: uppercase;
+}
+
+.sim-history-sub {
+  font-size: 11px;
+  color: var(--gov-text-muted);
+  margin-top: 2px;
+}
+
+.btn-history-refresh {
+  background: transparent;
+  color: var(--gov-navy-700);
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-xs);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-history-refresh:hover {
+  background: var(--gov-surface-inset);
+  color: var(--gov-navy-900);
+}
+
+.sim-history-empty {
+  font-size: 12px;
+  color: var(--gov-text-muted);
+  padding: 16px;
+  text-align: center;
+  font-style: italic;
+}
+
+.sim-history-table td {
+  vertical-align: middle;
+}
+
+.sim-history-cell-id {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-compact-delete {
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid var(--gov-border);
+  width: 24px;
+  height: 24px;
+  border-radius: var(--gov-radius-xs);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-compact-delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+/* Police Tab Simulation Desk Card */
+.sim-desk-card {
+  border-left: 3px solid #38bdf8 !important;
+}
+
+.btn-agency-link {
+  margin-top: 8px;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 10px;
+  border-radius: var(--gov-radius-xs);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-agency-link:hover {
+  background: rgba(56, 189, 248, 0.2);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   GOVERNMENT COMMAND NAVIGATION TABS BAR
+   ========================================================================== */
+.gov-tabs-navigation-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.gov-mobile-tabs-dropdown {
+  display: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+  background: var(--gov-surface);
+  padding: 8px 12px;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  box-shadow: var(--gov-shadow-sm);
+}
+
+.gov-mobile-tab-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gov-navy-900);
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.gov-mobile-tab-select {
+  flex: 1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--gov-border-dark);
+  border-radius: var(--gov-radius-sm);
+  background: var(--gov-surface);
+  color: var(--gov-navy-900);
+  cursor: pointer;
+}
+
+.gov-tabs-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 38px;
+  background: var(--gov-surface);
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-sm);
+  color: var(--gov-navy-800);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 2;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  box-shadow: var(--gov-shadow-sm);
+}
+
+.gov-tabs-scroll-btn:hover {
+  background: var(--gov-surface-inset);
+  color: var(--gov-navy-950);
+  border-color: var(--gov-border-dark);
+}
+
+.gov-tabs-scroll-btn.left {
+  margin-right: 6px;
+}
+
+.gov-tabs-scroll-btn.right {
+  margin-left: 6px;
+}
+
+.gov-command-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  padding: 8px 12px;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  box-shadow: var(--gov-shadow-sm);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  scroll-behavior: smooth;
+}
+
+.gov-nav-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--gov-radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gov-navy-700);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.gov-nav-tab-btn:hover {
+  background: var(--gov-surface-subtle);
+  color: var(--gov-navy-950);
+  border-color: var(--gov-border);
+}
+
+.gov-nav-tab-btn.active {
+  background: var(--gov-navy-900);
+  color: #ffffff;
+  border-color: var(--gov-navy-900);
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+}
+
+.gov-nav-tab-btn.active .tab-icon {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.gov-nav-tab-btn.gov-nav-tab-simulation {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(239, 246, 255, 0.6);
+  color: #1e40af;
+}
+
+.gov-nav-tab-btn.gov-nav-tab-simulation:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.gov-nav-tab-btn.gov-nav-tab-simulation.active {
+  background: #1e3a8a;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.tab-pill-sim {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: #f59e0b;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+.gov-nav-tab-btn.active .tab-pill-sim {
+  background: #fbbf24;
+  color: #0f172a;
+}
+
+.tab-badge-count {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background: var(--gov-critical-red);
+  color: #ffffff;
+}
+
+.tab-badge-active {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #f87171;
+}
+
+/* ==========================================================================
+   POLICE & CROWD SIMULATION DEDICATED TAB STYLING
+   ========================================================================== */
+.gov-simulation-page {
+  border-top: 4px solid #2563eb !important;
+}
+
+.gov-sim-page-header {
+  padding: 4px 0 16px;
+  border-bottom: 1px solid var(--gov-border);
+  margin-bottom: 16px;
+}
+
+.sim-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.sim-title-group {
+  flex: 1;
+  min-width: 320px;
+}
+
+.sim-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.badge-police-sim {
+  background: #1e293b;
+  color: #38bdf8;
+  border: 1px solid #334155;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.sim-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  border-radius: 9999px;
+}
+
+.sim-page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--gov-navy-950);
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.sim-page-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gov-navy-600);
+  margin: 0;
+}
+
+.sim-purpose-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #2563eb;
+  border-radius: var(--gov-radius-sm);
+  padding: 10px 14px;
+  max-width: 480px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.sim-purpose-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.sim-purpose-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sim-purpose-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #2563eb;
+  text-transform: uppercase;
+}
+
+.sim-purpose-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--gov-navy-700);
+  margin: 0;
+}
+
+/* ==========================================================================
+   RECOMMENDED ACTIONS 4-CATEGORY CARDS GRID
+   ========================================================================== */
+.sim-action-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.sim-action-cat-card {
+  background: #f8fafc;
+  border: 1px solid var(--gov-border);
+  border-radius: var(--gov-radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.15s ease;
+}
+
+.sim-action-cat-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: var(--gov-shadow-sm);
+}
+
+.cat-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cat-card-icon {
+  font-size: 18px;
+}
+
+.cat-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--gov-navy-900);
+}
+
+.cat-card-body {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gov-navy-700);
+  margin: 0;
+}
+
+/* Strip titles and headers for each tab */
+.gov-live-monitoring-header-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-radius: var(--gov-radius-sm);
+  margin-bottom: 16px;
+  box-shadow: var(--gov-shadow-sm);
+}
+
+.gov-live-monitoring-header-strip.strip-safety {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--gov-critical-red);
+}
+
+.gov-live-monitoring-header-strip.strip-emergency {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-left: 4px solid #f97316;
+}
+
+.gov-live-monitoring-header-strip.strip-analytics {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+}
+
+.live-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-strip-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--gov-navy-900);
+  text-transform: uppercase;
+}
+
+.live-strip-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--gov-radius-xs);
+  text-transform: uppercase;
+}
+
+.live-strip-badge.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.live-strip-badge.badge-normal {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Tab pane container */
+.gov-tab-page, .gov-tab-pane, .police-content-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .sim-action-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .gov-tabs-navigation-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .gov-mobile-tabs-dropdown {
+    display: flex;
+    align-items: center;
+  }
+  .gov-tabs-scroll-btn.desktop-only {
+    display: none !important;
+  }
+  .gov-command-tabs-nav {
+    display: none !important;
+  }
+  .gov-strip-pillar-divider {
+    display: none !important;
+  }
+  .gov-strip-pillar {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+  .sim-header-main {
+    flex-direction: column;
+  }
+  .sim-action-categories-grid {
+    grid-template-columns: 1fr;
+  }
+  .gov-live-monitoring-header-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+

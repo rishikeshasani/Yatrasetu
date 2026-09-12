@@ -275,49 +275,89 @@ export default function PilgrimAdvisory({
         </div>
       )}
 
-      {/* Dynamic Crowd Situation Assessment */}
-      <div className={`advisory-condition-box ${redistributionNeeded ? 'box-congestion-warning' : 'box-manageable'}`}>
-        <div className="condition-icon-badge">
-          {redistributionNeeded ? '⚠️' : '🌿'}
-        </div>
-        <div className="condition-info">
-          {redistributionNeeded ? (
-            <>
-              <div className="condition-status-label red-tag">
-                REROUTING STRONGLY ADVISED
+      {/* Dynamic Crowd Situation Assessment across 4 Authoritative Statuses */}
+      {(() => {
+        const getAdvisoryAssessment = (st, occ, name) => {
+          switch (st) {
+            case 'CRITICAL':
+              return {
+                boxClass: 'box-congestion-warning',
+                tagClass: 'red-tag',
+                icon: '🚨',
+                tagText: 'CRITICAL CONGESTION • SURGE SAFETY CORRIDORS ACTIVE',
+                heading: `Critical surge detected at ${name}. High bottleneck risk.`,
+                body: `The sanctum queue at ${name} is operating at critical density (${occ}% occupancy). Temple gate pacing is engaged. Pilgrims are strongly advised to divert to designated serene alternative shrines or waiting plazas to prevent crowd crush and prolonged delays.`,
+                recommendation: 'Strongly consider designated alternative destinations and follow authority guidance.'
+              };
+            case 'HIGH':
+              return {
+                boxClass: 'box-congestion-warning',
+                tagClass: 'orange-tag',
+                icon: '⚠️',
+                tagText: 'HEAVY RUSH • REDISTRIBUTION RECOMMENDED',
+                heading: `Heavy rush and prolonged queue delays at ${name}.`,
+                body: `The sanctum queue at ${name} is operating at ${occ}% occupancy with extended waiting times. Diverting to an alternative destination is recommended to ensure a peaceful, unhurried darshan and avoid queue fatigue.`,
+                recommendation: 'Alternative destinations recommended.'
+              };
+            case 'MODERATE':
+              return {
+                boxClass: 'box-moderate-warning',
+                tagClass: 'amber-tag',
+                icon: '⚡',
+                tagText: 'STEADY CROWD • REROUTING OPTIONAL',
+                heading: `Steady crowd flow observed at ${name}.`,
+                body: `The main temple queues at ${name} are moving at an orderly pace (${occ}% occupancy). If you prefer a quieter, off-peak spiritual atmosphere, consider browsing our recommended alternatives below.`,
+                recommendation: 'Consider nearby alternatives.'
+              };
+            case 'NORMAL':
+            default:
+              return {
+                boxClass: 'box-manageable',
+                tagClass: 'green-tag',
+                icon: '🌿',
+                tagText: 'CONDITIONS OPTIMAL • COMFORTABLE VISIT',
+                heading: `Darshan is flowing smoothly at ${name}.`,
+                body: `The sanctum at ${name} is experiencing comfortable, optimal crowd levels (${occ}% occupancy). Excellent window for peaceful darshan, sacred rituals, and family parikrama.`,
+                recommendation: 'Nearby alternatives available — rerouting optional.'
+              };
+          }
+        };
+
+        const assessment = getAdvisoryAssessment(backendStatus, occupancyPct, siteName);
+
+        return (
+          <div className={`advisory-condition-box ${assessment.boxClass}`}>
+            <div className="condition-icon-badge">
+              {assessment.icon}
+            </div>
+            <div className="condition-info">
+              <div className={`condition-status-label ${assessment.tagClass}`}>
+                {assessment.tagText}
               </div>
               <h3 className="condition-heading">
-                High crowd detected. Rerouting to an alternative destination is strongly recommended to avoid delays and queue fatigue.
+                {assessment.heading}
               </h3>
               <p className="condition-body">
-                The sanctum queue at {siteName} is currently operating near peak capacity ({occupancyPct}% occupancy). 
-                Diverting to the recommended serene destination below ensures a peaceful, unhurried darshan with significantly reduced queue times.
+                {assessment.body}
               </p>
-            </>
-          ) : (
-            <>
-              <div className="condition-status-label green-tag">
-                CONDITIONS MANAGEABLE • REROUTING OPTIONAL
+              <div className="recommendation-callout" style={{ marginTop: '0.6rem', padding: '0.45rem 0.75rem', borderRadius: '0.375rem', background: 'rgba(0,0,0,0.04)', fontSize: '0.88rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>💡</span>
+                <span>{assessment.recommendation}</span>
               </div>
-              <h3 className="condition-heading">
-                Current conditions are manageable. No rerouting required.
-              </h3>
-              <p className="condition-body">
-                The main temple queue at {siteName} is flowing smoothly with acceptable waiting periods. 
-                If you prefer a quieter, off-beat spiritual experience away from the central queue corridors, browse our AI-recommended alternatives below.
-              </p>
-            </>
-          )}
-        </div>
-      </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Fallback State if No Alternatives Exist */}
       {recommendations.length === 0 ? (
-        <div className="pilgrim-advisory-empty-box">
-          <div className="empty-icon-circle">ℹ️</div>
-          <h4 className="empty-title">No Alternative Destinations Available</h4>
-          <p className="empty-desc">
-            No alternative destinations are currently available. Please follow standard temple queue protocols at {siteName}.
+        <div className="pilgrim-advisory-empty-box" style={{ padding: '1.5rem', textAlign: 'center', background: '#F8FAFC', borderRadius: '0.85rem', border: '1px solid #E2E8F0', margin: '1.25rem 0' }}>
+          <div style={{ fontSize: '1.5rem', marginBottom: '0.35rem' }}>ℹ️</div>
+          <h4 style={{ margin: '0 0 0.35rem', fontSize: '1rem', fontWeight: 700, color: '#1E293B' }}>
+            No Alternative Destinations Registered
+          </h4>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>
+            No alternative destinations are currently registered for {siteName}. Please follow standard temple queue protocols.
           </p>
         </div>
       ) : (

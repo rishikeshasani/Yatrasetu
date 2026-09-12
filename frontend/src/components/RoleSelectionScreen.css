@@ -318,6 +318,23 @@
   color: #FFFFFF;
 }
 
+.role-card.role-police::before {
+  background: linear-gradient(90deg, #0B192C, #3B82F6);
+}
+.role-card.role-police:hover {
+  border-color: #60A5FA;
+  box-shadow: 0 20px 35px -8px rgba(11, 25, 44, 0.35);
+}
+.role-card.role-police .role-icon-box {
+  background: #0B192C;
+  color: #60A5FA;
+  border: 1px solid #1E3A8A;
+}
+.role-card.role-police .role-continue-btn {
+  background: linear-gradient(135deg, #0B192C 0%, #1E3A8A 100%);
+  color: #FFFFFF;
+}
+
 /* Card Content Details */
 .role-card-top {
   display: flex;
@@ -811,3 +828,209 @@
     padding: 1.5rem 1.25rem;
   }
 }
+
+/* --------------------------------------------------------------------------
+   Government Classification / Command Branch Picker on VIEW 1 Role Card
+   -------------------------------------------------------------------------- */
+.gov-card-classification-picker {
+  margin: 0.85rem 0 1rem 0;
+  padding: 0.75rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.75rem;
+}
+
+.gov-card-picker-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.5rem;
+}
+
+.gov-card-picker-btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+
+.gov-card-subrole-btn {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1E293B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  transition: all 0.15s ease;
+}
+
+.gov-card-subrole-btn:hover {
+  border-color: #2563EB;
+  color: #1D4ED8;
+  background: #EFF6FF;
+  transform: translateY(-1px);
+}
+
+.gov-card-subrole-btn.police:hover {
+  border-color: #3B82F6;
+  color: #1E40AF;
+  background: #DBEAFE;
+}
+
+.gov-card-subrole-btn.municipal:hover {
+  border-color: #6366F1;
+  color: #4338CA;
+  background: #EEF2FF;
+}
+
+/* --------------------------------------------------------------------------
+   Government Classification / Command Selector on VIEW 2 Login Form
+   -------------------------------------------------------------------------- */
+.gov-subrole-selector-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.gov-subrole-label-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.gov-subrole-title-label {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.gov-subrole-hint {
+  font-size: 0.72rem;
+  color: #64748B;
+}
+
+.gov-subrole-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+}
+
+@media (max-width: 640px) {
+  .gov-subrole-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gov-subrole-select-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.gov-subrole-select-card:hover {
+  border-color: #93C5FD;
+  background: #F8FAFC;
+  transform: translateY(-1px);
+}
+
+.gov-subrole-select-card.active {
+  border-color: #2563EB;
+  background: #EFF6FF;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.subrole-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.4rem;
+}
+
+.subrole-card-icon {
+  font-size: 1.25rem;
+}
+
+.subrole-card-pill {
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.subrole-card-pill.civil {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.subrole-card-pill.police {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.subrole-card-pill.municipal {
+  background: #E0E7FF;
+  color: #4338CA;
+}
+
+.subrole-card-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 0.25rem;
+}
+
+.subrole-card-desc {
+  font-size: 0.7rem;
+  color: #64748B;
+  line-height: 1.35;
+  margin-bottom: 0.45rem;
+  min-height: 34px;
+}
+
+.subrole-card-email,
+.subrole-card-scope {
+  font-size: 0.68rem;
+  font-family: var(--ys-font-sans, inherit);
+  color: #334155;
+  background: #F1F5F9;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.subrole-card-selected-marker {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: #2563EB;
+  color: #FFFFFF;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+

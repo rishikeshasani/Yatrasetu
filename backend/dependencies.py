@@ -16,6 +16,7 @@ class AuthenticatedUser(BaseModel):
     id: str
     email: Optional[str] = None
     role: str
+    government_subrole: Optional[str] = None
     full_name: Optional[str] = None
     created_at: Optional[str] = None
 
@@ -25,10 +26,10 @@ def get_current_user(
 ) -> AuthenticatedUser:
     """
     Verifies the Supabase JWT access token, identifies the authenticated user's ID,
-    and loads their role directly from the public.profiles database table.
+    and loads their role and government_subrole directly from the public.profiles database table.
     
     Returns HTTP 401 if token is missing, invalid, or expired.
-    NEVER trusts a role supplied by client request bodies or parameters.
+    NEVER trusts a role or subrole supplied by client request bodies or parameters.
     """
     if not credentials or not credentials.credentials:
         raise HTTPException(
@@ -129,19 +130,46 @@ def get_current_user(
     user = user_response.user
     user_id = user.id
 
-    # 2. Query the user's role directly from the public.profiles table (Source of Truth)
-    # The role is ALWAYS verified against the database and never trusted from request payloads
+    # 2. Query the user's role and subrole directly from the public.profiles table (Source of Truth)
     profile_data = None
+    gov_subrole_from_db = None
     try:
-        prof_res = supabase_admin.table("profiles").select("id, full_name, role, created_at").eq("id", user_id).execute()
+        prof_res = supabase_admin.table("profiles").select("id, full_name, role, government_subrole, created_at").eq("id", user_id).execute()
         if prof_res.data and len(prof_res.data) > 0:
             profile_data = prof_res.data[0]
-    except Exception as e:
-        print(f"Warning: Error querying public.profiles for user {user_id}: {e}")
+            gov_subrole_from_db = profile_data.get("government_subrole")
+    except Exception:
+        # Fallback if government_subrole column is not yet present in schema
+        try:
+            prof_res = supabase_admin.table("profiles").select("id, full_name, role, created_at").eq("id", user_id).execute()
+            if prof_res.data and len(prof_res.data) > 0:
+                profile_data = prof_res.data[0]
+        except Exception as e:
+            print(f"Warning: Error querying public.profiles for user {user_id}: {e}")
 
     # Fallback to user metadata if database sync is pending
     user_meta = getattr(user, "user_metadata", {}) or {}
-    role = (profile_data.get("role") if profile_data else None) or user_meta.get("role", "tourist")
+    raw_role = (profile_data.get("role") if profile_data else None) or user_meta.get("role")
+    
+    # CRITICAL: Never silently default to 'tourist' for missing/unknown roles
+    if not raw_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account has no assigned role in profile or metadata. Please contact system administrator."
+        )
+
+    role = raw_role
+    gov_subrole = gov_subrole_from_db or user_meta.get("government_subrole")
+
+    # Backward-compatibility: if legacy role is 'police', map to role='government', government_subrole='police_official'
+    if role == "police":
+        role = "government"
+        gov_subrole = "police_official"
+
+    # Default government_subrole for government role
+    if role == "government" and not gov_subrole:
+        gov_subrole = "government_official"
+
     full_name = (profile_data.get("full_name") if profile_data else None) or user_meta.get("full_name")
     created_at = profile_data.get("created_at") if profile_data else None
 
@@ -149,6 +177,7 @@ def get_current_user(
         id=user_id,
         email=user.email,
         role=role,
+        government_subrole=gov_subrole,
         full_name=full_name,
         created_at=created_at
     )
@@ -157,7 +186,7 @@ def get_current_user(
 def require_role(allowed_roles: Union[str, List[str], Set[str]]) -> Callable:
     """
     Reusable authorization dependency factory.
-    Enforces that the authenticated user possesses one of the allowed roles.
+    Enforces that the authenticated user possesses one of the allowed primary roles.
     
     - Returns HTTP 401 if unauthenticated or token is invalid (via get_current_user).
     - Returns HTTP 403 if authenticated user does not have permission.
@@ -170,6 +199,11 @@ def require_role(allowed_roles: Union[str, List[str], Set[str]]) -> Callable:
     def role_checker(
         current_user: AuthenticatedUser = Depends(get_current_user)
     ) -> AuthenticatedUser:
+        # Legacy compatibility: if endpoint asks for 'police', accept government + police_official
+        if "police" in roles_set:
+            if current_user.role == "police" or (current_user.role == "government" and current_user.government_subrole == "police_official"):
+                return current_user
+
         if current_user.role not in roles_set:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -180,8 +214,48 @@ def require_role(allowed_roles: Union[str, List[str], Set[str]]) -> Callable:
     return role_checker
 
 
-# Convenient role-specific dependencies
+def require_government_subrole(allowed_subroles: Union[str, List[str], Set[str]]) -> Callable:
+    """
+    Reusable authorization dependency factory for government classifications.
+    Enforces that:
+    1. The authenticated user has primary role 'government' (or legacy 'police').
+    2. The authenticated user's government_subrole is one of the allowed_subroles.
+    """
+    if isinstance(allowed_subroles, str):
+        subroles_set = {allowed_subroles}
+    else:
+        subroles_set = set(allowed_subroles)
+
+    def subrole_checker(
+        current_user: AuthenticatedUser = Depends(get_current_user)
+    ) -> AuthenticatedUser:
+        # Legacy compatibility: if user role is 'police' and 'police_official' is allowed
+        if current_user.role == "police" and "police_official" in subroles_set:
+            return current_user
+
+        if current_user.role != "government":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access forbidden: User role '{current_user.role}' is not authorized. Required role: 'government'."
+            )
+
+        if current_user.government_subrole not in subroles_set:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access forbidden: Government classification '{current_user.government_subrole}' is not authorized for this operation. Required classification(s): {sorted(list(subroles_set))}."
+            )
+        return current_user
+
+    return subrole_checker
+
+
+# Role & Classification-Specific Dependencies
 require_government = require_role("government")
+require_police_operations = require_government_subrole("police_official")
+require_civil_administration = require_government_subrole("government_official")
+require_police = require_police_operations
+require_police_or_government = require_role("government")
+require_operational_role = require_role("government")
 require_hotel = require_role("hotel")
 require_travel_company = require_role("travel_company")
 require_tourist = require_role("tourist")

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSiteScheduleInsights, fetchSite24hForecast } from '../api/api';
 import { getShrineImage } from '../utils/shrineImages';
+import StatusBadge from './common/StatusBadge';
 
 export default function LiveCrowdCard({ site, density, forecast, prediction, current24hForecast, queueForecast }) {
   if (!site) return null;
@@ -37,11 +38,11 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
   const status = density?.status || (occupancy < 50 ? 'NORMAL' : occupancy < 75 ? 'MODERATE' : occupancy < 90 ? 'HIGH' : 'CRITICAL');
   const lastUpdated = density?.last_updated || 'Live Synchronized';
 
-  // Queue forecast from GET /sites/{site_id}/crowd-forecast
+  // Queue forecast from GET /sites/{site_id}/crowd-forecast or canonical resolver
   const queueData = queueForecast?.queue_forecast || forecast?.queue_forecast;
-  const waitMins = queueData?.estimated_current_wait_mins ?? Math.max(15, Math.round((occupancy / 100) * 90));
-  const normalWait = queueData?.normal_wait_mins ?? 25;
-  const peakWait = queueData?.peak_wait_mins ?? 120;
+  const waitMins = density?.wait_time_minutes != null ? density.wait_time_minutes : (queueData?.estimated_current_wait_mins ?? Math.max(15, Math.round((occupancy / 100) * 90)));
+  const normalWait = density?.normal_wait != null ? density.normal_wait : (queueData?.normal_wait_mins ?? 25);
+  const peakWait = density?.peak_wait != null ? density.peak_wait : (queueData?.peak_wait_mins ?? 120);
   const queueSys = queueData?.queue_management_system || 'Automated Token Corridors';
   const fastTrack = queueData?.fast_track_details || 'Priority counters available for seniors and families';
 
@@ -112,6 +113,17 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
 
   const theme = getQualitativeTheme(occupancy, status);
 
+  const SOURCE_CONFIG = {
+    yolo_video: { label: 'YOLO Video Feed', icon: '📹', badgeClass: 'source-yolo' },
+    live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
+    demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
+    historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
+    historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
+  };
+
+  const rawSource = density?.source || 'demo_simulation';
+  const sourceInfo = SOURCE_CONFIG[rawSource] || SOURCE_CONFIG.demo_simulation;
+
   return (
     <section className="live-crowd-section">
       {/* 1. DESTINATION HERO HEADER */}
@@ -132,6 +144,13 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
           <div className="telemetry-badge-row">
             <span className="live-telemetry-tag">
               <span className="blink-dot"></span> OFFICIAL PILGRIM ADVISORY
+            </span>
+            <span
+              className={`source-badge-pill ${sourceInfo.badgeClass}`}
+              style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}
+              title={`Authoritative Data Source: ${sourceInfo.label}`}
+            >
+              {sourceInfo.icon} {sourceInfo.label}
             </span>
             <span className="live-poll-badge">
               <span className="poll-dot"></span> Live Crowd Advisory
@@ -213,9 +232,12 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
               <span className="metric-header-title">CURRENT CROWD STATUS</span>
               <span className="metric-sub-label">Live sanctum crowd level</span>
             </div>
-            <span className={`status-pill-big ${theme.badge}`}>
-              {theme.icon} {theme.level}
-            </span>
+            <StatusBadge
+              status={status}
+              size="lg"
+              pulse={status === 'CRITICAL'}
+              label={`${theme.icon} ${theme.label || theme.level}`}
+            />
           </div>
 
           <div className="occupancy-display-box">
@@ -360,6 +382,12 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                 <strong className="stat-bold" style={{ color: theme.color }}>
                   {theme.icon} {theme.level}
                 </strong>
+              </div>
+              <div className="stat-line">
+                <span className="stat-muted">Data Source:</span>
+                <span className={`source-badge-pill ${sourceInfo.badgeClass}`} style={{ fontSize: '0.72rem', padding: '0.12rem 0.5rem' }}>
+                  {sourceInfo.icon} {sourceInfo.label}
+                </span>
               </div>
               <div className="stat-line">
                 <span className="stat-muted">Last Updated:</span>

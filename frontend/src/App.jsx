@@ -14,6 +14,7 @@ import SOSModal from './components/SOSModal';
 import {
   fetchSites,
   fetchSiteDensity,
+  fetchAllSiteDensities,
   fetchSiteForecast,
   fetchSiteQueueForecast,
   fetchSite24hForecast,
@@ -64,6 +65,7 @@ export default function App() {
   // Authentication state
   const [currentUser, setCurrentUser] = useState(null);
   const [travelTab, setTravelTab] = useState('circuits');
+  const [govTab, setGovTab] = useState('overview');
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
@@ -82,17 +84,23 @@ export default function App() {
     // Check localStorage session
     const savedUser = loadUserSession();
     if (savedUser && savedUser.role) {
+      const normalizedRole = savedUser.role === 'police' ? 'government' : savedUser.role;
       setCurrentUser(savedUser);
-      if (['tourist', 'government', 'hotel', 'travel_company'].includes(savedUser.role)) {
-        setActiveRole(savedUser.role);
+      if (['tourist', 'government', 'hotel', 'travel_company'].includes(normalizedRole)) {
+        setActiveRole(normalizedRole);
+      } else {
+        setActiveRole(null);
       }
       // Re-verify token with backend in background
       fetchMe().then((freshUser) => {
         if (!isMounted) return;
         if (freshUser && freshUser.role) {
+          const freshRole = freshUser.role === 'police' ? 'government' : freshUser.role;
           setCurrentUser(freshUser);
-          if (['tourist', 'government', 'hotel', 'travel_company'].includes(freshUser.role)) {
-            setActiveRole(freshUser.role);
+          if (['tourist', 'government', 'hotel', 'travel_company'].includes(freshRole)) {
+            setActiveRole(freshRole);
+          } else {
+            setActiveRole(null);
           }
         } else if (freshUser === null && getAuthToken()) {
           // Token expired or invalid
@@ -125,11 +133,9 @@ export default function App() {
         setAlerts(fetchedAlerts);
         setWallet(fetchedWallet);
 
-        const dEntries = await Promise.all(
-          canonicalSites.map(async (s) => [s.id, await fetchSiteDensity(s.id)])
-        );
+        const initialDensityMap = await fetchAllSiteDensities(canonicalSites);
         if (!isMounted) return;
-        setDensityMap(Object.fromEntries(dEntries));
+        setDensityMap(initialDensityMap);
       } catch (err) {
         console.error("Error loading initial YatraSetu data:", err);
       }
@@ -229,6 +235,7 @@ export default function App() {
 
   // 2. Load dynamic telemetry (density, forecast, prediction) with live auto-polling & concurrency guard
   const isPollingRef = useRef(false);
+  const pollTickRef = useRef(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -237,20 +244,35 @@ export default function App() {
     async function pollTelemetry() {
       if (isPollingRef.current) return;
       isPollingRef.current = true;
+      pollTickRef.current += 1;
 
       try {
-        const [density, queueForecast, mlForecast, prediction] = await Promise.all([
+        const promises = [
           fetchSiteDensity(selectedSiteId),
           fetchSiteQueueForecast(selectedSiteId),
           fetchSite24hForecast(selectedSiteId),
           fetchSitePrediction(selectedSiteId)
-        ]);
+        ];
+
+        // Every 4th tick (~12s), also refresh full site density map across all 25 shrines
+        const shouldSyncAll = pollTickRef.current % 4 === 0;
+        if (shouldSyncAll && sites.length > 0) {
+          promises.push(fetchAllSiteDensities(sites));
+        }
+
+        const [density, queueForecast, mlForecast, prediction, allDensities] = await Promise.all(promises);
 
         if (!isMounted) return;
 
         if (density) {
           setCurrentDensity(density);
-          setDensityMap((prev) => ({ ...prev, [selectedSiteId]: density }));
+          setDensityMap((prev) => {
+            const next = allDensities ? { ...prev, ...allDensities } : { ...prev };
+            next[selectedSiteId] = density;
+            return next;
+          });
+        } else if (allDensities) {
+          setDensityMap((prev) => ({ ...prev, ...allDensities }));
         }
         if (queueForecast) setCurrentForecast(queueForecast);
         if (mlForecast) setCurrent24hForecast(mlForecast);
@@ -271,7 +293,7 @@ export default function App() {
       clearInterval(pollInterval);
       isPollingRef.current = false;
     };
-  }, [selectedSiteId]);
+  }, [selectedSiteId, sites]);
 
   const handleSelectSite = (siteOrId) => {
     const sId = typeof siteOrId === 'object' && siteOrId ? siteOrId.id : siteOrId;
@@ -285,18 +307,39 @@ export default function App() {
 
   const handleLoginSuccess = (user) => {
     if (!user) return;
-    const authRole = user.role || 'tourist';
-    setCurrentUser(user);
+    const rawRole = user.role;
+    if (!rawRole) {
+      showToast("❌ Authorization Error: Your account has no valid role assigned. Please contact system administrator.");
+      return;
+    }
+    const authRole = rawRole === 'police' ? 'government' : rawRole;
+    if (!['tourist', 'government', 'hotel', 'travel_company', 'vendor'].includes(authRole)) {
+      showToast(`❌ Authorization Error: Role '${rawRole}' is not recognized.`);
+      return;
+    }
+
+    const normalizedUser = rawRole === 'police'
+      ? { ...user, role: 'government', government_subrole: 'police_official' }
+      : user;
+
+    setCurrentUser(normalizedUser);
     if (['tourist', 'government', 'hotel', 'travel_company'].includes(authRole)) {
       setActiveRole(authRole);
     }
+
     if (authRole === 'tourist') {
       showToast(`🛡️ Welcome ${user.full_name}! Digital Yatri Card generated with Aadhaar verification.`);
     } else if (authRole === 'vendor') {
       showToast(`🏪 Welcome ${user.business_name}! Local Temple Vendor portal active.`);
       setIsProfileOpen(true);
     } else if (authRole === 'government') {
-      showToast(`🏛️ Welcome ${user.full_name}! National Pilgrimage Command Center authorized.`);
+      if (user.government_subrole === 'police_official') {
+        showToast(`👮 Welcome ${user.full_name}! Government Command Center (Police & Law Enforcement HQ) authorized.`);
+      } else if (user.government_subrole === 'other_government_official') {
+        showToast(`🏛️ Welcome ${user.full_name}! Government Command Center (Municipal & Inter-Agency Coordination) authorized.`);
+      } else {
+        showToast(`🏛️ Welcome ${user.full_name}! Government Command Center (Civil Administration) authorized.`);
+      }
     } else if (authRole === 'hotel') {
       showToast(`🏨 Welcome ${user.full_name}! Shrine Hospitality Partner console active.`);
     } else if (authRole === 'travel_company') {
@@ -315,7 +358,35 @@ export default function App() {
     showToast('Signed out successfully. Returned to role selection.');
   };
 
-  const handleNavigate = (target) => {
+  const handleNavigate = (target, item) => {
+    const effRole = currentUser?.role || activeRole;
+    if (item?.tabId) {
+      if (effRole === 'government') {
+        setGovTab(item.tabId);
+      }
+    } else if (target?.startsWith('police-')) {
+      const pTab = target.replace('police-', '');
+      if (pTab === 'crowd-simulation' || pTab === 'simulation') setGovTab('police-simulation');
+      else if (pTab === 'live-crowd') setGovTab('live-crowd');
+      else if (pTab === 'surge-alerts') setGovTab('surge-alerts');
+      else if (pTab === 'emergency-response') setGovTab('emergency-response');
+      else if (pTab === 'traffic-control') setGovTab('traffic-control');
+      else if (pTab === 'sos-response') setGovTab('sos-response');
+      else if (pTab === 'safety-zones') setGovTab('safety-zones');
+      else if (pTab === 'reports' || pTab === 'reports-analytics') setGovTab('reports-analytics');
+      else setGovTab('overview');
+    } else if (target === 'gov-overview' || target === 'gov-command-center') {
+      setGovTab('overview');
+    } else if (target === 'gov-live-crowd' || target === 'gov-crowd-monitoring' || target === 'gov-sites') {
+      setGovTab('live-crowd');
+    } else if (target === 'gov-alerts-safety' || target === 'gov-sos') {
+      setGovTab('alerts-safety');
+    } else if (target === 'gov-emergency-reroute') {
+      setGovTab('emergency-rerouting');
+    } else if (target === 'gov-reports-analytics') {
+      setGovTab('reports-analytics');
+    }
+
     if (target === 'travel-trips' || target === 'travel-groups') {
       setTravelTab('circuits');
     } else if (target === 'travel-crowd-alerts') {
@@ -442,7 +513,8 @@ export default function App() {
     }
 
     try {
-      await rewardUser('pilgrim_demo_user', 25, `Reached alternate destination: ${alt.name}`);
+      const uid = currentUser?.user_id || currentUser?.id || 'pilgrim_demo_user';
+      await rewardUser(uid, 25, `Reached alternate destination: ${alt.name}`);
 
       setCompletedRouteIds((prev) => [...prev, routeKey]);
       setRouteStatus('ARRIVED');
@@ -495,6 +567,8 @@ export default function App() {
   };
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
+  const effectiveRole = currentUser?.role === 'police' ? 'government' : currentUser?.role;
+  const isValidRole = currentUser ? ['tourist', 'government', 'hotel', 'travel_company', 'vendor'].includes(effectiveRole) : true;
 
   return (
     <div className="yatrasetu-app app-container">
@@ -521,16 +595,38 @@ export default function App() {
             currentUser={currentUser}
             onOpenAuth={() => setIsAuthOpen(true)}
             onOpenProfile={() => setIsProfileOpen(true)}
-            activeRole={currentUser.role || activeRole}
+            activeRole={currentUser.role}
+            currentView="dashboard"
             onLogout={handleLogout}
             onNavigate={handleNavigate}
+            activeGovTab={govTab}
           />
 
           <EmergencyAlertBanner />
 
           {/* Dynamic Protected Role-Based Dashboard View */}
           <main className="main-content-container main-content">
-            {activeRole === 'tourist' && (
+            {/* Explicit Authorization Error for Unrecognized / Missing Roles */}
+            {currentUser && !['tourist', 'government', 'hotel', 'travel_company', 'vendor'].includes(currentUser.role) && (
+              <div className="auth-error-card" style={{ maxWidth: '640px', margin: '4rem auto', padding: '2.5rem', background: '#0F172A', borderRadius: '1rem', border: '1px solid #DC2626', textAlign: 'center', color: '#F8FAFC', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)' }}>
+                <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>⛔</div>
+                <h2 style={{ color: '#EF4444', fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '0.05em' }}>
+                  ACCESS FORBIDDEN: UNRECOGNIZED ROLE
+                </h2>
+                <p style={{ color: '#94A3B8', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+                  The authenticated user role <code style={{ color: '#F87171', background: '#1E293B', padding: '0.2rem 0.5rem', borderRadius: '0.25rem' }}>{currentUser?.role || 'UNDEFINED'}</code> is not authorized to access this platform. No fallback dashboard is provided.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  style={{ background: '#DC2626', color: '#FFF', padding: '0.65rem 1.5rem', borderRadius: '0.5rem', fontWeight: 700, border: 'none', cursor: 'pointer' }}
+                >
+                  Log Out &amp; Return to Login
+                </button>
+              </div>
+            )}
+
+            {currentUser.role === 'tourist' && (
               <TouristDashboard
                 sites={sites}
                 selectedSiteId={selectedSiteId}
@@ -563,7 +659,7 @@ export default function App() {
               />
             )}
 
-            {activeRole === 'government' && (
+            {currentUser.role === 'government' && (
               <GovernmentDashboard
                 sites={sites}
                 densityMap={densityMap}
@@ -572,20 +668,23 @@ export default function App() {
                 onCrowdUpdated={handleCrowdUpdated}
                 currentUser={currentUser}
                 showToast={showToast}
+                activeTab={govTab}
+                onTabChange={setGovTab}
+                activeRerouteAlert={activeRerouteAlert}
               />
             )}
 
-            {activeRole === 'hotel' && (
+            {currentUser.role === 'hotel' && (
               <HotelDashboard
                 currentUser={currentUser}
                 showToast={showToast}
                 activeRerouteAlert={activeRerouteAlert}
                 densityMap={densityMap}
-                onBackToLanding={() => setActiveRole('tourist')}
+                onBackToLanding={handleLogout}
               />
             )}
 
-            {activeRole === 'travel_company' && (
+            {currentUser.role === 'travel_company' && (
               <TravelCompanyDashboard
                 sites={sites}
                 densityMap={densityMap}

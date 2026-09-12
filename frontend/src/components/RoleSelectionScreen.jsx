@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from './tourist/LanguageSelector';
 import {
   loginUser,
   signupUser,
@@ -17,6 +19,7 @@ export default function RoleSelectionScreen({
   onBackToSelect,
   onViewLanding
 }) {
+  const { t } = useTranslation();
   // Screen state: 'select' (4 role cards) | 'login' (role-specific auth form)
   const [currentView, setCurrentView] = useState(initialView || 'select');
   const [selectedRole, setSelectedRole] = useState(initialRole || null); // 'government' | 'hotel' | 'travel_company' | 'tourist'
@@ -28,6 +31,7 @@ export default function RoleSelectionScreen({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [governmentSubrole, setGovernmentSubrole] = useState('government_official');
 
   // Aadhaar Specific State (for Tourist)
   const [aadhaarNumber, setAadhaarNumber] = useState('');
@@ -39,13 +43,14 @@ export default function RoleSelectionScreen({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
+  const [showEvalDrawer, setShowEvalDrawer] = useState(false);
 
   // Pre-configured role metadata: exactly 4 roles in specified order
   const ROLES_DATA = [
     {
       id: 'government',
-      name: 'Government',
-      badge: 'NATIONAL COMMAND CENTER',
+      name: t('roles.govtTitle', 'Government & Administration'),
+      badge: t('roles.govtBadge', 'NATIONAL COMMAND CENTER'),
       iconEmoji: '🏛️',
       iconSvg: (
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,16 +63,16 @@ export default function RoleSelectionScreen({
           <polygon points="12 2 2 8 22 8 12 2" />
         </svg>
       ),
-      description: 'Monitor crowds, safety, alerts and emergency rerouting.',
-      actionText: 'Continue as Government',
+      description: t('roles.govtDesc', 'Unified command center for Civil Administration, Police Operations, and Multi-Agency Safety.'),
+      actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.govtTitle', 'Government')}`,
       colorClass: 'role-government',
       accentColor: '#1D4ED8',
-      features: ['Centralized AI CCTV Heatmap', 'Active Emergency Rerouting', 'Multi-Agency Dispatch (Police/NDRF)']
+      features: ['Civil Administration & Tourism Logistics', 'Police Law Enforcement & Crowd Simulations', 'Emergency Highway Rerouting & Safety Operations']
     },
     {
       id: 'hotel',
-      name: 'Hotel',
-      badge: 'SHRINE LODGING PARTNER',
+      name: t('roles.hotelTitle', 'Hotel'),
+      badge: t('roles.hotelBadge', 'SHRINE LODGING PARTNER'),
       iconEmoji: '🏨',
       iconSvg: (
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -81,16 +86,16 @@ export default function RoleSelectionScreen({
           <path d="M14 17h1" />
         </svg>
       ),
-      description: 'Manage rooms, bookings, occupancy and incoming fleet.',
-      actionText: 'Continue as Hotel',
+      description: t('roles.hotelDesc', 'Manage rooms, bookings, occupancy and incoming fleet.'),
+      actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.hotelTitle', 'Hotel')}`,
       colorClass: 'role-hotel',
       accentColor: '#D97706',
       features: ['Dynamic QR Check-In Terminal', 'Automated Surge Pricing Layer', 'Inbound Fleet & Highway Route Demand']
     },
     {
       id: 'travel_company',
-      name: 'Travel Company',
-      badge: 'FLEET & TOUR OPERATOR',
+      name: t('roles.travelTitle', 'Travel Company'),
+      badge: t('roles.travelBadge', 'FLEET & TOUR OPERATOR'),
       iconEmoji: '🚌',
       iconSvg: (
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -102,16 +107,16 @@ export default function RoleSelectionScreen({
           <path d="M3 11h18" />
         </svg>
       ),
-      description: 'Manage trips, fleet schedules, rerouting and travel planning.',
-      actionText: 'Continue as Travel Company',
+      description: t('roles.travelDesc', 'Fleet tracking, pilgrim safety corridors, and group permits.'),
+      actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.travelTitle', 'Travel Company')}`,
       colorClass: 'role-travel',
       accentColor: '#7C3AED',
       features: ['Char Dham Sacred Circuits', 'Fleet Rerouting & Bus Schedules', 'Multi-Shrine Fleet Intelligence']
     },
     {
       id: 'tourist',
-      name: 'Tourist',
-      badge: 'DEVOTEE & PILGRIM',
+      name: t('roles.touristTitle', 'Tourist / Pilgrim'),
+      badge: t('roles.touristBadge', 'DEVOTEE & PILGRIM'),
       iconEmoji: '🎒',
       iconSvg: (
         <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -121,8 +126,8 @@ export default function RoleSelectionScreen({
           <path d="M10 14h4" />
         </svg>
       ),
-      description: 'Explore destinations, crowd status, forecasts, safety and hotels.',
-      actionText: 'Continue as Tourist',
+      description: t('roles.touristDesc', 'Explore destinations, crowd status, forecasts, safety and hotels.'),
+      actionText: `${t('roles.continueBtn', 'Continue as')} ${t('roles.touristTitle', 'Tourist')}`,
       colorClass: 'role-tourist',
       accentColor: '#EA580C',
       features: ['Live 25 Shrines Telemetry', 'Punya Green Wallet & Rewards', 'Verified Lodges & 1-Click SOS']
@@ -135,11 +140,6 @@ export default function RoleSelectionScreen({
   React.useEffect(() => {
     if (initialRole) {
       setSelectedRole(initialRole);
-      const demo = DEMO_CREDENTIALS[initialRole];
-      if (demo) {
-        setEmail(demo.email || '');
-      }
-      setPassword(TEST_ACCOUNT_PASSWORD);
     }
     if (initialView) {
       setCurrentView(initialView);
@@ -147,25 +147,56 @@ export default function RoleSelectionScreen({
   }, [initialRole, initialView]);
 
   // Open login view for a specific role
-  const handleSelectRole = (roleId) => {
+  const handleSelectRole = (roleId, subrole = null) => {
     setSelectedRole(roleId);
     setCurrentView('login');
     setAuthMode('signin');
     setErrorMsg('');
     setInfoMsg('');
+    setEmail('');
+    setPassword('');
 
-    // Prepopulate demo credentials for seamless testing
-    const demo = DEMO_CREDENTIALS[roleId];
-    if (demo) {
-      setEmail(demo.email || '');
-    } else {
-      setEmail('');
+    if (roleId === 'government') {
+      const chosenSubrole = subrole || governmentSubrole || 'government_official';
+      setGovernmentSubrole(chosenSubrole);
     }
-    setPassword(TEST_ACCOUNT_PASSWORD);
 
     if (onSelectRole) {
       onSelectRole(roleId);
     }
+  };
+
+  // Switch government classification inside login form
+  const handleSelectSubrole = (newSubrole) => {
+    setGovernmentSubrole(newSubrole);
+    setErrorMsg('');
+    setInfoMsg('');
+  };
+
+  // Fast-track evaluation helper (only invoked via explicit SIH evaluation controls)
+  const handleQuickFillEvaluation = (targetRole, subrole = null) => {
+    const roleId = targetRole === 'police' || targetRole === 'municipal' ? 'government' : targetRole;
+    setSelectedRole(roleId);
+    setCurrentView('login');
+    setAuthMode('signin');
+    setErrorMsg('');
+
+    if (roleId === 'government') {
+      const actualSubrole = subrole || (targetRole === 'police' ? 'police_official' : targetRole === 'municipal' ? 'other_government_official' : 'government_official');
+      setGovernmentSubrole(actualSubrole);
+      if (actualSubrole === 'police_official') {
+        setEmail(DEMO_CREDENTIALS.police?.email || 'police_command@yatrasetu.org');
+      } else if (actualSubrole === 'other_government_official') {
+        setEmail(DEMO_CREDENTIALS.municipal?.email || 'municipal_command@yatrasetu.org');
+      } else {
+        setEmail(DEMO_CREDENTIALS.government?.email || 'govt_command@yatrasetu.org');
+      }
+    } else {
+      const demo = DEMO_CREDENTIALS[roleId];
+      setEmail(demo?.email || '');
+    }
+    setPassword(TEST_ACCOUNT_PASSWORD);
+    setInfoMsg('⚡ SIH Evaluation credentials populated into form.');
   };
 
   // Return to 4-card role selector
@@ -246,7 +277,8 @@ export default function RoleSelectionScreen({
 
     setIsLoading(true);
     try {
-      const res = await signupUser(email.trim(), password, fullName.trim(), selectedRole || 'tourist');
+      const subroleToPass = selectedRole === 'government' ? governmentSubrole : null;
+      const res = await signupUser(email.trim(), password, fullName.trim(), selectedRole || 'tourist', subroleToPass);
       if (res.status === 'success' && res.user) {
         onLoginSuccess(res.user);
       } else {
@@ -347,6 +379,7 @@ export default function RoleSelectionScreen({
           </div>
 
           <div className="role-nav-badge" style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <LanguageSelector compact={true} />
             {onViewLanding && (
               <button
                 type="button"
@@ -366,7 +399,7 @@ export default function RoleSelectionScreen({
                   gap: '0.35rem'
                 }}
               >
-                <span>Platform Overview</span>
+                <span>{t('nav.platformOverview', 'Platform Overview')}</span>
                 <span>→</span>
               </button>
             )}
@@ -383,14 +416,14 @@ export default function RoleSelectionScreen({
           <div className="role-hero-section">
             <div className="role-badge-pill">
               <span>🏛️</span>
-              <span>National Sacred Corridor Portal</span>
+              <span>{t('roles.nationalBadge', 'National Sacred Corridor Portal')}</span>
             </div>
-            <h1 className="role-main-title">Login As</h1>
+            <h1 className="role-main-title">{t('roles.loginAs', 'Login As')}</h1>
             <p className="role-main-subtitle">
-              Select your role to access your authorized dashboard
+              {t('roles.selectRole', 'Select your role to access your authorized dashboard')}
             </p>
             <p className="role-intro-caption">
-              Government Command, Shrine Lodging Partners, Fleet Operators, and Devotee Pilgrims.
+              {t('roles.introCaption', 'Government Command, Shrine Lodging Partners, Fleet Operators, and Devotee Pilgrims.')}
             </p>
           </div>
 
@@ -421,6 +454,44 @@ export default function RoleSelectionScreen({
                       </li>
                     ))}
                   </ul>
+
+                  {role.id === 'government' && (
+                    <div className="gov-card-classification-picker">
+                      <div className="gov-card-picker-label">Choose Command Classification:</div>
+                      <div className="gov-card-picker-btns">
+                        <button
+                          type="button"
+                          className="gov-card-subrole-btn civil"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectRole('government', 'government_official');
+                          }}
+                        >
+                          <span>🏛️</span> Civil
+                        </button>
+                        <button
+                          type="button"
+                          className="gov-card-subrole-btn police"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectRole('government', 'police_official');
+                          }}
+                        >
+                          <span>👮</span> Police HQ
+                        </button>
+                        <button
+                          type="button"
+                          className="gov-card-subrole-btn municipal"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectRole('government', 'other_government_official');
+                          }}
+                        >
+                          <span>🌐</span> Municipal
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="role-card-footer">
@@ -440,45 +511,88 @@ export default function RoleSelectionScreen({
             ))}
           </div>
 
-          {/* SIH Fast-Track Hackathon Evaluation Banner */}
-          <div className="role-demo-helper-strip">
-            <div className="demo-strip-content">
-              <span className="demo-spark">⚡</span>
-              <div>
-                <strong>Smart India Hackathon Jury Quick Evaluation:</strong>
-                <span> Each role provides authentic FastAPI backend JWT authentication with pre-configured credentials.</span>
+          {/* SIH Fast-Track Hackathon Evaluation Banner (Collapsible Drawer) */}
+          <div className="role-eval-drawer-wrap" style={{ margin: '2rem auto 0.5rem', maxWidth: '960px', textAlign: 'center' }}>
+            <button
+              type="button"
+              className="role-eval-toggle-btn"
+              onClick={() => setShowEvalDrawer(!showEvalDrawer)}
+              style={{
+                background: '#F8FAFC',
+                border: '1px solid #CBD5E1',
+                padding: '0.45rem 1rem',
+                borderRadius: '9999px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#475569',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🛠️</span>
+              <span>{showEvalDrawer ? 'Hide SIH Evaluation Controls' : 'SIH Hackathon Evaluation & Fast-Track Controls'}</span>
+              <span style={{ fontSize: '0.68rem', color: '#94A3B8' }}>{showEvalDrawer ? '▲' : '▼'}</span>
+            </button>
+
+            {showEvalDrawer && (
+              <div className="role-demo-helper-strip" style={{ marginTop: '0.85rem' }}>
+                <div className="demo-strip-content">
+                  <span className="demo-spark">⚡</span>
+                  <div>
+                    <strong>Smart India Hackathon Jury Quick Evaluation:</strong>
+                    <span> 1-Click authentic FastAPI backend JWT authentication for testing all role dashboards.</span>
+                  </div>
+                </div>
+                <div className="demo-strip-buttons">
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('tourist')}
+                  >
+                    🧳 Demo Tourist
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('government')}
+                  >
+                    🏛️ Demo Govt (Civil)
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('police')}
+                  >
+                    👮 Demo Govt (Police HQ)
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('municipal')}
+                  >
+                    🌐 Demo Govt (Municipal)
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('hotel')}
+                  >
+                    🏨 Demo Hotel
+                  </button>
+                  <button
+                    type="button"
+                    className="quick-eval-chip"
+                    onClick={() => handleQuickDemo('travel_company')}
+                  >
+                    🚌 Demo Travel
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="demo-strip-buttons">
-              <button
-                type="button"
-                className="quick-eval-chip"
-                onClick={() => handleQuickDemo('tourist')}
-              >
-                🧳 Demo Tourist
-              </button>
-              <button
-                type="button"
-                className="quick-eval-chip"
-                onClick={() => handleQuickDemo('government')}
-              >
-                🏛️ Demo Govt
-              </button>
-              <button
-                type="button"
-                className="quick-eval-chip"
-                onClick={() => handleQuickDemo('hotel')}
-              >
-                🏨 Demo Hotel
-              </button>
-              <button
-                type="button"
-                className="quick-eval-chip"
-                onClick={() => handleQuickDemo('travel_company')}
-              >
-                🚌 Demo Travel
-              </button>
-            </div>
+            )}
           </div>
         </main>
       )}
@@ -564,13 +678,75 @@ export default function RoleSelectionScreen({
             {/* FORM 1: EMAIL & PASSWORD SIGN IN */}
             {authMode === 'signin' && (
               <form onSubmit={handleEmailLogin} className="auth-form">
+                {selectedRole === 'government' && (
+                  <div className="gov-subrole-selector-wrap">
+                    <div className="gov-subrole-label-bar">
+                      <label className="gov-subrole-title-label">Government Classification / Command *</label>
+                      <span className="gov-subrole-hint">Choose authorized operational jurisdiction</span>
+                    </div>
+
+                    <div className="gov-subrole-cards-grid">
+                      <button
+                        type="button"
+                        className={`gov-subrole-select-card ${governmentSubrole === 'government_official' ? 'active' : ''}`}
+                        onClick={() => handleSelectSubrole('government_official')}
+                      >
+                        <div className="subrole-card-top-row">
+                          <span className="subrole-card-icon">🏛️</span>
+                          <span className="subrole-card-pill civil">CIVIL ADMIN</span>
+                        </div>
+                        <div className="subrole-card-name">Civil Administration</div>
+                        <div className="subrole-card-desc">District Magistrate • DEOC • Corridor Administration</div>
+                        <div className="subrole-card-scope">Public Safety &amp; Civil Desk</div>
+                        {governmentSubrole === 'government_official' && (
+                          <div className="subrole-card-selected-marker">✓ Selected</div>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`gov-subrole-select-card ${governmentSubrole === 'police_official' ? 'active' : ''}`}
+                        onClick={() => handleSelectSubrole('police_official')}
+                      >
+                        <div className="subrole-card-top-row">
+                          <span className="subrole-card-icon">🛡️</span>
+                          <span className="subrole-card-pill police">POLICE HQ</span>
+                        </div>
+                        <div className="subrole-card-name">Police Official</div>
+                        <div className="subrole-card-desc">Police HQ • SDRF • Crowd Surge Defense</div>
+                        <div className="subrole-card-scope">Law Enforcement &amp; Tactical Dispatch</div>
+                        {governmentSubrole === 'police_official' && (
+                          <div className="subrole-card-selected-marker">✓ Selected</div>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`gov-subrole-select-card ${governmentSubrole === 'other_government_official' ? 'active' : ''}`}
+                        onClick={() => handleSelectSubrole('other_government_official')}
+                      >
+                        <div className="subrole-card-top-row">
+                          <span className="subrole-card-icon">🌐</span>
+                          <span className="subrole-card-pill municipal">MUNICIPAL</span>
+                        </div>
+                        <div className="subrole-card-name">Other Govt Official</div>
+                        <div className="subrole-card-desc">Municipal Services • Inter-Agency Protocols</div>
+                        <div className="subrole-card-scope">Sanitation, Health &amp; Civic Amenities</div>
+                        {governmentSubrole === 'other_government_official' && (
+                          <div className="subrole-card-selected-marker">✓ Selected</div>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="auth-input-group">
-                  <label htmlFor="auth-email">Email Address *</label>
+                  <label htmlFor="auth-email">Official Email *</label>
                   <input
                     id="auth-email"
                     type="email"
                     required
-                    placeholder={`e.g. ${DEMO_CREDENTIALS[selectedRole]?.email || 'user@yatrasetu.org'}`}
+                    placeholder="official-email@yatrasetu.org"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="auth-text-input"
@@ -578,10 +754,7 @@ export default function RoleSelectionScreen({
                 </div>
 
                 <div className="auth-input-group">
-                  <div className="label-row">
-                    <label htmlFor="auth-password">Password *</label>
-                    <span className="auth-sub-note">Default Demo: {TEST_ACCOUNT_PASSWORD}</span>
-                  </div>
+                  <label htmlFor="auth-password">Password *</label>
                   <input
                     id="auth-password"
                     type="password"
@@ -602,22 +775,79 @@ export default function RoleSelectionScreen({
                   {isLoading ? 'Verifying Credentials...' : `Sign In as ${currentRoleMeta.name} →`}
                 </button>
 
-                {/* 1-Click Fast Track for the Current Role */}
-                <div className="auth-divider">
-                  <span>OR FAST-TRACK EVALUATION</span>
+                {/* SIH Evaluation Controls Toggle */}
+                <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowEvalDrawer(!showEvalDrawer)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748B',
+                      fontSize: '0.76rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textDecoration: 'underline'
+                    }}
+                  >
+                    {showEvalDrawer ? 'Hide SIH Quick-Fill Evaluation' : '⚡ SIH Evaluation: Quick-Fill Credentials'}
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={isLoading}
-                  onClick={() => handleQuickDemo(selectedRole)}
-                  className="auth-demo-quick-btn"
-                >
-                  <span>⚡ 1-Click Demo Login as {currentRoleMeta.name}</span>
-                  <span className="demo-email-hint">
-                    ({DEMO_CREDENTIALS[selectedRole]?.email || 'Official Demo Account'})
-                  </span>
-                </button>
+                {/* 1-Click Fast Track for the Current Role (Drawer) */}
+                {showEvalDrawer && (
+                  <div style={{ marginTop: '0.75rem' }}>
+                    <div className="auth-divider">
+                      <span>SIH FAST-TRACK EVALUATION</span>
+                    </div>
+
+                    {selectedRole === 'government' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <button
+                          type="button"
+                          disabled={isLoading}
+                          onClick={() => handleQuickFillEvaluation('government', 'government_official')}
+                          className="auth-demo-quick-btn"
+                        >
+                          <span>🏛️ Quick-Fill: Civil Administration</span>
+                          <span className="demo-email-hint">(District Magistrate Command)</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLoading}
+                          onClick={() => handleQuickFillEvaluation('government', 'police_official')}
+                          className="auth-demo-quick-btn"
+                          style={{ borderColor: '#3B82F6' }}
+                        >
+                          <span>👮 Quick-Fill: Police &amp; Law Enforcement HQ</span>
+                          <span className="demo-email-hint">(SDRF &amp; Police Headquarters Command)</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLoading}
+                          onClick={() => handleQuickFillEvaluation('government', 'other_government_official')}
+                          className="auth-demo-quick-btn"
+                          style={{ borderColor: '#6366F1' }}
+                        >
+                          <span>🌐 Quick-Fill: Municipal &amp; Inter-Agency</span>
+                          <span className="demo-email-hint">(Municipal Services Command)</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isLoading}
+                        onClick={() => handleQuickFillEvaluation(selectedRole)}
+                        className="auth-demo-quick-btn"
+                      >
+                        <span>⚡ Quick-Fill Demo Credentials as {currentRoleMeta.name}</span>
+                        <span className="demo-email-hint">
+                          ({DEMO_CREDENTIALS[selectedRole]?.email || 'Official Demo Account'})
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </form>
             )}
 
@@ -663,6 +893,23 @@ export default function RoleSelectionScreen({
                     className="auth-text-input"
                   />
                 </div>
+
+                {selectedRole === 'government' && (
+                  <div className="auth-input-group">
+                    <label htmlFor="signup-subrole">Government Classification *</label>
+                    <select
+                      id="signup-subrole"
+                      value={governmentSubrole}
+                      onChange={(e) => setGovernmentSubrole(e.target.value)}
+                      className="auth-text-input"
+                      style={{ padding: '0.6rem 0.8rem', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                    >
+                      <option value="government_official">Civil Administration (District Magistrate / DEOC)</option>
+                      <option value="police_official">Police / Law Enforcement Field Command (SDRF / Police HQ)</option>
+                      <option value="other_government_official">Municipal / Inter-Agency Coordination</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="auth-input-group">
                   <label>Assigning Role</label>

@@ -15,6 +15,20 @@ import {
 } from '../api/api';
 import { HOTELS_50_DATA } from '../data/hotels50';
 import './HotelDashboard.css';
+import { StatusBadge, StatCard, InfoCard, MetricRow, SectionHeader, EmptyState } from '../components/common';
+
+/**
+ * Format raw UUID into human-readable reference (e.g., BK-4821A9)
+ * Preserves raw UUID in title/tooltip/detail modals.
+ */
+const formatHumanRef = (id, prefix = 'BK') => {
+  if (!id) return `${prefix}-0000`;
+  const s = String(id).trim();
+  if (s.startsWith('YS-') || s.startsWith('BK-') || s.startsWith('REQ-')) return s;
+  const clean = s.replace(/-/g, '');
+  const slice = clean.length > 6 ? clean.slice(-6).toUpperCase() : clean.toUpperCase();
+  return `${prefix}-${slice}`;
+};
 
 // SVG QR Code generator component as a resilient, instant, self-contained QR renderer
 function ScannableQRCode({ payload }) {
@@ -632,17 +646,25 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
             )}
           </div>
 
-          <div className="dynamic-pricing-engine-card" style={{ backgroundColor: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: '0.75rem', padding: '1.25rem' }}>
+          <div className="dynamic-pricing-engine-card" style={{ backgroundColor: '#F8FAFC', border: '1px solid #BFDBFE', borderRadius: '0.75rem', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <h3 style={{ margin: 0, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem' }}>
-                <span>📈</span> Dynamic Pricing Engine
-              </h3>
-              <span style={{ backgroundColor: state.isRerouteSpikeActive ? '#FEE2E2' : '#DBEAFE', color: state.isRerouteSpikeActive ? '#DC2626' : '#1E40AF', padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                {state.isRerouteSpikeActive ? '⚡ HIGH SURGE ACTIVE' : '● HOURLY BASE'}
-              </span>
+              <div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: '#1E40AF', letterSpacing: '0.05em', display: 'block' }}>
+                  OPERATIONAL HOURLY TARIFF
+                </span>
+                <h3 style={{ margin: '0.15rem 0 0', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem' }}>
+                  <span>📈</span> Current Base &amp; Transit Pricing
+                </h3>
+              </div>
+              <StatusBadge
+                status={state.isRerouteSpikeActive ? 'HIGH' : 'NORMAL'}
+                theme="light"
+                size="sm"
+                label={state.isRerouteSpikeActive ? '⚡ TRANSIT SURGE ACTIVE' : '● HOURLY BASE RATE'}
+              />
             </div>
-            <p style={{ margin: '0 0 1rem', color: '#1D4ED8', fontSize: '0.88rem' }}>
-              Authoritative dynamic hourly rates computed from Somvati Amavasya crowd density and inbound pilgrimage demand.
+            <p style={{ margin: '0 0 1rem', color: '#475569', fontSize: '0.86rem' }}>
+              Real-time hourly tariffs calculated from Sharma Travels inbound bus arrivals and local temple queue saturation.
             </p>
 
             {/* Core Metrics Grid */}
@@ -951,13 +973,21 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
                 </svg>
               </div>
               <div>
-                <h3 className="ai-pricing-title">AI Pricing Decision Layer</h3>
+                <span style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: '#D97706', letterSpacing: '0.05em', display: 'block' }}>
+                  STATEWIDE SURGE GOVERNANCE
+                </span>
+                <h3 className="ai-pricing-title">AI Dynamic Pricing Recommendation</h3>
                 <p className="ai-pricing-subtitle">
-                  Automated pricing decision layer based on real-time temple transit reroute volume.
+                  Automated tariff recommendation calculated from district emergency reroute volume and corridor diversion status.
                 </p>
               </div>
             </div>
-            <span className="sih-layer-pill">SIH Decision Layer</span>
+            <StatusBadge
+              status={state.isRerouteSpikeActive ? 'HIGH' : 'NORMAL'}
+              theme="light"
+              size="sm"
+              label="SIH DECISION LAYER"
+            />
           </div>
 
           <div className="ai-pricing-card-body">
@@ -1211,27 +1241,23 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
                       <div className="req-card-meta-top">
                         <span className="req-card-title-tag">INCOMING BOOKING REQUEST</span>
                         <div className="req-status-pill-wrap">
-                          {req.status === 'pending' && (
-                            <span className="status-badge pending">
-                              <span className="dot animate-pulse"></span> PENDING REVIEW
-                            </span>
-                          )}
-                          {req.status === 'confirmed' && (
-                            <span className="status-badge confirmed">
-                              ✓ CONFIRMED &amp; BOOKED
-                            </span>
-                          )}
-                          {req.status === 'declined' && (
-                            <span className="status-badge declined">
-                              ✕ DECLINED
-                            </span>
-                          )}
+                          <StatusBadge
+                            status={req.status}
+                            theme="light"
+                            size="sm"
+                            pulse={req.status === 'pending'}
+                            label={req.status === 'pending' ? 'PENDING REVIEW' : req.status === 'confirmed' ? 'CONFIRMED' : 'DECLINED'}
+                          />
                         </div>
                       </div>
 
-                      <div className="req-refs-row">
-                        <span className="badge-req-id">{req.id}</span>
-                        <span className="badge-booking-id">REF: {req.booking_id}</span>
+                      <div className="req-refs-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', margin: '0.35rem 0' }}>
+                        <span className="badge-req-id" title={`System Request ID: ${req.id}`} style={{ cursor: 'help' }}>
+                          Request #{formatHumanRef(req.id, 'REQ')}
+                        </span>
+                        <span className="badge-booking-id" title={`Full Booking UUID: ${req.booking_id}`} style={{ cursor: 'help' }}>
+                          Booking #{formatHumanRef(req.booking_id, 'BK')}
+                        </span>
                       </div>
 
                       <h4 className="req-guest-title">
@@ -1561,8 +1587,8 @@ export default function HotelDashboard({ currentUser, showToast, activeRerouteAl
               <div className="pilgrim-card-frame">
                 <div className="pilgrim-card-top">
                   <div>
-                    <span className="booking-ref-tag">
-                      BOOKING REF: {state.bookingRef}
+                    <span className="booking-ref-tag" title={`Full Booking UUID: ${state.bookingRef}`}>
+                      BOOKING REF: #{formatHumanRef(state.bookingRef, 'YS')}
                     </span>
                     <h4 className="pilgrim-name-row">
                       <span>{state.guestName}</span>

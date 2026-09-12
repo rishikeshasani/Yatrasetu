@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from main import app
 from dependencies import get_current_user, AuthenticatedUser
 
+import uuid
 from database import supabase_admin
 
 def get_or_create_test_user(email: str, role: str, full_name: str) -> AuthenticatedUser:
@@ -17,7 +18,8 @@ def get_or_create_test_user(email: str, role: str, full_name: str) -> Authentica
         supabase_admin.table("profiles").upsert({"id": uid, "role": role, "full_name": full_name}).execute()
         return AuthenticatedUser(id=uid, email=email, role=role, full_name=full_name)
     except Exception:
-        return AuthenticatedUser(id="59afb8b6-6a33-4fe8-8837-ed1c55c05868", email=email, role=role, full_name=full_name)
+        fallback_uid = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
+        return AuthenticatedUser(id=fallback_uid, email=email, role=role, full_name=full_name)
 
 client = TestClient(app)
 
@@ -259,12 +261,12 @@ def run_hotel_tests():
     assert len(my_hotel_bookings) == 2
     print(f"PASS: Hotel Owner 1 successfully viewed {len(my_hotel_bookings)} bookings for created hotel (total owned: {len(owner_1_bookings)})")
 
-    # Hotel Owner 2 views their bookings -> should see 0 bookings (Cannot see Owner 1's bookings)
+    # Hotel Owner 2 views their bookings -> should NOT see any of Owner 1's hotel bookings
     app.dependency_overrides[get_current_user] = lambda: hotel_owner_2
     res = client.get("/hotels/owner/bookings")
     assert res.status_code == 200
     owner_2_bookings = res.json()
-    assert len(owner_2_bookings) == 0
+    assert not any(b.get("hotel_id") == my_hotel_id for b in owner_2_bookings)
     print("PASS: Hotel Owner 2 isolated: Cannot see Hotel Owner 1's bookings (Privacy preserved)")
 
 

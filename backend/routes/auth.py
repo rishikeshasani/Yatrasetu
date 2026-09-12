@@ -9,7 +9,13 @@ from pydantic import BaseModel, Field, field_validator
 from supabase_auth.errors import AuthApiError, AuthError
 
 from database import supabase, supabase_admin
-from dependencies import AuthenticatedUser, get_current_user, require_role
+from dependencies import (
+    AuthenticatedUser,
+    get_current_user,
+    require_role,
+    require_police_operations,
+    require_government_subrole,
+)
 
 router = APIRouter(tags=["Authentication & Identity"])
 
@@ -24,6 +30,7 @@ class UserRole(str, Enum):
     HOTEL = "hotel"
     TRAVEL_COMPANY = "travel_company"
     GOVERNMENT = "government"
+    POLICE = "police"
 
 
 # --------------------------------------------------------------------------
@@ -33,7 +40,8 @@ class SignupRequest(BaseModel):
     email: str = Field(..., description="User email address")
     password: str = Field(..., min_length=6, description="Password (at least 6 characters)")
     full_name: str = Field(..., min_length=1, description="Full name of the user")
-    role: UserRole = Field(UserRole.TOURIST, description="User role: tourist, hotel, travel_company, government")
+    role: UserRole = Field(UserRole.TOURIST, description="User role: tourist, hotel, travel_company, government, police")
+    government_subrole: Optional[str] = Field("government_official", description="Classification for government accounts: government_official, police_official, other_government_official")
 
     @field_validator("email")
     @classmethod
@@ -70,6 +78,7 @@ class ProfileResponse(BaseModel):
     id: str
     full_name: Optional[str] = None
     role: Optional[str] = None
+    government_subrole: Optional[str] = None
     created_at: Optional[str] = None
 
 
@@ -78,6 +87,7 @@ class UserResponseModel(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     role: Optional[str] = None
+    government_subrole: Optional[str] = None
 
 
 class SignupResponse(BaseModel):
@@ -101,6 +111,7 @@ class MeResponse(BaseModel):
     email: Optional[str] = None
     full_name: Optional[str] = None
     role: Optional[str] = None
+    government_subrole: Optional[str] = None
     created_at: Optional[str] = None
     profile: Optional[ProfileResponse] = None
 
@@ -115,16 +126,27 @@ def signup(data: SignupRequest):
     Supported roles: tourist, hotel, travel_company, government.
     """
     role_value = data.role.value if isinstance(data.role, Enum) else str(data.role)
-    
+    subrole_value = None
+    if role_value == "government":
+        subrole_value = data.government_subrole or "government_official"
+    elif role_value == "police":
+        # Normalize legacy police registration to government + police_official
+        role_value = "government"
+        subrole_value = "police_official"
+
     try:
+        user_meta_payload = {
+            "full_name": data.full_name,
+            "role": role_value,
+        }
+        if subrole_value:
+            user_meta_payload["government_subrole"] = subrole_value
+
         auth_response = supabase.auth.sign_up({
             "email": data.email,
             "password": data.password,
             "options": {
-                "data": {
-                    "full_name": data.full_name,
-                    "role": role_value,
-                }
+                "data": user_meta_payload
             }
         })
     except AuthApiError as e:
@@ -150,20 +172,33 @@ def signup(data: SignupRequest):
         if prof_res.data and len(prof_res.data) > 0:
             profile_data = prof_res.data[0]
         else:
-            # Fallback upsert if trigger has not executed
-            insert_res = supabase_admin.table("profiles").upsert({
+            profile_record = {
                 "id": user.id,
                 "full_name": data.full_name,
-                "role": role_value
-            }).execute()
-            if insert_res.data and len(insert_res.data) > 0:
-                profile_data = insert_res.data[0]
+                "role": role_value,
+            }
+            if subrole_value:
+                profile_record["government_subrole"] = subrole_value
+
+            try:
+                insert_res = supabase_admin.table("profiles").upsert(profile_record).execute()
+                if insert_res.data and len(insert_res.data) > 0:
+                    profile_data = insert_res.data[0]
+            except Exception:
+                # Fallback without government_subrole if column not yet added
+                insert_res = supabase_admin.table("profiles").upsert({
+                    "id": user.id,
+                    "full_name": data.full_name,
+                    "role": role_value
+                }).execute()
+                if insert_res.data and len(insert_res.data) > 0:
+                    profile_data = insert_res.data[0]
     except Exception:
-        # Fallback profile presentation if database read failed temporarily
         profile_data = {
             "id": user.id,
             "full_name": data.full_name,
             "role": role_value,
+            "government_subrole": subrole_value,
             "created_at": None
         }
 
@@ -176,6 +211,7 @@ def signup(data: SignupRequest):
 
     full_name_val = profile_data.get("full_name") if profile_data else data.full_name
     role_val = profile_data.get("role") if profile_data else role_value
+    subrole_val = (profile_data.get("government_subrole") if profile_data else None) or subrole_value
     created_at_val = profile_data.get("created_at") if profile_data else None
 
     return SignupResponse(
@@ -184,12 +220,14 @@ def signup(data: SignupRequest):
             id=user.id,
             email=user.email,
             full_name=full_name_val,
-            role=role_val
+            role=role_val,
+            government_subrole=subrole_val
         ),
         profile=ProfileResponse(
             id=user.id,
             full_name=full_name_val,
             role=role_val,
+            government_subrole=subrole_val,
             created_at=created_at_val
         ),
         access_token=access_token,
@@ -200,7 +238,9 @@ def signup(data: SignupRequest):
 @router.post("/auth/login", response_model=LoginResponse)
 def login(data: LoginRequest):
     """
-    Authenticates a user via Supabase Auth or verified hotelier/demo master accounts.
+    Authenticates a user via Supabase Auth or verified hotelier/demo master accounts,
+    returning an access token along with their profile.
+    Extracts role and government_subrole directly from the verified profile / user metadata.
     """
     clean_email = data.email.strip().lower()
 
@@ -289,16 +329,37 @@ def login(data: LoginRequest):
 
     user_meta = user.user_metadata or {}
     full_name = (profile_data.get("full_name") if profile_data else None) or user_meta.get("full_name")
-    role = (profile_data.get("role") if profile_data else None) or user_meta.get("role", "tourist")
+    raw_role = (profile_data.get("role") if profile_data else None) or user_meta.get("role")
+
+    # CRITICAL: Never silently default to 'tourist'
+    if not raw_role:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User account has no assigned role in profile or metadata. Please contact system administrator."
+        )
+
+    role = raw_role
+    gov_subrole = (profile_data.get("government_subrole") if profile_data else None) or user_meta.get("government_subrole")
+
+    # Normalize legacy police role
+    if role == "police":
+        role = "government"
+        gov_subrole = "police_official"
+
+    if role == "government" and not gov_subrole:
+        gov_subrole = "government_official"
 
     # If profile record was missing, synchronize it
     if not profile_data:
         try:
-            insert_res = supabase_admin.table("profiles").upsert({
+            profile_record = {
                 "id": user.id,
                 "full_name": full_name,
-                "role": role
-            }).execute()
+                "role": role,
+            }
+            if gov_subrole:
+                profile_record["government_subrole"] = gov_subrole
+            insert_res = supabase_admin.table("profiles").upsert(profile_record).execute()
             if insert_res.data and len(insert_res.data) > 0:
                 profile_data = insert_res.data[0]
         except Exception:
@@ -306,6 +367,7 @@ def login(data: LoginRequest):
                 "id": user.id,
                 "full_name": full_name,
                 "role": role,
+                "government_subrole": gov_subrole,
                 "created_at": None
             }
 
@@ -317,12 +379,14 @@ def login(data: LoginRequest):
             id=user.id,
             email=user.email,
             full_name=full_name,
-            role=role
+            role=role,
+            government_subrole=gov_subrole
         ),
         profile=ProfileResponse(
             id=user.id,
             full_name=full_name,
             role=role,
+            government_subrole=gov_subrole,
             created_at=profile_data.get("created_at") if profile_data else None
         )
     )
@@ -333,12 +397,13 @@ def get_current_user_profile(current_user: AuthenticatedUser = Depends(get_curre
     """
     Returns the authenticated user's details and profile.
     Requires Bearer token in the Authorization header.
-    Validates token, extracts user ID, and loads verified role from public.profiles.
+    Validates token, extracts user ID, and loads verified role and government_subrole from public.profiles.
     """
     profile_obj = ProfileResponse(
         id=current_user.id,
         full_name=current_user.full_name,
         role=current_user.role,
+        government_subrole=current_user.government_subrole,
         created_at=current_user.created_at
     )
 
@@ -347,6 +412,7 @@ def get_current_user_profile(current_user: AuthenticatedUser = Depends(get_curre
         email=current_user.email,
         full_name=current_user.full_name,
         role=current_user.role,
+        government_subrole=current_user.government_subrole,
         created_at=current_user.created_at,
         profile=profile_obj
     )
@@ -400,6 +466,24 @@ def travel_company_only_endpoint(
         "user_id": current_user.id,
         "email": current_user.email,
         "role": current_user.role
+    }
+
+
+@router.get("/auth/roles/police-only")
+def police_only_endpoint(
+    current_user: AuthenticatedUser = Depends(require_police_operations)
+):
+    """
+    Role-Protected Endpoint: Only accessible by government users with classification 'police_official'
+    (or legacy role 'police').
+    Returns 401 if unauthenticated, 403 if authenticated user is not authorized for police operations.
+    """
+    return {
+        "message": "Authorized: Access granted to Police & Law Enforcement Command.",
+        "user_id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "government_subrole": current_user.government_subrole
     }
 
 
