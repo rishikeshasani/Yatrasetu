@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { saveFleetSchedules, fetchFleetSchedules, fetchActiveRerouteAlert } from '../api/api';
 import TravelAgencyConsole from '../components/TravelAgencyConsole';
+import TransitFlowIntelligence from '../components/route_intelligence/TransitFlowIntelligence';
 import StatusBadge from '../components/common/StatusBadge';
 
 export default function TravelCompanyDashboard({
   showToast,
   externalTab
 }) {
+  const [activeTab, setActiveTab] = useState(externalTab || 'transit_flow');
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeReroute, setActiveReroute] = useState(null);
+
+  useEffect(() => {
+    if (externalTab) {
+      setActiveTab(externalTab);
+    }
+  }, [externalTab]);
 
   const [fleetRoutes, setFleetRoutes] = useState([
     { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
@@ -180,8 +188,144 @@ export default function TravelCompanyDashboard({
 
 
 
-      {/* HIMALAYA YATRA TRAVELS: PARTNER CONSOLE & DEMAND CALCULATOR (3 CORE FEATURES) */}
-      <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
+      {/* Top Level Navigation Tabs */}
+      <div style={{
+        margin: '0 1.5rem 1.25rem',
+        display: 'flex',
+        gap: '0.75rem',
+        borderBottom: '2px solid #E2E8F0',
+        paddingBottom: '0.5rem',
+        flexWrap: 'wrap'
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('transit_flow')}
+          style={{
+            backgroundColor: activeTab === 'transit_flow' ? '#D97706' : 'transparent',
+            color: activeTab === 'transit_flow' ? '#FFFFFF' : '#475569',
+            border: 'none',
+            borderRadius: '0.5rem',
+            padding: '0.65rem 1.25rem',
+            fontWeight: '800',
+            fontSize: '0.92rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: activeTab === 'transit_flow' ? '0 2px 8px rgba(217,119,6,0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <span>👁️</span> Transit Flow &amp; Reroute Intelligence
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('corridor_ai')}
+          style={{
+            backgroundColor: activeTab === 'corridor_ai' ? '#D97706' : 'transparent',
+            color: activeTab === 'corridor_ai' ? '#FFFFFF' : '#475569',
+            border: 'none',
+            borderRadius: '0.5rem',
+            padding: '0.65rem 1.25rem',
+            fontWeight: '800',
+            fontSize: '0.92rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: activeTab === 'corridor_ai' ? '0 2px 8px rgba(217,119,6,0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <span>🗺️</span> Corridor AI Intelligence &amp; Forecast
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('fleet_schedules')}
+          style={{
+            backgroundColor: activeTab === 'fleet_schedules' ? '#D97706' : 'transparent',
+            color: activeTab === 'fleet_schedules' ? '#FFFFFF' : '#475569',
+            border: 'none',
+            borderRadius: '0.5rem',
+            padding: '0.65rem 1.25rem',
+            fontWeight: '800',
+            fontSize: '0.92rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: activeTab === 'fleet_schedules' ? '0 2px 8px rgba(217,119,6,0.25)' : 'none',
+            transition: 'all 0.15s ease'
+          }}
+        >
+          <span>🚌</span> Active Fleet Schedules ({fleetRoutes.length})
+        </button>
+      </div>
+
+      {/* Tab View 1: Transit Flow & Reroute Intelligence */}
+      {activeTab === 'transit_flow' && (
+        <TransitFlowIntelligence showToast={showToast} />
+      )}
+
+      {/* Tab View 2: Corridor AI Intelligence & Demand Simulator */}
+      {activeTab === 'corridor_ai' && (
+        <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
+      )}
+
+      {/* Tab View 3: Fleet Schedules List & Action */}
+      {activeTab === 'fleet_schedules' && (
+        <div style={{ margin: '0 1.5rem', backgroundColor: '#FFFFFF', borderRadius: '0.75rem', border: '1px solid #E2E8F0', padding: '1.5rem', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '800', color: '#0F172A' }}>
+                🚌 Active Corridor Fleet Allocations
+              </h3>
+              <p style={{ margin: '0.2rem 0 0', color: '#64748B', fontSize: '0.85rem' }}>
+                Live route capacities synced with Hotel and Government dashboards.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowFleetModal(true)}
+              style={{
+                backgroundColor: '#D97706',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.6rem 1.25rem',
+                fontWeight: '800',
+                fontSize: '0.9rem',
+                cursor: 'pointer'
+              }}
+            >
+              ⚙️ Adjust Fleet Allocations
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {fleetRoutes.map((route) => (
+              <div key={route.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.65rem', padding: '1.2rem', backgroundColor: '#F8FAFC' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: '800', color: '#D97706', fontSize: '0.82rem' }}>{route.id}</span>
+                  <StatusBadge status={route.status === 'FULL' ? 'CRITICAL' : route.status === 'HIGH DEMAND' ? 'HIGH' : 'NORMAL'} theme="light" size="xs" label={route.status} />
+                </div>
+                <div style={{ fontWeight: '700', color: '#0F172A', fontSize: '0.96rem', marginBottom: '0.25rem' }}>
+                  {route.from} → {route.to}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#64748B', marginBottom: '0.75rem' }}>
+                  📅 {route.date} · 🚌 {route.type}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', borderTop: '1px solid #E2E8F0', paddingTop: '0.5rem' }}>
+                  <span>Assigned Buses: <strong>{route.buses}</strong> ({route.buses * route.capacity} seats)</span>
+                  <strong style={{ color: route.occupancy >= 90 ? '#DC2626' : '#0F172A' }}>{route.occupancy}% load</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* ====================================================== */}
       {/* FLEET SCHEDULE ADJUSTMENT MODAL                        */}

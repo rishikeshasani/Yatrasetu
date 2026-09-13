@@ -29,32 +29,59 @@ def get_yolo_status():
     }
 
 
+from services.transit_service import transit_flow_service, TRANSIT_NODES_REGISTRY
+
+
 @router.post("/analyze-video")
 async def analyze_video(
-    site_id: str = Form(..., description="Canonical shrine site ID (e.g. TS001-TS025)"),
+    site_id: Optional[str] = Form(None, description="Canonical shrine site ID (e.g. TS001-TS025)"),
+    node_id: Optional[str] = Form(None, description="Named transit node ID (e.g. NODE_SONPRAYAG, NODE_HARIDWAR_HW)"),
     sample_interval_sec: float = Form(1.0, description="Sampling interval in seconds for frame extraction"),
     max_frames: int = Form(30, description="Maximum number of frames to sample and analyze"),
     file: UploadFile = File(..., description="Video file stream for YOLO person detection"),
-    current_user: AuthenticatedUser = Depends(require_role(["government", "police", "tourist"])),
+    current_user: AuthenticatedUser = Depends(require_role(["government", "police", "tourist", "travel_company"])),
 ):
     """
     YOLO Computer Vision Video Ingestion Endpoint:
-    - Accepts video upload and canonical site_id.
-    - Validates canonical site identifier against system registry.
-    - Validates video format and content-type.
-    - Safely buffers video stream to temporary disk storage.
+    - Accepts video upload for either a sacred shrine (site_id) or a named transit node (node_id).
+    - Validates target entity against registry.
     - Decodes video frames via OpenCV at specified sample interval.
     - Executes real Ultralytics YOLO person inference on sampled frames.
-    - Derives camera FOV headcount and passes through the shared canonical crowd engine.
-    - Authoritatively updates live site crowd state under source 'yolo_video'.
-    - Returns structured JSON meeting the telemetry contract with disclaimer.
+    - Dynamically propagates results into central crowd or transit flow engine.
+    - Instantly recalculates passenger demand, fleet requirements, and operational alerts.
     """
-    canonical_id = LEGACY_SITE_ALIASES.get(site_id, site_id)
-    if canonical_id not in SITE_METADATA_FALLBACK:
+    target_node = node_id or (site_id if site_id and (site_id.startswith("NODE_") or site_id in TRANSIT_NODES_REGISTRY) else None)
+    target_site = site_id if not target_node else None
+
+    if not target_node and not target_site:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid or unrecognized site_id '{site_id}'. Must resolve to a canonical site in TS001-TS025.",
+            detail="Either 'site_id' (for a sacred shrine) or 'node_id' (for a transit region) must be provided.",
         )
+
+    # Validate site or node
+    canonical_site_id = None
+    if target_node:
+        if target_node not in TRANSIT_NODES_REGISTRY:
+            # Check case-insensitive match
+            matched = None
+            for k in TRANSIT_NODES_REGISTRY:
+                if k.lower() == target_node.lower():
+                    matched = k
+                    break
+            if not matched:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid transit node_id '{target_node}'. Valid nodes: {list(TRANSIT_NODES_REGISTRY.keys())}",
+                )
+            target_node = matched
+    else:
+        canonical_site_id = LEGACY_SITE_ALIASES.get(target_site, target_site)
+        if canonical_site_id not in SITE_METADATA_FALLBACK:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid or unrecognized site_id '{target_site}'. Must resolve to a canonical site in TS001-TS025.",
+            )
 
     # Validate file extension
     filename = file.filename or "video.mp4"
@@ -77,23 +104,52 @@ async def analyze_video(
             temp_path = temp_video.name
             shutil.copyfileobj(file.file, temp_video)
 
-        observation = yolo_service.analyze_video_stream(
-            video_path=temp_path,
-            site_id=canonical_id,
-            sample_interval_sec=max(0.2, min(5.0, sample_interval_sec)),
-            max_frames=max(1, min(120, max_frames)),
-        )
+        if target_node:
+            # Process for Transit Region / Node
+            node_result = yolo_service.analyze_transit_node_video(
+                video_path=temp_path,
+                node_id=target_node,
+                sample_interval_sec=max(0.2, min(5.0, sample_interval_sec)),
+                max_frames=max(1, min(120, max_frames)),
+            )
+            return {
+                "status": "success",
+                "target_type": "transit_node",
+                "message": f"Successfully analyzed video for transit hub {node_result['name']} ({target_node})",
+                "node": node_result,
+                "fleet_recommendation": {
+                    "expected_demand": node_result["expected_demand"],
+                    "usable_capacity": node_result["usable_capacity"],
+                    "required_buses": node_result["required_buses"],
+                    "available_buses": node_result["available_buses"],
+                    "shortage_buses": node_result["shortage_buses"],
+                    "rationale": node_result["rationale"],
+                },
+                "processed_by": {
+                    "user_id": current_user.id,
+                    "role": current_user.role,
+                },
+            }
+        else:
+            # Process for Sacred Shrine
+            observation = yolo_service.analyze_video_stream(
+                video_path=temp_path,
+                site_id=canonical_site_id,
+                sample_interval_sec=max(0.2, min(5.0, sample_interval_sec)),
+                max_frames=max(1, min(120, max_frames)),
+            )
 
-        return {
-            "status": "success",
-            "message": f"Successfully analyzed video for {observation['site_name']} ({canonical_id})",
-            "observation": observation,
-            "processed_by": {
-                "user_id": current_user.id,
-                "role": current_user.role,
-                "subrole": current_user.government_subrole,
-            },
-        }
+            return {
+                "status": "success",
+                "target_type": "shrine_site",
+                "message": f"Successfully analyzed video for {observation['site_name']} ({canonical_site_id})",
+                "observation": observation,
+                "processed_by": {
+                    "user_id": current_user.id,
+                    "role": current_user.role,
+                    "subrole": current_user.government_subrole,
+                },
+            }
 
     except ValueError as ve:
         raise HTTPException(

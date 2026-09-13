@@ -233,3 +233,85 @@ def get_agency_profile():
             ]
         }
     }
+
+
+# ---------------------------------------------------------------------------
+# TRANSIT FLOW & REROUTE INTELLIGENCE ENDPOINTS
+# ---------------------------------------------------------------------------
+from services.transit_service import transit_flow_service
+
+
+class TransitSimulateRequest(BaseModel):
+    headcount: Optional[int] = None
+    passengers_waiting: Optional[int] = None
+    expected_incoming: Optional[int] = None
+    reroutes_confirmed: Optional[int] = None
+    available_buses: Optional[int] = None
+
+
+class TransitDispatchRequest(BaseModel):
+    buses: int = 1
+
+
+@router.get("/transit-nodes")
+def get_transit_nodes():
+    """
+    Returns live telemetry, 6-stage reroute funnels, and local fleet recommendations
+    across all 6 key pilgrimage transit regions.
+    """
+    nodes = transit_flow_service.get_all_nodes()
+    return {
+        "status": "success",
+        "count": len(nodes),
+        "nodes": nodes
+    }
+
+
+@router.get("/transit-nodes/{node_id}")
+def get_transit_node(node_id: str):
+    """Returns detailed transit flow and fleet recommendation for a specific node."""
+    node = transit_flow_service.get_node(node_id)
+    if not node:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Transit node '{node_id}' not found."
+        )
+    return {
+        "status": "success",
+        "node": node
+    }
+
+
+@router.post("/transit-nodes/{node_id}/simulate")
+def simulate_transit_node(node_id: str, data: TransitSimulateRequest):
+    """Allows demo operators to tweak flow parameters and evaluate dynamic fleet response."""
+    try:
+        updated = transit_flow_service.simulate_node_observation(
+            node_id=node_id,
+            headcount=data.headcount,
+            passengers_waiting=data.passengers_waiting,
+            expected_incoming=data.expected_incoming,
+            reroutes_confirmed=data.reroutes_confirmed,
+            available_buses=data.available_buses
+        )
+        return {
+            "status": "success",
+            "message": f"Updated simulation state for {updated['name']}",
+            "node": updated
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+
+
+@router.post("/transit-nodes/{node_id}/dispatch")
+def dispatch_local_bus(node_id: str, data: TransitDispatchRequest):
+    """Dispatches additional local buses to a transit node, boarding waiting passengers."""
+    try:
+        result = transit_flow_service.dispatch_local_buses(
+            node_id=node_id,
+            buses_to_deploy=data.buses
+        )
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+

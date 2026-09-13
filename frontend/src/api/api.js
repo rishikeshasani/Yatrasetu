@@ -3480,3 +3480,100 @@ export async function fetchSiteGpsSignal(siteId) {
   return await apiRequest(`/crowd/gps/${encodeURIComponent(siteId)}`);
 }
 
+// ============================================================================
+// TRANSIT FLOW INTELLIGENCE & VIDEO-TO-DASHBOARD INGESTION
+// ============================================================================
+
+export async function fetchTransitNodes() {
+  return await apiRequest('/fleet/transit-nodes', {
+    requiresAuth: true
+  });
+}
+
+export async function fetchTransitNode(nodeId) {
+  return await apiRequest(`/fleet/transit-nodes/${encodeURIComponent(nodeId)}`, {
+    requiresAuth: true
+  });
+}
+
+export async function simulateTransitNode(nodeId, payload = {}) {
+  return await apiRequest(`/fleet/transit-nodes/${encodeURIComponent(nodeId)}/simulate`, {
+    method: 'POST',
+    requiresAuth: true,
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function dispatchLocalTransitBus(nodeId, buses = 1) {
+  return await apiRequest(`/fleet/transit-nodes/${encodeURIComponent(nodeId)}/dispatch`, {
+    method: 'POST',
+    requiresAuth: true,
+    body: JSON.stringify({ buses: Number(buses) })
+  });
+}
+
+export async function uploadTransitVideo(nodeId, file, options = {}) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('node_id', nodeId);
+  if (options.sampleInterval) formData.append('sample_interval', options.sampleInterval);
+  if (options.confThreshold) formData.append('conf_threshold', options.confThreshold);
+
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const url = `${API_BASE_URL}/yolo/analyze-video`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  if (!res.ok) {
+    let errorDetail = 'Failed to analyze video';
+    try {
+      const errJson = await res.json();
+      errorDetail = errJson.detail || errJson.message || errorDetail;
+    } catch {}
+    throw new ApiError(errorDetail, res.status);
+  }
+
+  return await res.json();
+}
+
+export async function uploadSiteVideo(siteId, file, options = {}) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('site_id', siteId);
+  if (options.sampleInterval) formData.append('sample_interval', options.sampleInterval);
+  if (options.confThreshold) formData.append('conf_threshold', options.confThreshold);
+
+  const token = getAuthToken();
+  const headers = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const url = `${API_BASE_URL}/yolo/analyze-video`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+
+  if (!res.ok) {
+    let errorDetail = 'Failed to analyze video';
+    try {
+      const errJson = await res.json();
+      errorDetail = errJson.detail || errJson.message || errorDetail;
+    } catch {}
+    throw new ApiError(errorDetail, res.status);
+  }
+
+  return await res.json();
+}
+
+
