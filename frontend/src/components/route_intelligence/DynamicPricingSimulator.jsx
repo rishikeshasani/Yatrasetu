@@ -14,6 +14,14 @@ export default function DynamicPricingSimulator({
   const fwdSurgePct = Math.round(((forwardFare - baseFare) / baseFare) * 100);
   const retDiscountPct = Math.round(((baseFare - returnFare) / baseFare) * 100);
 
+  const handleForwardStep = (delta) => {
+    setForwardFare((prev) => Math.max(baseFare, Math.min(Math.round(baseFare * 2.0), prev + delta)));
+  };
+
+  const handleReturnStep = (delta) => {
+    setReturnFare((prev) => Math.max(Math.round(baseFare * 0.4), Math.min(baseFare, prev + delta)));
+  };
+
   return (
     <div style={{
       backgroundColor: '#FFFFFF',
@@ -27,14 +35,14 @@ export default function DynamicPricingSimulator({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
         <div>
           <div style={{ fontSize: '0.72rem', fontWeight: 'bold', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Module 2 · Elasticity Simulation
+            Module 2 · Elasticity &amp; Yield Management
           </div>
-          <h4 style={{ margin: '0.15rem 0 0', fontSize: '1.1rem', fontWeight: '800', color: '#0F172A' }}>
-            Dynamic Pricing &amp; Yield Simulator
+          <h4 style={{ margin: '0.15rem 0 0', fontSize: '1.15rem', fontWeight: '800', color: '#0F172A' }}>
+            Dynamic Pricing &amp; Backhaul Simulator
           </h4>
         </div>
         <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 'bold' }}>
-          Standard Base Rate: <strong>₹{baseFare}/seat</strong>
+          Standard Base Fare: <strong>₹{baseFare}/seat</strong>
         </span>
       </div>
 
@@ -50,11 +58,11 @@ export default function DynamicPricingSimulator({
           backgroundColor: '#EFF6FF',
           border: '1px solid #BFDBFE',
           borderRadius: '0.65rem',
-          padding: '0.9rem'
+          padding: '0.95rem'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#1E40AF' }}>
-              ➡️ FORWARD TRIP FARE
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#1E40AF' }}>
+              ➡️ FORWARD SURGE (OUTBOUND)
             </span>
             <span style={{
               fontSize: '0.7rem',
@@ -68,11 +76,51 @@ export default function DynamicPricingSimulator({
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.25rem 0' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: '900', color: '#1E3A8A' }}>
-              ₹{forwardFare}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>/ seat</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0.35rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: '#1E3A8A' }}>
+                ₹{forwardFare}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#64748B' }}>/ seat</span>
+            </div>
+
+            {/* Stepper buttons */}
+            <div style={{ display: 'flex', gap: '0.3rem' }}>
+              <button
+                type="button"
+                onClick={() => handleForwardStep(-50)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  border: '1px solid #93C5FD',
+                  backgroundColor: '#FFFFFF',
+                  color: '#1E40AF',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={() => handleForwardStep(50)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  border: '1px solid #93C5FD',
+                  backgroundColor: '#FFFFFF',
+                  color: '#1E40AF',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Forward Slider */}
@@ -91,7 +139,7 @@ export default function DynamicPricingSimulator({
             <span style={{ color: '#2563EB', fontWeight: 'bold' }}>
               AI Rec: ₹{aiRecommendation.recommended_forward_fare}
             </span>
-            <span>₹{Math.round(baseFare * 1.8)}</span>
+            <span>₹{Math.round(baseFare * 1.8)} (Max)</span>
           </div>
 
           {/* Occupancy Impact */}
@@ -105,11 +153,11 @@ export default function DynamicPricingSimulator({
           backgroundColor: '#FEF2F2',
           border: '1px solid #FECACA',
           borderRadius: '0.65rem',
-          padding: '0.9rem'
+          padding: '0.95rem'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#991B1B' }}>
-              ↩️ RETURN TRIP FARE
+            <span style={{ fontSize: '0.78rem', fontWeight: '800', color: '#991B1B' }}>
+              ↩️ RETURN DISCOUNT (BACKHAUL)
             </span>
             <span style={{
               fontSize: '0.7rem',
@@ -123,11 +171,51 @@ export default function DynamicPricingSimulator({
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.25rem 0' }}>
-            <span style={{ fontSize: '1.6rem', fontWeight: '900', color: '#DC2626' }}>
-              ₹{returnFare}
-            </span>
-            <span style={{ fontSize: '0.75rem', color: '#64748B' }}>/ seat</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0.35rem 0' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.3rem' }}>
+              <span style={{ fontSize: '1.75rem', fontWeight: '900', color: '#DC2626' }}>
+                ₹{returnFare}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#64748B' }}>/ seat</span>
+            </div>
+
+            {/* Stepper buttons */}
+            <div style={{ display: 'flex', gap: '0.3rem' }}>
+              <button
+                type="button"
+                onClick={() => handleReturnStep(-40)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  border: '1px solid #FCA5A5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#DC2626',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                -
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReturnStep(40)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '4px',
+                  border: '1px solid #FCA5A5',
+                  backgroundColor: '#FFFFFF',
+                  color: '#DC2626',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                +
+              </button>
+            </div>
           </div>
 
           {/* Return Slider */}
@@ -164,10 +252,11 @@ export default function DynamicPricingSimulator({
         borderRadius: '0.5rem',
         fontSize: '0.78rem',
         color: '#78350F',
-        lineHeight: 1.4
+        lineHeight: 1.45
       }}>
-        💡 <strong>Yield Elasticity Model:</strong> Lowering return fare by {retDiscountPct}% lifts backhaul passenger occupancy from 24% to {simulationResult.return_occupancy_pct}%, generating an additional <strong>₹{(simulationResult.return_passengers_carried * returnFare / 1000).toFixed(0)}k</strong> in secondary return revenues rather than running empty buses.
+        💡 <strong>Economic Reality Check:</strong> Unlike standard urban transit, pilgrimage routes suffer from severe directional asymmetry (high outward rush, low immediate backhaul). Discounting the return fare by {retDiscountPct}% stimulates return travelers, raising backhaul load factor to <strong>{simulationResult.return_occupancy_pct}%</strong> and earning <strong>₹{((simulationResult.return_passengers_carried * returnFare) / 1000).toFixed(0)}k</strong> in secondary revenue rather than burning fuel with empty seats.
       </div>
     </div>
   );
 }
+
