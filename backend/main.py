@@ -11,6 +11,8 @@ from routes.vendors import router as vendors_router
 from routes.wallet import router as wallet_router
 from routes.groups import router as groups_router
 from routes.simulations import router as simulations_router
+from routes.yolo import router as yolo_router
+from routes.gps_crowd import router as gps_crowd_router
 
 app = FastAPI(title="YatraSetu Backend")
 
@@ -46,6 +48,8 @@ app.include_router(vendors_router)
 app.include_router(wallet_router)
 app.include_router(groups_router)
 app.include_router(simulations_router)
+app.include_router(yolo_router)
+app.include_router(gps_crowd_router)
 
 @app.get("/")
 def home():

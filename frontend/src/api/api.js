@@ -1969,75 +1969,17 @@ export async function loginUser(email, password) {
       return { status: "success", user: userObj, token: data.access_token };
     }
     const errData = await res.json().catch(() => ({}));
-    console.warn("Backend auth/login returned error:", errData);
-  } catch (err) {
-    console.warn("Backend login failed or offline. Using resilient demo auth fallback:", err);
-  }
-
-  // Resilient Demo Auth Fallback
-  const lowerEmail = email.toLowerCase().trim();
-
-  // Check 50 Master Hotel Accounts first
-  const matchedHotelAcc = HOTEL_OWNER_ACCOUNTS.find(a => a.email.toLowerCase() === lowerEmail);
-  if (matchedHotelAcc) {
-    const fallbackUser = {
-      id: matchedHotelAcc.owner_id,
-      user_id: matchedHotelAcc.owner_id,
-      owner_id: matchedHotelAcc.owner_id,
-      hotel_id: matchedHotelAcc.hotel_id,
-      shrine_id: matchedHotelAcc.shrine_id,
-      shrine_name: matchedHotelAcc.shrine_name,
-      email: matchedHotelAcc.email,
-      full_name: matchedHotelAcc.hotel_name,
-      business_name: matchedHotelAcc.hotel_name,
-      role: "hotel",
-      punya_points: 260,
-      phone: "+91-9876543210",
-      badge: "VERIFIED SHRINE HOTEL",
-      token: `demo-jwt-token-for-${matchedHotelAcc.hotel_id}`
-    };
-    localStorage.setItem("yatrasetu_token", fallbackUser.token);
-    localStorage.setItem("yatrasetu_user", JSON.stringify(fallbackUser));
     return {
-      status: "success",
-      user: fallbackUser,
-      token: fallbackUser.token,
-      message: `Logged in as ${fallbackUser.full_name} (HOTEL OWNER)`
+      status: "error",
+      detail: errData.detail || "Invalid email or password. Please verify credentials."
+    };
+  } catch (err) {
+    console.error("Backend login request failed:", err);
+    return {
+      status: "error",
+      detail: "Cannot connect to authentication service. Please check your network or server."
     };
   }
-
-  let matchedRole = "tourist";
-  if (lowerEmail.includes("govt") || lowerEmail.includes("dm") || lowerEmail.includes("police")) {
-    matchedRole = "government";
-  } else if (lowerEmail.includes("hotel") || lowerEmail.includes("lodge") || lowerEmail.includes("inn")) {
-    matchedRole = "hotel";
-  } else if (lowerEmail.includes("travel") || lowerEmail.includes("agency") || lowerEmail.includes("fleet") || lowerEmail.includes("planner")) {
-    matchedRole = "travel_company";
-  }
-
-  const demoProfile = DEMO_CREDENTIALS[matchedRole] || DEMO_CREDENTIALS.tourist;
-  const fallbackUser = {
-    id: `DEMO-${matchedRole.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    user_id: `DEMO-${matchedRole.toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`,
-    email: email,
-    full_name: demoProfile.full_name,
-    role: matchedRole,
-    punya_points: demoProfile.punya_points || 260,
-    phone: demoProfile.phone,
-    aadhaar_masked: demoProfile.aadhaar_masked,
-    business_name: demoProfile.business_name,
-    token: `demo-jwt-token-for-${matchedRole}`
-  };
-
-  localStorage.setItem("yatrasetu_token", fallbackUser.token);
-  localStorage.setItem("yatrasetu_user", JSON.stringify(fallbackUser));
-
-  return {
-    status: "success",
-    user: fallbackUser,
-    token: fallbackUser.token,
-    message: `Logged in as ${fallbackUser.full_name} (${matchedRole.toUpperCase()})`
-  };
 }
 
 export async function signupUser(email, password, fullName, role = "tourist", governmentSubrole = null) {
@@ -3502,3 +3444,39 @@ export async function fetchPoliceSOSStatus(alertId) {
     requiresAuth: true
   });
 }
+
+// ============================================================================
+// MOBILE GPS-BASED CROWD ESTIMATION & MULTI-SOURCE FUSION HELPERS
+// ============================================================================
+
+export async function submitTouristGpsLocation(latitude, longitude, clientIdentifier = null) {
+  return await apiRequest('/crowd/gps', {
+    method: 'POST',
+    body: JSON.stringify({
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      client_identifier: clientIdentifier
+    })
+  });
+}
+
+export async function submitAggregatedGpsCrowd(siteId, activeDeviceCount, isDemo = false) {
+  return await apiRequest('/crowd/gps/aggregate', {
+    method: 'POST',
+    requiresAuth: true,
+    body: JSON.stringify({
+      site_id: siteId,
+      active_device_count: Number(activeDeviceCount),
+      is_demo: Boolean(isDemo)
+    })
+  });
+}
+
+export async function fetchGpsCrowdStatus() {
+  return await apiRequest('/crowd/gps/status');
+}
+
+export async function fetchSiteGpsSignal(siteId) {
+  return await apiRequest(`/crowd/gps/${encodeURIComponent(siteId)}`);
+}
+

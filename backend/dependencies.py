@@ -81,6 +81,16 @@ def get_current_user(
                 created_at="2026-09-05T00:00:00Z"
             )
 
+        if role_part == "police":
+            return AuthenticatedUser(
+                id="00000000-0000-0000-0000-000000000006",
+                email="police_official@yatrasetu.demo",
+                role="government",
+                government_subrole="police_official",
+                full_name="Police & SDRF Command Official",
+                created_at="2026-09-05T00:00:00Z"
+            )
+
         if role_part not in ["tourist", "government", "hotel", "travel_company", "vendor"]:
             role_part = "tourist"
         display_names = {

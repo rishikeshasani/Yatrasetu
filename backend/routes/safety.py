@@ -593,15 +593,22 @@ def get_alerts():
     # Check active emergency reroute first
     reroute = get_active_reroute_from_db()
     if reroute:
+        reroute_site = reroute.get("site_id")
+        from routes.crowd import resolve_site_crowd_state
+        canonical = resolve_site_crowd_state(reroute_site) if reroute_site else None
+        current_status = canonical["status"] if canonical else reroute.get("crowd_status", "CRITICAL")
+        current_occ = canonical["occupancy_percentage"] if canonical else reroute.get("occupancy_percentage")
+        current_ppl = canonical["people_count"] if canonical else reroute.get("people_count")
+
         active_alerts.append({
             "id": reroute.get("id"),
             "site_id": reroute.get("site_id"),
             "site_name": reroute.get("site_name"),
             "alert_type": "EMERGENCY_REROUTE",
-            "severity": reroute.get("crowd_status", "CRITICAL"),
-            "message": f"🚨 EMERGENCY REROUTE ACTIVE: High crowd congestion ({reroute.get('occupancy_percentage')}%) at {reroute.get('site_name')}. {reroute.get('diverted_tourists', 350)} tourists diverted to {reroute.get('partner_buses', 14)} buses and {reroute.get('partner_hotels', 22)} partner hotels.",
-            "people_count": reroute.get("people_count"),
-            "occupancy_percentage": reroute.get("occupancy_percentage"),
+            "severity": current_status,
+            "message": f"🚨 EMERGENCY REROUTE ACTIVE: High crowd congestion ({current_occ}%) at {reroute.get('site_name')}. {reroute.get('diverted_tourists', 350)} tourists diverted to {reroute.get('partner_buses', 14)} buses and {reroute.get('partner_hotels', 22)} partner hotels.",
+            "people_count": current_ppl,
+            "occupancy_percentage": current_occ,
             "timestamp": reroute.get("activated_at"),
             "diverted_tourists": reroute.get("diverted_tourists"),
             "partner_buses": reroute.get("partner_buses"),

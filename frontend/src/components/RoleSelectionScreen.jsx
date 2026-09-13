@@ -766,15 +766,15 @@ export default function RoleSelectionScreen({
                       textDecoration: 'underline'
                     }}
                   >
-                    {showEvalDrawer ? 'Hide SIH Quick-Fill Evaluation' : '⚡ SIH Evaluation: Quick-Fill Credentials'}
+                    {showEvalDrawer ? 'Hide SIH Hackathon Evaluation & Fast-Track Controls' : '⚡ SIH Hackathon Evaluation & Fast-Track Controls'}
                   </button>
                 </div>
 
-                {/* 1-Click Fast Track for the Current Role (Drawer) */}
+                {/* Fast Track Credentials for the Current Role (Drawer) */}
                 {showEvalDrawer && (
                   <div style={{ marginTop: '0.75rem' }}>
                     <div className="auth-divider">
-                      <span>SIH FAST-TRACK EVALUATION</span>
+                      <span>SIH HACKATHON EVALUATION &amp; FAST-TRACK CONTROLS</span>
                     </div>
 
                     {selectedRole === 'government' ? (

@@ -26,7 +26,10 @@ export default function DestinationCard({
   const waitMins = density?.wait_time_minutes != null ? density.wait_time_minutes : Math.max(15, Math.round((occupancy / 100) * 120));
 
   const SOURCE_CONFIG = {
-    yolo_video: { label: 'YOLO Video', icon: '📹', badgeClass: 'source-yolo' },
+    fused_yolo_gps: { label: 'YOLO + GPS Fusion', icon: '⚡', badgeClass: 'source-fused' },
+    yolo_video: { label: 'YOLO Headcount', icon: '📹', badgeClass: 'source-yolo' },
+    gps_crowd: { label: 'GPS Crowd Signal', icon: '📡', badgeClass: 'source-gps' },
+    gps_crowd_demo: { label: 'Demo GPS Signal', icon: '📡', badgeClass: 'source-demo' },
     live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
     demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
     historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },

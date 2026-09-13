@@ -17,6 +17,7 @@ import { supabase } from '../supabaseClient';
 import './GovernmentDashboard.css';
 import './PoliceDashboard.css';
 import { StatusBadge, StatCard, InfoCard, MetricRow, SectionHeader, EmptyState } from '../components/common';
+import GodsEyeMap from '../components/GodsEyeMap';
 
 function getStructuredRecommendations(sim) {
   if (!sim) return { crowdControl: '', safety: '', traffic: '', altRec: '' };
@@ -217,6 +218,7 @@ export default function GovernmentDashboard({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [stateFilter, setStateFilter] = useState('ALL');
+  const [liveCrowdViewMode, setLiveCrowdViewMode] = useState('grid'); // 'grid' | 'map'
 
   // Multi-Agency Operations Tab ('administration' | 'transport' | 'health' | 'disaster' | 'municipal')
   const [activeAgencyTab, setActiveAgencyTab] = useState('administration');
@@ -897,7 +899,37 @@ export default function GovernmentDashboard({
       {/* TAB 1: OVERVIEW                                                       */}
       {/* ===================================================================== */}
       {activeGovTab === 'overview' && (
-        isPoliceOfficial ? (
+        <>
+          {/* YatraSetu 2D GIS Operational God's-Eye Crowd Command Center Map */}
+          <div className="gov-godseye-command-wrap" style={{ marginBottom: '1.75rem' }}>
+            <GodsEyeMap
+              sites={sites}
+              densityMap={densityMap}
+              selectedSiteId={selectedSiteId || updateSiteId}
+              onSelectSite={(id) => {
+                if (onSelectSite) onSelectSite(id);
+                setUpdateSiteId(id);
+                const found = sites.find(s => s.id === id);
+                if (found) {
+                  const d = densityMap[id] || {};
+                  setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
+                  setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
+                }
+              }}
+              activeRerouteAlert={propRerouteAlert}
+              onRefresh={() => {
+                if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
+                  onCrowdUpdated(selectedSiteId || updateSiteId);
+                }
+              }}
+              onOpenCrowdUpdate={(id) => {
+                setUpdateSiteId(id);
+                handleSwitchGovTab('live-crowd');
+              }}
+            />
+          </div>
+
+          {isPoliceOfficial ? (
           <div id="gov-overview-police" className="police-content-wrap">
             {/* Tactical KPI Cards */}
             <div className="police-kpi-grid">
@@ -1392,14 +1424,72 @@ export default function GovernmentDashboard({
             </div>
           </section>
         </div>
-        )
       )}
+      </>
+    )}
 
       {/* ===================================================================== */}
       {/* TAB 2: LIVE CROWD MONITORING                                          */}
       {/* ===================================================================== */}
       {activeGovTab === 'live-crowd' && (
-        isPoliceOfficial ? (
+        <>
+          {/* View Mode Switcher */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>👥</span>
+              <span>LIVE CROWD INTELLIGENCE • 25 SACRED SHRINES</span>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className={`police-preset-btn ${liveCrowdViewMode === 'grid' ? 'active' : ''}`}
+                style={{ background: liveCrowdViewMode === 'grid' ? '#3B82F6' : '#080E1A', color: 'white' }}
+                onClick={() => setLiveCrowdViewMode('grid')}
+              >
+                📋 Data Table View
+              </button>
+              <button
+                type="button"
+                className={`police-preset-btn ${liveCrowdViewMode === 'map' ? 'active' : ''}`}
+                style={{ background: liveCrowdViewMode === 'map' ? '#3B82F6' : '#080E1A', color: 'white' }}
+                onClick={() => setLiveCrowdViewMode('map')}
+              >
+                🗺️ 2D GIS Command Map
+              </button>
+            </div>
+          </div>
+
+          {liveCrowdViewMode === 'map' && (
+            <div style={{ marginBottom: '1.75rem' }}>
+              <GodsEyeMap
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId || updateSiteId}
+                onSelectSite={(id) => {
+                  if (onSelectSite) onSelectSite(id);
+                  setUpdateSiteId(id);
+                  const found = sites.find(s => s.id === id);
+                  if (found) {
+                    const d = densityMap[id] || {};
+                    setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
+                    setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
+                  }
+                }}
+                activeRerouteAlert={propRerouteAlert}
+                onRefresh={() => {
+                  if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
+                    onCrowdUpdated(selectedSiteId || updateSiteId);
+                  }
+                }}
+                onOpenCrowdUpdate={(id) => {
+                  setUpdateSiteId(id);
+                  setLiveCrowdViewMode('grid');
+                }}
+              />
+            </div>
+          )}
+
+          {isPoliceOfficial ? (
           <div className="police-panel" id="gov-live-crowd-police">
             <div className="police-panel-header">
               <div className="police-panel-title">
@@ -1857,8 +1947,9 @@ export default function GovernmentDashboard({
             </div>
           </section>
         </div>
-        )
       )}
+      </>
+    )}
 
       {/* ===================================================================== */}
       {/* POLICE TAB: CROWD SURGE ALERTS                                        */}

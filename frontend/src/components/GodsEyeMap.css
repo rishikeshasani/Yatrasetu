@@ -1,0 +1,770 @@
+/* ==========================================================================
+   YATRASETU GOD'S-EYE CROWD COMMAND MAP STYLES
+   Operational 2D GIS Command Center Theme
+   ========================================================================== */
+
+.godseye-root {
+  background: #0B132B;
+  border: 1px solid #1E293B;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  color: #F8FAFC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* 1. Header & Title */
+.godseye-header {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.godseye-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.godseye-emblem {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.godseye-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.godseye-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60A5FA;
+  border: 1px solid #3B82F6;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.godseye-subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.85rem;
+  color: #94A3B8;
+}
+
+.godseye-live-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10B981;
+  color: #34D399;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.godseye-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+/* 2. Top Summary KPI Metrics */
+.godseye-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #080E1A;
+  border-bottom: 1px solid #1E293B;
+}
+
+.godseye-metric-card {
+  background: #0F172A;
+  border: 1px solid #1E293B;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.godseye-metric-card:hover {
+  transform: translateY(-2px);
+  border-color: #3B82F6;
+}
+
+.gem-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94A3B8;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gem-val {
+  font-size: 1.45rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+  color: #F8FAFC;
+  line-height: 1.1;
+}
+
+.gem-val.text-critical { color: #EF4444; }
+.gem-val.text-high { color: #F97316; }
+.gem-val.text-moderate { color: #F59E0B; }
+.gem-val.text-normal { color: #10B981; }
+.gem-val.text-accent { color: #60A5FA; }
+
+/* 3. Active Emergency Reroute Banner */
+.godseye-reroute-banner {
+  background: linear-gradient(90deg, rgba(220, 38, 38, 0.25) 0%, rgba(185, 28, 28, 0.15) 100%);
+  border-left: 4px solid #DC2626;
+  border-bottom: 1px solid #7F1D1D;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.reroute-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.reroute-banner-icon {
+  font-size: 1.5rem;
+}
+
+.reroute-banner-title {
+  font-weight: 800;
+  font-size: 0.88rem;
+  letter-spacing: 0.05em;
+  color: #F87171;
+  text-transform: uppercase;
+}
+
+.reroute-banner-desc {
+  font-size: 0.82rem;
+  color: #E2E8F0;
+  margin-top: 0.15rem;
+}
+
+.reroute-banner-btn {
+  background: #DC2626;
+  color: white;
+  border: none;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.reroute-banner-btn:hover {
+  background: #B91C1C;
+}
+
+/* 4. Controls & Filters Toolbar */
+.godseye-toolbar {
+  padding: 0.85rem 1.5rem;
+  background: #0D162B;
+  border-bottom: 1px solid #1E293B;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.godseye-search-wrap {
+  flex: 1;
+  min-width: 260px;
+  max-width: 400px;
+  position: relative;
+}
+
+.godseye-search-input {
+  width: 100%;
+  background: #080E1A;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+  color: #F8FAFC;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.godseye-search-input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.godseye-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748B;
+  pointer-events: none;
+}
+
+.godseye-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.godseye-pill-btn {
+  background: #080E1A;
+  border: 1px solid #334155;
+  color: #94A3B8;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.godseye-pill-btn:hover {
+  background: #1E293B;
+  color: #F8FAFC;
+}
+
+.godseye-pill-btn.active {
+  background: #3B82F6;
+  color: white;
+  border-color: #3B82F6;
+}
+
+.godseye-pill-btn.pill-critical.active {
+  background: #EF4444;
+  border-color: #EF4444;
+}
+
+.godseye-pill-btn.pill-high.active {
+  background: #F97316;
+  border-color: #F97316;
+}
+
+.godseye-pill-btn.pill-moderate.active {
+  background: #F59E0B;
+  border-color: #F59E0B;
+}
+
+.godseye-pill-btn.pill-normal.active {
+  background: #10B981;
+  border-color: #10B981;
+}
+
+.godseye-source-select {
+  background: #080E1A;
+  border: 1px solid #334155;
+  color: #F8FAFC;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.godseye-action-btn {
+  background: #1E293B;
+  border: 1px solid #334155;
+  color: #E2E8F0;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s;
+}
+
+.godseye-action-btn:hover {
+  background: #334155;
+}
+
+/* 5. Main Map & Intelligence Layout */
+.godseye-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  min-height: 580px;
+  background: #080E1A;
+}
+
+@media (max-width: 1100px) {
+  .godseye-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.godseye-map-container {
+  height: 580px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .godseye-map-container {
+    height: 440px;
+  }
+}
+
+/* Leaflet Map Overrides */
+.godseye-map-container .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: #050A14;
+  font-family: inherit;
+}
+
+/* Custom Marker Styling */
+.gem-marker-icon {
+  background: transparent;
+  border: none;
+}
+
+.gem-marker-pin {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gem-marker-pin:hover,
+.gem-marker-pin.selected {
+  transform: scale(1.25);
+  z-index: 1000 !important;
+}
+
+.gem-marker-pin.status-normal {
+  background: #10B981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.gem-marker-pin.status-moderate {
+  background: #F59E0B;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+.gem-marker-pin.status-high {
+  background: #F97316;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+}
+
+.gem-marker-pin.status-critical {
+  background: #EF4444;
+  box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
+  border-color: #FEE2E2;
+}
+
+.gem-marker-pin.has-reroute {
+  border: 3px solid #DC2626;
+  box-shadow: 0 0 16px #DC2626;
+}
+
+.gem-marker-label {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Popup Styling */
+.gem-popup .leaflet-popup-content-wrapper {
+  background: #0F172A;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #F8FAFC;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  padding: 0;
+  overflow: hidden;
+}
+
+.gem-popup .leaflet-popup-content {
+  margin: 0;
+  line-height: 1.4;
+  min-width: 220px;
+}
+
+.gem-popup .leaflet-popup-tip {
+  background: #0F172A;
+}
+
+.popup-header {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #1E293B;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #080E1A;
+}
+
+.popup-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #F8FAFC;
+}
+
+.popup-body {
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.popup-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.popup-label {
+  color: #94A3B8;
+}
+
+.popup-val {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.popup-inspect-btn {
+  width: 100%;
+  margin-top: 0.4rem;
+  background: #3B82F6;
+  color: white;
+  border: none;
+  padding: 0.45rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.popup-inspect-btn:hover {
+  background: #2563EB;
+}
+
+/* 6. Selected Shrine Operational Intelligence Side Panel */
+.godseye-side-panel {
+  background: #0B132B;
+  border-left: 1px solid #1E293B;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: 580px;
+}
+
+@media (max-width: 1100px) {
+  .godseye-side-panel {
+    border-left: none;
+    border-top: 1px solid #1E293B;
+    max-height: none;
+  }
+}
+
+.intel-panel-header {
+  padding: 1rem 1.25rem;
+  background: #0F172A;
+  border-bottom: 1px solid #1E293B;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intel-panel-title {
+  font-weight: 800;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  color: #F8FAFC;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.intel-panel-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60A5FA;
+}
+
+.intel-panel-content {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intel-empty-state {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #64748B;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.intel-shrine-header {
+  border-bottom: 1px solid #1E293B;
+  padding-bottom: 0.85rem;
+}
+
+.intel-shrine-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #F8FAFC;
+}
+
+.intel-shrine-meta {
+  font-size: 0.8rem;
+  color: #94A3B8;
+  margin-top: 0.25rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Occupancy Progress Bar */
+.intel-occupancy-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.intel-occupancy-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #1E293B;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.intel-occupancy-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.intel-occupancy-bar-fill.status-normal { background: #10B981; }
+.intel-occupancy-bar-fill.status-moderate { background: #F59E0B; }
+.intel-occupancy-bar-fill.status-high { background: #F97316; }
+.intel-occupancy-bar-fill.status-critical { background: #EF4444; }
+
+/* Operational Metrics Grid */
+.intel-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.intel-stat-box {
+  background: #080E1A;
+  border: 1px solid #1E293B;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.isb-label {
+  font-size: 0.7rem;
+  color: #94A3B8;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.isb-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: #F8FAFC;
+  margin-top: 0.15rem;
+}
+
+/* Multi-Source Fusion Intelligence Card */
+.intel-fusion-card {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ifc-title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #60A5FA;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ifc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+
+.ifc-label {
+  color: #94A3B8;
+}
+
+.ifc-val {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #F8FAFC;
+}
+
+.ifc-formula {
+  background: #080E1A;
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.72rem;
+  color: #38BDF8;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: center;
+  margin-top: 0.25rem;
+}
+
+/* Relative Surge Alert Box */
+.intel-surge-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid #EF4444;
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  font-size: 0.78rem;
+  color: #FCA5A5;
+}
+
+/* Action Buttons */
+.intel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.intel-primary-btn {
+  background: #3B82F6;
+  color: white;
+  border: none;
+  padding: 0.65rem 1rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+
+.intel-primary-btn:hover {
+  background: #2563EB;
+}
+
+/* 7. Footer, Legend & Disclaimer */
+.godseye-footer {
+  padding: 0.85rem 1.5rem;
+  background: #080E1A;
+  border-top: 1px solid #1E293B;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.78rem;
+}
+
+.godseye-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #94A3B8;
+  font-weight: 600;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-dot.dot-normal { background: #10B981; }
+.legend-dot.dot-moderate { background: #F59E0B; }
+.legend-dot.dot-high { background: #F97316; }
+.legend-dot.dot-critical { background: #EF4444; }
+
+.godseye-disclaimer {
+  color: #64748B;
+  font-size: 0.72rem;
+  max-width: 600px;
+}
