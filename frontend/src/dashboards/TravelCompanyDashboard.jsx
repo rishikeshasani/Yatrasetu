@@ -8,16 +8,23 @@ export default function TravelCompanyDashboard({
   showToast,
   externalTab
 }) {
-  const [activeTab, setActiveTab] = useState(externalTab || 'transit_flow');
+  const [activeTab, setActiveTab] = useState('transit_flow');
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeReroute, setActiveReroute] = useState(null);
 
   useEffect(() => {
     if (externalTab) {
-      setActiveTab(externalTab);
+      if (['circuits', 'optimizer', 'matrix', 'corridor_ai'].includes(externalTab)) {
+        setActiveTab('corridor_ai');
+      } else if (['transit_flow', 'transit', 'telemetry'].includes(externalTab)) {
+        setActiveTab('transit_flow');
+      } else if (['fleet_schedules', 'fleet', 'schedules'].includes(externalTab)) {
+        setActiveTab('fleet_schedules');
+      }
     }
   }, [externalTab]);
+
 
   const [fleetRoutes, setFleetRoutes] = useState([
     { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
