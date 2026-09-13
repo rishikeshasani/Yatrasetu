@@ -112,9 +112,9 @@ export default function AiRecommendationPanel({
           gap: '0.6rem'
         }}>
           <div style={{ backgroundColor: '#FFFFFF', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #FDE68A', textAlign: 'center' }}>
-            <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Est. Gross Revenue</div>
+            <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 'bold', textTransform: 'uppercase' }}>Route Seat Supply</div>
             <div style={{ fontSize: '1.05rem', fontWeight: '900', color: '#0369A1' }}>
-              ₹{(impact.gross_revenue / 100000).toFixed(2)}L
+              {(impact.deployed_seats || (aiRecommendation.recommended_buses * 42)).toLocaleString()}
             </div>
           </div>
 

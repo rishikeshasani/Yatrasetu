@@ -408,10 +408,10 @@ export default function FleetSimulator({
         </div>
       </div>
 
-      {/* Fleet Inventory & Operating Cost Grid */}
+      {/* Fleet Inventory & Operational Grid */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
+        gridTemplateColumns: 'repeat(3, 1fr)',
         gap: '0.65rem',
         marginBottom: '0.85rem'
       }}>
@@ -424,27 +424,19 @@ export default function FleetSimulator({
         </div>
 
         <div style={{ backgroundColor: '#F8FAFC', padding: '0.65rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Round-Trip Seats</div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>Active Route Seats</div>
           <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#2563EB' }}>
-            {(totalSeats * 2).toLocaleString()}
+            {totalSeats.toLocaleString()} seats
           </div>
-          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{totalSeats.toLocaleString()} each leg</div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Across {deployedBuses} active coaches</div>
         </div>
 
         <div style={{ backgroundColor: '#F8FAFC', padding: '0.65rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>Total Operating Cost</div>
-          <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#475569' }}>
-            ₹{(simulationResult.operating_cost / 100000).toFixed(2)}L
+          <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>Fleet Utilization</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#0F172A' }}>
+            {simulationResult.fleet_utilization_pct}%
           </div>
-          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Fuel, Tolls &amp; Crew</div>
-        </div>
-
-        <div style={{ backgroundColor: '#F8FAFC', padding: '0.65rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>Net Operating Margin</div>
-          <div style={{ fontSize: '1.15rem', fontWeight: '900', color: simulationResult.net_operating_margin >= 0 ? '#15803D' : '#DC2626' }}>
-            ₹{(simulationResult.net_operating_margin / 100000).toFixed(2)}L
-          </div>
-          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{simulationResult.margin_pct}% net margin</div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{deployedBuses} of {totalFleet} active</div>
         </div>
       </div>
 

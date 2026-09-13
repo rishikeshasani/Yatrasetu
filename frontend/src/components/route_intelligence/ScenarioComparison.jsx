@@ -113,20 +113,13 @@ export default function ScenarioComparison({
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.25rem' }}>
-                  <span style={{ color: '#64748B' }}>Gross Revenue:</span>
-                  <strong style={{ color: '#0369A1' }}>₹{(sc.gross_revenue / 100000).toFixed(2)}L</strong>
+                  <span style={{ color: '#64748B' }}>Route Seats:</span>
+                  <strong style={{ color: '#0369A1' }}>{(sc.deployed_buses * 42).toLocaleString()} seats</strong>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.25rem' }}>
-                  <span style={{ color: '#64748B' }}>Operating Cost:</span>
-                  <span style={{ color: '#64748B' }}>₹{(sc.operating_cost / 100000).toFixed(2)}L</span>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.25rem' }}>
-                  <span style={{ color: '#64748B' }}>Net Margin:</span>
-                  <strong style={{ color: sc.net_operating_margin >= 0 ? '#15803D' : '#DC2626' }}>
-                    ₹{(sc.net_operating_margin / 100000).toFixed(2)}L
-                  </strong>
+                  <span style={{ color: '#64748B' }}>Depot Reserve:</span>
+                  <strong style={{ color: '#0F172A' }}>{sc.reserve_fleet} buses</strong>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.25rem' }}>

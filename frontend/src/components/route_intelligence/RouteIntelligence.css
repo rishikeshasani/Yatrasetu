@@ -46,11 +46,11 @@
 @media (min-width: 1025px) {
   .ri-operations-workspace {
     display: grid;
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     grid-template-areas:
       "airec airec"
       "forecast fleet"
-      "map pricing"
+      "map map"
       "scenarios scenarios";
     gap: 1.25rem;
     align-items: start;
@@ -60,12 +60,10 @@
   .ri-order-forecast { grid-area: forecast; }
   .ri-order-map { grid-area: map; }
   .ri-order-fleet { grid-area: fleet; }
-  .ri-order-pricing { grid-area: pricing; }
   .ri-order-scenarios { grid-area: scenarios; }
 }
 
-/* Mobile & Tablet Stacking Order (Requirement 13) */
-/* Route Search -> Date -> KPIs -> Forecast -> Map -> Fleet -> Pricing -> AI Recommendation -> Dispatch */
+/* Mobile & Tablet Stacking Order */
 @media (max-width: 1024px) {
   .ri-operations-workspace {
     display: flex;
@@ -73,33 +71,28 @@
     gap: 1.25rem;
   }
 
-  .ri-order-forecast {
+  .ri-order-airec {
     order: 1;
     width: 100%;
   }
 
-  .ri-order-map {
+  .ri-order-forecast {
     order: 2;
     width: 100%;
   }
 
-  .ri-order-fleet {
+  .ri-order-map {
     order: 3;
     width: 100%;
   }
 
-  .ri-order-pricing {
+  .ri-order-fleet {
     order: 4;
     width: 100%;
   }
 
-  .ri-order-airec {
-    order: 5;
-    width: 100%;
-  }
-
   .ri-order-scenarios {
-    order: 6;
+    order: 5;
     width: 100%;
   }
 }

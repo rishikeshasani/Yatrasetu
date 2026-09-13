@@ -558,23 +558,18 @@ export function generateAiRecommendation({
   return {
     recommended_buses: recommendedBuses,
     recommended_reserve: Math.round(recommendedReserve),
-    recommended_forward_fare: recommendedForwardFare,
-    forward_surge_label: forwardSurgeText,
-    recommended_return_fare: recommendedReturnFare,
-    return_discount_label: returnDiscountText,
     bottleneck_statement: bottleneckStatement,
     action_items: [
       `Deploy ${recommendedBuses} buses (${Math.round((recommendedBuses / totalFleet) * 100)}% fleet utilization) on ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`,
       `Maintain ${Math.round(recommendedReserve)} buses in reserve depot for rapid-replacement mechanical contingencies`,
-      `Apply dynamic forward fare of ₹${recommendedForwardFare.toLocaleString()} (${forwardSurgeText}) during peak departures`,
-      `Incentivize return occupancy with ₹${recommendedReturnFare.toLocaleString()} (${returnDiscountText}) to reduce empty backhauls`
+      `Align outbound departure frequencies with peak pilgrim congregation windows`,
+      `Coordinate return shuttle schedules to match pilgrim temple exit patterns`
     ],
     projected_impact: {
-      gross_revenue: recommendedSim.gross_revenue,
+      deployed_seats: recommendedBuses * seatsPerBus,
       forward_occupancy: recommendedSim.forward_occupancy_pct,
       return_occupancy: recommendedSim.return_occupancy_pct,
       unmet_passengers: recommendedSim.unmet_passengers,
-      net_margin: recommendedSim.net_operating_margin,
       risk: recommendedSim.operational_risk
     }
   };

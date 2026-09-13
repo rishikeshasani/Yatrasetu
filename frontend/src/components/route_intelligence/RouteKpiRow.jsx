@@ -3,7 +3,6 @@ import React from 'react';
 export default function RouteKpiRow({
   demandForecast,
   simulationResult,
-  aiRecommendation,
   agencyConfig
 }) {
   if (!demandForecast || !simulationResult) return null;
@@ -16,9 +15,7 @@ export default function RouteKpiRow({
   const utilization = simulationResult.fleet_utilization_pct;
   const fwdOcc = simulationResult.forward_occupancy_pct;
   const retOcc = simulationResult.return_occupancy_pct;
-  const revenue = simulationResult.gross_revenue;
-  const netMargin = simulationResult.net_operating_margin;
-  const marginPct = simulationResult.margin_pct;
+  const totalSeats = deployed * agencyConfig.bus_seat_capacity;
   const risk = simulationResult.operational_risk;
 
   // Risk styling
@@ -73,7 +70,7 @@ export default function RouteKpiRow({
         </div>
       </div>
 
-      {/* 2. FLEET DEPLOYED / TOTAL FLEET CEILING */}
+      {/* 2. FLEET DEPLOYED */}
       <div style={{
         backgroundColor: '#FFFFFF',
         border: '1px solid #E2E8F0',
@@ -88,10 +85,10 @@ export default function RouteKpiRow({
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Fleet Deployment
+              Fleet Deployed
             </span>
             <span style={{ fontSize: '0.68rem', backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
-              Cap: {totalFleet}
+              {utilization}% Fleet
             </span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#1E3A8A', lineHeight: 1.2, margin: '0.3rem 0 0.15rem' }}>
@@ -99,11 +96,41 @@ export default function RouteKpiRow({
           </div>
         </div>
         <div style={{ fontSize: '0.74rem', color: '#2563EB', fontWeight: '600', marginTop: '0.35rem' }}>
-          {utilization}% active · {reserve} in depot reserve
+          {totalSeats.toLocaleString()} seats allocated to route
         </div>
       </div>
 
-      {/* 3. FORWARD JOURNEY OCCUPANCY */}
+      {/* 3. DEPOT SAFETY RESERVE */}
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: '0.75rem',
+        padding: '0.95rem 1rem',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+        borderTop: '3px solid #0284C7',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between'
+      }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Depot Reserve Buffer
+            </span>
+            <span style={{ fontSize: '0.68rem', backgroundColor: '#E0F2FE', color: '#0369A1', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
+              Standby
+            </span>
+          </div>
+          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: reserve < 20 ? '#DC2626' : '#0369A1', lineHeight: 1.2, margin: '0.3rem 0 0.15rem' }}>
+            {reserve} <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#64748B' }}>buses</span>
+          </div>
+        </div>
+        <div style={{ fontSize: '0.74rem', color: '#0369A1', fontWeight: '600', marginTop: '0.35rem' }}>
+          Contingency &amp; breakdown buffer
+        </div>
+      </div>
+
+      {/* 4. FORWARD JOURNEY OCCUPANCY */}
       <div style={{
         backgroundColor: '#FFFFFF',
         border: '1px solid #E2E8F0',
@@ -133,7 +160,7 @@ export default function RouteKpiRow({
         </div>
       </div>
 
-      {/* 4. RETURN JOURNEY OCCUPANCY */}
+      {/* 5. RETURN JOURNEY OCCUPANCY */}
       <div style={{
         backgroundColor: '#FFFFFF',
         border: '1px solid #E2E8F0',
@@ -159,37 +186,7 @@ export default function RouteKpiRow({
           </div>
         </div>
         <div style={{ fontSize: '0.74rem', color: '#6D28D9', fontWeight: '600', marginTop: '0.35rem' }}>
-          {simulationResult.return_passengers_carried.toLocaleString()} backhaul return bookings
-        </div>
-      </div>
-
-      {/* 5. ESTIMATED REVENUE & NET MARGIN */}
-      <div style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #E2E8F0',
-        borderRadius: '0.75rem',
-        padding: '0.95rem 1rem',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-        borderTop: '3px solid #0284C7',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between'
-      }}>
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: '800', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Financial Yield
-            </span>
-            <span style={{ fontSize: '0.68rem', backgroundColor: '#E0F2FE', color: '#0369A1', padding: '0.1rem 0.35rem', borderRadius: '3px', fontWeight: '700' }}>
-              Round-Trip P&amp;L
-            </span>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: '900', color: '#0369A1', lineHeight: 1.2, margin: '0.3rem 0 0.15rem' }}>
-            ₹{(revenue / 100000).toFixed(2)}L <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#64748B' }}>gross</span>
-          </div>
-        </div>
-        <div style={{ fontSize: '0.74rem', color: netMargin >= 0 ? '#15803D' : '#DC2626', fontWeight: '700', marginTop: '0.35rem' }}>
-          Net: ₹{(netMargin / 100000).toFixed(2)}L ({marginPct}% margin)
+          {simulationResult.return_passengers_carried.toLocaleString()} backhaul return passengers
         </div>
       </div>
 
@@ -225,4 +222,5 @@ export default function RouteKpiRow({
     </div>
   );
 }
+
 

@@ -156,12 +156,12 @@ export default function DispatchSummaryModal({
               </strong>
             </div>
 
-            {/* 4. Fare Structure */}
+            {/* 4. Total Route Seats */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.45rem' }}>
-              <span style={{ color: '#64748B', fontWeight: '600' }}>🎫 Seat Fares:</span>
-              <span style={{ fontWeight: 'bold' }}>
-                Fwd: <strong style={{ color: '#1E40AF' }}>₹{simulationResult.forward_fare}</strong> · Ret: <strong style={{ color: '#DC2626' }}>₹{simulationResult.return_fare}</strong>
-              </span>
+              <span style={{ color: '#64748B', fontWeight: '600' }}>💺 Total Seat Capacity:</span>
+              <strong style={{ color: '#0F172A' }}>
+                {(simulationResult.deployed_buses * 42).toLocaleString()} seats
+              </strong>
             </div>
 
             {/* 5. Expected Occupancy */}
@@ -172,15 +172,12 @@ export default function DispatchSummaryModal({
               </strong>
             </div>
 
-            {/* 6. Estimated Revenue & Margin */}
+            {/* 6. Depot Reserve Standby */}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '0.45rem' }}>
-              <span style={{ color: '#64748B', fontWeight: '600' }}>💰 Projected Financials:</span>
-              <span style={{ textAlign: 'right' }}>
-                <strong style={{ color: '#0369A1' }}>₹{(simulationResult.gross_revenue / 100000).toFixed(2)}L Gross</strong>
-                <span style={{ fontSize: '0.75rem', color: '#15803D', marginLeft: '0.4rem' }}>
-                  (Net Margin: ₹{(simulationResult.net_operating_margin / 100000).toFixed(2)}L)
-                </span>
-              </span>
+              <span style={{ color: '#64748B', fontWeight: '600' }}>🛡️ Depot Reserve Buffer:</span>
+              <strong style={{ color: simulationResult.reserve_fleet < 20 ? '#DC2626' : '#0369A1' }}>
+                {simulationResult.reserve_fleet} Standby Coaches
+              </strong>
             </div>
 
             {/* 7. Operational Risk */}

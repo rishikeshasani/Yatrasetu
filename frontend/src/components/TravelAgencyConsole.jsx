@@ -18,7 +18,6 @@ import RouteKpiRow from './route_intelligence/RouteKpiRow';
 import DemandForecastChart from './route_intelligence/DemandForecastChart';
 import RouteIntelligenceMap from './route_intelligence/RouteIntelligenceMap';
 import FleetSimulator from './route_intelligence/FleetSimulator';
-import DynamicPricingSimulator from './route_intelligence/DynamicPricingSimulator';
 import AiRecommendationPanel from './route_intelligence/AiRecommendationPanel';
 import ScenarioComparison from './route_intelligence/ScenarioComparison';
 import DataSourcesModal from './route_intelligence/DataSourcesModal';
@@ -37,8 +36,6 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
 
   // Interactive Simulation Controls
   const [deployedBuses, setDeployedBuses] = useState(220);
-  const [forwardFare, setForwardFare] = useState(1150);
-  const [returnFare, setReturnFare] = useState(680);
 
   // UI Modals & State
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -64,7 +61,6 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
           ...prev,
           agency_name: data.agency_name || prev.agency_name,
           total_fleet_capacity: data.total_fleet_capacity || prev.total_fleet_capacity,
-          base_fare_per_seat: data.base_fare_per_seat || prev.base_fare_per_seat,
           agency_id: data.agency_id || prev.agency_id
         }));
       }
@@ -76,17 +72,6 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
       }
     }).catch(() => {});
   }, []);
-
-  // =========================================================================
-  // THE CRITICAL DATA-FLOW ENGINE
-  // Source + Destination + Dates
-  //        ↓ Route Resolution
-  //        ↓ Event Detection
-  //        ↓ Demand Forecast
-  //        ↓ AI Recommendation
-  //        ↓ Fleet Simulation
-  //        ↓ Scenario Comparison
-  // =========================================================================
 
   // Step 1: Route Resolution
   const routeInfo = useMemo(() => {
@@ -119,40 +104,37 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
     });
   }, [demandForecast, deployedBuses, routeInfo, agencyConfig, eventContext]);
 
-  // Auto-adapt fares and initial deployment when route or event changes
+  // Auto-adapt initial deployment when route or event changes
   useEffect(() => {
     if (aiRecommendation) {
-      setForwardFare(aiRecommendation.recommended_forward_fare);
-      setReturnFare(aiRecommendation.recommended_return_fare);
-      // Sensible initial deployment matching recommendation
       setDeployedBuses(aiRecommendation.recommended_buses);
     }
   }, [routeInfo.route_key, eventContext.event_name]);
 
-  // Step 6: Fleet & Pricing Operations Simulation (Dynamic to slider changes)
+  // Step 6: Fleet Operations Simulation (Dynamic to slider changes)
   const simulationResult = useMemo(() => {
     return simulateOperations({
       deployedBuses,
       demandForecast,
-      forwardFare,
-      returnFare,
+      forwardFare: 1000,
+      returnFare: 1000,
       routeInfo,
       agencyConfig
     });
-  }, [deployedBuses, demandForecast, forwardFare, returnFare, routeInfo, agencyConfig]);
+  }, [deployedBuses, demandForecast, routeInfo, agencyConfig]);
 
   // Step 7: Scenario Comparison Matrix
   const scenarioMatrix = useMemo(() => {
     return buildScenarioComparison({
       demandForecast,
       customBuses: deployedBuses,
-      customForwardFare: forwardFare,
-      customReturnFare: returnFare,
+      customForwardFare: 1000,
+      customReturnFare: 1000,
       aiRecommendation,
       routeInfo,
       agencyConfig
     });
-  }, [demandForecast, deployedBuses, forwardFare, returnFare, aiRecommendation, routeInfo, agencyConfig]);
+  }, [demandForecast, deployedBuses, aiRecommendation, routeInfo, agencyConfig]);
 
   // Handle explicit [Analyze Route] button trigger
   const handleAnalyze = () => {
@@ -166,17 +148,13 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
   // 1-Click apply AI recommendation
   const handleApplyAiRecommendation = () => {
     setDeployedBuses(aiRecommendation.recommended_buses);
-    setForwardFare(aiRecommendation.recommended_forward_fare);
-    setReturnFare(aiRecommendation.recommended_return_fare);
-    notify(`✨ Applied AI Recommended deployment: ${aiRecommendation.recommended_buses} buses @ ₹${aiRecommendation.recommended_forward_fare} forward / ₹${aiRecommendation.recommended_return_fare} return`);
+    notify(`✨ Applied AI Recommended deployment: ${aiRecommendation.recommended_buses} buses (${(aiRecommendation.recommended_buses * agencyConfig.bus_seat_capacity).toLocaleString()} seats) on ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`);
   };
 
   // Handle scenario selection from matrix
   const handleSelectScenario = (sc) => {
     setDeployedBuses(sc.deployed_buses);
-    setForwardFare(sc.forward_fare);
-    setReturnFare(sc.return_fare);
-    notify(`Loaded ${sc.name} scenario: ${sc.deployed_buses} buses @ ₹${sc.forward_fare} fare.`);
+    notify(`Loaded ${sc.name} deployment: ${sc.deployed_buses} buses (${(sc.deployed_buses * agencyConfig.bus_seat_capacity).toLocaleString()} seats)`);
   };
 
   return (
@@ -230,7 +208,7 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
             <span>🚌</span> {agencyConfig.agency_name} — AI Route Intelligence
           </h2>
           <div style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '0.25rem' }}>
-            Enterprise Partner Console • Fleet Capacity: <strong>{agencyConfig.total_fleet_capacity} Buses</strong> • Base Rate: <strong>₹{agencyConfig.base_fare_per_seat}/seat</strong> • Corridor Operating Base: ₹{agencyConfig.operating_cost_per_km}/km
+            Enterprise Partner Console • Fleet Asset Base: <strong>{agencyConfig.total_fleet_capacity} Buses</strong> • Active Corridor Operations
           </div>
         </div>
 
@@ -299,15 +277,14 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
         dateSelection={dateSelection}
       />
 
-      {/* 3. ROUTE INTELLIGENCE KPI ROW (6 MATHEMATICALLY-DERIVED METRICS) */}
+      {/* 3. ROUTE INTELLIGENCE KPI ROW (6 OPERATIONAL METRICS) */}
       <RouteKpiRow
         demandForecast={demandForecast}
         simulationResult={simulationResult}
-        aiRecommendation={aiRecommendation}
         agencyConfig={agencyConfig}
       />
 
-      {/* 4. MAIN OPERATIONAL WORKSPACE (DESKTOP 2-COLUMN, MOBILE/TABLET EXACT ORDER) */}
+      {/* 4. MAIN OPERATIONAL WORKSPACE */}
       <div className="ri-operations-workspace">
         {/* Module 1: AI Recommendation */}
         <div className="ri-order-airec">
@@ -349,20 +326,7 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
           />
         </div>
 
-        {/* Module 5: Dynamic Pricing & Yield Simulator */}
-        <div className="ri-order-pricing">
-          <DynamicPricingSimulator
-            forwardFare={forwardFare}
-            setForwardFare={setForwardFare}
-            returnFare={returnFare}
-            setReturnFare={setReturnFare}
-            simulationResult={simulationResult}
-            aiRecommendation={aiRecommendation}
-            agencyConfig={agencyConfig}
-          />
-        </div>
-
-        {/* Module 6: Scenario Comparison Matrix */}
+        {/* Module 5: Scenario Comparison Matrix */}
         <div className="ri-order-scenarios">
           <ScenarioComparison
             scenarios={scenarioMatrix}
@@ -390,7 +354,7 @@ export default function TravelAgencyConsole({ onOpenFleetModal, showToast: exter
             Ready to deploy schedule for {routeInfo.source.name} ⇄ {routeInfo.destination.name}?
           </div>
           <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '0.15rem' }}>
-            Current simulation assigns <strong>{deployedBuses} buses</strong> with projected gross revenue of <strong>₹{(simulationResult.gross_revenue / 100000).toFixed(2)} Lakhs</strong>.
+            Current simulation assigns <strong>{deployedBuses} buses</strong> (<strong>{(deployedBuses * agencyConfig.bus_seat_capacity).toLocaleString()} seats</strong>) with <strong>{simulationResult.reserve_fleet} standby coaches</strong> in depot.
           </div>
         </div>
 
