@@ -403,52 +403,54 @@ export function generateDemandForecast(destination, eventContext, dateSelection,
  * Computes fleet, pricing, revenue, costs, and risk for a given deployment scenario.
  */
 export function simulateOperations({
-  deployedBuses,
-  demandForecast,
-  forwardFare,
-  returnFare,
-  routeInfo,
+  deployedBuses = 220,
+  demandForecast = {},
+  forwardFare = 850,
+  returnFare = 850,
+  routeInfo = {},
   agencyConfig = DEFAULT_AGENCY_CONFIG
-}) {
-  const totalFleet = agencyConfig.total_fleet_capacity;
-  const seatsPerBus = agencyConfig.bus_seat_capacity;
-  const distanceKm = routeInfo.distance_km;
-  const totalDemandBuses = demandForecast.total_demand_buses;
-  const totalDemandPassengers = demandForecast.total_passenger_demand;
+} = {}) {
+  const cfg = agencyConfig || DEFAULT_AGENCY_CONFIG;
+  const totalFleet = cfg.total_fleet_capacity || 350;
+  const seatsPerBus = cfg.bus_seat_capacity || 42;
+  const distanceKm = routeInfo?.distance_km || 220;
+  const totalDemandBuses = demandForecast?.total_demand_buses || 250;
+  const totalDemandPassengers = demandForecast?.total_passenger_demand || (totalDemandBuses * seatsPerBus);
 
-  const buses = Math.min(totalFleet, Math.max(1, deployedBuses));
+  const buses = Math.min(totalFleet, Math.max(1, Number(deployedBuses) || 1));
   const availableFleet = totalFleet - buses;
   const reserveFleet = Math.max(0, availableFleet);
-  const fleetUtilizationPct = Math.round((buses / totalFleet) * 100);
+  const fleetUtilizationPct = Math.round((buses / totalFleet) * 100) || 0;
 
   // Capacity deployed
   const totalDeployedSeats = buses * seatsPerBus;
 
   // Forward occupancy
-  const forwardOccupancyPct = Math.min(100, Math.max(10, Math.round((totalDemandPassengers / totalDeployedSeats) * 100)));
+  const forwardOccupancyPct = totalDeployedSeats > 0
+    ? Math.min(100, Math.max(10, Math.round((totalDemandPassengers / totalDeployedSeats) * 100)))
+    : 100;
   const forwardPassengersCarried = Math.min(totalDemandPassengers, totalDeployedSeats);
   const unmetPassengers = Math.max(0, totalDemandPassengers - totalDeployedSeats);
   const unmetBuses = Math.ceil(unmetPassengers / seatsPerBus);
 
   // Return occupancy modeling with elasticity:
-  // Base return occupancy is low (~22%) because pilgrims stay at destination.
-  // Lowering return fare below base rate stimulates return bookings.
-  const baseFare = agencyConfig.base_fare_per_seat;
-  const returnDiscountRatio = Math.max(0, (baseFare - returnFare) / baseFare);
-  // Elasticity factor: each 10% discount boosts return occupancy by ~18%
+  const baseFare = cfg.base_fare_per_seat || 850;
+  const safeForwardFare = Number(forwardFare) || baseFare;
+  const safeReturnFare = Number(returnFare) || baseFare;
+  const returnDiscountRatio = Math.max(0, (baseFare - safeReturnFare) / baseFare);
   const baseReturnOccupancy = 24;
   const elasticityBonus = Math.round(returnDiscountRatio * 180);
   const returnOccupancyPct = Math.min(85, Math.max(15, baseReturnOccupancy + elasticityBonus));
   const returnPassengersCarried = Math.round(totalDeployedSeats * (returnOccupancyPct / 100));
 
   // Financials
-  const forwardRevenue = forwardPassengersCarried * forwardFare;
-  const returnRevenue = returnPassengersCarried * returnFare;
+  const forwardRevenue = forwardPassengersCarried * safeForwardFare;
+  const returnRevenue = returnPassengersCarried * safeReturnFare;
   const grossRevenue = forwardRevenue + returnRevenue;
 
   // Operating costs: 2 legs (round trip) * distanceKm * cost/km
   const roundTripKm = distanceKm * 2;
-  const roundTripCostPerBus = roundTripKm * agencyConfig.operating_cost_per_km;
+  const roundTripCostPerBus = roundTripKm * (cfg.operating_cost_per_km || 52);
   const totalOperatingCost = buses * roundTripCostPerBus;
 
   const netOperatingMargin = grossRevenue - totalOperatingCost;
@@ -484,8 +486,8 @@ export function simulateOperations({
     return_passengers_carried: returnPassengersCarried,
     unmet_passengers: unmetPassengers,
     unmet_buses: unmetBuses,
-    forward_fare: forwardFare,
-    return_fare: returnFare,
+    forward_fare: safeForwardFare,
+    return_fare: safeReturnFare,
     gross_revenue: grossRevenue,
     operating_cost: totalOperatingCost,
     net_operating_margin: netOperatingMargin,
@@ -499,23 +501,26 @@ export function simulateOperations({
  * Generates an optimal AI recommendation based on capacity gap analysis.
  */
 export function generateAiRecommendation({
-  demandForecast,
-  currentDeployed,
-  routeInfo,
+  demandForecast = {},
+  currentDeployed = 220,
+  routeInfo = {},
   agencyConfig = DEFAULT_AGENCY_CONFIG,
-  eventContext
-}) {
-  const totalFleet = agencyConfig.total_fleet_capacity;
-  const totalDemandBuses = demandForecast.total_demand_buses;
-  const baseFare = agencyConfig.base_fare_per_seat;
+  eventContext = {}
+} = {}) {
+  const cfg = agencyConfig || DEFAULT_AGENCY_CONFIG;
+  const totalFleet = cfg.total_fleet_capacity || 350;
+  const seatsPerBus = cfg.bus_seat_capacity || 42;
+  const totalDemandBuses = demandForecast?.total_demand_buses || 250;
+  const baseFare = cfg.base_fare_per_seat || 850;
 
   // Optimal fleet deployment targets covering demand while preserving 10-12% reserve
-  const maxSafeDeploy = totalFleet - agencyConfig.safety_reserve_min_pct * 3.5; // ~315 buses max
+  const safetyReservePct = cfg.safety_reserve_min_pct || 10;
+  const maxSafeDeploy = totalFleet - Math.round(totalFleet * (safetyReservePct / 100)); // ~315 buses max
   const recommendedBuses = Math.min(maxSafeDeploy, Math.max(30, Math.round(totalDemandBuses * 0.75)));
   const recommendedReserve = totalFleet - recommendedBuses;
 
   // Dynamic fare pricing logic based on demand surge
-  const surgeMultiplier = eventContext.demand_multiplier || 1.0;
+  const surgeMultiplier = eventContext?.demand_multiplier || 1.0;
   let recommendedForwardFare;
   let forwardSurgeText;
 
@@ -535,14 +540,14 @@ export function generateAiRecommendation({
   const returnDiscountText = '-20% Off-Peak Discount';
 
   // Gap analysis statement
-  const currentCoverageBuses = currentDeployed;
+  const currentCoverageBuses = Number(currentDeployed) || 220;
   const gapBuses = totalDemandBuses - currentCoverageBuses;
 
   let bottleneckStatement = '';
   if (gapBuses > 0) {
-    bottleneckStatement = `Projected passenger demand exceeds current scheduled capacity by ${gapBuses} buses (~${(gapBuses * 42).toLocaleString()} seats) during peak hours.`;
+    bottleneckStatement = `Projected passenger demand exceeds current scheduled capacity by ${gapBuses} buses (~${(gapBuses * seatsPerBus).toLocaleString()} seats) during peak hours.`;
   } else {
-    bottleneckStatement = `Current deployed capacity of ${currentDeployed} buses covers all anticipated corridor demand.`;
+    bottleneckStatement = `Current deployed capacity of ${currentCoverageBuses} buses covers all anticipated corridor demand.`;
   }
 
   // Simulated metrics for recommended plan
@@ -552,15 +557,22 @@ export function generateAiRecommendation({
     forwardFare: recommendedForwardFare,
     returnFare: recommendedReturnFare,
     routeInfo,
-    agencyConfig
+    agencyConfig: cfg
   });
+
+  const srcName = routeInfo?.source?.name || 'Origin';
+  const destName = routeInfo?.destination?.name || 'Destination';
 
   return {
     recommended_buses: recommendedBuses,
     recommended_reserve: Math.round(recommendedReserve),
+    recommended_forward_fare: recommendedForwardFare,
+    recommended_return_fare: recommendedReturnFare,
+    forward_surge_text: forwardSurgeText,
+    return_discount_text: returnDiscountText,
     bottleneck_statement: bottleneckStatement,
     action_items: [
-      `Deploy ${recommendedBuses} buses (${Math.round((recommendedBuses / totalFleet) * 100)}% fleet utilization) on ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`,
+      `Deploy ${recommendedBuses} buses (${Math.round((recommendedBuses / totalFleet) * 100)}% fleet utilization) on ${srcName} ⇄ ${destName}`,
       `Maintain ${Math.round(recommendedReserve)} buses in reserve depot for rapid-replacement mechanical contingencies`,
       `Align outbound departure frequencies with peak pilgrim congregation windows`,
       `Coordinate return shuttle schedules to match pilgrim temple exit patterns`
@@ -582,15 +594,16 @@ export function generateAiRecommendation({
  * 3. [Custom Scenario]: The operator's live interactive slider settings
  */
 export function buildScenarioComparison({
-  demandForecast,
-  customBuses,
-  customForwardFare,
-  customReturnFare,
-  aiRecommendation,
-  routeInfo,
+  demandForecast = {},
+  customBuses = 220,
+  customForwardFare = 850,
+  customReturnFare = 850,
+  aiRecommendation = {},
+  routeInfo = {},
   agencyConfig = DEFAULT_AGENCY_CONFIG
-}) {
-  const baseFare = agencyConfig.base_fare_per_seat;
+} = {}) {
+  const cfg = agencyConfig || DEFAULT_AGENCY_CONFIG;
+  const baseFare = cfg.base_fare_per_seat || 850;
 
   // 1. Current Plan (default baseline)
   const currentPlanBuses = 220;
@@ -600,17 +613,17 @@ export function buildScenarioComparison({
     forwardFare: baseFare,
     returnFare: baseFare,
     routeInfo,
-    agencyConfig
+    agencyConfig: cfg
   });
 
   // 2. AI Recommended Scenario
   const aiPlan = simulateOperations({
-    deployedBuses: aiRecommendation.recommended_buses,
+    deployedBuses: aiRecommendation?.recommended_buses || 260,
     demandForecast,
-    forwardFare: aiRecommendation.recommended_forward_fare,
-    returnFare: aiRecommendation.recommended_return_fare,
+    forwardFare: aiRecommendation?.recommended_forward_fare || baseFare,
+    returnFare: aiRecommendation?.recommended_return_fare || baseFare,
     routeInfo,
-    agencyConfig
+    agencyConfig: cfg
   });
 
   // 3. Custom Scenario
@@ -620,7 +633,7 @@ export function buildScenarioComparison({
     forwardFare: customForwardFare,
     returnFare: customReturnFare,
     routeInfo,
-    agencyConfig
+    agencyConfig: cfg
   });
 
   return {

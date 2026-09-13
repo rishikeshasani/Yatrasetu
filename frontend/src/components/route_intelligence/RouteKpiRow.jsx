@@ -7,16 +7,16 @@ export default function RouteKpiRow({
 }) {
   if (!demandForecast || !simulationResult) return null;
 
-  const totalDemandBuses = demandForecast.total_demand_buses;
-  const passengers = demandForecast.total_passenger_demand;
-  const deployed = simulationResult.deployed_buses;
-  const totalFleet = agencyConfig.total_fleet_capacity;
-  const reserve = simulationResult.reserve_fleet;
-  const utilization = simulationResult.fleet_utilization_pct;
-  const fwdOcc = simulationResult.forward_occupancy_pct;
-  const retOcc = simulationResult.return_occupancy_pct;
-  const totalSeats = deployed * agencyConfig.bus_seat_capacity;
-  const risk = simulationResult.operational_risk;
+  const totalDemandBuses = demandForecast.total_demand_buses || 0;
+  const passengers = demandForecast.total_passenger_demand || 0;
+  const deployed = simulationResult.deployed_buses || 0;
+  const totalFleet = agencyConfig?.total_fleet_capacity || 350;
+  const reserve = simulationResult.reserve_fleet ?? 0;
+  const utilization = simulationResult.fleet_utilization_pct || 0;
+  const fwdOcc = simulationResult.forward_occupancy_pct || 0;
+  const retOcc = simulationResult.return_occupancy_pct || 0;
+  const totalSeats = deployed * (agencyConfig?.bus_seat_capacity || 42);
+  const risk = simulationResult.operational_risk || 'LOW';
 
   // Risk styling
   const getRiskStyle = (r) => {
@@ -156,7 +156,7 @@ export default function RouteKpiRow({
           </div>
         </div>
         <div style={{ fontSize: '0.74rem', color: '#047857', fontWeight: '600', marginTop: '0.35rem' }}>
-          {simulationResult.forward_passengers_carried.toLocaleString()} pilgrims on outward trip
+          {(simulationResult.forward_passengers_carried || 0).toLocaleString()} pilgrims on outward trip
         </div>
       </div>
 
@@ -186,7 +186,7 @@ export default function RouteKpiRow({
           </div>
         </div>
         <div style={{ fontSize: '0.74rem', color: '#6D28D9', fontWeight: '600', marginTop: '0.35rem' }}>
-          {simulationResult.return_passengers_carried.toLocaleString()} backhaul return passengers
+          {(simulationResult.return_passengers_carried || 0).toLocaleString()} backhaul return passengers
         </div>
       </div>
 
