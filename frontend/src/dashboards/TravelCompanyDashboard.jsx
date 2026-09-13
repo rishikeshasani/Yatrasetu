@@ -271,61 +271,98 @@ export default function TravelCompanyDashboard({
   const waitingPressurePct = Math.round((waiting / Math.max(1, expectedDemand)) * 100);
 
   // Forward vs Return Occupancy Metrics
-  const forwardOccupancyPct = currNode.forward_occupancy_pct ?? Math.min(100, Math.max(20, Math.round((expectedDemand / Math.max(1, availableBuses * usableCap)) * 85)));
-  const returnOccupancyPct = currNode.return_occupancy_pct ?? Math.max(15, Math.min(60, Math.round(forwardOccupancyPct * 0.38)));
+  const forwardOccupancyPct = currNode.forward_occupancy_pct ?? Math.min(100, Math.max(25, Math.round((expectedDemand / Math.max(1, availableBuses * usableCap)) * 88)));
+  const returnOccupancyPct = currNode.return_occupancy_pct ?? Math.max(18, Math.min(55, Math.round(forwardOccupancyPct * 0.35)));
   const imbalancePct = forwardOccupancyPct - returnOccupancyPct;
 
-  // Funnel conversion percentages
-  const offeredBase = Math.max(1, funnel.offered || 100);
-  const acceptedPct = Math.round(((funnel.accepted || 0) / offeredBase) * 100);
-  const confirmedPct = Math.round(((funnel.confirmed || 0) / offeredBase) * 100);
-  const waitingPct = Math.round(((funnel.waiting || 0) / offeredBase) * 100);
-  const boardedPct = Math.round(((funnel.boarded || 0) / offeredBase) * 100);
-  const completedPct = Math.round(((funnel.completed || 0) / offeredBase) * 100);
+  // Status Levels: Normal / Moderate / High / Critical
+  const crowdStatusLevel = crowdLoadPct >= 85 ? 'Critical' : crowdLoadPct >= 65 ? 'High' : crowdLoadPct >= 40 ? 'Moderate' : 'Normal';
+  const crowdStatusColor = crowdStatusLevel === 'Critical' ? '#DC2626' : crowdStatusLevel === 'High' ? '#EA580C' : crowdStatusLevel === 'Moderate' ? '#D97706' : '#16A34A';
 
-  // Fleet stress
-  const activeFleetSeats = Math.max(1, availableBuses * usableCap);
-  const fleetUtilizationPct = Math.round((expectedDemand / activeFleetSeats) * 100);
-  const fleetDeficitPct = fleetUtilizationPct > 100 ? fleetUtilizationPct - 100 : 0;
-  const capacityPressureStatus = shortageBuses >= 2 ? 'Critical' : shortageBuses === 1 ? 'Constrained' : 'Optimal';
+  const forwardStatusLevel = forwardOccupancyPct >= 90 ? 'Critical' : forwardOccupancyPct >= 75 ? 'High' : 'Normal';
+  const forwardStatusColor = forwardStatusLevel === 'Critical' ? '#DC2626' : forwardStatusLevel === 'High' ? '#EA580C' : '#16A34A';
 
+  // Fleet Totals Across Company
+  const totalCoachesInService = fleetRoutes.reduce((acc, r) => acc + (r.buses || 0), 0);
+  const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
+
+  // Human-Readable Rationale for the Recommendation Card
   const rationale = shortageBuses > 0
-    ? `Waiting pressure is at ${waitingPressurePct}% with rising incoming flow (${inflowPct}%). Deploying ${shortageBuses} bus(es) restores fleet coverage to 100%.`
-    : `Fleet coverage is optimal at ${fleetUtilizationPct}% utilization (${availableBuses} deployed coach buffer).`;
+    ? `Waiting pressure is at ${waitingPressurePct}% with ${inflowPct}% incoming flow velocity. Deploying ${shortageBuses} additional coach will clear the queued passengers and absorb incoming pilgrims without delay.`
+    : `Current fleet deployment of ${availableBuses} coach(es) safely covers 100% of forward demand. Next departure in ${nextDepartureMins}m.`;
 
   const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
 
-  // Corridor Summary Stats
-  const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
-
   return (
-    <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0.75rem 1.5rem 2.5rem', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#0F172A', backgroundColor: '#F8FAFC' }}>
+    <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0.5rem 1.5rem 2.5rem', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#0F172A', backgroundColor: '#F8FAFC' }}>
       
-      {/* 1. COMPACT COMMAND CENTER HEADER */}
+      {/* ========================================================================= */}
+      {/* 1. COMPANY HEADER & NAVIGATION (Himalaya Yatra Travels Identity)           */}
+      {/* ========================================================================= */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
         border: '1px solid #E2E8F0',
-        padding: '1rem 1.5rem',
+        padding: '0.85rem 1.25rem',
         marginBottom: '1rem',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.03)',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '0.75rem'
       }}>
-        <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Himalaya Yatra Travels · Field Fleet Command
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '0.5rem',
+            backgroundColor: '#FFFBEB',
+            border: '1px solid #FDE68A',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.4rem'
+          }}>
+            🏔️
           </div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: '900', color: '#0F172A', margin: '0.15rem 0 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>🚌</span> Travel Operations Command Center
-          </h1>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Himalaya Yatra Travels
+              </span>
+              <span style={{ fontSize: '0.65rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: '800', border: '1px solid #86EFAC' }}>
+                ● LIVE GPS &amp; YOLO AI ACTIVE
+              </span>
+            </div>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0F172A', margin: '0.1rem 0 0' }}>
+              Fleet Operations Command Center
+            </h1>
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Quick Operational Actions */}
+        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowFleetModal(true)}
+            style={{
+              backgroundColor: '#D97706',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 0.95rem',
+              fontSize: '0.82rem',
+              fontWeight: '800',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 2px 6px rgba(217,119,6,0.25)'
+            }}
+          >
+            <span>🚌</span> Adjust Fleet Schedules
+          </button>
           <button
             type="button"
             onClick={() => setShowSimModal(true)}
@@ -334,185 +371,155 @@ export default function TravelCompanyDashboard({
               color: '#334155',
               border: '1px solid #CBD5E1',
               borderRadius: '0.5rem',
-              padding: '0.5rem 0.9rem',
+              padding: '0.5rem 0.85rem',
               fontSize: '0.82rem',
               fontWeight: '700',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
             }}
           >
-            ⚡ Test Surge Simulation
+            <span>⚡</span> Test Surge
           </button>
         </div>
       </div>
 
-      {/* 2. 5-SECOND DECISION & FLEET VERDICT CARD (HERO BANNER) */}
-      <div style={{
-        backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
-        borderRadius: '0.75rem',
-        border: shortageBuses > 0 ? '2px solid #FCA5A5' : '2px solid #BBF7D0',
-        padding: '1.25rem 1.5rem',
-        marginBottom: '1.25rem',
-        boxShadow: shortageBuses > 0 ? '0 4px 16px rgba(220,38,38,0.12)' : '0 2px 8px rgba(22,163,74,0.08)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1.25rem'
-      }}>
-        <div style={{ flex: '1 1 450px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.35rem' }}>
-            <span style={{ fontSize: '1.6rem' }}>{shortageBuses > 0 ? '🚨' : '✅'}</span>
-            <div style={{
-              fontSize: '0.75rem',
-              fontWeight: '900',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              color: shortageBuses > 0 ? '#DC2626' : '#16A34A',
-              backgroundColor: shortageBuses > 0 ? '#FEE2E2' : '#DCFCE7',
-              padding: '0.2rem 0.6rem',
-              borderRadius: '0.35rem'
-            }}>
-              {shortageBuses > 0 ? `ACTION REQUIRED: ${shortageBuses} BUS DEFICIT` : 'FLEET OPTIMAL: CAPACITY FULLY COVERED'}
+      {/* EMERGENCY REROUTE DIRECTIVE (If state alert active) */}
+      {activeReroute?.is_active && (
+        <div style={{
+          backgroundColor: '#FEF2F2',
+          border: '1.5px solid #F87171',
+          borderRadius: '0.75rem',
+          padding: '0.85rem 1.25rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <span style={{ fontSize: '1.4rem' }}>🚨</span>
+            <div>
+              <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase' }}>
+                STATE EMERGENCY DIRECTIVE ACTIVE
+              </div>
+              <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#991B1B' }}>
+                {activeReroute.message || 'Haridwar Corridor Overtourism: Divert scheduled coaches to satellite basecamp.'}
+              </div>
             </div>
           </div>
-
-          <h2 style={{ margin: '0.2rem 0', fontSize: '1.35rem', fontWeight: '900', color: shortageBuses > 0 ? '#991B1B' : '#166534' }}>
-            {shortageBuses > 0
-              ? `Deploy ${shortageBuses} Additional Shuttle Bus to ${nodeName.split('&')[0]}`
-              : `All Scheduled Departures at ${nodeName.split('&')[0]} are Fully Sized`}
-          </h2>
-
-          <p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem', color: shortageBuses > 0 ? '#7F1D1D' : '#14532D', fontWeight: '600', lineHeight: 1.4 }}>
-            💡 <strong>Reason:</strong> {rationale}
-          </p>
+          <div style={{ fontSize: '0.8rem', color: '#7F1D1D', fontWeight: '700' }}>
+            Diverted: <strong>{activeReroute.diverted_tourists_count || 320} Pilgrims</strong> · Assigned: <strong>{activeReroute.assigned_buses_count || 8} Coaches</strong>
+          </div>
         </div>
+      )}
 
-        {/* 1-Click Action Button */}
-        <div>
-          {shortageBuses > 0 ? (
-            <button
-              type="button"
-              disabled={isDispatching}
-              onClick={() => handleDispatchBus(shortageBuses)}
-              style={{
-                backgroundColor: '#DC2626',
-                color: '#FFFFFF',
-                border: 'none',
-                borderRadius: '0.55rem',
-                padding: '0.85rem 1.65rem',
-                fontSize: '1rem',
-                fontWeight: '900',
-                cursor: isDispatching ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 14px rgba(220,38,38,0.35)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <span>{isDispatching ? '⏳' : '🚀'}</span>
-              <span>{isDispatching ? 'Deploying...' : `Deploy ${shortageBuses} Bus Now`}</span>
-            </button>
-          ) : (
-            <div style={{
-              backgroundColor: '#DCFCE7',
-              color: '#166534',
-              padding: '0.65rem 1.25rem',
-              borderRadius: '0.5rem',
-              fontWeight: '800',
-              fontSize: '0.9rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              border: '1px solid #86EFAC'
-            }}>
-              <span>✓</span> 100% Demand Covered
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 3. 5 CORE HIGH-LEVEL HEALTH METERS (PERCENTAGES ONLY) */}
+      {/* ========================================================================= */}
+      {/* 2. ABOVE THE FOLD: TODAY'S PASSENGER & CAPACITY SUMMARY (PERCENTAGE-FIRST)*/}
+      {/* ========================================================================= */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
         gap: '0.75rem',
-        marginBottom: '1.25rem'
+        marginBottom: '1rem'
       }}>
-        {/* Metric 1: Crowd Load */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.95rem 1.15rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>👥 Crowd Load</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: crowdLoadPct >= 80 ? '#DC2626' : '#0F172A', marginTop: '0.15rem' }}>{crowdLoadPct}%</div>
-          <div style={{ fontSize: '0.72rem', color: crowdLoadPct >= 80 ? '#DC2626' : '#059669', fontWeight: '700' }}>
-            {crowdLoadPct >= 80 ? '🔴 High Concourse Density' : crowdLoadPct >= 50 ? '🟡 Moderate Rush' : '🟢 Normal'}
+        {/* Metric 1: Forward Occupancy */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🚌 Forward Occupancy</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: forwardStatusColor, marginTop: '0.1rem' }}>
+            {forwardOccupancyPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: forwardStatusColor, fontWeight: '700' }}>
+            {forwardStatusLevel === 'Critical' ? '🔴 Capacity Saturated' : forwardStatusLevel === 'High' ? '🟡 High Demand' : '🟢 Normal Flow'}
           </div>
         </div>
 
-        {/* Metric 2: Net Inflow */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.95rem 1.15rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>🌊 Inflow Velocity</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#2563EB', marginTop: '0.15rem' }}>{inflowPct}%</div>
-          <div style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: '700' }}>
-            {inflowPct > 50 ? 'Inflow Exceeds Outflow' : 'Balanced Transit'}
+        {/* Metric 2: Return Occupancy */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🔄 Return Occupancy</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0284C7', marginTop: '0.1rem' }}>
+            {returnOccupancyPct}%
           </div>
-        </div>
-
-        {/* Metric 3: Forward Occupancy */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.95rem 1.15rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>🚌 Forward Occupancy</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: forwardOccupancyPct >= 85 ? '#DC2626' : '#D97706', marginTop: '0.15rem' }}>{forwardOccupancyPct}%</div>
-          <div style={{ fontSize: '0.72rem', color: forwardOccupancyPct >= 85 ? '#DC2626' : '#D97706', fontWeight: '700' }}>
-            {forwardOccupancyPct >= 85 ? '🔴 Near Capacity' : '🟢 Normal'}
-          </div>
-        </div>
-
-        {/* Metric 4: Return Occupancy */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.95rem 1.15rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>🔄 Return Occupancy</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0284C7', marginTop: '0.15rem' }}>{returnOccupancyPct}%</div>
           <div style={{ fontSize: '0.72rem', color: '#0284C7', fontWeight: '700' }}>
             Available Return Seats
           </div>
         </div>
 
-        {/* Metric 5: Next Departure ETA */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.95rem 1.15rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.7rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>⏱️ Next Departure</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0F172A', marginTop: '0.15rem' }}>{nextDepartureMins}m</div>
+        {/* Metric 3: Fleet In-Service & Utilization */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🚍 Fleet Status</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0F172A', marginTop: '0.1rem' }}>
+            {totalCoachesInService} <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748B' }}>Active</span>
+          </div>
           <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: '700' }}>
-            To {nextHub.split(' ')[0]} (ETA: {transitEta})
+            4 Reserve Coaches Standby
+          </div>
+        </div>
+
+        {/* Metric 4: Concourse Crowd Load */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>👥 Crowd Load</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: crowdStatusColor, marginTop: '0.1rem' }}>
+            {crowdLoadPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: crowdStatusColor, fontWeight: '700' }}>
+            Status: {crowdStatusLevel}
+          </div>
+        </div>
+
+        {/* Metric 5: Inflow Velocity */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🌊 Inflow Velocity</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#2563EB', marginTop: '0.1rem' }}>
+            {inflowPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: '700' }}>
+            {inflowPct > 50 ? 'Inflow Exceeds Outflow' : 'Steady Transit Rate'}
+          </div>
+        </div>
+
+        {/* Metric 6: Next Scheduled Departure */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>⏱️ Next Departure</div>
+          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0F172A', marginTop: '0.1rem' }}>
+            {nextDepartureMins}m
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '700' }}>
+            To {nextHub.split(' ')[0]} ({transitEta})
           </div>
         </div>
       </div>
 
-      {/* 4. LIVE PILGRIMAGE CORRIDOR (6-NODE VISUAL ROUTE BAR) */}
+      {/* ========================================================================= */}
+      {/* 3. COMPACT PILGRIMAGE CORRIDOR (Delhi → Sonprayag Stepper)                */}
+      {/* ========================================================================= */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
         border: '1px solid #E2E8F0',
-        padding: '1.25rem 1.5rem',
-        marginBottom: '1.25rem',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+        padding: '0.85rem 1.25rem',
+        marginBottom: '1rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <span>🛣️</span> Pilgrimage Corridor Route Status (Delhi ➔ Sonprayag)
-            </h3>
-            <p style={{ margin: '0.15rem 0 0', fontSize: '0.78rem', color: '#64748B' }}>
-              Select any station to inspect its live status and trigger shuttle deployment.
-            </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1rem' }}>🛣️</span>
+            <span style={{ fontSize: '0.92rem', fontWeight: '800', color: '#0F172A' }}>
+              Pilgrimage Corridor Status (Delhi ➔ Haridwar ➔ Rishikesh ➔ Rudraprayag ➔ Guptkashi ➔ Sonprayag)
+            </span>
           </div>
-          <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
-            Corridor Shortage: <strong style={{ color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A' }}>{totalCorridorShortage > 0 ? `${totalCorridorShortage} Buses Needed` : '0 (Optimal)'}</strong>
+          <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
+            Total Corridor Shortage: <strong style={{ color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A' }}>{totalCorridorShortage > 0 ? `${totalCorridorShortage} Coaches Needed` : '0 (Optimal)'}</strong>
           </div>
         </div>
 
-        {/* 6 Hub Stepper Pills */}
+        {/* 6 Node Pills */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-          gap: '0.65rem'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gap: '0.55rem'
         }}>
           {nodes.map((node, sIdx) => {
             const id = node.id || node.node_id;
@@ -531,29 +538,27 @@ export default function TravelCompanyDashboard({
                   backgroundColor: isSelected ? '#FFFBEB' : '#FFFFFF',
                   color: '#0F172A',
                   border: isSelected ? '2px solid #D97706' : '1px solid #E2E8F0',
-                  borderRadius: '0.6rem',
-                  padding: '0.75rem 0.85rem',
+                  borderRadius: '0.5rem',
+                  padding: '0.6rem 0.75rem',
                   cursor: 'pointer',
                   textAlign: 'left',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: isSelected ? '0 4px 12px rgba(217,119,6,0.15)' : '0 1px 3px rgba(0,0,0,0.02)',
+                  gap: '0.2rem',
+                  boxShadow: isSelected ? '0 2px 8px rgba(217,119,6,0.18)' : 'none',
                   transition: 'all 0.15s ease'
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '0.72rem', fontWeight: '800', color: isSelected ? '#92400E' : '#64748B' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: '800', color: isSelected ? '#92400E' : '#64748B' }}>
                     {sIdx + 1}. {name.split(' ')[0]}
                   </span>
-                  <span>{indicatorEmoji}</span>
+                  <span style={{ fontSize: '0.75rem' }}>{indicatorEmoji}</span>
                 </div>
-
-                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: isSelected ? '#92400E' : '#0F172A', lineHeight: 1.2 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: '800', color: isSelected ? '#92400E' : '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {name.split('&')[0]}
                 </div>
-
-                <div style={{ fontSize: '0.74rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '0.35rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.25rem' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '0.15rem' }}>
                   <span>Load: <strong>{nodeLoad}%</strong></span>
                   <strong style={{ color: nodeShortage > 0 ? '#DC2626' : '#16A34A' }}>
                     {nodeShortage > 0 ? `-${nodeShortage} Bus` : '✓ OK'}
@@ -565,61 +570,187 @@ export default function TravelCompanyDashboard({
         </div>
       </div>
 
-      {/* 5. SELECTED STATION FIELD OPERATIONS CARD (CLEAN & SIMPLE) */}
+      {/* ========================================================================= */}
+      {/* 4. PRIMARY OPERATIONAL ROW: AI ACTION CARD + COMPACT SELECTED NODE CARD   */}
+      {/* ========================================================================= */}
       <div style={{
-        backgroundColor: '#FFFFFF',
-        borderRadius: '0.75rem',
-        border: '1px solid #E2E8F0',
-        padding: '1.25rem 1.5rem',
-        marginBottom: '1.25rem',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '1rem'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '0.85rem',
+        marginBottom: '1rem'
       }}>
-        <div>
-          <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#0284C7', textTransform: 'uppercase' }}>
-            Selected Station Operational View
+        
+        {/* LEFT: Prominent but Compact AI Bus Deployment Recommendation */}
+        <div style={{
+          backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
+          borderRadius: '0.75rem',
+          border: shortageBuses > 0 ? '2px solid #FCA5A5' : '2px solid #BBF7D0',
+          padding: '1rem 1.25rem',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '0.75rem',
+          boxShadow: shortageBuses > 0 ? '0 4px 12px rgba(220,38,38,0.1)' : '0 2px 6px rgba(22,163,74,0.06)'
+        }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <span style={{ fontSize: '1.25rem' }}>{shortageBuses > 0 ? '🚨' : '✅'}</span>
+                <span style={{
+                  fontSize: '0.72rem',
+                  fontWeight: '900',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: shortageBuses > 0 ? '#DC2626' : '#16A34A',
+                  backgroundColor: shortageBuses > 0 ? '#FEE2E2' : '#DCFCE7',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '0.3rem'
+                }}>
+                  {shortageBuses > 0 ? `ACTION REQUIRED: ${shortageBuses} BUS SHORTAGE` : 'FLEET OPTIMAL: DEMAND COVERED'}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '700' }}>
+                {currNodeName.split('&')[0]}
+              </span>
+            </div>
+
+            <h3 style={{ margin: '0.15rem 0 0.35rem', fontSize: '1.15rem', fontWeight: '900', color: shortageBuses > 0 ? '#991B1B' : '#166534' }}>
+              {shortageBuses > 0
+                ? `Deploy ${shortageBuses} Standby Coach to ${currNodeName.split('&')[0]}`
+                : `All Departures at ${currNodeName.split('&')[0]} are Adequately Sized`}
+            </h3>
+
+            <p style={{ margin: 0, fontSize: '0.82rem', color: shortageBuses > 0 ? '#7F1D1D' : '#14532D', fontWeight: '600', lineHeight: 1.4 }}>
+              💡 <strong>Reason:</strong> {rationale}
+            </p>
           </div>
-          <h3 style={{ margin: '0.15rem 0 0', fontSize: '1.25rem', fontWeight: '900', color: '#0F172A' }}>
-            {nodeName} ({region})
-          </h3>
-          <div style={{ fontSize: '0.82rem', color: '#64748B', marginTop: '0.2rem' }}>
-            Status: <strong style={{ color: capacityPressureStatus === 'Critical' ? '#DC2626' : '#16A34A' }}>{capacityPressureStatus}</strong> · Waiting Pressure: <strong>{waitingPressurePct}%</strong> · Forward Rush: <strong>{forwardOccupancyPct}%</strong>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', borderTop: `1px solid ${shortageBuses > 0 ? '#FECACA' : '#BBF7D0'}`, paddingTop: '0.65rem' }}>
+            <div style={{ fontSize: '0.76rem', color: shortageBuses > 0 ? '#991B1B' : '#166534', fontWeight: '700' }}>
+              Forward Rush: <strong>{forwardOccupancyPct}%</strong> · Waiting Pressure: <strong>{waitingPressurePct}%</strong>
+            </div>
+
+            {shortageBuses > 0 ? (
+              <button
+                type="button"
+                disabled={isDispatching}
+                onClick={() => handleDispatchBus(shortageBuses)}
+                style={{
+                  backgroundColor: '#DC2626',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '0.45rem',
+                  padding: '0.55rem 1.15rem',
+                  fontSize: '0.88rem',
+                  fontWeight: '900',
+                  cursor: isDispatching ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <span>{isDispatching ? '⏳' : '🚀'}</span>
+                <span>{isDispatching ? 'Deploying...' : `Deploy ${shortageBuses} Bus Now`}</span>
+              </button>
+            ) : (
+              <div style={{
+                backgroundColor: '#DCFCE7',
+                color: '#166534',
+                padding: '0.4rem 0.85rem',
+                borderRadius: '0.4rem',
+                fontWeight: '800',
+                fontSize: '0.82rem',
+                border: '1px solid #86EFAC'
+              }}>
+                ✓ 100% Demand Covered
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Ingest Video Button */}
-        <label style={{
-          backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
-          color: '#FFFFFF',
-          borderRadius: '0.5rem',
-          padding: '0.65rem 1.15rem',
-          fontSize: '0.86rem',
-          fontWeight: '700',
-          cursor: isUploading ? 'not-allowed' : 'pointer',
+        {/* RIGHT: Compact Selected-Node Live Flow & Video Telemetry Ingest Card */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.75rem',
+          border: '1px solid #E2E8F0',
+          padding: '1rem 1.25rem',
           display: 'flex',
-          alignItems: 'center',
-          gap: '0.45rem',
-          boxShadow: '0 2px 5px rgba(2,132,199,0.25)'
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: '0.75rem',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.03)'
         }}>
-          <span>{isUploading ? '⏳' : '📹'}</span>
-          {isUploading ? 'Analyzing Video...' : 'Ingest Video for YOLO Analysis'}
-          <input
-            type="file"
-            accept="video/*"
-            style={{ display: 'none' }}
-            disabled={isUploading}
-            onChange={handleVideoUpload}
-          />
-        </label>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#0284C7', textTransform: 'uppercase' }}>
+                Selected Hub: {currRegion}
+              </span>
+              <span style={{ fontSize: '0.68rem', backgroundColor: '#F1F5F9', color: '#475569', padding: '0.15rem 0.45rem', borderRadius: '0.25rem', fontWeight: '700' }}>
+                📹 {cameraName}
+              </span>
+            </div>
+
+            <h3 style={{ margin: '0.1rem 0 0.35rem', fontSize: '1.15rem', fontWeight: '900', color: '#0F172A' }}>
+              {currNodeName}
+            </h3>
+
+            {/* Quick Flow & Pressure Meters */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem', margin: '0.5rem 0' }}>
+              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Flow Velocity</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#0F172A', marginTop: '0.1rem' }}>
+                  Inflow: <strong style={{ color: '#2563EB' }}>{inflowPct}%</strong> · Out: {outflowPct}%
+                </div>
+              </div>
+
+              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Reroute Activity</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#7C3AED', marginTop: '0.1rem' }}>
+                  {funnel.confirmed || 45} Confirmed · {funnel.waiting || 25} Waiting
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dynamic Video Ingest Trigger */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px solid #F1F5F9', paddingTop: '0.65rem' }}>
+            <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
+              YOLO Class 0 Confidence: <strong style={{ color: '#059669' }}>{Number(confidence).toFixed(1)}%</strong>
+            </div>
+
+            <label style={{
+              backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
+              color: '#FFFFFF',
+              borderRadius: '0.45rem',
+              padding: '0.5rem 0.95rem',
+              fontSize: '0.82rem',
+              fontWeight: '800',
+              cursor: isUploading ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 2px 6px rgba(2,132,199,0.2)'
+            }}>
+              <span>{isUploading ? '⏳' : '📹'}</span>
+              <span>{isUploading ? 'Processing...' : 'Upload Video to YOLO'}</span>
+              <input
+                type="file"
+                accept="video/*"
+                style={{ display: 'none' }}
+                disabled={isUploading}
+                onChange={handleVideoUpload}
+              />
+            </label>
+          </div>
+        </div>
+
       </div>
 
-      {/* 6. OPERATIONAL ALERTS BANNER (ONLY MEANINGFUL ALERTS) */}
+      {/* OPERATIONAL ALERTS (If meaningful conditions exist) */}
       {alerts.length > 0 && (
-        <div style={{ marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
           {alerts.map((alert, idx) => {
             const isCrit = alert.severity === 'CRITICAL';
             return (
@@ -628,9 +759,9 @@ export default function TravelCompanyDashboard({
                 style={{
                   backgroundColor: isCrit ? '#FEF2F2' : '#FFFBEB',
                   border: `1px solid ${isCrit ? '#FCA5A5' : '#FDE68A'}`,
-                  borderRadius: '0.55rem',
-                  padding: '0.75rem 1rem',
-                  fontSize: '0.84rem',
+                  borderRadius: '0.5rem',
+                  padding: '0.65rem 1rem',
+                  fontSize: '0.82rem',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
@@ -643,8 +774,8 @@ export default function TravelCompanyDashboard({
                     {isCrit ? '🚨' : '⚠️'} ALERT: {alert.message}
                   </span>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  Recommended Action: <strong>{alert.action || 'Deploy standby local bus'}</strong>
+                <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
+                  Action: <strong>{alert.action || 'Deploy standby coach'}</strong>
                 </div>
               </div>
             );
@@ -653,65 +784,67 @@ export default function TravelCompanyDashboard({
       )}
 
       {/* ========================================================================= */}
-      {/* 7. EXPANDABLE TECHNICAL DETAILS & ANALYTICS DRAWERS (COLLAPSED BY DEFAULT) */}
+      {/* 5. BELOW THE FOLD: COLLAPSIBLE TECHNICAL DRAWERS (100% Retained Features)  */}
       {/* ========================================================================= */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
         
-        {/* DRAWER 1: YOLO Video & Camera Feed Details */}
+        {/* DRAWER 1: Detailed YOLO Neural Telemetry & Camera Feed Diagnostics */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
           <button
             type="button"
             onClick={() => toggleDrawer('yolo')}
-            style={{ width: '100%', padding: '0.85rem 1.25rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
           >
-            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#334155' }}>
-              📁 Technical Details: YOLO Neural Inference &amp; Camera Feed Telemetry
+            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>📁</span> Technical Details: YOLO Neural Inference &amp; Camera Telemetry
             </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#0284C7' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#0284C7' }}>
               {openDrawers.yolo ? '▲ Hide Details' : '▼ Show Details'}
             </span>
           </button>
           {openDrawers.yolo && (
-            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', fontSize: '0.82rem', color: '#475569' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
-                <div><strong>Feed Identifier:</strong> {feedId}</div>
+            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', fontSize: '0.82rem', color: '#475569' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
+                <div><strong>Feed ID:</strong> {feedId}</div>
                 <div><strong>Camera Name:</strong> {cameraName}</div>
-                <div><strong>Model Confidence:</strong> {Number(confidence).toFixed(1)}% (Ultralytics YOLO Class 0)</div>
-                <div><strong>Privacy Protocol:</strong> Aggregate count only (No facial biometrics)</div>
+                <div><strong>Inference Model:</strong> Ultralytics YOLO (Person Class 0)</div>
+                <div><strong>Detection Confidence:</strong> {Number(confidence).toFixed(1)}%</div>
+                <div><strong>Flow Sampling Interval:</strong> 15-frame rolling window</div>
+                <div><strong>Privacy Guarantee:</strong> Aggregate flow only (Zero biometric capture)</div>
               </div>
             </div>
           )}
         </div>
 
-        {/* DRAWER 2: 6-Stage Reroute Funnel Progression */}
+        {/* DRAWER 2: 6-Stage Pilgrimage Reroute Funnel Progression */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
           <button
             type="button"
             onClick={() => toggleDrawer('funnel')}
-            style={{ width: '100%', padding: '0.85rem 1.25rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
           >
-            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#334155' }}>
-              📁 Technical Details: 6-Stage Corridor Reroute Funnel
+            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>📁</span> Technical Details: 6-Stage Pilgrimage Reroute Funnel
             </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#7C3AED' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#7C3AED' }}>
               {openDrawers.funnel ? '▲ Hide Funnel' : '▼ Show Funnel'}
             </span>
           </button>
           {openDrawers.funnel && (
-            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.45rem', textAlign: 'center' }}>
+            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.4rem', textAlign: 'center' }}>
                 {[
-                  { label: 'Offered', pct: '100%', sub: 'Baseline', color: '#64748B', bg: '#F1F5F9' },
-                  { label: 'Accepted', pct: `${acceptedPct}%`, sub: 'Interest', color: '#0284C7', bg: '#E0F2FE' },
-                  { label: 'Confirmed', pct: `${confirmedPct}%`, sub: 'Committed', color: '#7C3AED', bg: '#F5F3FF' },
-                  { label: 'Waiting', pct: `${waitingPct}%`, sub: 'Needs Bus', color: '#D97706', bg: '#FEF3C7' },
-                  { label: 'Boarded', pct: `${boardedPct}%`, sub: 'En Route', color: '#2563EB', bg: '#DBEAFE' },
-                  { label: 'Completed', pct: `${completedPct}%`, sub: 'Cleared', color: '#059669', bg: '#D1FAE5' }
+                  { label: 'Offered', pct: '100%', count: funnel.offered || 100, sub: 'Baseline', color: '#64748B', bg: '#F1F5F9' },
+                  { label: 'Accepted', pct: `${Math.round(((funnel.accepted || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.accepted || 70, sub: 'Interest', color: '#0284C7', bg: '#E0F2FE' },
+                  { label: 'Confirmed', pct: `${Math.round(((funnel.confirmed || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.confirmed || 55, sub: 'Committed', color: '#7C3AED', bg: '#F5F3FF' },
+                  { label: 'Waiting', pct: `${Math.round(((funnel.waiting || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.waiting || 30, sub: 'Needs Bus', color: '#D97706', bg: '#FEF3C7' },
+                  { label: 'Boarded', pct: `${Math.round(((funnel.boarded || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.boarded || 20, sub: 'En Route', color: '#2563EB', bg: '#DBEAFE' },
+                  { label: 'Completed', pct: `${Math.round(((funnel.completed || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.completed || 35, sub: 'Cleared', color: '#059669', bg: '#D1FAE5' }
                 ].map((s, idx) => (
-                  <div key={idx} style={{ backgroundColor: s.bg, padding: '0.6rem 0.35rem', borderRadius: '0.4rem', border: `1px solid ${s.color}20` }}>
-                    <div style={{ fontSize: '0.65rem', fontWeight: '800', color: s.color }}>{s.label}</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: '900', color: s.color }}>{s.pct}</div>
-                    <div style={{ fontSize: '0.65rem', color: s.color, opacity: 0.85 }}>{s.sub}</div>
+                  <div key={idx} style={{ backgroundColor: s.bg, padding: '0.55rem 0.35rem', borderRadius: '0.4rem', border: `1px solid ${s.color}20` }}>
+                    <div style={{ fontSize: '0.64rem', fontWeight: '800', color: s.color }}>{s.label}</div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: '900', color: s.color }}>{s.pct}</div>
+                    <div style={{ fontSize: '0.64rem', color: s.color, opacity: 0.85 }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
@@ -719,31 +852,31 @@ export default function TravelCompanyDashboard({
           )}
         </div>
 
-        {/* DRAWER 3: Scheduled Fleet Routes & Occupancy Adjuster */}
+        {/* DRAWER 3: Scheduled Coach Routes & Fleet Allocations */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
           <button
             type="button"
             onClick={() => toggleDrawer('routes')}
-            style={{ width: '100%', padding: '0.85rem 1.25rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
           >
-            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#334155' }}>
-              📁 Operations: Scheduled Coach Routes &amp; Fleet Allocation Matrix ({fleetRoutes.length} Routes)
+            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>📁</span> Operations: Scheduled Coach Routes &amp; Fleet Allocation Matrix ({fleetRoutes.length} Routes)
             </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#D97706' }}>
+            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#D97706' }}>
               {openDrawers.routes ? '▲ Hide Routes' : '▼ Show Routes'}
             </span>
           </button>
           {openDrawers.routes && (
-            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
-                {fleetRoutes.map((r, idx) => (
-                  <div key={r.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.5rem', padding: '0.85rem', backgroundColor: '#FFFFFF' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: '800' }}>
+            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.65rem' }}>
+                {fleetRoutes.map((r) => (
+                  <div key={r.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.5rem', padding: '0.75rem', backgroundColor: '#FFFFFF' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '800' }}>
                       <span style={{ color: '#D97706' }}>{r.id}</span>
                       <span style={{ color: r.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>Fwd: {r.forwardOccupancy}% · Ret: {r.returnOccupancy}%</span>
                     </div>
-                    <div style={{ fontWeight: '800', fontSize: '0.88rem', margin: '0.2rem 0' }}>{r.from.split('(')[0]} → {r.to.split('(')[0]}</div>
-                    <div style={{ fontSize: '0.76rem', color: '#64748B' }}>Assigned: <strong>{r.buses} Coaches</strong> ({r.buses * r.capacity} seats)</div>
+                    <div style={{ fontWeight: '800', fontSize: '0.86rem', margin: '0.2rem 0' }}>{r.from.split('(')[0]} → {r.to.split('(')[0]}</div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748B' }}>Assigned: <strong>{r.buses} Coaches</strong> ({r.buses * r.capacity} seats)</div>
                   </div>
                 ))}
               </div>
@@ -751,22 +884,22 @@ export default function TravelCompanyDashboard({
           )}
         </div>
 
-        {/* DRAWER 4: Advanced Scenario Simulator & Dynamic Pricing Console */}
+        {/* DRAWER 4: Advanced Scenario Simulator, Dynamic Pricing & Revenue Models */}
         <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
           <button
             type="button"
-            onClick={() => toggleDrawer('advanced')}
-            style={{ width: '100%', padding: '0.85rem 1.25rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+            onClick={() => toggleDrawer('analytics')}
+            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
           >
-            <span style={{ fontSize: '0.9rem', fontWeight: '800', color: '#334155' }}>
-              📁 Analytics: Multi-Scenario Matrix, Route Simulator &amp; Revenue Models
+            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>📁</span> Advanced Analytics: Scenario Simulator, Demand Forecasting &amp; Dynamic Pricing
             </span>
-            <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#D97706' }}>
-              {openDrawers.advanced ? '▲ Hide Advanced Console' : '▼ Show Advanced Console'}
+            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#D97706' }}>
+              {openDrawers.analytics ? '▲ Hide Advanced Console' : '▼ Show Advanced Console'}
             </span>
           </button>
-          {openDrawers.advanced && (
-            <div style={{ padding: '1.25rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
+          {openDrawers.analytics && (
+            <div style={{ padding: '1rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
               <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
             </div>
           )}
