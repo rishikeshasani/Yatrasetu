@@ -304,7 +304,27 @@ class TransitFlowService:
                 "action": "Increase terminal boarding gate throughput"
             })
 
+        # Next-hour demand forecast and transit ETAs
+        eta_map = {
+            "NODE_DELHI_NDLS": {"next_departure_mins": 15, "next_hub": "Haridwar Gateway", "transit_eta": "4h 15m", "corridor_step": 1},
+            "NODE_HARIDWAR_HW": {"next_departure_mins": 10, "next_hub": "Rishikesh Foothills", "transit_eta": "45m", "corridor_step": 2},
+            "NODE_RISHIKESH_BS": {"next_departure_mins": 20, "next_hub": "Rudraprayag Junction", "transit_eta": "3h 30m", "corridor_step": 3},
+            "NODE_RUDRAPRAYAG": {"next_departure_mins": 12, "next_hub": "Guptkashi Staging", "transit_eta": "1h 45m", "corridor_step": 4},
+            "NODE_GUPTKASHI": {"next_departure_mins": 8, "next_hub": "Sonprayag Basecamp", "transit_eta": "1h 15m", "corridor_step": 5},
+            "NODE_SONPRAYAG": {"next_departure_mins": 5, "next_hub": "Kedarnath Dham Trek/Shuttle", "transit_eta": "30m", "corridor_step": 6}
+        }
+        node_id_key = node.get("id", "")
+        eta_info = eta_map.get(node_id_key, {"next_departure_mins": 15, "next_hub": "Next Station", "transit_eta": "1h 00m", "corridor_step": 1})
+
+        next_hour_inflow = int(round(node.get("inflow_per_min", 25) * 60 * 0.75))
+        next_hour_demand = waiting + next_hour_inflow + int(round(confirmed_reroutes * 0.6))
+
         node["expected_demand"] = expected_demand
+        node["next_hour_demand"] = next_hour_demand
+        node["next_departure_mins"] = eta_info["next_departure_mins"]
+        node["next_hub"] = eta_info["next_hub"]
+        node["transit_eta"] = eta_info["transit_eta"]
+        node["corridor_step"] = eta_info["corridor_step"]
         node["usable_capacity"] = usable_cap
         node["required_buses"] = required_buses
         node["shortage_buses"] = shortage
@@ -314,6 +334,7 @@ class TransitFlowService:
         node["funnel"] = funnel
         node["alerts"] = alerts
         return node
+
 
     def get_all_nodes(self) -> List[dict]:
         """Returns all 6 transit nodes with computed metrics."""
