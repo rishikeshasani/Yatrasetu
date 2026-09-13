@@ -8,130 +8,10 @@ import {
 } from '../../api/api';
 import StatusBadge from '../common/StatusBadge';
 
-// Pre-seeded fallback data in case of connection delay
-const FALLBACK_NODES = [
-  {
-    node_id: "NODE_HARIDWAR_HW",
-    node_name: "Haridwar Railway Station & Bus Terminal",
-    region: "Haridwar Gateway",
-    node_type: "railway_station",
-    observation: {
-      people_count: 1420,
-      inflow_rate_per_min: 38,
-      outflow_rate_per_min: 28,
-      confidence_score: 0.95,
-      timestamp: new Date().toISOString(),
-      feed_id: "FEED-NODE-HW-STN"
-    },
-    agency_passengers_expected: 190,
-    reroute_funnel: {
-      offered: 95,
-      accepted: 70,
-      confirmed: 58,
-      waiting: 31,
-      boarded: 22,
-      completed: 35
-    },
-    fleet: {
-      expected_demand: 51,
-      required_buses: 2,
-      available_buses: 1,
-      net_shortage: 1,
-      usable_seat_capacity: 36,
-      rationale: "Deploy 1 additional local bus — 31 passengers waiting, 20 expected incoming, and 58 reroutes confirmed."
-    },
-    alerts: [
-      {
-        alert_type: "FLEET_SHORTAGE",
-        severity: "WARNING",
-        message: "Shortage of 1 local bus(es) at Haridwar Railway Station & Bus Terminal",
-        timestamp: new Date().toISOString()
-      }
-    ],
-    historical_flow: [
-      { hour: "00:00", headcount: 380, inflow: 8, outflow: 12 },
-      { hour: "04:00", headcount: 620, inflow: 25, outflow: 10 },
-      { hour: "08:00", headcount: 1420, inflow: 45, outflow: 28 },
-      { hour: "12:00", headcount: 1280, inflow: 35, outflow: 30 },
-      { hour: "16:00", headcount: 1540, inflow: 50, outflow: 35 },
-      { hour: "20:00", headcount: 1100, inflow: 20, outflow: 40 }
-    ]
-  },
-  {
-    node_id: "NODE_DELHI_NDLS",
-    node_name: "Delhi Railway Station & ISBT",
-    region: "Delhi NCR",
-    node_type: "railway_station",
-    observation: {
-      people_count: 1850,
-      inflow_rate_per_min: 45,
-      outflow_rate_per_min: 38,
-      confidence_score: 0.96,
-      timestamp: new Date().toISOString(),
-      feed_id: "FEED-NODE-NDLS"
-    },
-    agency_passengers_expected: 240,
-    reroute_funnel: { offered: 120, accepted: 85, confirmed: 64, waiting: 38, boarded: 26, completed: 45 },
-    fleet: { expected_demand: 73, required_buses: 3, available_buses: 2, net_shortage: 1, usable_seat_capacity: 36, rationale: "Deploy 1 additional local bus — 38 passengers waiting, 35 expected incoming." },
-    alerts: [],
-    historical_flow: []
-  },
-  {
-    node_id: "NODE_RISHIKESH_BS",
-    node_name: "Rishikesh Bus Stand & ISBT",
-    region: "Rishikesh Foothills",
-    node_type: "bus_terminal",
-    observation: { people_count: 980, inflow_rate_per_min: 28, outflow_rate_per_min: 20, confidence_score: 0.94, timestamp: new Date().toISOString(), feed_id: "FEED-NODE-RISHIKESH" },
-    agency_passengers_expected: 150,
-    reroute_funnel: { offered: 75, accepted: 55, confirmed: 42, waiting: 25, boarded: 18, completed: 30 },
-    fleet: { expected_demand: 40, required_buses: 2, available_buses: 1, net_shortage: 1, usable_seat_capacity: 36, rationale: "Deploy 1 additional bus — 25 waiting." },
-    alerts: [],
-    historical_flow: []
-  },
-  {
-    node_id: "NODE_RUDRAPRAYAG",
-    node_name: "Rudraprayag Sangam Transit Junction",
-    region: "Garhwal Confluence",
-    node_type: "transit_junction",
-    observation: { people_count: 620, inflow_rate_per_min: 22, outflow_rate_per_min: 18, confidence_score: 0.93, timestamp: new Date().toISOString(), feed_id: "FEED-NODE-RUDRAPRAYAG" },
-    agency_passengers_expected: 110,
-    reroute_funnel: { offered: 60, accepted: 45, confirmed: 36, waiting: 22, boarded: 14, completed: 25 },
-    fleet: { expected_demand: 40, required_buses: 2, available_buses: 1, net_shortage: 1, usable_seat_capacity: 36, rationale: "Deploy 1 additional bus." },
-    alerts: [],
-    historical_flow: []
-  },
-  {
-    node_id: "NODE_GUPTKASHI",
-    node_name: "Guptkashi Staging & Helipad Hub",
-    region: "Kedarnath Valley",
-    node_type: "staging_base",
-    observation: { people_count: 510, inflow_rate_per_min: 25, outflow_rate_per_min: 15, confidence_score: 0.95, timestamp: new Date().toISOString(), feed_id: "FEED-NODE-GUPTKASHI" },
-    agency_passengers_expected: 95,
-    reroute_funnel: { offered: 50, accepted: 40, confirmed: 34, waiting: 28, boarded: 12, completed: 20 },
-    fleet: { expected_demand: 50, required_buses: 2, available_buses: 1, net_shortage: 1, usable_seat_capacity: 36, rationale: "Deploy 1 additional bus." },
-    alerts: [],
-    historical_flow: []
-  },
-  {
-    node_id: "NODE_SONPRAYAG",
-    node_name: "Sonprayag Basecamp & Shuttle Terminal",
-    region: "Kedarnath Trek Gateway",
-    node_type: "trek_base",
-    observation: { people_count: 890, inflow_rate_per_min: 35, outflow_rate_per_min: 22, confidence_score: 0.97, timestamp: new Date().toISOString(), feed_id: "FEED-NODE-SONPRAYAG" },
-    agency_passengers_expected: 180,
-    reroute_funnel: { offered: 90, accepted: 68, confirmed: 52, waiting: 44, boarded: 20, completed: 32 },
-    fleet: { expected_demand: 74, required_buses: 3, available_buses: 1, net_shortage: 2, usable_seat_capacity: 36, rationale: "Deploy 2 additional local bus(es) — 44 passengers waiting." },
-    alerts: [
-      { alert_type: "FLEET_SHORTAGE", severity: "CRITICAL", message: "Critical shortage of 2 shuttle bus(es) at Sonprayag Basecamp", timestamp: new Date().toISOString() }
-    ],
-    historical_flow: []
-  }
-];
-
 export default function TransitFlowIntelligence({ showToast }) {
-  const [nodes, setNodes] = useState(FALLBACK_NODES);
-  const [selectedNodeId, setSelectedNodeId] = useState('NODE_HARIDWAR_HW');
-  const [activeNodeData, setActiveNodeData] = useState(FALLBACK_NODES[0]);
+  const [nodes, setNodes] = useState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState('NODE_DELHI_NDLS');
+  const [activeNodeData, setActiveNodeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -139,34 +19,34 @@ export default function TransitFlowIntelligence({ showToast }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [showSimModal, setShowSimModal] = useState(false);
   const [simParams, setSimParams] = useState({
-    headcountDelta: 30,
-    inflow: 25,
-    outflow: 10,
-    waitingToAdd: 15,
-    reroutesToAdd: 10
+    headcountDelta: 450,
+    waitingToAdd: 25,
+    incomingToAdd: 20,
+    reroutesToAdd: 30
   });
 
   const selectedNodeIdRef = useRef(selectedNodeId);
   selectedNodeIdRef.current = selectedNodeId;
 
-  // Safe notification wrapper
+  // Safe toast helper
   const notify = useCallback((msg) => {
     if (typeof showToast === 'function') {
       showToast(msg);
     }
   }, [showToast]);
 
-  // Load all transit nodes without creating infinite re-renders
+  // Load all transit nodes from backend
   const loadNodes = useCallback(async (explicitId = null) => {
     try {
       const res = await fetchTransitNodes();
       if (res && Array.isArray(res.nodes) && res.nodes.length > 0) {
         setNodes(res.nodes);
-        const currentTargetId = explicitId || selectedNodeIdRef.current;
-        const matching = res.nodes.find(n => n.node_id === currentTargetId) || res.nodes[0];
+        const currentTargetId = explicitId || selectedNodeIdRef.current || res.nodes[0].id || res.nodes[0].node_id;
+        const matching = res.nodes.find(n => (n.id || n.node_id) === currentTargetId) || res.nodes[0];
         setActiveNodeData(matching);
-        if (matching && matching.node_id !== selectedNodeIdRef.current) {
-          setSelectedNodeId(matching.node_id);
+        const matchedId = matching.id || matching.node_id;
+        if (matchedId && matchedId !== selectedNodeIdRef.current) {
+          setSelectedNodeId(matchedId);
         }
       }
     } catch (err) {
@@ -186,12 +66,13 @@ export default function TransitFlowIntelligence({ showToast }) {
   // Handle switching nodes
   const handleSelectNode = async (nodeId) => {
     setSelectedNodeId(nodeId);
-    const existing = nodes.find(n => n.node_id === nodeId);
+    const existing = nodes.find(n => (n.id || n.node_id) === nodeId);
     if (existing) setActiveNodeData(existing);
     try {
       const fresh = await fetchTransitNode(nodeId);
-      if (fresh && fresh.node_id) {
-        setActiveNodeData(fresh);
+      const nodeObj = fresh?.node || fresh;
+      if (nodeObj && (nodeObj.id || nodeObj.node_id)) {
+        setActiveNodeData(nodeObj);
       }
     } catch (err) {
       console.warn('Failed to refresh selected node details:', err?.message);
@@ -206,13 +87,14 @@ export default function TransitFlowIntelligence({ showToast }) {
     try {
       setIsUploading(true);
       setUploadProgress('Uploading video to YOLO pipeline...');
-      notify(`🎥 Processing feed for ${activeNodeData?.node_name || selectedNodeId}...`);
+      const nodeTitle = activeNodeData?.name || activeNodeData?.node_name || selectedNodeId;
+      notify(`🎥 Processing video feed for ${nodeTitle}...`);
 
       const res = await uploadTransitVideo(selectedNodeId, file, { sampleInterval: 15 });
 
       if (res && res.flow_analysis) {
         setUploadProgress('YOLO inference complete. Updating fleet demand & reroutes...');
-        notify(`✅ Video processed! Detected ${res.flow_analysis.average_headcount} avg people (peak ${res.flow_analysis.peak_headcount}) with ${(res.flow_analysis.confidence * 100).toFixed(1)}% confidence.`);
+        notify(`✅ Video analyzed! Detected ${res.flow_analysis.average_headcount} avg people (peak ${res.flow_analysis.peak_headcount}) with ${(res.flow_analysis.confidence * 100).toFixed(1)}% confidence.`);
         await loadNodes(selectedNodeId);
       } else {
         notify('✅ Video uploaded and processed successfully.');
@@ -247,12 +129,24 @@ export default function TransitFlowIntelligence({ showToast }) {
   const handleRunSimulation = async () => {
     try {
       setIsSimulating(true);
-      const res = await simulateTransitNode(selectedNodeId, simParams);
-      notify(`⚡ Injected flow spike into ${activeNodeData?.node_name}! Fleet demand recalculated.`);
+      const currentHeadcount = activeNodeData?.headcount ?? 1000;
+      const currentWaiting = activeNodeData?.passengers_waiting ?? 30;
+      const currentIncoming = activeNodeData?.expected_incoming ?? 20;
+      const currentConfirmed = activeNodeData?.reroutes_confirmed ?? 40;
+
+      const payload = {
+        headcount: currentHeadcount + Number(simParams.headcountDelta || 0),
+        passengers_waiting: currentWaiting + Number(simParams.waitingToAdd || 0),
+        expected_incoming: currentIncoming + Number(simParams.incomingToAdd || 0),
+        reroutes_confirmed: currentConfirmed + Number(simParams.reroutesToAdd || 0)
+      };
+
+      const res = await simulateTransitNode(selectedNodeId, payload);
+      notify(`⚡ Injected crowd spike into ${activeNodeData?.name || activeNodeData?.node_name}! Fleet demand recalculated.`);
       setShowSimModal(false);
       if (res?.node) {
         setActiveNodeData(res.node);
-        setNodes(prev => prev.map(n => n.node_id === res.node.node_id ? res.node : n));
+        setNodes(prev => prev.map(n => ((n.id || n.node_id) === (res.node.id || res.node.node_id) ? res.node : n)));
       } else {
         await loadNodes(selectedNodeId);
       }
@@ -264,52 +158,67 @@ export default function TransitFlowIntelligence({ showToast }) {
     }
   };
 
-  // Safe Derived metrics
-  const observation = activeNodeData?.observation || {};
-  const rerouteFunnel = activeNodeData?.reroute_funnel || {};
-  const fleet = activeNodeData?.fleet || {};
-  const alerts = Array.isArray(activeNodeData?.alerts) ? activeNodeData.alerts : [];
-  const history = Array.isArray(activeNodeData?.historical_flow) ? activeNodeData.historical_flow : [];
+  // Safe Normalized Data Accessors
+  const currNode = activeNodeData || {};
+  const nodeId = currNode.id || currNode.node_id || selectedNodeId;
+  const nodeName = currNode.name || currNode.node_name || 'Pilgrimage Transit Hub';
+  const region = currNode.region || 'Transit Corridor';
+  const nodeType = currNode.type || currNode.node_type || 'transit_hub';
+  const feedId = currNode.feed_id || 'FEED-LIVE';
+  const cameraName = currNode.camera_name || 'Corridor Camera Feed';
 
-  // 24h Flow Chart Coordinates Helper
+  const headcount = currNode.headcount ?? currNode.observation?.people_count ?? 0;
+  const inflow = currNode.inflow_per_min ?? currNode.observation?.inflow_rate_per_min ?? 0;
+  const outflow = currNode.outflow_per_min ?? currNode.observation?.outflow_rate_per_min ?? 0;
+  const confidence = currNode.confidence ?? (currNode.observation?.confidence_score ? currNode.observation.confidence_score * 100 : 94.5);
+  const agencyExpected = currNode.agency_passengers_expected ?? 0;
+
+  const funnel = currNode.funnel || currNode.reroute_funnel || {
+    offered: currNode.reroutes_offered ?? 0,
+    accepted: currNode.reroutes_accepted ?? 0,
+    confirmed: currNode.reroutes_confirmed ?? 0,
+    waiting: currNode.passengers_waiting ?? 0,
+    boarded: currNode.passengers_boarded ?? 0,
+    completed: currNode.passengers_completed ?? 0
+  };
+
+  const waiting = currNode.passengers_waiting ?? funnel.waiting ?? 0;
+  const incoming = currNode.expected_incoming ?? Math.round(inflow * 0.75) ?? 0;
+  const expectedDemand = currNode.expected_demand ?? (waiting + incoming);
+  const requiredBuses = currNode.required_buses ?? 0;
+  const availableBuses = currNode.available_buses ?? 1;
+  const shortageBuses = currNode.shortage_buses ?? currNode.fleet?.net_shortage ?? Math.max(0, requiredBuses - availableBuses);
+  const usableCap = currNode.usable_capacity ?? currNode.usable_seat_capacity ?? 36;
+  const rationale = currNode.rationale || currNode.fleet?.rationale || (
+    shortageBuses > 0
+      ? `Deploy ${shortageBuses} additional local bus(es) — ${waiting} passengers waiting, ${incoming} expected incoming, and ${funnel.confirmed ?? 0} reroutes confirmed.`
+      : `Current fleet of ${availableBuses} bus(es) covers demand of ${expectedDemand} passengers.`
+  );
+
+  const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
+  const hourlyFlow = Array.isArray(currNode.hourly_flow) ? currNode.hourly_flow : (Array.isArray(currNode.historical_flow) ? currNode.historical_flow : []);
+
+  // 24-Hour Chart Generator
   const chartData = useMemo(() => {
-    if (!history || history.length === 0) {
-      // Fallback points for smooth visualization
-      const sample = [
-        { hour: "00:00", headcount: 320 },
-        { hour: "04:00", headcount: 540 },
-        { hour: "08:00", headcount: observation.people_count || 1200 },
-        { hour: "12:00", headcount: Math.round((observation.people_count || 1200) * 0.9) },
-        { hour: "16:00", headcount: Math.round((observation.people_count || 1200) * 1.1) },
-        { hour: "20:00", headcount: 780 }
-      ];
-      const maxVal = Math.max(100, ...sample.map(h => h.headcount));
-      const width = 680;
-      const height = 140;
-      const padding = 20;
-      const points = sample.map((item, idx) => ({
-        x: padding + (idx / (sample.length - 1)) * (width - 2 * padding),
-        y: height - padding - (item.headcount / maxVal) * (height - 2 * padding),
-        ...item
-      }));
-      const polyline = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-      return { polyline, points, maxVal, width, height };
+    if (!hourlyFlow || hourlyFlow.length === 0) {
+      return { polyline: '', points: [], maxVal: 100, width: 680, height: 140 };
     }
 
-    const maxVal = Math.max(100, ...history.map(h => Math.max(h.headcount || 0, h.inflow || 0)));
+    const maxVal = Math.max(100, ...hourlyFlow.map(h => Math.max(h.total_flow || h.headcount || 0, h.inflow || 0)));
     const width = 680;
     const height = 140;
-    const padding = 20;
+    const padding = 24;
 
-    const points = history.map((item, idx) => {
-      const x = padding + (idx / (history.length - 1 || 1)) * (width - 2 * padding);
-      const y = height - padding - ((item.headcount || 0) / maxVal) * (height - 2 * padding);
-      return { x, y, ...item };
+    const points = hourlyFlow.map((item, idx) => {
+      const val = item.total_flow ?? item.headcount ?? 0;
+      const x = padding + (idx / (hourlyFlow.length - 1 || 1)) * (width - 2 * padding);
+      const y = height - padding - (val / maxVal) * (height - 2 * padding);
+      return { x, y, val, label: item.label || item.hour, ...item };
     });
 
     const polyline = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
     return { polyline, points, maxVal, width, height };
-  }, [history, observation.people_count]);
+  }, [hourlyFlow]);
 
   return (
     <div style={{
@@ -319,7 +228,7 @@ export default function TransitFlowIntelligence({ showToast }) {
       fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       color: '#0F172A'
     }}>
-      {/* 1. Header & Live Node Bar */}
+      {/* 1. Header & Live Node Action Bar */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
@@ -361,20 +270,21 @@ export default function TransitFlowIntelligence({ showToast }) {
         </div>
 
         {/* Top Control Buttons */}
-        <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Video Upload Button */}
           <label style={{
             backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
             color: '#FFFFFF',
             borderRadius: '0.5rem',
-            padding: '0.55rem 1rem',
-            fontSize: '0.84rem',
+            padding: '0.6rem 1.15rem',
+            fontSize: '0.86rem',
             fontWeight: '700',
             cursor: isUploading ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.4rem',
-            boxShadow: '0 2px 4px rgba(2,132,199,0.2)'
+            gap: '0.45rem',
+            boxShadow: '0 2px 5px rgba(2,132,199,0.25)',
+            transition: 'all 0.15s ease'
           }}>
             <span>{isUploading ? '⏳' : '📹'}</span>
             {isUploading ? 'Analyzing Video...' : 'Upload Video to Node Feed'}
@@ -396,13 +306,14 @@ export default function TransitFlowIntelligence({ showToast }) {
               color: '#334155',
               border: '1px solid #CBD5E1',
               borderRadius: '0.5rem',
-              padding: '0.55rem 0.95rem',
-              fontSize: '0.84rem',
+              padding: '0.6rem 1rem',
+              fontSize: '0.86rem',
               fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.4rem'
+              gap: '0.45rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
           >
             ⚡ Simulate Spike
@@ -430,56 +341,79 @@ export default function TransitFlowIntelligence({ showToast }) {
         </div>
       )}
 
-      {/* 2. Transit Node Selector Pills */}
+      {/* 2. Enhanced White Visible Transit Node Selector Cards */}
       <div style={{
-        display: 'flex',
-        gap: '0.6rem',
-        overflowX: 'auto',
-        paddingBottom: '0.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '0.75rem',
         marginBottom: '1.25rem'
       }}>
         {nodes.map(node => {
-          const isSelected = node.node_id === selectedNodeId;
-          const hasAlert = Array.isArray(node.alerts) && node.alerts.length > 0;
+          const id = node.id || node.node_id;
+          const name = node.name || node.node_name || id;
+          const isSelected = id === selectedNodeId;
+          const nodeHeadcount = node.headcount ?? node.observation?.people_count ?? 0;
+          const nodeShortage = node.shortage_buses ?? node.fleet?.net_shortage ?? 0;
+          const nodeAlerts = Array.isArray(node.alerts) ? node.alerts : [];
+          const hasAlerts = nodeAlerts.length > 0;
+
           return (
             <button
-              key={node.node_id}
-              onClick={() => handleSelectNode(node.node_id)}
+              key={id}
+              onClick={() => handleSelectNode(id)}
               style={{
-                backgroundColor: isSelected ? '#0F172A' : '#FFFFFF',
-                color: isSelected ? '#FFFFFF' : '#334155',
-                border: isSelected ? '1.5px solid #0F172A' : '1px solid #E2E8F0',
+                backgroundColor: isSelected ? '#FFFBEB' : '#FFFFFF',
+                color: '#0F172A',
+                border: isSelected ? '2px solid #D97706' : '1px solid #E2E8F0',
+                borderLeft: isSelected ? '5px solid #D97706' : '1px solid #E2E8F0',
                 borderRadius: '0.65rem',
-                padding: '0.65rem 1.15rem',
-                fontSize: '0.86rem',
-                fontWeight: '700',
+                padding: '0.85rem 1rem',
                 cursor: 'pointer',
+                textAlign: 'left',
                 display: 'flex',
-                alignItems: 'center',
-                gap: '0.55rem',
-                boxShadow: isSelected ? '0 4px 10px rgba(15,23,42,0.15)' : '0 1px 3px rgba(0,0,0,0.03)',
-                whiteSpace: 'nowrap',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                boxShadow: isSelected ? '0 4px 12px rgba(217,119,6,0.15)' : '0 1px 3px rgba(0,0,0,0.04)',
                 transition: 'all 0.15s ease'
               }}
             >
-              <span>{node.node_type === 'railway_station' ? '🚉' : node.node_type === 'bus_terminal' ? '🚏' : '⛰️'}</span>
-              <span>{node.node_name}</span>
-              {hasAlert && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '0.35rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span style={{ fontSize: '1.15rem' }}>
+                    {node.type?.includes('rail') || node.node_type?.includes('rail') ? '🚉' : node.type?.includes('bus') ? '🚏' : '⛰️'}
+                  </span>
+                  <div style={{ fontSize: '0.88rem', fontWeight: '800', color: isSelected ? '#92400E' : '#0F172A', lineHeight: 1.25 }}>
+                    {name}
+                  </div>
+                </div>
+                {hasAlerts && (
+                  <span style={{
+                    backgroundColor: '#EF4444',
+                    color: '#FFFFFF',
+                    borderRadius: '50%',
+                    width: '20px',
+                    height: '20px',
+                    fontSize: '0.72rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '800',
+                    flexShrink: 0
+                  }}>
+                    {nodeAlerts.length}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.76rem', color: '#64748B', marginTop: '0.4rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
+                <span>👥 <strong>{nodeHeadcount.toLocaleString()}</strong></span>
                 <span style={{
-                  backgroundColor: '#EF4444',
-                  color: '#FFFFFF',
-                  borderRadius: '50%',
-                  width: '18px',
-                  height: '18px',
-                  fontSize: '0.68rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: '800'
+                  color: nodeShortage > 0 ? '#DC2626' : '#16A34A',
+                  fontWeight: '700'
                 }}>
-                  {node.alerts.length}
+                  {nodeShortage > 0 ? `⚠️ -${nodeShortage} Bus` : '✓ Sized'}
                 </span>
-              )}
+              </div>
             </button>
           );
         })}
@@ -493,61 +427,65 @@ export default function TransitFlowIntelligence({ showToast }) {
           gap: '0.6rem',
           marginBottom: '1.25rem'
         }}>
-          {alerts.map((alert, idx) => (
-            <div
-              key={idx}
-              style={{
-                backgroundColor: alert.severity === 'CRITICAL' ? '#FEF2F2' : alert.severity === 'WARNING' ? '#FFFBEB' : '#EFF6FF',
-                border: `1px solid ${alert.severity === 'CRITICAL' ? '#FCA5A5' : alert.severity === 'WARNING' ? '#FDE68A' : '#BFDBFE'}`,
-                borderRadius: '0.65rem',
-                padding: '0.85rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.75rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.3rem' }}>
-                  {alert.alert_type === 'FLEET_SHORTAGE' ? '🚨' : alert.alert_type === 'REROUTE_SURGE' ? '🔀' : '⚠️'}
-                </span>
-                <div>
-                  <div style={{
-                    fontSize: '0.88rem',
-                    fontWeight: '800',
-                    color: alert.severity === 'CRITICAL' ? '#991B1B' : alert.severity === 'WARNING' ? '#92400E' : '#1E40AF'
-                  }}>
-                    {alert.alert_type?.replace(/_/g, ' ') || 'ALERT'}: {alert.message}
-                  </div>
-                  <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '0.1rem' }}>
-                    Triggered by dynamic multi-source flow monitoring • Telemetry updated {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'Just now'}
+          {alerts.map((alert, idx) => {
+            const isCritical = alert.severity === 'CRITICAL';
+            const alertType = alert.type || alert.alert_type || 'ALERT';
+            return (
+              <div
+                key={idx}
+                style={{
+                  backgroundColor: isCritical ? '#FEF2F2' : '#FFFBEB',
+                  border: `1px solid ${isCritical ? '#FCA5A5' : '#FDE68A'}`,
+                  borderRadius: '0.65rem',
+                  padding: '0.85rem 1.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.3rem' }}>
+                    {alertType === 'FLEET_SHORTAGE' ? '🚨' : alertType === 'REROUTE_SURGE' ? '🔀' : '⚠️'}
+                  </span>
+                  <div>
+                    <div style={{
+                      fontSize: '0.88rem',
+                      fontWeight: '800',
+                      color: isCritical ? '#991B1B' : '#92400E'
+                    }}>
+                      ALERT: {alert.message}
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '0.1rem' }}>
+                      Triggered by dynamic multi-source flow monitoring • Telemetry updated Just now
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {alert.alert_type === 'FLEET_SHORTAGE' && (fleet.net_shortage || 0) > 0 && (
-                <button
-                  type="button"
-                  disabled={isDispatching}
-                  onClick={() => handleDispatchBus(fleet.net_shortage)}
-                  style={{
-                    backgroundColor: '#DC2626',
-                    color: '#FFFFFF',
-                    border: 'none',
-                    borderRadius: '0.4rem',
-                    padding: '0.45rem 0.95rem',
-                    fontSize: '0.82rem',
-                    fontWeight: '800',
-                    cursor: isDispatching ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 2px 6px rgba(220,38,38,0.3)'
-                  }}
-                >
-                  {isDispatching ? 'Deploying...' : `🚀 Deploy ${fleet.net_shortage} Bus(es) Now`}
-                </button>
-              )}
-            </div>
-          ))}
+                {alertType === 'FLEET_SHORTAGE' && shortageBuses > 0 && (
+                  <button
+                    type="button"
+                    disabled={isDispatching}
+                    onClick={() => handleDispatchBus(shortageBuses)}
+                    style={{
+                      backgroundColor: '#DC2626',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      borderRadius: '0.4rem',
+                      padding: '0.45rem 0.95rem',
+                      fontSize: '0.82rem',
+                      fontWeight: '800',
+                      cursor: isDispatching ? 'not-allowed' : 'pointer',
+                      boxShadow: '0 2px 6px rgba(220,38,38,0.3)'
+                    }}
+                  >
+                    {isDispatching ? 'Deploying...' : `🚀 Deploy ${shortageBuses} Bus(es) Now`}
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -570,7 +508,7 @@ export default function TransitFlowIntelligence({ showToast }) {
             Current Headcount
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0' }}>
-            {observation.people_count ?? 0}
+            {headcount.toLocaleString()}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600' }}>
             YOLO Video Inference
@@ -589,7 +527,7 @@ export default function TransitFlowIntelligence({ showToast }) {
             Inflow / Outflow
           </div>
           <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0' }}>
-            <span style={{ color: '#2563EB' }}>+{observation.inflow_rate_per_min ?? 0}</span> / <span style={{ color: '#64748B' }}>-{observation.outflow_rate_per_min ?? 0}</span>
+            <span style={{ color: '#2563EB' }}>+{inflow}</span> / <span style={{ color: '#64748B' }}>-{outflow}</span>
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
             rate per min
@@ -608,10 +546,10 @@ export default function TransitFlowIntelligence({ showToast }) {
             Agency Expected
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#D97706', margin: '0.2rem 0' }}>
-            {activeNodeData?.agency_passengers_expected ?? 0}
+            {agencyExpected.toLocaleString()}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {rerouteFunnel.waiting ?? 0} waiting at depot
+            {waiting} waiting at depot
           </div>
         </div>
 
@@ -627,10 +565,10 @@ export default function TransitFlowIntelligence({ showToast }) {
             Reroute Funnel
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#7C3AED', margin: '0.2rem 0' }}>
-            {rerouteFunnel.confirmed ?? 0}
+            {funnel.confirmed ?? 0}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {rerouteFunnel.offered ?? 0} offered / {rerouteFunnel.accepted ?? 0} accepted
+            {funnel.offered ?? 0} offered / {funnel.accepted ?? 0} accepted
           </div>
         </div>
 
@@ -645,11 +583,11 @@ export default function TransitFlowIntelligence({ showToast }) {
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
             Required Buses
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: (fleet.net_shortage || 0) > 0 ? '#DC2626' : '#16A34A', margin: '0.2rem 0' }}>
-            {fleet.required_buses ?? 0}
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', margin: '0.2rem 0' }}>
+            {requiredBuses}
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {fleet.available_buses ?? 0} currently deployed
+            {availableBuses} currently deployed
           </div>
         </div>
 
@@ -665,7 +603,7 @@ export default function TransitFlowIntelligence({ showToast }) {
             CV Confidence
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0284C7', margin: '0.2rem 0' }}>
-            {(((observation.confidence_score !== undefined ? observation.confidence_score : 0.94)) * 100).toFixed(0)}%
+            {Number(confidence).toFixed(0)}%
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
             Ultralytics YOLO (Class 0)
@@ -709,7 +647,7 @@ export default function TransitFlowIntelligence({ showToast }) {
                 borderRadius: '0.35rem',
                 border: '1px solid #DDD6FE'
               }}>
-                Funnel Throughput: {rerouteFunnel.completed ?? 0} completed
+                Funnel Throughput: {funnel.completed ?? 0} completed
               </span>
             </div>
 
@@ -724,12 +662,12 @@ export default function TransitFlowIntelligence({ showToast }) {
               border: '1px solid #E2E8F0'
             }}>
               {[
-                { label: 'Offered', count: rerouteFunnel.offered ?? 0, color: '#64748B', bg: '#F1F5F9' },
-                { label: 'Accepted', count: rerouteFunnel.accepted ?? 0, color: '#0284C7', bg: '#E0F2FE' },
-                { label: 'Confirmed', count: rerouteFunnel.confirmed ?? 0, color: '#7C3AED', bg: '#F5F3FF' },
-                { label: 'Waiting', count: rerouteFunnel.waiting ?? 0, color: '#D97706', bg: '#FEF3C7' },
-                { label: 'Boarded', count: rerouteFunnel.boarded ?? 0, color: '#2563EB', bg: '#DBEAFE' },
-                { label: 'Completed', count: rerouteFunnel.completed ?? 0, color: '#059669', bg: '#D1FAE5' }
+                { label: 'Offered', count: funnel.offered ?? 0, color: '#64748B', bg: '#F1F5F9' },
+                { label: 'Accepted', count: funnel.accepted ?? 0, color: '#0284C7', bg: '#E0F2FE' },
+                { label: 'Confirmed', count: funnel.confirmed ?? 0, color: '#7C3AED', bg: '#F5F3FF' },
+                { label: 'Waiting', count: funnel.waiting ?? 0, color: '#D97706', bg: '#FEF3C7' },
+                { label: 'Boarded', count: funnel.boarded ?? 0, color: '#2563EB', bg: '#DBEAFE' },
+                { label: 'Completed', count: funnel.completed ?? 0, color: '#059669', bg: '#D1FAE5' }
               ].map((stage, sIdx) => (
                 <div
                   key={sIdx}
@@ -778,9 +716,9 @@ export default function TransitFlowIntelligence({ showToast }) {
             <div style={{ overflowX: 'auto' }}>
               <svg viewBox={`0 0 ${chartData.width} ${chartData.height}`} style={{ width: '100%', height: 'auto', minWidth: '420px' }}>
                 {/* Horizontal Grid lines */}
-                <line x1="20" y1="20" x2={chartData.width - 20} y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="20" y1={chartData.height / 2} x2={chartData.width - 20} y2={chartData.height / 2} stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="20" y1={chartData.height - 20} x2={chartData.width - 20} y2={chartData.height - 20} stroke="#E2E8F0" strokeWidth="1.5" />
+                <line x1="24" y1="20" x2={chartData.width - 24} y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="24" y1={chartData.height / 2} x2={chartData.width - 24} y2={chartData.height / 2} stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                <line x1="24" y1={chartData.height - 24} x2={chartData.width - 24} y2={chartData.height - 24} stroke="#E2E8F0" strokeWidth="1.5" />
 
                 {/* Flow line */}
                 {chartData.polyline && (
@@ -797,17 +735,17 @@ export default function TransitFlowIntelligence({ showToast }) {
                 {/* Flow points */}
                 {chartData.points.map((p, idx) => (
                   <g key={idx}>
-                    <circle cx={p.x} cy={p.y} r="4.5" fill="#FFFFFF" stroke="#D97706" strokeWidth="2.5" />
+                    <circle cx={p.x} cy={p.y} r="4" fill="#FFFFFF" stroke="#D97706" strokeWidth="2" />
                     {idx % 4 === 0 && (
                       <text
                         x={p.x}
-                        y={chartData.height - 5}
-                        fontSize="9"
+                        y={chartData.height - 6}
+                        fontSize="8.5"
                         fill="#94A3B8"
                         textAnchor="middle"
                         fontWeight="600"
                       >
-                        {p.hour}
+                        {p.label}
                       </text>
                     )}
                   </g>
@@ -825,7 +763,7 @@ export default function TransitFlowIntelligence({ showToast }) {
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
-            border: (fleet.net_shortage || 0) > 0 ? '2px solid #FCA5A5' : '1px solid #E2E8F0',
+            border: shortageBuses > 0 ? '2px solid #FCA5A5' : '1px solid #E2E8F0',
             padding: '1.25rem 1.5rem',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
           }}>
@@ -834,10 +772,10 @@ export default function TransitFlowIntelligence({ showToast }) {
                 🚌 Local Transit Sizing &amp; Demand Math
               </h3>
               <StatusBadge
-                status={(fleet.net_shortage || 0) > 0 ? 'CRITICAL' : 'OPTIMAL'}
+                status={shortageBuses > 0 ? 'CRITICAL' : 'OPTIMAL'}
                 theme="light"
                 size="xs"
-                label={(fleet.net_shortage || 0) > 0 ? `${fleet.net_shortage} SHORT` : 'SUFFICIENT'}
+                label={shortageBuses > 0 ? `${shortageBuses} SHORT` : 'SUFFICIENT'}
               />
             </div>
 
@@ -853,38 +791,38 @@ export default function TransitFlowIntelligence({ showToast }) {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                 <span style={{ color: '#64748B' }}>Waiting at Staging:</span>
-                <strong>{rerouteFunnel.waiting ?? 0} passengers</strong>
+                <strong>{waiting} passengers</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                 <span style={{ color: '#64748B' }}>Incoming Demand (15m):</span>
-                <strong>{observation.inflow_rate_per_min ? Math.round(observation.inflow_rate_per_min * 15 * 0.4) : 0} passengers</strong>
+                <strong>{incoming} passengers</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', borderTop: '1px dashed #CBD5E1', paddingTop: '0.35rem' }}>
                 <span style={{ color: '#0F172A', fontWeight: '700' }}>Total Expected Demand:</span>
-                <strong style={{ color: '#D97706' }}>{fleet.expected_demand ?? 0} passengers</strong>
+                <strong style={{ color: '#D97706' }}>{expectedDemand} passengers</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                 <span style={{ color: '#64748B' }}>Usable Bus Capacity:</span>
-                <span>{fleet.usable_seat_capacity ?? 36} seats (40 × 90%)</span>
+                <span>{usableCap} seats (40 × 90%)</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #CBD5E1', paddingTop: '0.35rem' }}>
                 <span style={{ color: '#0F172A', fontWeight: '800' }}>Required Fleet:</span>
-                <strong style={{ color: '#0F172A', fontSize: '0.95rem' }}>{fleet.required_buses ?? 0} Buses</strong>
+                <strong style={{ color: '#0F172A', fontSize: '0.95rem' }}>{requiredBuses} Buses</strong>
               </div>
             </div>
 
             {/* Rationale String */}
             <div style={{
-              backgroundColor: (fleet.net_shortage || 0) > 0 ? '#FEF2F2' : '#F0FDF4',
-              border: `1px solid ${(fleet.net_shortage || 0) > 0 ? '#FECACA' : '#BBF7D0'}`,
+              backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
+              border: `1px solid ${shortageBuses > 0 ? '#FECACA' : '#BBF7D0'}`,
               borderRadius: '0.5rem',
               padding: '0.85rem 1rem',
               marginBottom: '1.25rem',
               fontSize: '0.85rem',
-              color: (fleet.net_shortage || 0) > 0 ? '#991B1B' : '#166534',
+              color: shortageBuses > 0 ? '#991B1B' : '#166534',
               fontWeight: '600'
             }}>
-              💡 {fleet.rationale || 'Fleet is currently sufficient to meet passenger load.'}
+              💡 {rationale}
             </div>
 
             {/* Quick Dispatch Action */}
@@ -892,10 +830,10 @@ export default function TransitFlowIntelligence({ showToast }) {
               <button
                 type="button"
                 disabled={isDispatching}
-                onClick={() => handleDispatchBus(Math.max(1, fleet.net_shortage || 1))}
+                onClick={() => handleDispatchBus(Math.max(1, shortageBuses || 1))}
                 style={{
                   flex: 1,
-                  backgroundColor: (fleet.net_shortage || 0) > 0 ? '#DC2626' : '#D97706',
+                  backgroundColor: shortageBuses > 0 ? '#DC2626' : '#D97706',
                   color: '#FFFFFF',
                   border: 'none',
                   borderRadius: '0.5rem',
@@ -911,7 +849,7 @@ export default function TransitFlowIntelligence({ showToast }) {
                 }}
               >
                 <span>{isDispatching ? '⏳' : '🚌'}</span>
-                <span>{isDispatching ? 'Dispatching...' : `Deploy ${Math.max(1, fleet.net_shortage || 1)} Shuttle Bus(es)`}</span>
+                <span>{isDispatching ? 'Dispatching...' : `Deploy ${Math.max(1, shortageBuses || 1)} Shuttle Bus(es)`}</span>
               </button>
             </div>
           </div>
@@ -928,10 +866,10 @@ export default function TransitFlowIntelligence({ showToast }) {
               📷 Video Feed Metadata
             </h4>
             <div style={{ fontSize: '0.8rem', color: '#64748B', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <div><strong>Feed Source:</strong> {observation.feed_id || 'FEED-LIVE'}</div>
-              <div><strong>Last Updated:</strong> {observation.timestamp ? new Date(observation.timestamp).toLocaleString() : 'Just now'}</div>
+              <div><strong>Feed Source:</strong> {feedId} ({cameraName})</div>
+              <div><strong>Last Updated:</strong> {currNode.last_updated ? new Date(currNode.last_updated).toLocaleTimeString() : 'Just now'}</div>
               <div><strong>Privacy Mode:</strong> Aggregate Flow Only (No facial recognition / biometric IDs)</div>
-              <div><strong>Corridor Route:</strong> {activeNodeData?.region || 'Haridwar Gateway'}</div>
+              <div><strong>Corridor Region:</strong> {region}</div>
             </div>
           </div>
 
@@ -962,7 +900,7 @@ export default function TransitFlowIntelligence({ showToast }) {
               ⚡ Simulate Flow &amp; Passenger Spike
             </h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '0.84rem', color: '#64748B' }}>
-              Inject a sudden rush into <strong>{activeNodeData?.node_name}</strong> to evaluate dynamic fleet auto-scaling and alert triggers.
+              Inject a sudden rush into <strong>{nodeName}</strong> to evaluate dynamic fleet auto-scaling and alert triggers.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -981,23 +919,23 @@ export default function TransitFlowIntelligence({ showToast }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    Inflow (/min)
+                    Waiting at Depot (+passengers)
                   </label>
                   <input
                     type="number"
-                    value={simParams.inflow}
-                    onChange={e => setSimParams({ ...simParams, inflow: Number(e.target.value) })}
+                    value={simParams.waitingToAdd}
+                    onChange={e => setSimParams({ ...simParams, waitingToAdd: Number(e.target.value) })}
                     style={{ width: '100%', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #CBD5E1' }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    Outflow (/min)
+                    Incoming Inflow (+passengers)
                   </label>
                   <input
                     type="number"
-                    value={simParams.outflow}
-                    onChange={e => setSimParams({ ...simParams, outflow: Number(e.target.value) })}
+                    value={simParams.incomingToAdd}
+                    onChange={e => setSimParams({ ...simParams, incomingToAdd: Number(e.target.value) })}
                     style={{ width: '100%', padding: '0.5rem', borderRadius: '0.4rem', border: '1px solid #CBD5E1' }}
                   />
                 </div>
