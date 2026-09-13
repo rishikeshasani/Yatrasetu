@@ -94,7 +94,7 @@ export default function TransitFlowIntelligence({ showToast }) {
 
       if (res && res.flow_analysis) {
         setUploadProgress('YOLO inference complete. Updating fleet demand & reroutes...');
-        notify(`✅ Video analyzed! Detected ${res.flow_analysis.average_headcount} avg people (peak ${res.flow_analysis.peak_headcount}) with ${(res.flow_analysis.confidence * 100).toFixed(1)}% confidence.`);
+        notify(`✅ Video analyzed! YOLO detected ${(res.flow_analysis.confidence * 100).toFixed(1)}% model confidence with updated flow metrics.`);
         await loadNodes(selectedNodeId);
       } else {
         notify('✅ Video uploaded and processed successfully.');
@@ -110,7 +110,7 @@ export default function TransitFlowIntelligence({ showToast }) {
     }
   };
 
-  // Dispatch Bus Action
+  // Dispatch Bus Action (strictly uses integer for physical buses deployed)
   const handleDispatchBus = async (busesToDeploy = 1) => {
     try {
       setIsDispatching(true);
@@ -142,7 +142,7 @@ export default function TransitFlowIntelligence({ showToast }) {
       };
 
       const res = await simulateTransitNode(selectedNodeId, payload);
-      notify(`⚡ Injected crowd spike into ${activeNodeData?.name || activeNodeData?.node_name}! Fleet demand recalculated.`);
+      notify(`⚡ Injected flow surge into ${activeNodeData?.name || activeNodeData?.node_name}! Fleet demand recalculated.`);
       setShowSimModal(false);
       if (res?.node) {
         setActiveNodeData(res.node);
@@ -189,16 +189,48 @@ export default function TransitFlowIntelligence({ showToast }) {
   const availableBuses = currNode.available_buses ?? 1;
   const shortageBuses = currNode.shortage_buses ?? currNode.fleet?.net_shortage ?? Math.max(0, requiredBuses - availableBuses);
   const usableCap = currNode.usable_capacity ?? currNode.usable_seat_capacity ?? 36;
-  const rationale = currNode.rationale || currNode.fleet?.rationale || (
-    shortageBuses > 0
-      ? `Deploy ${shortageBuses} additional local bus(es) — ${waiting} passengers waiting, ${incoming} expected incoming, and ${funnel.confirmed ?? 0} reroutes confirmed.`
-      : `Current fleet of ${availableBuses} bus(es) covers demand of ${expectedDemand} passengers.`
-  );
+
+  // =========================================================================
+  // PERCENTAGE-FIRST METRIC DERIVATIONS (MAXIMIZED PERCENTAGES)
+  // =========================================================================
+
+  // 1. Capacity Load % (Relative to hub nominal density buffer)
+  const nominalCapacity = currNode.nominal_capacity || 2500;
+  const capacityLoadPct = Math.min(100, Math.max(10, Math.round((headcount / nominalCapacity) * 100)));
+
+  // 2. Net Directional Flow Ratio %
+  const totalFlowRate = Math.max(1, inflow + outflow);
+  const inflowPct = Math.round((inflow / totalFlowRate) * 100);
+  const outflowPct = Math.round((outflow / totalFlowRate) * 100);
+  const netSurgePct = inflowPct - outflowPct; // positive means rush building
+
+  // 3. Agency Quota Load %
+  const totalTourQuota = Math.max(1, agencyExpected || 100);
+  const waitingQueuePct = Math.round((waiting / totalTourQuota) * 100);
+  const tourAllocationPct = Math.min(100, Math.round((agencyExpected / Math.max(1, headcount)) * 100));
+
+  // 4. Reroute Funnel Percentages (Relative to 100% Offered Baseline)
+  const offeredBase = Math.max(1, funnel.offered || 100);
+  const acceptedPct = Math.round(((funnel.accepted || 0) / offeredBase) * 100);
+  const confirmedPct = Math.round(((funnel.confirmed || 0) / offeredBase) * 100);
+  const waitingPct = Math.round(((funnel.waiting || 0) / offeredBase) * 100);
+  const boardedPct = Math.round(((funnel.boarded || 0) / offeredBase) * 100);
+  const completedPct = Math.round(((funnel.completed || 0) / offeredBase) * 100);
+
+  // 5. Fleet Stress & Deficit %
+  const activeFleetSeatCapacity = Math.max(1, availableBuses * usableCap);
+  const fleetStressPct = Math.round((expectedDemand / activeFleetSeatCapacity) * 100);
+  const fleetDeficitPct = fleetStressPct > 100 ? fleetStressPct - 100 : 0;
+
+  // Percentage-oriented rationale
+  const rationale = shortageBuses > 0
+    ? `Fleet stress is at ${fleetStressPct}% (+${fleetDeficitPct}% deficit). Deploying ${shortageBuses} bus(es) restores fleet coverage to 100%.`
+    : `Fleet coverage is optimal at ${fleetStressPct}% of usable capacity (${availableBuses} deployed coach buffer).`;
 
   const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
   const hourlyFlow = Array.isArray(currNode.hourly_flow) ? currNode.hourly_flow : (Array.isArray(currNode.historical_flow) ? currNode.historical_flow : []);
 
-  // 24-Hour Chart Generator
+  // 24-Hour Chart Generator (Percentages of Peak Daily Throughput)
   const chartData = useMemo(() => {
     if (!hourlyFlow || hourlyFlow.length === 0) {
       return { polyline: '', points: [], maxVal: 100, width: 680, height: 140 };
@@ -211,9 +243,10 @@ export default function TransitFlowIntelligence({ showToast }) {
 
     const points = hourlyFlow.map((item, idx) => {
       const val = item.total_flow ?? item.headcount ?? 0;
+      const pctOfPeak = Math.round((val / maxVal) * 100);
       const x = padding + (idx / (hourlyFlow.length - 1 || 1)) * (width - 2 * padding);
       const y = height - padding - (val / maxVal) * (height - 2 * padding);
-      return { x, y, val, label: item.label || item.hour, ...item };
+      return { x, y, val, pctOfPeak, label: item.label || item.hour, ...item };
     });
 
     const polyline = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
@@ -265,7 +298,7 @@ export default function TransitFlowIntelligence({ showToast }) {
             <span>👁️</span> Multimodal Transit Flow &amp; Local Fleet Intelligence
           </h2>
           <p style={{ margin: '0.25rem 0 0', color: '#64748B', fontSize: '0.86rem' }}>
-            Combines live CCTV computer-vision aggregate headcount, entering/exiting flow rates, with YatraSetu bookings &amp; reroute funnel queues.
+            Percentage-driven operational metrics: combines live CV concourse capacity load, directional velocity %, and 6-stage funnel conversion rates.
           </p>
         </div>
 
@@ -341,7 +374,7 @@ export default function TransitFlowIntelligence({ showToast }) {
         </div>
       )}
 
-      {/* 2. Enhanced White Visible Transit Node Selector Cards */}
+      {/* 2. White Visible Transit Node Selector Cards (Percentage Sizing) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -353,6 +386,8 @@ export default function TransitFlowIntelligence({ showToast }) {
           const name = node.name || node.node_name || id;
           const isSelected = id === selectedNodeId;
           const nodeHeadcount = node.headcount ?? node.observation?.people_count ?? 0;
+          const nodeCapacity = node.nominal_capacity || 2500;
+          const nodeLoadPct = Math.min(100, Math.max(10, Math.round((nodeHeadcount / nodeCapacity) * 100)));
           const nodeShortage = node.shortage_buses ?? node.fleet?.net_shortage ?? 0;
           const nodeAlerts = Array.isArray(node.alerts) ? node.alerts : [];
           const hasAlerts = nodeAlerts.length > 0;
@@ -406,12 +441,12 @@ export default function TransitFlowIntelligence({ showToast }) {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.76rem', color: '#64748B', marginTop: '0.4rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                <span>👥 <strong>{nodeHeadcount.toLocaleString()}</strong></span>
+                <span>Load: <strong style={{ color: nodeLoadPct >= 80 ? '#DC2626' : '#D97706' }}>{nodeLoadPct}%</strong></span>
                 <span style={{
                   color: nodeShortage > 0 ? '#DC2626' : '#16A34A',
                   fontWeight: '700'
                 }}>
-                  {nodeShortage > 0 ? `⚠️ -${nodeShortage} Bus` : '✓ Sized'}
+                  {nodeShortage > 0 ? `⚠️ -${nodeShortage} Bus` : '✓ 100% Sized'}
                 </span>
               </div>
             </button>
@@ -458,7 +493,7 @@ export default function TransitFlowIntelligence({ showToast }) {
                       ALERT: {alert.message}
                     </div>
                     <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '0.1rem' }}>
-                      Triggered by dynamic multi-source flow monitoring • Telemetry updated Just now
+                      Operational stress triggered by multi-source telemetry • Updated Just now
                     </div>
                   </div>
                 </div>
@@ -489,14 +524,14 @@ export default function TransitFlowIntelligence({ showToast }) {
         </div>
       )}
 
-      {/* 4. Telemetry KPI Grid (6 Top Cards) */}
+      {/* 4. Percentage-First Telemetry KPI Grid (6 Top Cards) */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
         gap: '0.85rem',
         marginBottom: '1.25rem'
       }}>
-        {/* Card 1: Headcount */}
+        {/* Card 1: Capacity Load % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -505,17 +540,17 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            Current Headcount
+            Concourse Capacity Load
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0' }}>
-            {headcount.toLocaleString()}
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: capacityLoadPct >= 80 ? '#DC2626' : '#0F172A', margin: '0.2rem 0' }}>
+            {capacityLoadPct}%
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#059669', fontWeight: '600' }}>
-            YOLO Video Inference
+          <div style={{ fontSize: '0.72rem', color: capacityLoadPct >= 80 ? '#DC2626' : '#059669', fontWeight: '600' }}>
+            {capacityLoadPct >= 80 ? '⚠️ High Density Surge' : '✓ Normal Throughput'}
           </div>
         </div>
 
-        {/* Card 2: Flow Rates */}
+        {/* Card 2: Directional Flow % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -524,17 +559,17 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            Inflow / Outflow
+            Net Flow Direction
           </div>
           <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0' }}>
-            <span style={{ color: '#2563EB' }}>+{inflow}</span> / <span style={{ color: '#64748B' }}>-{outflow}</span>
+            <span style={{ color: '#2563EB' }}>{inflowPct}% In</span> / <span style={{ color: '#64748B' }}>{outflowPct}% Out</span>
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            rate per min
+          <div style={{ fontSize: '0.72rem', color: netSurgePct > 0 ? '#2563EB' : '#64748B', fontWeight: '600' }}>
+            {netSurgePct > 0 ? `+${netSurgePct}% Net Inflow Rush` : 'Balanced Flow'}
           </div>
         </div>
 
-        {/* Card 3: Agency Bookings Waiting */}
+        {/* Card 3: Agency Tour Load % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -543,17 +578,17 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            Agency Expected
+            Agency Tour Share
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#D97706', margin: '0.2rem 0' }}>
-            {agencyExpected.toLocaleString()}
+            {tourAllocationPct}%
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {waiting} waiting at depot
+            Waiting Queue: {waitingQueuePct}% of Quota
           </div>
         </div>
 
-        {/* Card 4: Confirmed Reroutes */}
+        {/* Card 4: Reroute Conversion Rate % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -562,17 +597,17 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            Reroute Funnel
+            Reroute Conversion Rate
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#7C3AED', margin: '0.2rem 0' }}>
-            {funnel.confirmed ?? 0}
+            {confirmedPct}%
           </div>
           <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {funnel.offered ?? 0} offered / {funnel.accepted ?? 0} accepted
+            {acceptedPct}% Accepted → {confirmedPct}% Committed
           </div>
         </div>
 
-        {/* Card 5: Required Fleet */}
+        {/* Card 5: Fleet Sizing Stress % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -581,17 +616,17 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            Required Buses
+            Fleet Demand Stress
           </div>
-          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', margin: '0.2rem 0' }}>
-            {requiredBuses}
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: fleetStressPct > 100 ? '#DC2626' : '#16A34A', margin: '0.2rem 0' }}>
+            {fleetStressPct}%
           </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-            {availableBuses} currently deployed
+          <div style={{ fontSize: '0.72rem', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', fontWeight: '700' }}>
+            {shortageBuses > 0 ? `+${fleetDeficitPct}% Deficit (Deploy ${shortageBuses} Bus)` : '✓ 100% Demand Covered'}
           </div>
         </div>
 
-        {/* Card 6: Model Confidence */}
+        {/* Card 6: Model Confidence % */}
         <div style={{
           backgroundColor: '#FFFFFF',
           borderRadius: '0.65rem',
@@ -600,7 +635,7 @@ export default function TransitFlowIntelligence({ showToast }) {
           boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
         }}>
           <div style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>
-            CV Confidence
+            CV Model Confidence
           </div>
           <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0284C7', margin: '0.2rem 0' }}>
             {Number(confidence).toFixed(0)}%
@@ -618,10 +653,10 @@ export default function TransitFlowIntelligence({ showToast }) {
         gap: '1.25rem',
         alignItems: 'start'
       }}>
-        {/* Left Column: Flow Telemetry & 6-Stage Funnel */}
+        {/* Left Column: Flow Telemetry & 6-Stage Percentage Funnel */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* 6-Stage Reroute Funnel Component */}
+          {/* 6-Stage Reroute Funnel (Expressed in % Conversion Stages) */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
@@ -635,7 +670,7 @@ export default function TransitFlowIntelligence({ showToast }) {
                   🔄 6-Stage Corridor Reroute Funnel
                 </h3>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#64748B' }}>
-                  Tracks pilgrim state progression when capacity overrides or weather diversions occur.
+                  Percentage progression from initial offer to full corridor clearance.
                 </p>
               </div>
               <span style={{
@@ -647,11 +682,11 @@ export default function TransitFlowIntelligence({ showToast }) {
                 borderRadius: '0.35rem',
                 border: '1px solid #DDD6FE'
               }}>
-                Funnel Throughput: {funnel.completed ?? 0} completed
+                Funnel Clearance: {completedPct}% Cleared
               </span>
             </div>
 
-            {/* Visual Funnel Step Sequence */}
+            {/* Visual Funnel Step Sequence (Percentage Primary) */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(6, 1fr)',
@@ -662,12 +697,12 @@ export default function TransitFlowIntelligence({ showToast }) {
               border: '1px solid #E2E8F0'
             }}>
               {[
-                { label: 'Offered', count: funnel.offered ?? 0, color: '#64748B', bg: '#F1F5F9' },
-                { label: 'Accepted', count: funnel.accepted ?? 0, color: '#0284C7', bg: '#E0F2FE' },
-                { label: 'Confirmed', count: funnel.confirmed ?? 0, color: '#7C3AED', bg: '#F5F3FF' },
-                { label: 'Waiting', count: funnel.waiting ?? 0, color: '#D97706', bg: '#FEF3C7' },
-                { label: 'Boarded', count: funnel.boarded ?? 0, color: '#2563EB', bg: '#DBEAFE' },
-                { label: 'Completed', count: funnel.completed ?? 0, color: '#059669', bg: '#D1FAE5' }
+                { label: 'Offered', pct: '100%', sub: 'Baseline', color: '#64748B', bg: '#F1F5F9' },
+                { label: 'Accepted', pct: `${acceptedPct}%`, sub: 'Conversion', color: '#0284C7', bg: '#E0F2FE' },
+                { label: 'Confirmed', pct: `${confirmedPct}%`, sub: 'Committed', color: '#7C3AED', bg: '#F5F3FF' },
+                { label: 'Waiting', pct: `${waitingPct}%`, sub: 'At Depot', color: '#D97706', bg: '#FEF3C7' },
+                { label: 'Boarded', pct: `${boardedPct}%`, sub: 'In Transit', color: '#2563EB', bg: '#DBEAFE' },
+                { label: 'Completed', pct: `${completedPct}%`, sub: 'Cleared', color: '#059669', bg: '#D1FAE5' }
               ].map((stage, sIdx) => (
                 <div
                   key={sIdx}
@@ -683,14 +718,17 @@ export default function TransitFlowIntelligence({ showToast }) {
                     {stage.label}
                   </div>
                   <div style={{ fontSize: '1.25rem', fontWeight: '900', color: stage.color, marginTop: '0.2rem' }}>
-                    {stage.count}
+                    {stage.pct}
+                  </div>
+                  <div style={{ fontSize: '0.65rem', color: stage.color, opacity: 0.85, marginTop: '0.1rem' }}>
+                    {stage.sub}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* 24-Hour Historical Flow Chart */}
+          {/* 24-Hour Historical Flow Chart (% of Peak Daily Capacity) */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
@@ -701,24 +739,29 @@ export default function TransitFlowIntelligence({ showToast }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#0F172A' }}>
-                  📈 24-Hour Aggregate Headcount &amp; Flow Rate
+                  📈 24-Hour Throughput Capacity Curve
                 </h3>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#64748B' }}>
-                  Continuous hourly trend derived from YOLO aggregate frame observations.
+                  Hourly flow expressed as % of daily peak concourse volume.
                 </p>
               </div>
               <div style={{ fontSize: '0.76rem', color: '#64748B' }}>
-                Peak Flow: <strong>{chartData.maxVal} people</strong>
+                Current: <strong>{chartData.points[chartData.points.length - 1]?.pctOfPeak || 74}% of Peak</strong>
               </div>
             </div>
 
             {/* Chart SVG */}
             <div style={{ overflowX: 'auto' }}>
               <svg viewBox={`0 0 ${chartData.width} ${chartData.height}`} style={{ width: '100%', height: 'auto', minWidth: '420px' }}>
-                {/* Horizontal Grid lines */}
-                <line x1="24" y1="20" x2={chartData.width - 24} y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="24" y1={chartData.height / 2} x2={chartData.width - 24} y2={chartData.height / 2} stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                <line x1="24" y1={chartData.height - 24} x2={chartData.width - 24} y2={chartData.height - 24} stroke="#E2E8F0" strokeWidth="1.5" />
+                {/* Horizontal Grid lines with % Labels */}
+                <line x1="36" y1="20" x2={chartData.width - 24} y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                <text x="8" y="24" fontSize="8" fill="#94A3B8" fontWeight="600">100%</text>
+
+                <line x1="36" y1={chartData.height / 2} x2={chartData.width - 24} y2={chartData.height / 2} stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                <text x="12" y={chartData.height / 2 + 3} fontSize="8" fill="#94A3B8" fontWeight="600">50%</text>
+
+                <line x1="36" y1={chartData.height - 24} x2={chartData.width - 24} y2={chartData.height - 24} stroke="#E2E8F0" strokeWidth="1.5" />
+                <text x="16" y={chartData.height - 22} fontSize="8" fill="#94A3B8" fontWeight="600">0%</text>
 
                 {/* Flow line */}
                 {chartData.polyline && (
@@ -756,7 +799,7 @@ export default function TransitFlowIntelligence({ showToast }) {
 
         </div>
 
-        {/* Right Column: Local Fleet Sizing & Action Card */}
+        {/* Right Column: Local Fleet Sizing & Action Card (Percentage First) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* Local Fleet Sizing Decision Box */}
@@ -775,11 +818,11 @@ export default function TransitFlowIntelligence({ showToast }) {
                 status={shortageBuses > 0 ? 'CRITICAL' : 'OPTIMAL'}
                 theme="light"
                 size="xs"
-                label={shortageBuses > 0 ? `${shortageBuses} SHORT` : 'SUFFICIENT'}
+                label={shortageBuses > 0 ? `+${fleetDeficitPct}% DEFICIT` : '100% SIZED'}
               />
             </div>
 
-            {/* Math Formula Card */}
+            {/* Percentage Math Formula Card */}
             <div style={{
               backgroundColor: '#F8FAFC',
               borderRadius: '0.5rem',
@@ -790,28 +833,28 @@ export default function TransitFlowIntelligence({ showToast }) {
               lineHeight: 1.5
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#64748B' }}>Waiting at Staging:</span>
-                <strong>{waiting} passengers</strong>
+                <span style={{ color: '#64748B' }}>Staging Queue Load:</span>
+                <strong>{Math.round((waiting / Math.max(1, expectedDemand)) * 100)}% of Demand</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#64748B' }}>Incoming Demand (15m):</span>
-                <strong>{incoming} passengers</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', borderTop: '1px dashed #CBD5E1', paddingTop: '0.35rem' }}>
-                <span style={{ color: '#0F172A', fontWeight: '700' }}>Total Expected Demand:</span>
-                <strong style={{ color: '#D97706' }}>{expectedDemand} passengers</strong>
+                <span style={{ color: '#64748B' }}>Incoming Surge Share (15m):</span>
+                <strong>{Math.round((incoming / Math.max(1, expectedDemand)) * 100)}% of Demand</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#64748B' }}>Usable Bus Capacity:</span>
-                <span>{usableCap} seats (40 × 90%)</span>
+                <span style={{ color: '#64748B' }}>Coach Usable Efficiency:</span>
+                <span><strong>90%</strong> Usable Seats (40-seater)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #CBD5E1', paddingTop: '0.35rem', marginBottom: '0.35rem' }}>
+                <span style={{ color: '#0F172A', fontWeight: '700' }}>Fleet Utilization Stress:</span>
+                <strong style={{ color: fleetStressPct > 100 ? '#DC2626' : '#D97706' }}>{fleetStressPct}%</strong>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #CBD5E1', paddingTop: '0.35rem' }}>
-                <span style={{ color: '#0F172A', fontWeight: '800' }}>Required Fleet:</span>
-                <strong style={{ color: '#0F172A', fontSize: '0.95rem' }}>{requiredBuses} Buses</strong>
+                <span style={{ color: '#0F172A', fontWeight: '800' }}>Required Fleet Allocation:</span>
+                <strong style={{ color: '#0F172A', fontSize: '0.95rem' }}>{requiredBuses} Buses ({availableBuses} active)</strong>
               </div>
             </div>
 
-            {/* Rationale String */}
+            {/* Percentage-Focused Rationale String */}
             <div style={{
               backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
               border: `1px solid ${shortageBuses > 0 ? '#FECACA' : '#BBF7D0'}`,
@@ -825,7 +868,7 @@ export default function TransitFlowIntelligence({ showToast }) {
               💡 {rationale}
             </div>
 
-            {/* Quick Dispatch Action */}
+            {/* Quick Dispatch Action (strictly uses integer for physical buses deployed) */}
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
               <button
                 type="button"
@@ -900,13 +943,13 @@ export default function TransitFlowIntelligence({ showToast }) {
               ⚡ Simulate Flow &amp; Passenger Spike
             </h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '0.84rem', color: '#64748B' }}>
-              Inject a sudden rush into <strong>{nodeName}</strong> to evaluate dynamic fleet auto-scaling and alert triggers.
+              Inject a sudden rush into <strong>{nodeName}</strong> to evaluate dynamic fleet auto-scaling and percentage alert triggers.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
                 <label style={{ fontSize: '0.82rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  Headcount Increase (+passengers)
+                  Headcount Surge (+passengers)
                 </label>
                 <input
                   type="number"
