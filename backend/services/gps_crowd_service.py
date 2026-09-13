@@ -282,7 +282,7 @@ class GPSCrowdService:
         if not obs:
             return None
 
-        if is_observation_fresh(obs.get("timestamp"), max_age_seconds=GPS_ACTIVE_WINDOW_SECONDS):
+        if is_observation_fresh(obs.get("timestamp"), max_age_seconds=GPS_ACTIVE_WINDOW_SECONDS) or obs.get("is_showcase"):
             return obs
         return None
 

@@ -13,6 +13,29 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Authoritative honest source label mapping
+export const getSourceLabel = (rawSource) => {
+  const normalized = String(rawSource || '').toLowerCase();
+  switch (normalized) {
+    case 'fused_yolo_gps':
+      return 'Multi-Source Fusion — YOLO + GPS';
+    case 'yolo_video':
+      return 'YOLO Video Headcount';
+    case 'live_telemetry':
+      return 'Live Telemetry';
+    case 'gps_crowd':
+      return 'Mobile GPS Crowd Signal';
+    case 'gps_crowd_demo':
+      return 'Mobile GPS Crowd Signal (Demo)';
+    case 'historical':
+    case 'historical_baseline':
+      return 'Historical Baseline';
+    case 'demo_simulation':
+    default:
+      return 'Demo Simulation — no live source currently available';
+  }
+};
+
 // Map Controller: Fits bounds across all canonical destinations
 function MapBoundsController({ bounds, fitTrigger }) {
   const map = useMap();
@@ -84,6 +107,15 @@ export default function GodsEyeMap({
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [fitTrigger, setFitTrigger] = useState(0);
+
+  // Backend Crowd Service Connectivity & Freshness
+  const isCrowdServiceAvailable = Boolean(densityMap && Object.keys(densityMap).length > 0);
+  const hasLiveSource = useMemo(() => {
+    if (!isCrowdServiceAvailable) return false;
+    return Object.values(densityMap).some(d =>
+      ['yolo_video', 'fused_yolo_gps', 'live_telemetry', 'gps_crowd'].includes(d?.source)
+    );
+  }, [isCrowdServiceAvailable, densityMap]);
 
   // Authoritative Site Telemetry Resolution across all 25 shrines
   const telemetrySites = useMemo(() => {
@@ -238,10 +270,22 @@ export default function GodsEyeMap({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="godseye-live-pill">
-            <span className="godseye-pulse-dot"></span>
-            <span>LIVE TELEMETRY</span>
-          </div>
+          {!isCrowdServiceAvailable ? (
+            <div className="godseye-status-unavailable" role="alert" title="Backend crowd telemetry unavailable">
+              <span>⚠️</span>
+              <span>YatraSetu crowd service unavailable</span>
+            </div>
+          ) : hasLiveSource ? (
+            <div className="godseye-live-pill" title="Live/Fused telemetry active">
+              <span className="godseye-pulse-dot"></span>
+              <span>ACTIVE TELEMETRY NETWORK</span>
+            </div>
+          ) : (
+            <div className="godseye-live-pill godseye-sim-pill" title="Deterministic baseline / simulation mode">
+              <span style={{ fontSize: '0.75rem' }}>📊</span>
+              <span>PILGRIMAGE CROWD INTELLIGENCE</span>
+            </div>
+          )}
           {onRefresh && (
             <button
               type="button"
@@ -254,6 +298,14 @@ export default function GodsEyeMap({
           )}
         </div>
       </div>
+
+      {/* Crowd Service Unavailable Notice */}
+      {!isCrowdServiceAvailable && (
+        <div className="godseye-unavailable-banner" role="alert">
+          <span>⚠️</span>
+          <span><strong>YatraSetu crowd service unavailable:</strong> Unable to connect to backend crowd telemetry endpoints. Showing cached canonical registry.</span>
+        </div>
+      )}
 
       {/* 2. Top Summary Metrics Bar */}
       <div className="godseye-metrics-bar">
@@ -405,9 +457,9 @@ export default function GodsEyeMap({
             style={{ height: '100%', width: '100%' }}
           >
             <TileLayer
-              attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-              maxZoom={18}
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={19}
             />
 
             <MapBoundsController bounds={mapBounds} fitTrigger={fitTrigger} />
@@ -436,7 +488,7 @@ export default function GodsEyeMap({
                     <div className="popup-body">
                       <div className="popup-row">
                         <span className="popup-label">{t('godsEye.peopleCount', 'Headcount')}:</span>
-                        <span className="popup-val">{site.people_count.toLocaleString()}</span>
+                        <span className="popup-val">{site.people_count.toLocaleString()} / {(site.capacity || 10000).toLocaleString()}</span>
                       </div>
                       <div className="popup-row">
                         <span className="popup-label">{t('godsEye.occupancy', 'Occupancy')}:</span>
@@ -448,8 +500,8 @@ export default function GodsEyeMap({
                       </div>
                       <div className="popup-row">
                         <span className="popup-label">{t('godsEye.dataSource', 'Source')}:</span>
-                        <span className="popup-val" style={{ fontSize: '0.72rem', color: '#38BDF8' }}>
-                          {site.source}
+                        <span className="popup-val" style={{ fontSize: '0.72rem', color: '#38BDF8' }} title={getSourceLabel(site.source)}>
+                          {getSourceLabel(site.source)}
                         </span>
                       </div>
                       <button
@@ -526,8 +578,8 @@ export default function GodsEyeMap({
                   </div>
                   <div className="intel-stat-box">
                     <span className="isb-label">{t('godsEye.dataSource', 'Data Source')}</span>
-                    <span className="isb-val" style={{ fontSize: '0.82rem', color: '#38BDF8' }}>
-                      {activeSelectedSite.source}
+                    <span className="isb-val" style={{ fontSize: '0.78rem', color: '#38BDF8', lineHeight: 1.25 }} title={getSourceLabel(activeSelectedSite.source)}>
+                      {getSourceLabel(activeSelectedSite.source)}
                     </span>
                   </div>
                 </div>
@@ -584,8 +636,8 @@ export default function GodsEyeMap({
                     </div>
                     <div className="ifc-row">
                       <span className="ifc-label">Telemetry Tier:</span>
-                      <span className="ifc-val" style={{ textTransform: 'capitalize' }}>
-                        {activeSelectedSite.source.replace(/_/g, ' ')}
+                      <span className="ifc-val" style={{ textTransform: 'none', color: '#38BDF8', fontSize: '0.85rem' }}>
+                        {getSourceLabel(activeSelectedSite.source)}
                       </span>
                     </div>
                     <div className="ifc-row">

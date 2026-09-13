@@ -183,7 +183,7 @@ def test_gods_eye_view_contract_compliance():
     ]
 
     valid_statuses = {"NORMAL", "MODERATE", "HIGH", "CRITICAL"}
-    valid_sources = {"yolo_video", "live_telemetry", "historical_baseline", "historical", "demo_simulation"}
+    valid_sources = {"yolo_video", "fused_yolo_gps", "live_telemetry", "gps_crowd", "gps_crowd_demo", "historical_baseline", "historical", "demo_simulation"}
 
     for i in range(1, 26):
         site_id = f"TS{i:03d}"

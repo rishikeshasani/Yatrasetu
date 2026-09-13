@@ -114,12 +114,12 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
   const theme = getQualitativeTheme(occupancy, status);
 
   const SOURCE_CONFIG = {
-    fused_yolo_gps: { label: 'Multi-Source Fusion (YOLO + GPS)', icon: '⚡', badgeClass: 'source-fused' },
+    fused_yolo_gps: { label: 'Multi-Source Fusion — YOLO + GPS', icon: '⚡', badgeClass: 'source-fused' },
     yolo_video: { label: 'YOLO Video Headcount', icon: '📹', badgeClass: 'source-yolo' },
     gps_crowd: { label: 'Mobile GPS Crowd Signal', icon: '📡', badgeClass: 'source-gps' },
-    gps_crowd_demo: { label: 'Demo GPS Signal', icon: '📡', badgeClass: 'source-demo' },
+    gps_crowd_demo: { label: 'Mobile GPS Crowd Signal (Demo)', icon: '📡', badgeClass: 'source-demo' },
     live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
-    demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
+    demo_simulation: { label: 'Demo Simulation — no live source currently available', icon: '📊', badgeClass: 'source-demo' },
     historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
     historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
   };
@@ -156,7 +156,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
               {sourceInfo.icon} {sourceInfo.label}
             </span>
             <span className="live-poll-badge">
-              <span className="poll-dot"></span> Live Crowd Advisory
+              <span className="poll-dot"></span> {rawSource === 'demo_simulation' ? 'Deterministic Advisory' : 'Live Crowd Advisory'}
             </span>
           </div>
           <h1 className="destination-heading">{site.name}</h1>

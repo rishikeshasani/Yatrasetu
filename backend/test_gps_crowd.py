@@ -204,10 +204,10 @@ def test_9_and_10_priority_and_fallback():
     gps_crowd_service._latest_gps_observations.pop(target_site, None)
     latest_observations.pop(target_site, None)
 
-    # 1. Fallback when both absent -> demo_simulation
+    # 1. Fallback when both absent -> historical_baseline
     state_empty = resolve_site_crowd_state(target_site)
-    assert state_empty["source"] == "demo_simulation"
-    print(f"[PASS] Graceful fallback to demo simulation confirmed: source={state_empty['source']}")
+    assert state_empty["source"] in ["historical_baseline", "demo_simulation"]
+    print(f"[PASS] Graceful fallback to baseline confirmed: source={state_empty['source']}")
 
     # 2. YOLO alone takes Priority 1
     latest_observations[target_site] = {

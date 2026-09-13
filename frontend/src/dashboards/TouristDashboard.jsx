@@ -19,8 +19,7 @@ import {
   fetchMyHotelBookings,
   fetchUserBookingRequests,
   fetchActiveRerouteAlert,
-  toCanonicalSiteId,
-  MOCK_DENSITY
+  toCanonicalSiteId
 } from '../api/api';
 import { getShrineAccommodations } from '../utils/shrineImages';
 

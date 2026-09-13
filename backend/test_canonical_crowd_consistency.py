@@ -10,12 +10,16 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from main import app
 from routes.crowd import resolve_site_crowd_state, latest_observations
 from routes.simulations import run_simulation_calculation
+from services.crowd_service import seed_showcase_telemetry
 
 client = TestClient(app)
 
 TEST_SITES = [f"TS{i:03d}" for i in range(1, 26)]
 
 class TestCanonicalCrowdConsistency(unittest.TestCase):
+
+    def setUp(self):
+        seed_showcase_telemetry()
 
     def test_single_vs_batch_endpoints_consistency(self):
         """Verify individual /sites/{id}/density matches batch /sites/density and /crowd/density-all."""
@@ -149,10 +153,13 @@ class TestCanonicalCrowdConsistency(unittest.TestCase):
         stale_iso = "2025-01-01T00:00:00+00:00"
 
         try:
-            # 1. Fallback when empty -> demo_simulation
+            # 1. Fallback when empty: canonical site -> historical_baseline; unregistered site -> demo_simulation
             latest_observations.pop(test_site, None)
-            state_demo = resolve_site_crowd_state(test_site)
-            self.assertEqual(state_demo["source"], "demo_simulation")
+            state_canonical = resolve_site_crowd_state(test_site)
+            self.assertEqual(state_canonical["source"], "historical_baseline")
+
+            state_unregistered = resolve_site_crowd_state("TS999")
+            self.assertEqual(state_unregistered["source"], "demo_simulation")
 
             # 2. Historical baseline tier
             latest_observations[test_site] = {

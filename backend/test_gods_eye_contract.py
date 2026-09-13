@@ -30,6 +30,7 @@ from services.crowd_service import (
     latest_observations,
     calculate_queue_wait_time,
     calculate_occupancy_and_status,
+    seed_showcase_telemetry,
 )
 from services.gps_crowd_service import gps_crowd_service
 
@@ -208,8 +209,9 @@ def test_10_rbac_command_center_security():
     )
     assert res_police_mutation.status_code == 200, f"Expected 200 for police crowd update, got {res_police_mutation.status_code}"
 
-    # Clean up TS001 in-memory update
+    # Clean up TS001 in-memory update and restore showcase state
     latest_observations.pop("TS001", None)
+    seed_showcase_telemetry()
 
     print("[PASS] RBAC verified: Tourists blocked from crowd mutations (403); Government & Police authorized (200).")
 

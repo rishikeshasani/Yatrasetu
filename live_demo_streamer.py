@@ -1,11 +1,11 @@
-\"\"\"
+"""
 YatraSetu: Live Dynamic Demo Streamer
 =====================================
 Proves to judges that the pipeline is 100% dynamic:
 1. Replays real YOLO video detections frame-by-frame into the backend API.
 2. Injects an unexpected sudden crowd spike at step 5 to prove dynamic anomaly detection.
 3. The React frontend dashboard updates its gauge, headcount, and surge alarm live in real time!
-\"\"\"
+"""
 
 import time
 import requests

@@ -3,19 +3,19 @@ import { getShrineImage } from '../utils/shrineImages';
 
 const TELEMETRY_SHRINES = {
   Main: {
-    siteId: 'SITE001',
-    name: 'Main Temple',
-    location: 'Bhubaneswar, Odisha',
-    image: getShrineImage('SITE001'),
-    alt: 'Main Temple Visual Telemetry, Bhubaneswar, Odisha',
-    camId: 'CAM-HD-01',
-    headcount: '184',
-    headcountSub: 'People in Sanctum',
-    occupancy: '10%',
+    siteId: 'TS001',
+    name: 'Kedarnath Temple',
+    location: 'Rudraprayag, Uttarakhand',
+    image: getShrineImage('TS001'),
+    alt: 'Kedarnath Temple Visual Telemetry, Uttarakhand',
+    camId: 'CAM-KD-01',
+    headcount: '1,240',
+    headcountSub: 'Sanctum Queue Corridor',
+    occupancy: '25%',
     occupancyStatus: 'Normal / Smooth',
-    wait: '20 mins',
+    wait: '35 mins',
     waitSub: 'Standard Queues Flowing',
-    capacity: '1,000',
+    capacity: '13,000',
     capacitySub: 'Threshold Monitored'
   },
   Heritage: {
