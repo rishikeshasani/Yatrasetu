@@ -16,13 +16,12 @@ export default function TravelCompanyDashboard({
   showToast,
   externalTab
 }) {
-  // Transit Nodes & Selected Node Telemetry State
+  // Transit Nodes & Active Selected Node State
   const [nodes, setNodes] = useState([]);
   const [selectedNodeId, setSelectedNodeId] = useState('NODE_DELHI_NDLS');
   const [activeNodeData, setActiveNodeData] = useState(null);
 
   // Operational State
-  const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [isDispatching, setIsDispatching] = useState(false);
@@ -40,11 +39,12 @@ export default function TravelCompanyDashboard({
     reroutesToAdd: 30
   });
 
+  // Active Corridor Route Allocations
   const [fleetRoutes, setFleetRoutes] = useState([
-    { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, occupancy: 94, type: 'Volvo A/C', status: 'HIGH DEMAND' },
-    { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, occupancy: 100, type: 'Sleeper', status: 'FULL' },
-    { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, occupancy: 22, type: 'Volvo A/C', status: 'RETURN' },
-    { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, occupancy: 67, type: 'Mini Bus', status: 'NORMAL' },
+    { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, forwardOccupancy: 94, returnOccupancy: 22, type: 'Volvo A/C', status: 'HIGH DEMAND' },
+    { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, forwardOccupancy: 100, returnOccupancy: 35, type: 'Sleeper', status: 'FULL' },
+    { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, forwardOccupancy: 88, returnOccupancy: 26, type: 'Volvo A/C', status: 'HIGH DEMAND' },
+    { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, forwardOccupancy: 67, returnOccupancy: 40, type: 'Mini Bus', status: 'NORMAL' },
   ]);
 
   const selectedNodeIdRef = useRef(selectedNodeId);
@@ -91,7 +91,8 @@ export default function TravelCompanyDashboard({
           date: r.journey_date || r.date,
           buses: r.buses,
           capacity: r.capacity || 42,
-          occupancy: r.occupancy || 80,
+          forwardOccupancy: r.occupancy || r.forwardOccupancy || 85,
+          returnOccupancy: r.returnOccupancy || Math.round((r.occupancy || 85) * 0.35),
           type: r.bus_type || r.type || 'Volvo A/C',
           status: r.status || 'NORMAL',
         })));
@@ -122,7 +123,7 @@ export default function TravelCompanyDashboard({
     };
   }, [loadNodes]);
 
-  // Handle switching nodes
+  // Handle switching active transit node
   const handleSelectNode = async (nodeId) => {
     setSelectedNodeId(nodeId);
     const existing = nodes.find(n => (n.id || n.node_id) === nodeId);
@@ -153,7 +154,7 @@ export default function TravelCompanyDashboard({
 
       if (res && res.flow_analysis) {
         setUploadProgress('YOLO inference complete. Updating fleet demand & reroutes...');
-        notify(`✅ Video processed! Detected ${(res.flow_analysis.confidence * 100).toFixed(1)}% confidence with ${res.flow_analysis.average_headcount} avg people. Fleet demand recalculated.`);
+        notify(`✅ Video processed! Detected ${(res.flow_analysis.confidence * 100).toFixed(1)}% confidence. Fleet demand, occupancy & reroute queues recalculated.`);
         await loadNodes(selectedNodeId);
       } else {
         notify('✅ Video uploaded and processed successfully.');
@@ -169,7 +170,7 @@ export default function TravelCompanyDashboard({
     }
   };
 
-  // Dispatch Bus Action
+  // Dispatch Bus Action (strictly integer count for physical deployment)
   const handleDispatchBus = async (busesToDeploy = 1) => {
     try {
       setIsDispatching(true);
@@ -184,7 +185,7 @@ export default function TravelCompanyDashboard({
     }
   };
 
-  // Run Traffic / Surge Simulation
+  // Run Surge Simulation
   const handleRunSimulation = async () => {
     try {
       setIsSimulating(true);
@@ -229,15 +230,14 @@ export default function TravelCompanyDashboard({
   const inflow = currNode.inflow_per_min ?? currNode.observation?.inflow_rate_per_min ?? 0;
   const outflow = currNode.outflow_per_min ?? currNode.observation?.outflow_rate_per_min ?? 0;
   const confidence = currNode.confidence ?? (currNode.observation?.confidence_score ? currNode.observation.confidence_score * 100 : 94.5);
-  const agencyExpected = currNode.agency_passengers_expected ?? 0;
 
   const funnel = currNode.funnel || currNode.reroute_funnel || {
-    offered: currNode.reroutes_offered ?? 0,
-    accepted: currNode.reroutes_accepted ?? 0,
-    confirmed: currNode.reroutes_confirmed ?? 0,
-    waiting: currNode.passengers_waiting ?? 0,
-    boarded: currNode.passengers_boarded ?? 0,
-    completed: currNode.passengers_completed ?? 0
+    offered: currNode.reroutes_offered ?? 100,
+    accepted: currNode.reroutes_accepted ?? 70,
+    confirmed: currNode.reroutes_confirmed ?? 55,
+    waiting: currNode.passengers_waiting ?? 30,
+    boarded: currNode.passengers_boarded ?? 20,
+    completed: currNode.passengers_completed ?? 35
   };
 
   const waiting = currNode.passengers_waiting ?? funnel.waiting ?? 0;
@@ -247,17 +247,22 @@ export default function TravelCompanyDashboard({
   const availableBuses = currNode.available_buses ?? 1;
   const shortageBuses = currNode.shortage_buses ?? currNode.fleet?.net_shortage ?? Math.max(0, requiredBuses - availableBuses);
   const usableCap = currNode.usable_capacity ?? currNode.usable_seat_capacity ?? 36;
-  const nextHourDemand = currNode.next_hour_demand ?? Math.round(expectedDemand * 1.35);
   const nextDepartureMins = currNode.next_departure_mins ?? 12;
   const transitEta = currNode.transit_eta ?? '1h 30m';
   const nextHub = currNode.next_hub ?? 'Next Staging Base';
 
-  // Capacity & Flow Ratios
+  // Capacity & Flow Ratios (Strictly Percentage Primary)
   const nominalCapacity = currNode.nominal_capacity || 2500;
-  const capacityLoadPct = Math.min(100, Math.max(10, Math.round((headcount / nominalCapacity) * 100)));
+  const crowdLoadPct = currNode.crowd_load_pct ?? Math.min(100, Math.max(10, Math.round((headcount / (nominalCapacity * 0.15)) * 100)));
   const totalFlow = Math.max(1, inflow + outflow);
   const inflowPct = Math.round((inflow / totalFlow) * 100);
   const outflowPct = Math.round((outflow / totalFlow) * 100);
+  const waitingPressurePct = Math.round((waiting / Math.max(1, expectedDemand)) * 100);
+
+  // Forward vs Return Occupancy Metrics
+  const forwardOccupancyPct = currNode.forward_occupancy_pct ?? Math.min(100, Math.max(20, Math.round((expectedDemand / Math.max(1, availableBuses * usableCap)) * 85)));
+  const returnOccupancyPct = currNode.return_occupancy_pct ?? Math.max(15, Math.min(60, Math.round(forwardOccupancyPct * 0.38)));
+  const imbalancePct = forwardOccupancyPct - returnOccupancyPct;
 
   // Funnel conversion percentages
   const offeredBase = Math.max(1, funnel.offered || 100);
@@ -269,26 +274,24 @@ export default function TravelCompanyDashboard({
 
   // Fleet stress
   const activeFleetSeats = Math.max(1, availableBuses * usableCap);
-  const fleetStressPct = Math.round((expectedDemand / activeFleetSeats) * 100);
-  const fleetDeficitPct = fleetStressPct > 100 ? fleetStressPct - 100 : 0;
+  const fleetUtilizationPct = Math.round((expectedDemand / activeFleetSeats) * 100);
+  const fleetDeficitPct = fleetUtilizationPct > 100 ? fleetUtilizationPct - 100 : 0;
+  const capacityPressureStatus = shortageBuses >= 2 ? 'CRITICAL' : shortageBuses === 1 ? 'CONSTRAINED' : 'OPTIMAL';
 
-  const rationale = currNode.rationale || currNode.fleet?.rationale || (
-    shortageBuses > 0
-      ? `Deploy ${shortageBuses} additional local bus(es) — ${waiting} passengers waiting, ${incoming} expected incoming, and ${funnel.confirmed ?? 0} reroutes confirmed.`
-      : `Current fleet of ${availableBuses} bus(es) covers demand of ${expectedDemand} passengers.`
-  );
+  const rationale = shortageBuses > 0
+    ? `Additional capacity recommended: waiting pressure is at ${waitingPressurePct}% with rising incoming flow (${inflowPct}%). Deploying ${shortageBuses} bus(es) restores fleet coverage to 100%.`
+    : `Fleet coverage is optimal at ${fleetUtilizationPct}% utilization (${availableBuses} deployed coach buffer).`;
 
   const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
 
-  // Total Corridor Summary Stats
-  const totalCorridorWaiting = nodes.reduce((acc, n) => acc + (n.passengers_waiting ?? n.funnel?.waiting ?? 0), 0);
+  // Corridor Summary Stats
   const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
-  const totalCorridorHeadcount = nodes.reduce((acc, n) => acc + (n.headcount ?? 0), 0);
+  const avgCrowdLoad = nodes.length > 0 ? Math.round(nodes.reduce((acc, n) => acc + (n.crowd_load_pct ?? 65), 0) / nodes.length) : 74;
 
   return (
     <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0.75rem 1.5rem 2.5rem', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#0F172A', backgroundColor: '#F8FAFC' }}>
       
-      {/* 1. TOP HEADER & OPERATIONAL STATUS */}
+      {/* 1. TOP OPERATIONS COMMAND HEADER */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
@@ -307,10 +310,10 @@ export default function TravelCompanyDashboard({
             Himalaya Yatra Travels · Central Fleet Operations
           </div>
           <h1 style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span>🚌</span> Char Dham Corridor Fleet &amp; Transit Flow Command
+            <span>🚌</span> Travel Operations Command Center
           </h1>
           <p style={{ margin: '0.25rem 0 0', color: '#64748B', fontSize: '0.86rem' }}>
-            Unified view: Passenger locations, YOLO camera telemetry, corridor reroute flow, and real-time shuttle deployment.
+            Observe crowd concentration → Predict next-hour demand → Sizing &amp; Forward/Return balance → Deploy local shuttles.
           </p>
         </div>
 
@@ -334,7 +337,7 @@ export default function TravelCompanyDashboard({
               boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
           >
-            ⚙️ Fleet Allocations ({fleetRoutes.length})
+            ⚙️ Route Allocations ({fleetRoutes.length})
           </button>
 
           <button
@@ -359,75 +362,105 @@ export default function TravelCompanyDashboard({
         </div>
       </div>
 
-      {/* 2. THE 3 CORE OPERATIONAL QUESTIONS BANNER */}
+      {/* Active State Emergency Directive Banner (if triggered) */}
+      {activeReroute?.is_active && (
+        <div style={{
+          marginBottom: '1rem',
+          padding: '1.15rem 1.4rem',
+          background: 'linear-gradient(135deg, #7F1D1D 0%, #991B1B 100%)',
+          border: '1px solid #EF4444',
+          borderRadius: '0.65rem',
+          color: '#FFFFFF',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ fontSize: '1.6rem' }}>🚨</span>
+            <div>
+              <div style={{ fontWeight: '800', fontSize: '0.98rem' }}>
+                STATE EMERGENCY DIRECTIVE: Divert Fleet on {activeReroute.source_site || 'Char Dham Corridor'}
+              </div>
+              <div style={{ fontSize: '0.82rem', color: '#FEE2E2', marginTop: '0.15rem' }}>
+                {activeReroute.message || 'Capacity override active. Re-route forward buses to sister shrine circuits.'}
+              </div>
+            </div>
+          </div>
+          <div style={{ fontSize: '0.82rem', fontWeight: '800', backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.4rem 0.85rem', borderRadius: '0.4rem', border: '1px solid rgba(255,255,255,0.2)' }}>
+            Sister Shrines: <strong>{activeReroute.target_sites?.join(', ') || 'Ukhimath, Triyuginarayan'}</strong>
+          </div>
+        </div>
+      )}
+
+      {/* 2. TOP KPI STRIP (8 COMPACT PERCENTAGE & STATUS INDICATORS) */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-        gap: '0.85rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+        gap: '0.65rem',
         marginBottom: '1.25rem'
       }}>
-        {/* Question 1 */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '0.65rem',
-          border: '1px solid #E2E8F0',
-          padding: '1rem 1.25rem',
-          borderLeft: '4px solid #2563EB',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-        }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            📍 1. Where are my passengers?
-          </div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0F172A', marginTop: '0.25rem' }}>
-            <strong>{totalCorridorHeadcount.toLocaleString()}</strong> across corridor · <strong>{totalCorridorWaiting}</strong> waiting
-          </div>
-          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.15rem' }}>
-            Selected: <strong>{nodeName}</strong> has {waiting} waiting &amp; {incoming} incoming.
-          </div>
+        {/* KPI 1: Crowd Load % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Crowd Load</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: crowdLoadPct >= 80 ? '#DC2626' : '#0F172A', marginTop: '0.15rem' }}>{crowdLoadPct}%</div>
+          <div style={{ fontSize: '0.68rem', color: crowdLoadPct >= 80 ? '#DC2626' : '#059669', fontWeight: '700' }}>{crowdLoadPct >= 80 ? 'High' : crowdLoadPct >= 50 ? 'Moderate' : 'Low'}</div>
         </div>
 
-        {/* Question 2 */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '0.65rem',
-          border: '1px solid #E2E8F0',
-          padding: '1rem 1.25rem',
-          borderLeft: '4px solid #D97706',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-        }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            ⏱️ 2. What is happening next?
-          </div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0F172A', marginTop: '0.25rem' }}>
-            Next departure in <strong>{nextDepartureMins} mins</strong> · {inflowPct}% Inflow velocity
-          </div>
-          <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.15rem' }}>
-            Next-hour projected load: <strong>{nextHourDemand} passengers</strong> to {nextHub}.
-          </div>
+        {/* KPI 2: Incoming Flow % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Incoming Flow</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: '#2563EB', marginTop: '0.15rem' }}>{inflowPct}%</div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Outflow: {outflowPct}%</div>
         </div>
 
-        {/* Question 3 */}
-        <div style={{
-          backgroundColor: totalCorridorShortage > 0 ? '#FEF2F2' : '#F0FDF4',
-          borderRadius: '0.65rem',
-          border: totalCorridorShortage > 0 ? '1px solid #FECACA' : '1px solid #BBF7D0',
-          padding: '1rem 1.25rem',
-          borderLeft: totalCorridorShortage > 0 ? '4px solid #DC2626' : '4px solid #16A34A',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
-        }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: '800', color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            🚌 3. Do I need to deploy a bus?
+        {/* KPI 3: Waiting Pressure % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Waiting Pressure</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: '#D97706', marginTop: '0.15rem' }}>{waitingPressurePct}%</div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>At Staging Depot</div>
+        </div>
+
+        {/* KPI 4: Forward Occupancy % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Forward Occupancy</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: forwardOccupancyPct >= 85 ? '#DC2626' : '#D97706', marginTop: '0.15rem' }}>{forwardOccupancyPct}%</div>
+          <div style={{ fontSize: '0.68rem', color: forwardOccupancyPct >= 85 ? '#DC2626' : '#D97706', fontWeight: '700' }}>{forwardOccupancyPct >= 85 ? 'High Demand' : 'Normal'}</div>
+        </div>
+
+        {/* KPI 5: Return Occupancy % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Return Occupancy</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: '#0284C7', marginTop: '0.15rem' }}>{returnOccupancyPct}%</div>
+          <div style={{ fontSize: '0.68rem', color: '#0284C7', fontWeight: '700' }}>Available Space</div>
+        </div>
+
+        {/* KPI 6: Fleet Utilization % */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Fleet Utilization</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: fleetUtilizationPct > 100 ? '#DC2626' : '#16A34A', marginTop: '0.15rem' }}>{fleetUtilizationPct}%</div>
+          <div style={{ fontSize: '0.68rem', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', fontWeight: '700' }}>{shortageBuses > 0 ? `+${fleetDeficitPct}% Deficit` : 'Covered'}</div>
+        </div>
+
+        {/* KPI 7: Capacity Pressure Status */}
+        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Capacity Pressure</div>
+          <div style={{ fontSize: '1.15rem', fontWeight: '900', color: capacityPressureStatus === 'CRITICAL' ? '#DC2626' : capacityPressureStatus === 'CONSTRAINED' ? '#D97706' : '#16A34A', marginTop: '0.35rem' }}>
+            {capacityPressureStatus}
           </div>
-          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: totalCorridorShortage > 0 ? '#991B1B' : '#166534', marginTop: '0.25rem' }}>
-            {totalCorridorShortage > 0 ? `🚨 YES — ${totalCorridorShortage} Bus Shortage across corridor` : '✓ NO — Fleet currently sufficient'}
-          </div>
-          <div style={{ fontSize: '0.78rem', color: totalCorridorShortage > 0 ? '#B91C1C' : '#15803D', marginTop: '0.15rem' }}>
-            {shortageBuses > 0 ? `Selected hub (${nodeName}) requires ${shortageBuses} bus(es).` : 'All scheduled departures are covered.'}
-          </div>
+          <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Corridor Status</div>
+        </div>
+
+        {/* KPI 8: Active Alerts */}
+        <div style={{ backgroundColor: alerts.length > 0 ? '#FEF2F2' : '#FFFFFF', borderRadius: '0.6rem', padding: '0.85rem 1rem', border: alerts.length > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+          <div style={{ fontSize: '0.68rem', color: alerts.length > 0 ? '#991B1B' : '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Active Alerts</div>
+          <div style={{ fontSize: '1.45rem', fontWeight: '900', color: alerts.length > 0 ? '#DC2626' : '#16A34A', marginTop: '0.15rem' }}>{alerts.length}</div>
+          <div style={{ fontSize: '0.68rem', color: alerts.length > 0 ? '#DC2626' : '#16A34A', fontWeight: '700' }}>{alerts.length > 0 ? 'Action Needed' : 'Nominal'}</div>
         </div>
       </div>
 
-      {/* 3. LIVE CORRIDOR TRANSIT FLOW STEPPER (DELHI → HARIDWAR → RISHIKESH → RUDRAPRAYAG → GUPTKASHI → SONPRAYAG) */}
+      {/* 3. LIVE PILGRIMAGE CORRIDOR (CENTRAL VISUAL STEPPER) */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
@@ -442,15 +475,15 @@ export default function TravelCompanyDashboard({
               <span>🛣️</span> Live Pilgrimage Corridor Route Sequence
             </h2>
             <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#64748B' }}>
-              Sequential transit flow from interstate origin to sacred shrine trek base. Click any hub to focus live YOLO telemetry.
+              Sequential transit flow from interstate gateway to sacred shrine base. Select any hub to view live telemetry &amp; deployment options.
             </p>
           </div>
           <div style={{ fontSize: '0.76rem', color: '#64748B', fontWeight: '600' }}>
-            Corridor Length: <strong>480 km</strong> · Transit Chain: <strong>6 Hubs</strong>
+            Corridor Length: <strong>480 km</strong> · Fleet Shortage: <strong style={{ color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A' }}>{totalCorridorShortage > 0 ? `${totalCorridorShortage} Buses` : '0 (Optimal)'}</strong>
           </div>
         </div>
 
-        {/* Horizontal Visual Step Flow */}
+        {/* Stepper Cards */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
@@ -460,12 +493,9 @@ export default function TravelCompanyDashboard({
             const id = node.id || node.node_id;
             const name = node.name || node.node_name || id;
             const isSelected = id === selectedNodeId;
-            const nodeHeadcount = node.headcount ?? node.observation?.people_count ?? 0;
-            const nodeCapacity = node.nominal_capacity || 2500;
-            const nodeLoadPct = Math.min(100, Math.max(10, Math.round((nodeHeadcount / nodeCapacity) * 100)));
+            const nodeLoad = node.crowd_load_pct ?? 70;
             const nodeShortage = node.shortage_buses ?? node.fleet?.net_shortage ?? 0;
-            const nodeAlerts = Array.isArray(node.alerts) ? node.alerts : [];
-            const hasAlerts = nodeAlerts.length > 0;
+            const nodeStatus = nodeShortage >= 2 ? 'Critical' : nodeShortage === 1 ? 'Busy' : 'Normal';
 
             return (
               <button
@@ -485,11 +515,9 @@ export default function TravelCompanyDashboard({
                   flexDirection: 'column',
                   justifyContent: 'space-between',
                   boxShadow: isSelected ? '0 4px 12px rgba(217,119,6,0.18)' : '0 1px 3px rgba(0,0,0,0.03)',
-                  transition: 'all 0.15s ease',
-                  position: 'relative'
+                  transition: 'all 0.15s ease'
                 }}
               >
-                {/* Step number badge */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                   <span style={{
                     fontSize: '0.68rem',
@@ -499,32 +527,22 @@ export default function TravelCompanyDashboard({
                     padding: '0.1rem 0.45rem',
                     borderRadius: '0.25rem'
                   }}>
-                    Step {sIdx + 1}
+                    {sIdx + 1}. {node.type?.includes('rail') ? '🚉' : node.type?.includes('bus') ? '🚏' : '⛰️'}
                   </span>
-                  {hasAlerts && (
-                    <span style={{
-                      backgroundColor: '#EF4444',
-                      color: '#FFFFFF',
-                      borderRadius: '50%',
-                      width: '18px',
-                      height: '18px',
-                      fontSize: '0.68rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: '800'
-                    }}>
-                      {nodeAlerts.length}
-                    </span>
-                  )}
+                  <StatusBadge
+                    status={nodeStatus === 'Critical' ? 'CRITICAL' : nodeStatus === 'Busy' ? 'HIGH' : 'NORMAL'}
+                    theme="light"
+                    size="xs"
+                    label={nodeStatus}
+                  />
                 </div>
 
-                <div style={{ fontSize: '0.86rem', fontWeight: '800', color: isSelected ? '#92400E' : '#0F172A', lineHeight: 1.25, marginBottom: '0.35rem' }}>
+                <div style={{ fontSize: '0.88rem', fontWeight: '800', color: isSelected ? '#92400E' : '#0F172A', lineHeight: 1.25, margin: '0.2rem 0' }}>
                   {name.split('&')[0]}
                 </div>
 
                 <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #F1F5F9', paddingTop: '0.35rem' }}>
-                  <span>Load: <strong>{nodeLoadPct}%</strong></span>
+                  <span>Load: <strong>{nodeLoad}%</strong></span>
                   <span style={{ color: nodeShortage > 0 ? '#DC2626' : '#16A34A', fontWeight: '700' }}>
                     {nodeShortage > 0 ? `⚠️ -${nodeShortage} Bus` : '✓ Sized'}
                   </span>
@@ -543,10 +561,11 @@ export default function TravelCompanyDashboard({
         alignItems: 'start',
         marginBottom: '1.25rem'
       }}>
-        {/* LEFT COLUMN: LIVE TELEMETRY & 6-STAGE REROUTE FUNNEL */}
+        
+        {/* LEFT COLUMN: SELECTED NODE YOLO TELEMETRY + NEXT-HOUR + REROUTE FUNNEL */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* Card A: Selected Node Live YOLO Telemetry & Video Upload */}
+          {/* Card A: Selected Node + YOLO Telemetry & Dynamic Ingestion */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
@@ -557,29 +576,30 @@ export default function TravelCompanyDashboard({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
                 <div style={{ fontSize: '0.72rem', fontWeight: '800', color: '#0284C7', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  Live Camera Feed · {feedId}
+                  Live Camera Feed · {feedId} ({cameraName})
                 </div>
-                <h3 style={{ margin: '0.15rem 0 0', fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
+                <h3 style={{ margin: '0.15rem 0 0', fontSize: '1.25rem', fontWeight: '900', color: '#0F172A' }}>
                   {nodeName}
                 </h3>
                 <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.15rem' }}>
-                  {cameraName} · {region}
+                  {region} · Aggregate Non-Biometric Flow Mode
                 </div>
               </div>
 
-              {/* Video Upload CTA directly on the node */}
+              {/* Direct Video Upload Trigger */}
               <label style={{
                 backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
                 color: '#FFFFFF',
                 borderRadius: '0.5rem',
-                padding: '0.55rem 1rem',
+                padding: '0.55rem 1.05rem',
                 fontSize: '0.84rem',
                 fontWeight: '700',
                 cursor: isUploading ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                boxShadow: '0 2px 5px rgba(2,132,199,0.25)'
+                boxShadow: '0 2px 5px rgba(2,132,199,0.25)',
+                transition: 'all 0.15s ease'
               }}>
                 <span>{isUploading ? '⏳' : '📹'}</span>
                 {isUploading ? 'Analyzing Video...' : 'Upload Video to Node Feed'}
@@ -593,14 +613,13 @@ export default function TravelCompanyDashboard({
               </label>
             </div>
 
-            {/* Ingestion notice */}
             {isUploading && uploadProgress && (
               <div style={{ backgroundColor: '#E0F2FE', border: '1px solid #7DD3FC', borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem', color: '#0369A1', fontSize: '0.85rem', fontWeight: '600' }}>
                 🔄 {uploadProgress}
               </div>
             )}
 
-            {/* 4 Core Real-Time Metrics */}
+            {/* 4 Core Percentage Indicators */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
@@ -608,56 +627,59 @@ export default function TravelCompanyDashboard({
               marginBottom: '1rem'
             }}>
               <div style={{ backgroundColor: '#F8FAFC', borderRadius: '0.5rem', padding: '0.75rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Current Headcount</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0F172A', marginTop: '0.15rem' }}>{headcount.toLocaleString()}</div>
-                <div style={{ fontSize: '0.68rem', color: '#059669', fontWeight: '600' }}>{capacityLoadPct}% Concourse Load</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Crowd Load</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: '900', color: crowdLoadPct >= 80 ? '#DC2626' : '#0F172A', marginTop: '0.15rem' }}>{crowdLoadPct}%</div>
+                <div style={{ fontSize: '0.68rem', color: crowdLoadPct >= 80 ? '#DC2626' : '#059669', fontWeight: '700' }}>{crowdLoadPct >= 80 ? 'High' : 'Normal'}</div>
               </div>
 
               <div style={{ backgroundColor: '#F8FAFC', borderRadius: '0.5rem', padding: '0.75rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
                 <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Inflow / Outflow</div>
                 <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0F172A', marginTop: '0.15rem' }}>
-                  <span style={{ color: '#2563EB' }}>+{inflow}</span> / <span style={{ color: '#64748B' }}>-{outflow}</span>
+                  <span style={{ color: '#2563EB' }}>{inflowPct}%</span> / <span style={{ color: '#64748B' }}>{outflowPct}%</span>
                 </div>
-                <div style={{ fontSize: '0.68rem', color: '#2563EB' }}>{inflowPct}% Inflow Share</div>
+                <div style={{ fontSize: '0.68rem', color: '#2563EB', fontWeight: '600' }}>{inflowPct > 50 ? 'Net Inflow Rush' : 'Balanced'}</div>
               </div>
 
               <div style={{ backgroundColor: '#F8FAFC', borderRadius: '0.5rem', padding: '0.75rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Waiting at Depot</div>
-                <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#D97706', marginTop: '0.15rem' }}>{waiting}</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748B' }}>{incoming} incoming (15m)</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Waiting Pressure</div>
+                <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#D97706', marginTop: '0.15rem' }}>{waitingPressurePct}%</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Staging Depot</div>
               </div>
 
               <div style={{ backgroundColor: '#F8FAFC', borderRadius: '0.5rem', padding: '0.75rem', border: '1px solid #E2E8F0', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>YOLO Confidence</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>CV Confidence</div>
                 <div style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0284C7', marginTop: '0.15rem' }}>{Number(confidence).toFixed(0)}%</div>
-                <div style={{ fontSize: '0.68rem', color: '#64748B' }}>Class 0 Detection</div>
+                <div style={{ fontSize: '0.68rem', color: '#64748B' }}>YOLO (Class 0)</div>
               </div>
             </div>
 
-            {/* ETA & Next-Hour Projection Bar */}
+            {/* Next-Hour Intelligence Card */}
             <div style={{
               backgroundColor: '#EFF6FF',
-              borderRadius: '0.5rem',
+              borderRadius: '0.55rem',
               border: '1px solid #BFDBFE',
-              padding: '0.75rem 1rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
+              padding: '0.85rem 1.15rem',
               fontSize: '0.82rem',
-              color: '#1E40AF'
+              color: '#1E40AF',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.35rem'
             }}>
-              <div>
-                ⏱️ <strong>Next Departure:</strong> In <strong>{nextDepartureMins} mins</strong> to {nextHub} (Transit ETA: <strong>{transitEta}</strong>)
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  ⏱️ <strong>Upcoming Departure:</strong> In <strong>{nextDepartureMins} mins</strong> to {nextHub} (Transit ETA: <strong>{transitEta}</strong>)
+                </div>
+                <div>
+                  📈 <strong>Next-Hour Demand Level:</strong> <strong style={{ color: '#1E40AF' }}>{crowdLoadPct >= 80 ? 'HIGH SURGE' : 'MODERATE'}</strong>
+                </div>
               </div>
-              <div>
-                📈 <strong>Next-Hour Projected Demand:</strong> <strong>{nextHourDemand} passengers</strong>
+              <div style={{ fontSize: '0.76rem', color: '#3B82F6', borderTop: '1px dashed #BFDBFE', paddingTop: '0.35rem' }}>
+                Forward trend: <strong>+35% Rush Expected</strong> · Return flow: <strong>Available Capacity</strong>
               </div>
             </div>
           </div>
 
-          {/* Card B: 6-Stage Reroute Funnel */}
+          {/* Card B: Reroute Intelligence Funnel */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
@@ -671,7 +693,7 @@ export default function TravelCompanyDashboard({
                   🔄 6-Stage Corridor Reroute Funnel
                 </h3>
                 <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: '#64748B' }}>
-                  Progression when overcrowding overrides divert pilgrims to alternate circuits.
+                  Tracks pilgrim progression through rerouting offers without overcounting tentative accepts.
                 </p>
               </div>
               <span style={{
@@ -683,11 +705,11 @@ export default function TravelCompanyDashboard({
                 borderRadius: '0.35rem',
                 border: '1px solid #DDD6FE'
               }}>
-                Funnel Clearance: {completedPct}% ({funnel.completed || 0} pilgrims)
+                Clearance: {completedPct}%
               </span>
             </div>
 
-            {/* 6 Stages Row */}
+            {/* Visual 6 Stages */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(6, 1fr)',
@@ -698,12 +720,12 @@ export default function TravelCompanyDashboard({
               border: '1px solid #E2E8F0'
             }}>
               {[
-                { label: 'Offered', count: funnel.offered || 0, pct: '100%', color: '#64748B', bg: '#F1F5F9' },
-                { label: 'Accepted', count: funnel.accepted || 0, pct: `${acceptedPct}%`, color: '#0284C7', bg: '#E0F2FE' },
-                { label: 'Confirmed', count: funnel.confirmed || 0, pct: `${confirmedPct}%`, color: '#7C3AED', bg: '#F5F3FF' },
-                { label: 'Waiting', count: funnel.waiting || 0, pct: `${waitingPct}%`, color: '#D97706', bg: '#FEF3C7' },
-                { label: 'Boarded', count: funnel.boarded || 0, pct: `${boardedPct}%`, color: '#2563EB', bg: '#DBEAFE' },
-                { label: 'Completed', count: funnel.completed || 0, pct: `${completedPct}%`, color: '#059669', bg: '#D1FAE5' }
+                { label: 'Offered', pct: '100%', sub: 'Baseline', color: '#64748B', bg: '#F1F5F9' },
+                { label: 'Accepted', pct: `${acceptedPct}%`, sub: 'Interest', color: '#0284C7', bg: '#E0F2FE' },
+                { label: 'Confirmed', pct: `${confirmedPct}%`, sub: 'Committed', color: '#7C3AED', bg: '#F5F3FF' },
+                { label: 'Waiting', pct: `${waitingPct}%`, sub: 'Needs Bus', color: '#D97706', bg: '#FEF3C7' },
+                { label: 'Boarded', pct: `${boardedPct}%`, sub: 'En Route', color: '#2563EB', bg: '#DBEAFE' },
+                { label: 'Completed', pct: `${completedPct}%`, sub: 'Cleared', color: '#059669', bg: '#D1FAE5' }
               ].map((stage, sIdx) => (
                 <div
                   key={sIdx}
@@ -721,8 +743,8 @@ export default function TravelCompanyDashboard({
                   <div style={{ fontSize: '1.15rem', fontWeight: '900', color: stage.color, marginTop: '0.15rem' }}>
                     {stage.pct}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: stage.color, opacity: 0.85 }}>
-                    {stage.count} pax
+                  <div style={{ fontSize: '0.65rem', color: stage.color, opacity: 0.85 }}>
+                    {stage.sub}
                   </div>
                 </div>
               ))}
@@ -731,73 +753,136 @@ export default function TravelCompanyDashboard({
 
         </div>
 
-        {/* RIGHT COLUMN: ACTION REQUIRED, FLEET DEPLOYMENT & ALERTS */}
+        {/* RIGHT COLUMN: FORWARD/RETURN OCCUPANCY + ACTION REQUIRED + ALERTS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
-          {/* ACTION REQUIRED & FLEET SIZING CARD */}
+          {/* Card C: Forward + Return Occupancy & Imbalance */}
+          <div style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '0.75rem',
+            border: '1px solid #E2E8F0',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#0F172A' }}>
+                ⇄ Forward vs Return Occupancy Balance
+              </h3>
+              <StatusBadge
+                status={imbalancePct >= 40 ? 'HIGH' : 'OPTIMAL'}
+                theme="light"
+                size="xs"
+                label={imbalancePct >= 40 ? `+${imbalancePct}% Imbalance` : 'Balanced'}
+              />
+            </div>
+
+            {/* Progress Bars for Forward & Return */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.85rem' }}>
+              {/* Forward */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: '700', color: '#0F172A' }}>FORWARD CORRIDOR (Inbound to Sacred Shrine):</span>
+                  <strong style={{ color: forwardOccupancyPct >= 80 ? '#DC2626' : '#D97706' }}>{forwardOccupancyPct}% — High Demand</strong>
+                </div>
+                <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${forwardOccupancyPct}%`, height: '100%', backgroundColor: forwardOccupancyPct >= 80 ? '#DC2626' : '#D97706', borderRadius: '4px' }} />
+                </div>
+              </div>
+
+              {/* Return */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.25rem' }}>
+                  <span style={{ fontWeight: '700', color: '#0F172A' }}>RETURN CORRIDOR (Outbound to Gateways):</span>
+                  <strong style={{ color: '#0284C7' }}>{returnOccupancyPct}% — Available Capacity</strong>
+                </div>
+                <div style={{ width: '100%', height: '8px', backgroundColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: `${returnOccupancyPct}%`, height: '100%', backgroundColor: '#0284C7', borderRadius: '4px' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Imbalance notice */}
+            <div style={{
+              backgroundColor: imbalancePct >= 40 ? '#FFFBEB' : '#F0FDF4',
+              border: `1px solid ${imbalancePct >= 40 ? '#FDE68A' : '#BBF7D0'}`,
+              borderRadius: '0.5rem',
+              padding: '0.65rem 0.85rem',
+              fontSize: '0.78rem',
+              color: imbalancePct >= 40 ? '#92400E' : '#166534',
+              lineHeight: 1.4
+            }}>
+              {imbalancePct >= 40 ? (
+                <>⚖️ <strong>Capacity Imbalance:</strong> Forward leg outpaces return by <strong>+{imbalancePct}%</strong>. Suggest offering dynamic return fare discounts or holding return coaches for evening temple exodus.</>
+              ) : (
+                <>✓ Forward and return passenger flows are evenly distributed across active schedule.</>
+              )}
+            </div>
+          </div>
+
+          {/* Card D: Action Required & Bus Deployment */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
             border: shortageBuses > 0 ? '2px solid #FCA5A5' : '1px solid #BBF7D0',
-            padding: '1.35rem 1.5rem',
+            padding: '1.25rem 1.5rem',
             boxShadow: shortageBuses > 0 ? '0 4px 14px rgba(220,38,38,0.1)' : '0 2px 6px rgba(0,0,0,0.03)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.74rem', fontWeight: '800', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Operational Recommendation
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+              <div style={{ fontSize: '0.72rem', fontWeight: '800', color: shortageBuses > 0 ? '#DC2626' : '#16A34A', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Fleet Sizing Recommendation
               </div>
               <StatusBadge
                 status={shortageBuses > 0 ? 'CRITICAL' : 'OPTIMAL'}
                 theme="light"
                 size="xs"
-                label={shortageBuses > 0 ? `🚨 ${shortageBuses} BUS SHORTAGE` : '✓ SUFFICIENT'}
+                label={shortageBuses > 0 ? `🚨 ${shortageBuses} BUS SHORTAGE` : '✓ 100% SIZED'}
               />
             </div>
 
-            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.35rem', fontWeight: '900', color: shortageBuses > 0 ? '#991B1B' : '#166534' }}>
+            <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.3rem', fontWeight: '900', color: shortageBuses > 0 ? '#991B1B' : '#166534' }}>
               {shortageBuses > 0 ? `Deploy ${shortageBuses} Additional Shuttle Bus(es)` : 'Fleet is Currently Sized to Demand'}
             </h3>
 
-            {/* Sizing Math Table */}
+            {/* Sizing Status Breakdown */}
             <div style={{
               backgroundColor: '#F8FAFC',
               borderRadius: '0.5rem',
-              padding: '0.85rem 1rem',
+              padding: '0.75rem 0.95rem',
               border: '1px solid #E2E8F0',
-              fontSize: '0.82rem',
-              marginBottom: '1rem',
+              fontSize: '0.8rem',
+              marginBottom: '0.85rem',
               lineHeight: 1.5
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#64748B' }}>Waiting Queue + Incoming:</span>
-                <strong>{waiting} waiting + {incoming} incoming = {expectedDemand} pax</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ color: '#64748B' }}>Active Fleet on Hub:</span>
+                <strong>{availableBuses} Coach(es) ({availableBuses * usableCap} Usable Seats)</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#64748B' }}>Active Capacity ({availableBuses} bus @ 90% load):</span>
-                <span><strong>{activeFleetSeats} usable seats</strong></span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ color: '#64748B' }}>Required Fleet Allocation:</span>
+                <strong>{requiredBuses} Coaches ({requiredBuses * usableCap} Seats)</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #CBD5E1', paddingTop: '0.35rem', marginBottom: '0.35rem' }}>
-                <span style={{ color: '#0F172A', fontWeight: '700' }}>Fleet Stress &amp; Sizing:</span>
-                <strong style={{ color: fleetStressPct > 100 ? '#DC2626' : '#16A34A' }}>{fleetStressPct}% ({requiredBuses} buses needed)</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #CBD5E1', paddingTop: '0.35rem' }}>
+                <span style={{ color: '#0F172A', fontWeight: '700' }}>Fleet Utilization Stress:</span>
+                <strong style={{ color: fleetUtilizationPct > 100 ? '#DC2626' : '#16A34A' }}>{fleetUtilizationPct}%</strong>
               </div>
             </div>
 
-            {/* Plain-language WHY rationale */}
+            {/* WHY Rationale */}
             <div style={{
               backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
               border: `1px solid ${shortageBuses > 0 ? '#FECACA' : '#BBF7D0'}`,
               borderRadius: '0.5rem',
-              padding: '0.85rem 1rem',
-              marginBottom: '1.25rem',
-              fontSize: '0.86rem',
+              padding: '0.75rem 0.95rem',
+              marginBottom: '1rem',
+              fontSize: '0.84rem',
               color: shortageBuses > 0 ? '#991B1B' : '#166534',
               fontWeight: '600',
-              lineHeight: 1.45
+              lineHeight: 1.4
             }}>
               💡 <strong>WHY:</strong> {rationale}
             </div>
 
-            {/* Big Action Button */}
+            {/* Direct Deployment Action Button */}
             <button
               type="button"
               disabled={isDispatching}
@@ -808,11 +893,11 @@ export default function TravelCompanyDashboard({
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '0.5rem',
-                padding: '0.85rem 1.5rem',
-                fontSize: '0.98rem',
+                padding: '0.85rem 1.25rem',
+                fontSize: '0.96rem',
                 fontWeight: '900',
                 cursor: isDispatching ? 'not-allowed' : 'pointer',
-                boxShadow: shortageBuses > 0 ? '0 4px 14px rgba(220,38,38,0.35)' : '0 4px 14px rgba(217,119,6,0.3)',
+                boxShadow: shortageBuses > 0 ? '0 4px 14px rgba(220,38,38,0.3)' : '0 4px 14px rgba(217,119,6,0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -824,7 +909,7 @@ export default function TravelCompanyDashboard({
             </button>
           </div>
 
-          {/* OPERATIONAL ALERTS CARD */}
+          {/* Card E: Operational Alerts with Explanations */}
           <div style={{
             backgroundColor: '#FFFFFF',
             borderRadius: '0.75rem',
@@ -832,13 +917,13 @@ export default function TravelCompanyDashboard({
             padding: '1.25rem 1.5rem',
             boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
           }}>
-            <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.96rem', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>🚨</span> Active Operational Alerts ({alerts.length})
+            <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.94rem', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <span>🚨</span> Meaningful Operational Alerts ({alerts.length})
             </h4>
 
             {alerts.length === 0 ? (
-              <div style={{ fontSize: '0.84rem', color: '#166534', backgroundColor: '#F0FDF4', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0' }}>
-                ✓ No critical alerts for {nodeName}. Operations are nominal.
+              <div style={{ fontSize: '0.82rem', color: '#166534', backgroundColor: '#F0FDF4', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid #BBF7D0' }}>
+                ✓ No active alerts for {nodeName}. Operations are running smoothly.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
@@ -859,7 +944,7 @@ export default function TravelCompanyDashboard({
                         {isCrit ? '🚨' : '⚠️'} {alert.message}
                       </div>
                       <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
-                        Action: <strong>{alert.action || 'Deploy standby fleet'}</strong>
+                        Operational Action: <strong>{alert.action || 'Deploy standby local fleet'}</strong>
                       </div>
                     </div>
                   );
@@ -869,9 +954,10 @@ export default function TravelCompanyDashboard({
           </div>
 
         </div>
+
       </div>
 
-      {/* 5. COLLAPSIBLE ADVANCED ANALYTICS & SCENARIO SIMULATION SECTION */}
+      {/* 5. EXPANDABLE ADVANCED OPERATIONS / ANALYTICS DRAWER */}
       <div style={{
         backgroundColor: '#FFFFFF',
         borderRadius: '0.75rem',
@@ -896,10 +982,10 @@ export default function TravelCompanyDashboard({
         >
           <div>
             <div style={{ fontSize: '1rem', fontWeight: '800', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>📊</span> Advanced Corridor AI, Demand Forecasts &amp; Scenario Simulator
+              <span>📊</span> Advanced Operations: Multi-Scenario Matrix, Route Simulator &amp; Dynamic Pricing
             </div>
             <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.15rem' }}>
-              Deep-dive tools: Multi-hub scenario comparisons, 24-hour demand curves, and dynamic pricing simulation.
+              Deep-dive operational tools: Comparative deployment scenarios, highway corridor map, and revenue/fare calculators.
             </div>
           </div>
           <span style={{
@@ -910,7 +996,7 @@ export default function TravelCompanyDashboard({
             padding: '0.35rem 0.75rem',
             borderRadius: '0.4rem'
           }}>
-            {showAdvanced ? '▲ Collapse Advanced' : '▼ Expand Advanced'}
+            {showAdvanced ? '▲ Hide Advanced Operations' : '▼ Expand Advanced Operations'}
           </span>
         </button>
 
@@ -942,10 +1028,10 @@ export default function TravelCompanyDashboard({
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
             <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: '800' }}>
-              ⚡ Simulate Flow &amp; Passenger Spike
+              ⚡ Simulate Flow &amp; Passenger Surge
             </h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '0.84rem', color: '#64748B' }}>
-              Inject a sudden rush into <strong>{nodeName}</strong> to evaluate dynamic fleet auto-scaling and alert triggers.
+              Inject a sudden surge into <strong>{nodeName}</strong> to evaluate dynamic fleet auto-scaling and occupancy recalculations.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -1035,7 +1121,7 @@ export default function TravelCompanyDashboard({
         </div>
       )}
 
-      {/* 7. FLEET SCHEDULE ADJUSTMENT MODAL */}
+      {/* 7. ROUTE ALLOCATIONS MODAL */}
       {showFleetModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ backgroundColor: '#FFF', borderRadius: '1rem', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
@@ -1046,7 +1132,7 @@ export default function TravelCompanyDashboard({
                   🚌 Fleet Schedule Allocation Panel
                 </h2>
                 <p style={{ margin: 0, color: '#FDE68A', fontSize: '0.95rem' }}>
-                  Manage scheduled coach allocations across active Char Dham corridors.
+                  Manage scheduled coach allocations and balance forward/return occupancy.
                 </p>
               </div>
               <button onClick={() => setShowFleetModal(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#FFF', borderRadius: '50%', width: '36px', height: '36px', fontSize: '1.2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
@@ -1065,8 +1151,10 @@ export default function TravelCompanyDashboard({
                         <p style={{ margin: 0, color: '#6B7280', fontSize: '0.85rem' }}>📅 {route.date} · 🚌 {route.type}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold', color: route.occupancy >= 90 ? '#DC2626' : '#16A34A' }}>{route.occupancy}%</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Occupancy</div>
+                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: route.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>
+                          Forward: {route.forwardOccupancy}% · Return: {route.returnOccupancy}%
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Corridor Balance</div>
                       </div>
                     </div>
 

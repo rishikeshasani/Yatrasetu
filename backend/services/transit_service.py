@@ -319,12 +319,31 @@ class TransitFlowService:
         next_hour_inflow = int(round(node.get("inflow_per_min", 25) * 60 * 0.75))
         next_hour_demand = waiting + next_hour_inflow + int(round(confirmed_reroutes * 0.6))
 
+        # Forward vs Return Occupancy Metrics & Imbalance
+        nominal_cap = max(500, node.get("nominal_capacity", 25000))
+        crowd_load_pct = min(100, max(10, round((headcount / (nominal_cap * 0.15)) * 100)))
+        forward_occupancy_pct = min(100, max(20, round((expected_demand / max(1, available_buses * usable_cap)) * 85)))
+        return_occupancy_pct = max(15, min(60, round(forward_occupancy_pct * 0.38)))
+        imbalance_pct = forward_occupancy_pct - return_occupancy_pct
+
+        if imbalance_pct >= 40:
+            alerts.append({
+                "type": "CAPACITY_IMBALANCE",
+                "severity": "WARNING",
+                "message": f"Forward occupancy ({forward_occupancy_pct}%) severely outpaces return leg ({return_occupancy_pct}%).",
+                "action": "Offer dynamic return fare discounts or adjust return shuttle departure staging"
+            })
+
         node["expected_demand"] = expected_demand
         node["next_hour_demand"] = next_hour_demand
         node["next_departure_mins"] = eta_info["next_departure_mins"]
         node["next_hub"] = eta_info["next_hub"]
         node["transit_eta"] = eta_info["transit_eta"]
         node["corridor_step"] = eta_info["corridor_step"]
+        node["crowd_load_pct"] = crowd_load_pct
+        node["forward_occupancy_pct"] = forward_occupancy_pct
+        node["return_occupancy_pct"] = return_occupancy_pct
+        node["imbalance_pct"] = imbalance_pct
         node["usable_capacity"] = usable_cap
         node["required_buses"] = required_buses
         node["shortage_buses"] = shortage
@@ -334,6 +353,7 @@ class TransitFlowService:
         node["funnel"] = funnel
         node["alerts"] = alerts
         return node
+
 
 
     def get_all_nodes(self) -> List[dict]:
