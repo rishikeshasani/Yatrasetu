@@ -231,9 +231,12 @@ export default function TravelCompanyDashboard({
 
   // Safe Normalized Active Node Data
   const currNode = activeNodeData || {};
-  const nodeId = currNode.id || currNode.node_id || selectedNodeId;
-  const nodeName = currNode.name || currNode.node_name || 'Pilgrimage Transit Hub';
+  const nodeId = currNode.id || currNode.node_id || selectedNodeId || 'NODE_HARIDWAR_HW';
+  const currNodeId = nodeId;
+  const nodeName = currNode.name || currNode.node_name || 'Haridwar Railway Station & Bus Terminal';
+  const currNodeName = nodeName;
   const region = currNode.region || 'Transit Corridor';
+  const currRegion = region;
   const feedId = currNode.feed_id || 'FEED-LIVE';
   const cameraName = currNode.camera_name || 'Corridor Camera Feed';
 
