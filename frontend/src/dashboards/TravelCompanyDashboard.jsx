@@ -9,7 +9,6 @@ import {
   fetchFleetSchedules,
   fetchActiveRerouteAlert
 } from '../api/api';
-import TravelAgencyConsole from '../components/TravelAgencyConsole';
 import StatusBadge from '../components/common/StatusBadge';
 
 export default function TravelCompanyDashboard({
@@ -30,18 +29,6 @@ export default function TravelCompanyDashboard({
   const [showFleetModal, setShowFleetModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeReroute, setActiveReroute] = useState(null);
-
-  // Collapsible Technical Detail Drawers (Default: Closed for Field Operator Simplicity)
-  const [openDrawers, setOpenDrawers] = useState({
-    yolo: false,
-    funnel: false,
-    routes: false,
-    advanced: false
-  });
-
-  const toggleDrawer = (key) => {
-    setOpenDrawers(prev => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const [simParams, setSimParams] = useState({
     headcountDelta: 450,
@@ -787,127 +774,64 @@ export default function TravelCompanyDashboard({
       )}
 
       {/* ========================================================================= */}
-      {/* 5. BELOW THE FOLD: COLLAPSIBLE TECHNICAL DRAWERS (100% Retained Features)  */}
+      {/* 5. SCHEDULED COACH ROUTES & FLEET ALLOCATION MATRIX                       */}
       {/* ========================================================================= */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-        
-        {/* DRAWER 1: Detailed YOLO Neural Telemetry & Camera Feed Diagnostics */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+      <div style={{
+        backgroundColor: '#FFFFFF',
+        borderRadius: '0.75rem',
+        border: '1px solid #E2E8F0',
+        padding: '1rem 1.25rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '1.1rem' }}>🚌</span>
+            <div>
+              <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>
+                Active Coach Routes &amp; Fleet Allocations
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '0.5rem' }}>
+                ({fleetRoutes.length} Active Corridors)
+              </span>
+            </div>
+          </div>
           <button
             type="button"
-            onClick={() => toggleDrawer('yolo')}
-            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
+            onClick={() => setShowFleetModal(true)}
+            style={{
+              backgroundColor: '#FEF3C7',
+              color: '#92400E',
+              border: '1px solid #FDE68A',
+              borderRadius: '0.4rem',
+              padding: '0.35rem 0.75rem',
+              fontSize: '0.78rem',
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
           >
-            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>📁</span> Technical Details: YOLO Neural Inference &amp; Camera Telemetry
-            </span>
-            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#0284C7' }}>
-              {openDrawers.yolo ? '▲ Hide Details' : '▼ Show Details'}
-            </span>
+            ⚙️ Adjust Coach Schedules
           </button>
-          {openDrawers.yolo && (
-            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', fontSize: '0.82rem', color: '#475569' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.65rem' }}>
-                <div><strong>Feed ID:</strong> {feedId}</div>
-                <div><strong>Camera Name:</strong> {cameraName}</div>
-                <div><strong>Inference Model:</strong> Ultralytics YOLO (Person Class 0)</div>
-                <div><strong>Detection Confidence:</strong> {Number(confidence).toFixed(1)}%</div>
-                <div><strong>Flow Sampling Interval:</strong> 15-frame rolling window</div>
-                <div><strong>Privacy Guarantee:</strong> Aggregate flow only (Zero biometric capture)</div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+          {fleetRoutes.map((r) => (
+            <div key={r.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.55rem', padding: '0.85rem', backgroundColor: '#F8FAFC' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '800' }}>
+                <span style={{ color: '#D97706', backgroundColor: '#FEF3C7', padding: '0.1rem 0.4rem', borderRadius: '0.25rem' }}>{r.id}</span>
+                <span style={{ color: r.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>
+                  Fwd: {r.forwardOccupancy}% · Ret: {r.returnOccupancy}%
+                </span>
+              </div>
+              <div style={{ fontWeight: '800', fontSize: '0.9rem', color: '#0F172A', margin: '0.4rem 0 0.2rem' }}>
+                {r.from.split('(')[0]} → {r.to.split('(')[0]}
+              </div>
+              <div style={{ fontSize: '0.74rem', color: '#64748B', display: 'flex', justifyContent: 'space-between', marginTop: '0.35rem' }}>
+                <span>{r.date} · {r.type}</span>
+                <strong style={{ color: '#0F172A' }}>{r.buses} Coaches ({r.buses * r.capacity} seats)</strong>
               </div>
             </div>
-          )}
+          ))}
         </div>
-
-        {/* DRAWER 2: 6-Stage Pilgrimage Reroute Funnel Progression */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          <button
-            type="button"
-            onClick={() => toggleDrawer('funnel')}
-            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>📁</span> Technical Details: 6-Stage Pilgrimage Reroute Funnel
-            </span>
-            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#7C3AED' }}>
-              {openDrawers.funnel ? '▲ Hide Funnel' : '▼ Show Funnel'}
-            </span>
-          </button>
-          {openDrawers.funnel && (
-            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.4rem', textAlign: 'center' }}>
-                {[
-                  { label: 'Offered', pct: '100%', count: funnel.offered || 100, sub: 'Baseline', color: '#64748B', bg: '#F1F5F9' },
-                  { label: 'Accepted', pct: `${Math.round(((funnel.accepted || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.accepted || 70, sub: 'Interest', color: '#0284C7', bg: '#E0F2FE' },
-                  { label: 'Confirmed', pct: `${Math.round(((funnel.confirmed || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.confirmed || 55, sub: 'Committed', color: '#7C3AED', bg: '#F5F3FF' },
-                  { label: 'Waiting', pct: `${Math.round(((funnel.waiting || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.waiting || 30, sub: 'Needs Bus', color: '#D97706', bg: '#FEF3C7' },
-                  { label: 'Boarded', pct: `${Math.round(((funnel.boarded || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.boarded || 20, sub: 'En Route', color: '#2563EB', bg: '#DBEAFE' },
-                  { label: 'Completed', pct: `${Math.round(((funnel.completed || 0) / Math.max(1, funnel.offered || 100)) * 100)}%`, count: funnel.completed || 35, sub: 'Cleared', color: '#059669', bg: '#D1FAE5' }
-                ].map((s, idx) => (
-                  <div key={idx} style={{ backgroundColor: s.bg, padding: '0.55rem 0.35rem', borderRadius: '0.4rem', border: `1px solid ${s.color}20` }}>
-                    <div style={{ fontSize: '0.64rem', fontWeight: '800', color: s.color }}>{s.label}</div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: '900', color: s.color }}>{s.pct}</div>
-                    <div style={{ fontSize: '0.64rem', color: s.color, opacity: 0.85 }}>{s.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* DRAWER 3: Scheduled Coach Routes & Fleet Allocations */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          <button
-            type="button"
-            onClick={() => toggleDrawer('routes')}
-            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>📁</span> Operations: Scheduled Coach Routes &amp; Fleet Allocation Matrix ({fleetRoutes.length} Routes)
-            </span>
-            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#D97706' }}>
-              {openDrawers.routes ? '▲ Hide Routes' : '▼ Show Routes'}
-            </span>
-          </button>
-          {openDrawers.routes && (
-            <div style={{ padding: '0.95rem 1.15rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.65rem' }}>
-                {fleetRoutes.map((r) => (
-                  <div key={r.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.5rem', padding: '0.75rem', backgroundColor: '#FFFFFF' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '800' }}>
-                      <span style={{ color: '#D97706' }}>{r.id}</span>
-                      <span style={{ color: r.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>Fwd: {r.forwardOccupancy}% · Ret: {r.returnOccupancy}%</span>
-                    </div>
-                    <div style={{ fontWeight: '800', fontSize: '0.86rem', margin: '0.2rem 0' }}>{r.from.split('(')[0]} → {r.to.split('(')[0]}</div>
-                    <div style={{ fontSize: '0.74rem', color: '#64748B' }}>Assigned: <strong>{r.buses} Coaches</strong> ({r.buses * r.capacity} seats)</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* DRAWER 4: Advanced Scenario Simulator, Dynamic Pricing & Revenue Models */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', border: '1px solid #E2E8F0', overflow: 'hidden' }}>
-          <button
-            type="button"
-            onClick={() => toggleDrawer('analytics')}
-            style={{ width: '100%', padding: '0.75rem 1.15rem', backgroundColor: '#FFFFFF', border: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', textAlign: 'left' }}
-          >
-            <span style={{ fontSize: '0.88rem', fontWeight: '800', color: '#334155', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span>📁</span> Advanced Analytics: Scenario Simulator, Demand Forecasting &amp; Dynamic Pricing
-            </span>
-            <span style={{ fontSize: '0.76rem', fontWeight: '700', color: '#D97706' }}>
-              {openDrawers.analytics ? '▲ Hide Advanced Console' : '▼ Show Advanced Console'}
-            </span>
-          </button>
-          {openDrawers.analytics && (
-            <div style={{ padding: '1rem', borderTop: '1px solid #E2E8F0', backgroundColor: '#F8FAFC' }}>
-              <TravelAgencyConsole onOpenFleetModal={() => setShowFleetModal(true)} showToast={showToast} />
-            </div>
-          )}
-        </div>
-
       </div>
 
       {/* 8. SURGE SIMULATION MODAL */}
