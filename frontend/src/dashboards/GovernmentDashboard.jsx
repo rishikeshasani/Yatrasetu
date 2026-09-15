@@ -900,35 +900,6 @@ export default function GovernmentDashboard({
       {/* ===================================================================== */}
       {activeGovTab === 'overview' && (
         <>
-          {/* YatraSetu 2D GIS Operational God's-Eye Crowd Command Center Map */}
-          <div className="gov-godseye-command-wrap" style={{ marginBottom: '1.75rem' }}>
-            <GodsEyeMap
-              sites={sites}
-              densityMap={densityMap}
-              selectedSiteId={selectedSiteId || updateSiteId}
-              onSelectSite={(id) => {
-                if (onSelectSite) onSelectSite(id);
-                setUpdateSiteId(id);
-                const found = sites.find(s => s.id === id);
-                if (found) {
-                  const d = densityMap[id] || {};
-                  setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
-                  setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
-                }
-              }}
-              activeRerouteAlert={propRerouteAlert}
-              onRefresh={() => {
-                if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
-                  onCrowdUpdated(selectedSiteId || updateSiteId);
-                }
-              }}
-              onOpenCrowdUpdate={(id) => {
-                setUpdateSiteId(id);
-                handleSwitchGovTab('live-crowd');
-              }}
-            />
-          </div>
-
           {isPoliceOfficial ? (
           <div id="gov-overview-police" className="police-content-wrap">
             {/* Tactical KPI Cards */}
@@ -1325,7 +1296,7 @@ export default function GovernmentDashboard({
           </div>
 
           {/* Zone Risk Glance */}
-          <section className="gov-panel" id="gov-zone-monitoring-glance">
+          <section className="gov-panel" id="gov-zone-monitoring-glance" style={{ marginBottom: '1.75rem' }}>
             <div className="gov-panel-header">
               <div className="gov-panel-title">
                 <span>ZONE RISK OVERVIEW</span>
@@ -1425,8 +1396,37 @@ export default function GovernmentDashboard({
           </section>
         </div>
       )}
-      </>
-    )}
+
+          {/* YatraSetu 2D GIS Operational God's-Eye Crowd Command Center Map (Positioned at bottom of overview) */}
+          <div className="gov-godseye-command-wrap" style={{ marginTop: '1.25rem', marginBottom: '1.75rem' }}>
+            <GodsEyeMap
+              sites={sites}
+              densityMap={densityMap}
+              selectedSiteId={selectedSiteId || updateSiteId}
+              onSelectSite={(id) => {
+                if (onSelectSite) onSelectSite(id);
+                setUpdateSiteId(id);
+                const found = sites.find(s => s.id === id);
+                if (found) {
+                  const d = densityMap[id] || {};
+                  setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
+                  setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
+                }
+              }}
+              activeRerouteAlert={propRerouteAlert}
+              onRefresh={() => {
+                if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
+                  onCrowdUpdated(selectedSiteId || updateSiteId);
+                }
+              }}
+              onOpenCrowdUpdate={(id) => {
+                setUpdateSiteId(id);
+                handleSwitchGovTab('live-crowd');
+              }}
+            />
+          </div>
+        </>
+      )}
 
       {/* ===================================================================== */}
       {/* TAB 2: LIVE CROWD MONITORING                                          */}
