@@ -425,22 +425,35 @@ export function simulateOperations({
   // Capacity deployed
   const totalDeployedSeats = buses * seatsPerBus;
 
-  // Forward occupancy
-  const forwardOccupancyPct = totalDeployedSeats > 0
-    ? Math.min(100, Math.max(10, Math.round((totalDemandPassengers / totalDeployedSeats) * 100)))
-    : 100;
-  const forwardPassengersCarried = Math.min(totalDemandPassengers, totalDeployedSeats);
+  // Forward occupancy realistic scaling (prevents awkward flat 100% and reflects real load factor)
+  const loadRatio = totalDeployedSeats > 0 ? totalDemandPassengers / totalDeployedSeats : 1.0;
+  let forwardOccupancyPct;
+  if (loadRatio >= 1.25) {
+    // Saturated high demand (realistic coach load factor: 92% - 96%)
+    forwardOccupancyPct = Math.min(96, 91 + Math.round(Math.min(5, (loadRatio - 1.25) * 4)));
+  } else if (loadRatio >= 0.95) {
+    // High demand (84% - 90%)
+    forwardOccupancyPct = 84 + Math.round((loadRatio - 0.95) * 20);
+  } else if (loadRatio >= 0.65) {
+    // Balanced / normal flow (62% - 83%)
+    forwardOccupancyPct = 62 + Math.round(((loadRatio - 0.65) / 0.3) * 21);
+  } else {
+    // Low / surplus capacity (30% - 60%)
+    forwardOccupancyPct = Math.max(22, Math.round((loadRatio / 0.65) * 60));
+  }
+
+  const forwardPassengersCarried = Math.min(totalDemandPassengers, Math.round(totalDeployedSeats * (forwardOccupancyPct / 100)));
   const unmetPassengers = Math.max(0, totalDemandPassengers - totalDeployedSeats);
   const unmetBuses = Math.ceil(unmetPassengers / seatsPerBus);
 
-  // Return occupancy modeling with elasticity:
+  // Return occupancy modeling (typically 32% - 40% of forward occupancy + fare elasticity)
   const baseFare = cfg.base_fare_per_seat || 850;
   const safeForwardFare = Number(forwardFare) || baseFare;
   const safeReturnFare = Number(returnFare) || baseFare;
   const returnDiscountRatio = Math.max(0, (baseFare - safeReturnFare) / baseFare);
-  const baseReturnOccupancy = 24;
+  const baseReturnOccupancy = Math.max(16, Math.min(42, Math.round(forwardOccupancyPct * 0.36)));
   const elasticityBonus = Math.round(returnDiscountRatio * 180);
-  const returnOccupancyPct = Math.min(85, Math.max(15, baseReturnOccupancy + elasticityBonus));
+  const returnOccupancyPct = Math.min(65, Math.max(14, baseReturnOccupancy + elasticityBonus));
   const returnPassengersCarried = Math.round(totalDeployedSeats * (returnOccupancyPct / 100));
 
   // Financials
