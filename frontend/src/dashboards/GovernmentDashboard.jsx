@@ -1397,34 +1397,36 @@ export default function GovernmentDashboard({
         </div>
       )}
 
-          {/* YatraSetu 2D GIS Operational God's-Eye Crowd Command Center Map (Positioned at bottom of overview) */}
-          <div className="gov-godseye-command-wrap" style={{ marginTop: '1.25rem', marginBottom: '1.75rem' }}>
-            <GodsEyeMap
-              sites={sites}
-              densityMap={densityMap}
-              selectedSiteId={selectedSiteId || updateSiteId}
-              onSelectSite={(id) => {
-                if (onSelectSite) onSelectSite(id);
-                setUpdateSiteId(id);
-                const found = sites.find(s => s.id === id);
-                if (found) {
-                  const d = densityMap[id] || {};
-                  setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
-                  setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
-                }
-              }}
-              activeRerouteAlert={propRerouteAlert}
-              onRefresh={() => {
-                if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
-                  onCrowdUpdated(selectedSiteId || updateSiteId);
-                }
-              }}
-              onOpenCrowdUpdate={(id) => {
-                setUpdateSiteId(id);
-                handleSwitchGovTab('live-crowd');
-              }}
-            />
-          </div>
+          {/* YatraSetu 2D GIS Operational God's-Eye Crowd Command Center Map (Civil Administration Overview) */}
+          {!isPoliceOfficial && (
+            <div className="gov-godseye-command-wrap" style={{ marginTop: '1.25rem', marginBottom: '1.75rem' }}>
+              <GodsEyeMap
+                sites={sites}
+                densityMap={densityMap}
+                selectedSiteId={selectedSiteId || updateSiteId}
+                onSelectSite={(id) => {
+                  if (onSelectSite) onSelectSite(id);
+                  setUpdateSiteId(id);
+                  const found = sites.find(s => s.id === id);
+                  if (found) {
+                    const d = densityMap[id] || {};
+                    setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
+                    setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
+                  }
+                }}
+                activeRerouteAlert={propRerouteAlert}
+                onRefresh={() => {
+                  if (onCrowdUpdated && (selectedSiteId || updateSiteId)) {
+                    onCrowdUpdated(selectedSiteId || updateSiteId);
+                  }
+                }}
+                onOpenCrowdUpdate={(id) => {
+                  setUpdateSiteId(id);
+                  handleSwitchGovTab('live-crowd');
+                }}
+              />
+            </div>
+          )}
         </>
       )}
 
@@ -1433,33 +1435,35 @@ export default function GovernmentDashboard({
       {/* ===================================================================== */}
       {activeGovTab === 'live-crowd' && (
         <>
-          {/* View Mode Switcher */}
+          {/* View Mode Switcher (Civil Administration Only) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>👥</span>
               <span>LIVE CROWD INTELLIGENCE • 25 SACRED SHRINES</span>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                type="button"
-                className={`police-preset-btn ${liveCrowdViewMode === 'grid' ? 'active' : ''}`}
-                style={{ background: liveCrowdViewMode === 'grid' ? '#3B82F6' : '#080E1A', color: 'white' }}
-                onClick={() => setLiveCrowdViewMode('grid')}
-              >
-                📋 Data Table View
-              </button>
-              <button
-                type="button"
-                className={`police-preset-btn ${liveCrowdViewMode === 'map' ? 'active' : ''}`}
-                style={{ background: liveCrowdViewMode === 'map' ? '#3B82F6' : '#080E1A', color: 'white' }}
-                onClick={() => setLiveCrowdViewMode('map')}
-              >
-                🗺️ 2D GIS Command Map
-              </button>
-            </div>
+            {!isPoliceOfficial && (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  className={`police-preset-btn ${liveCrowdViewMode === 'grid' ? 'active' : ''}`}
+                  style={{ background: liveCrowdViewMode === 'grid' ? '#3B82F6' : '#080E1A', color: 'white' }}
+                  onClick={() => setLiveCrowdViewMode('grid')}
+                >
+                  📋 Data Table View
+                </button>
+                <button
+                  type="button"
+                  className={`police-preset-btn ${liveCrowdViewMode === 'map' ? 'active' : ''}`}
+                  style={{ background: liveCrowdViewMode === 'map' ? '#3B82F6' : '#080E1A', color: 'white' }}
+                  onClick={() => setLiveCrowdViewMode('map')}
+                >
+                  🗺️ 2D GIS Command Map
+                </button>
+              </div>
+            )}
           </div>
 
-          {liveCrowdViewMode === 'map' && (
+          {!isPoliceOfficial && liveCrowdViewMode === 'map' && (
             <div style={{ marginBottom: '1.75rem' }}>
               <GodsEyeMap
                 sites={sites}
