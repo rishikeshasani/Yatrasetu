@@ -23,7 +23,6 @@ import {
 // Route Intelligence Sub-components
 import RouteCommandBar from '../components/route_intelligence/RouteCommandBar';
 import EventContextBanner from '../components/route_intelligence/EventContextBanner';
-import RouteKpiRow from '../components/route_intelligence/RouteKpiRow';
 import AiRecommendationPanel from '../components/route_intelligence/AiRecommendationPanel';
 import FleetSimulator from '../components/route_intelligence/FleetSimulator';
 import DataSourcesModal from '../components/route_intelligence/DataSourcesModal';
@@ -299,6 +298,25 @@ export default function TravelCompanyDashboard({
   const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
   const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
 
+  // Operational Percentage-First Metrics (As shown in Pic 1)
+  const forwardOccupancyPct = simulationResult?.forward_occupancy_pct ?? currNode.forward_occupancy_pct ?? 86;
+  const returnOccupancyPct = simulationResult?.return_occupancy_pct ?? currNode.return_occupancy_pct ?? 33;
+  
+  const forwardStatusLevel = forwardOccupancyPct >= 90 ? 'Critical' : forwardOccupancyPct >= 75 ? 'High' : 'Normal';
+  const forwardStatusColor = forwardStatusLevel === 'Critical' ? '#DC2626' : forwardStatusLevel === 'High' ? '#EA580C' : '#16A34A';
+  const forwardStatusLabel = forwardStatusLevel === 'Critical' ? '🔴 Capacity Saturated' : forwardStatusLevel === 'High' ? '🟡 High Demand' : '🟢 Normal Flow';
+
+  const activeCoaches = fleetRoutes.reduce((acc, r) => acc + (r.buses || 0), 0) || 14;
+  const reserveCoaches = simulationResult?.reserve_fleet ?? 4;
+
+  const crowdLoadPct = currNode.crowd_load_pct ?? 25;
+  const crowdStatusLevel = crowdLoadPct >= 85 ? 'Critical' : crowdLoadPct >= 65 ? 'High' : crowdLoadPct >= 40 ? 'Moderate' : 'Normal';
+  const crowdStatusColor = crowdStatusLevel === 'Critical' ? '#DC2626' : crowdStatusLevel === 'High' ? '#EA580C' : crowdStatusLevel === 'Moderate' ? '#D97706' : '#16A34A';
+
+  const nextDepartureMins = currNode.next_departure_mins ?? 15;
+  const nextHubName = routeInfo?.destination?.name ? routeInfo.destination.name.split(' ')[0] : 'Haridwar';
+  const transitEta = currNode.transit_eta ?? '4h 15m';
+
   // Run Surge Simulation
   const handleRunSimulation = async () => {
     try {
@@ -499,13 +517,146 @@ export default function TravelCompanyDashboard({
       />
 
       {/* ========================================================================= */}
-      {/* 4. ROUTE INTELLIGENCE KPI ROW (6 CORE OPERATIONAL METRICS)                */}
+      {/* 4. CORE OPERATIONAL KPI ROW (6 PERCENTAGE-FIRST CARDS)                    */}
       {/* ========================================================================= */}
-      <RouteKpiRow
-        demandForecast={demandForecast}
-        simulationResult={simulationResult}
-        agencyConfig={agencyConfig}
-      />
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+        gap: '0.75rem',
+        marginBottom: '1.25rem'
+      }}>
+        {/* Card 1: Forward Occupancy */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>🚌</span> FORWARD OCCUPANCY
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: forwardStatusColor, margin: '0.2rem 0 0.1rem' }}>
+            {forwardOccupancyPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: forwardStatusColor, fontWeight: '700' }}>
+            {forwardStatusLabel}
+          </div>
+        </div>
+
+        {/* Card 2: Return Occupancy */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>🔄</span> RETURN OCCUPANCY
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0284C7', margin: '0.2rem 0 0.1rem' }}>
+            {returnOccupancyPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#0284C7', fontWeight: '700' }}>
+            Available Return Seats
+          </div>
+        </div>
+
+        {/* Card 3: Fleet Status */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>🚍</span> FLEET STATUS
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0 0.1rem' }}>
+            {activeCoaches} <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748B' }}>Active</span>
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: '700' }}>
+            {reserveCoaches} Reserve Coaches Standby
+          </div>
+        </div>
+
+        {/* Card 4: Crowd Load */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>👥</span> CROWD LOAD
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: crowdStatusColor, margin: '0.2rem 0 0.1rem' }}>
+            {crowdLoadPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: crowdStatusColor, fontWeight: '700' }}>
+            Status: {crowdStatusLevel}
+          </div>
+        </div>
+
+        {/* Card 5: Inflow Velocity */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>🌊</span> INFLOW VELOCITY
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#2563EB', margin: '0.2rem 0 0.1rem' }}>
+            {inflowPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: '700' }}>
+            {inflowPct > 50 ? 'Inflow Exceeds Outflow' : 'Steady Transit Rate'}
+          </div>
+        </div>
+
+        {/* Card 6: Next Scheduled Departure */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          borderRadius: '0.65rem',
+          padding: '0.85rem 1rem',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between'
+        }}>
+          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>⏱️</span> NEXT DEPARTURE
+          </div>
+          <div style={{ fontSize: '1.65rem', fontWeight: '900', color: '#0F172A', margin: '0.2rem 0 0.1rem' }}>
+            {nextDepartureMins}m
+          </div>
+          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '700' }}>
+            To {nextHubName} ({transitEta})
+          </div>
+        </div>
+      </div>
 
       {/* ========================================================================= */}
       {/* 5. AI ROUTE INTELLIGENCE PLAN (OPTIMIZED ALGORITHMIC RECOMMENDATION)      */}
