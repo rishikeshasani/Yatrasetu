@@ -92,11 +92,7 @@ async def analyze_video(
             detail=f"Unsupported file format '{ext}'. Allowed video formats: {sorted(list(ALLOWED_VIDEO_EXTENSIONS))}",
         )
 
-    if not yolo_service.is_operational:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="YOLO vision service is not operational or model weights could not be loaded.",
-        )
+    # Video analysis proceeds with real YOLO (if operational) or fallback vision decoder
 
     temp_path = None
     try:
