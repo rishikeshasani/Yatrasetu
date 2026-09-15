@@ -71,11 +71,38 @@ export default function TravelCompanyDashboard({
 
   // Active Corridor Route Allocations
   const [fleetRoutes, setFleetRoutes] = useState([
-    { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, forwardOccupancy: 94, returnOccupancy: 22, type: 'Volvo A/C', status: 'HIGH DEMAND' },
-    { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, forwardOccupancy: 100, returnOccupancy: 35, type: 'Sleeper', status: 'FULL' },
-    { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, forwardOccupancy: 88, returnOccupancy: 26, type: 'Volvo A/C', status: 'HIGH DEMAND' },
-    { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, forwardOccupancy: 67, returnOccupancy: 40, type: 'Mini Bus', status: 'NORMAL' },
+    { id: 'HR-01', from: 'Delhi (ISBT Kashmiri Gate)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 3, capacity: 42, baseDemand: 118, forwardOccupancy: 94, returnOccupancy: 33, type: 'Volvo A/C', status: 'HIGH DEMAND' },
+    { id: 'HR-02', from: 'Dehradun (Bus Stand)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 2, capacity: 38, baseDemand: 76, forwardOccupancy: 100, returnOccupancy: 35, type: 'Sleeper', status: 'FULL' },
+    { id: 'HR-03', from: 'Haridwar (Har Ki Pauri)', to: 'Delhi (ISBT Kashmiri Gate)', date: 'Oct 13 (Sun)', buses: 3, capacity: 42, baseDemand: 110, forwardOccupancy: 88, returnOccupancy: 31, type: 'Volvo A/C', status: 'HIGH DEMAND' },
+    { id: 'HR-04', from: 'Rishikesh (Triveni Ghat)', to: 'Haridwar (Har Ki Pauri)', date: 'Oct 12 (Fri)', buses: 1, capacity: 30, baseDemand: 20, forwardOccupancy: 67, returnOccupancy: 23, type: 'Mini Bus', status: 'NORMAL' },
   ]);
+
+  // Dynamic route bus adjustment & occupancy recalculation
+  const handleUpdateRouteBuses = (idx, delta) => {
+    setFleetRoutes(prev => prev.map((r, i) => {
+      if (i !== idx) return r;
+      const newBuses = Math.max(1, (r.buses || 1) + delta);
+      const capacityPerBus = r.capacity || 42;
+      const totalSeats = newBuses * capacityPerBus;
+      
+      // Calculate or retrieve stable passenger demand baseline
+      const baseDemand = r.baseDemand || Math.round((r.buses || 3) * capacityPerBus * ((r.forwardOccupancy || 85) / 100));
+      
+      // Recalculate forward & return occupancies dynamically
+      const forwardOccupancy = Math.min(100, Math.max(12, Math.round((baseDemand / totalSeats) * 100)));
+      const returnOccupancy = Math.max(10, Math.min(65, Math.round(forwardOccupancy * 0.35)));
+      const status = forwardOccupancy >= 95 ? 'FULL' : forwardOccupancy >= 80 ? 'HIGH DEMAND' : 'NORMAL';
+
+      return {
+        ...r,
+        buses: newBuses,
+        baseDemand,
+        forwardOccupancy,
+        returnOccupancy,
+        status
+      };
+    }));
+  };
 
   const selectedNodeIdRef = useRef(selectedNodeId);
   selectedNodeIdRef.current = selectedNodeId;
@@ -884,7 +911,7 @@ export default function TravelCompanyDashboard({
             <div key={r.id} style={{ border: '1px solid #E2E8F0', borderRadius: '0.55rem', padding: '0.85rem', backgroundColor: '#F8FAFC' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '800' }}>
                 <span style={{ color: '#D97706', backgroundColor: '#FEF3C7', padding: '0.1rem 0.4rem', borderRadius: '0.25rem' }}>{r.id}</span>
-                <span style={{ color: r.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>
+                <span style={{ color: r.forwardOccupancy >= 90 ? '#DC2626' : r.forwardOccupancy >= 75 ? '#EA580C' : '#16A34A', transition: 'color 0.2s ease' }}>
                   Fwd: {r.forwardOccupancy}% · Ret: {r.returnOccupancy}%
                 </span>
               </div>
@@ -992,16 +1019,35 @@ export default function TravelCompanyDashboard({
                         <p style={{ margin: 0, color: '#6B7280', fontSize: '0.85rem' }}>📅 {route.date} · 🚌 {route.type}</p>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: route.forwardOccupancy >= 90 ? '#DC2626' : '#16A34A' }}>Fwd: {route.forwardOccupancy}% · Ret: {route.returnOccupancy}%</div>
+                        <div style={{
+                          fontSize: '1.2rem',
+                          fontWeight: 'bold',
+                          color: route.forwardOccupancy >= 90 ? '#DC2626' : route.forwardOccupancy >= 75 ? '#EA580C' : '#16A34A',
+                          transition: 'color 0.2s ease'
+                        }}>
+                          Fwd: {route.forwardOccupancy}% · Ret: {route.returnOccupancy}%
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: '#64748B' }}>Corridor Occupancy</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFF', borderRadius: '0.5rem', padding: '0.65rem 1rem', border: '1px solid #E5E7EB' }}>
                       <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#374151' }}>Assigned Coaches:</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <button onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: Math.max(1, r.buses - 1) } : r))} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #D1D5DB', background: '#F9FAFB', fontWeight: 'bold', cursor: 'pointer' }}>−</button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateRouteBuses(idx, -1)}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #D1D5DB', background: '#F9FAFB', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          −
+                        </button>
                         <span style={{ fontSize: '1.4rem', fontWeight: 'bold', minWidth: '2rem', textAlign: 'center' }}>{route.buses}</span>
-                        <button onClick={() => setFleetRoutes(prev => prev.map((r, i) => i === idx ? { ...r, buses: r.buses + 1 } : r))} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #D97706', background: '#FEF3C7', fontWeight: 'bold', cursor: 'pointer', color: '#92400E' }}>+</button>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateRouteBuses(idx, 1)}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', border: '1px solid #D97706', background: '#FEF3C7', fontWeight: 'bold', cursor: 'pointer', color: '#92400E' }}
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
                   </div>
