@@ -89,28 +89,8 @@ export default function Navbar({
     }
 
     if (role === 'government') {
-      if (subrole === 'police_official') {
-        return [
-          { label: t('nav.overview', 'Overview'), target: 'gov-overview', tabId: 'overview' },
-          { label: t('nav.liveCrowdMonitoring', 'Live Crowd Monitoring'), target: 'gov-live-crowd', tabId: 'live-crowd' },
-          { label: t('nav.surgeAlerts', 'Crowd Surge Alerts'), target: 'gov-surge-alerts', tabId: 'surge-alerts' },
-          { label: `👮 ${t('nav.policeSimulation', 'Police & Crowd Simulation')}`, target: 'gov-police-simulation', tabId: 'police-simulation' },
-          { label: t('nav.emergencyResponse', 'Emergency Response'), target: 'gov-emergency-response', tabId: 'emergency-response' },
-          { label: t('nav.trafficControl', 'Traffic & Route Control'), target: 'gov-traffic-control', tabId: 'traffic-control' },
-          { label: t('nav.sosResponse', 'SOS / Distress Response'), target: 'gov-sos-response', tabId: 'sos-response' },
-          { label: t('nav.safetyZones', 'Safety Zones'), target: 'gov-safety-zones', tabId: 'safety-zones' },
-          { label: t('nav.reportsAnalytics', 'Reports / Analytics'), target: 'gov-reports-analytics', tabId: 'reports-analytics' }
-        ];
-      }
-
-      // Default: Civil Administration (government_official)
-      return [
-        { label: t('nav.overview', 'Overview'), target: 'gov-overview', tabId: 'overview' },
-        { label: t('nav.liveCrowdMonitoring', 'Live Crowd Monitoring'), target: 'gov-live-crowd', tabId: 'live-crowd' },
-        { label: t('nav.alertsSafety', 'Alerts & Safety'), target: 'gov-alerts-safety', tabId: 'alerts-safety' },
-        { label: t('nav.emergencyRerouting', 'Emergency Rerouting'), target: 'gov-emergency-reroute', tabId: 'emergency-rerouting' },
-        { label: t('nav.reportsAnalytics', 'Reports / Analytics'), target: 'gov-reports-analytics', tabId: 'reports-analytics' }
-      ];
+      // Government & Police dashboards manage their own dedicated command tab navigation
+      return [];
     }
 
     // Pilgrim / Tourist Navigation
