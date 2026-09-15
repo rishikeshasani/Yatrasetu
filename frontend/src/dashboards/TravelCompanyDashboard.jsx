@@ -7,28 +7,61 @@ import {
   uploadTransitVideo,
   saveFleetSchedules,
   fetchFleetSchedules,
-  fetchActiveRerouteAlert
+  fetchActiveRerouteAlert,
+  fetchTravelAgencyProfile
 } from '../api/api';
-import StatusBadge from '../components/common/StatusBadge';
+import {
+  DEFAULT_AGENCY_CONFIG,
+  resolveRoute,
+  parseDateSelection,
+  detectEventsForRouteAndDates,
+  generateDemandForecast,
+  simulateOperations,
+  generateAiRecommendation
+} from '../services/routeIntelligenceEngine';
+
+// Route Intelligence Sub-components
+import RouteCommandBar from '../components/route_intelligence/RouteCommandBar';
+import EventContextBanner from '../components/route_intelligence/EventContextBanner';
+import RouteKpiRow from '../components/route_intelligence/RouteKpiRow';
+import AiRecommendationPanel from '../components/route_intelligence/AiRecommendationPanel';
+import FleetSimulator from '../components/route_intelligence/FleetSimulator';
+import DataSourcesModal from '../components/route_intelligence/DataSourcesModal';
+import DispatchSummaryModal from '../components/route_intelligence/DispatchSummaryModal';
+import '../components/route_intelligence/RouteIntelligence.css';
 
 export default function TravelCompanyDashboard({
   showToast,
   externalTab
 }) {
+  // Agency Profile configuration
+  const [agencyConfig, setAgencyConfig] = useState(DEFAULT_AGENCY_CONFIG);
+
+  // 1. Primary Route Inputs (Multi-Route Selection)
+  const [source, setSource] = useState('HUB_DELHI_ISBT');
+  const [destination, setDestination] = useState('TS015'); // Har Ki Pauri Haridwar
+  const [dateInput, setDateInput] = useState('weekend');
+
+  // Interactive Simulation Controls (+5, +10 buses, slider)
+  const [deployedBuses, setDeployedBuses] = useState(150);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Modals & UI Controls
+  const [showDataSources, setShowDataSources] = useState(false);
+  const [showDispatchSummary, setShowDispatchSummary] = useState(false);
+  const [showSimModal, setShowSimModal] = useState(false);
+  const [showFleetModal, setShowFleetModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDispatching, setIsDispatching] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [activeReroute, setActiveReroute] = useState(null);
+
   // Transit Nodes & Active Selected Node State
   const [nodes, setNodes] = useState([]);
   const [selectedNodeId, setSelectedNodeId] = useState('NODE_DELHI_NDLS');
   const [activeNodeData, setActiveNodeData] = useState(null);
-
-  // Operational State
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null);
-  const [isDispatching, setIsDispatching] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [showSimModal, setShowSimModal] = useState(false);
-  const [showFleetModal, setShowFleetModal] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeReroute, setActiveReroute] = useState(null);
 
   const [simParams, setSimParams] = useState({
     headcountDelta: 450,
@@ -53,6 +86,87 @@ export default function TravelCompanyDashboard({
       showToast(msg);
     }
   }, [showToast]);
+
+  // Load agency configuration on mount
+  useEffect(() => {
+    fetchTravelAgencyProfile().then((data) => {
+      if (data) {
+        setAgencyConfig((prev) => ({
+          ...prev,
+          agency_name: data.agency_name || prev.agency_name,
+          total_fleet_capacity: data.total_fleet_capacity || prev.total_fleet_capacity,
+          agency_id: data.agency_id || prev.agency_id
+        }));
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Step 1: Route Resolution
+  const routeInfo = useMemo(() => {
+    return resolveRoute(source, destination);
+  }, [source, destination]);
+
+  // Step 2: Date Selection Parsing
+  const dateSelection = useMemo(() => {
+    return parseDateSelection(dateInput);
+  }, [dateInput]);
+
+  // Step 3: Event Detection
+  const eventContext = useMemo(() => {
+    return detectEventsForRouteAndDates(routeInfo.destination, dateSelection);
+  }, [routeInfo.destination, dateSelection]);
+
+  // Step 4: Demand Forecast
+  const demandForecast = useMemo(() => {
+    return generateDemandForecast(routeInfo.destination, eventContext, dateSelection, routeInfo);
+  }, [routeInfo.destination, eventContext, dateSelection, routeInfo]);
+
+  // Step 5: AI Recommendation Synthesis
+  const aiRecommendation = useMemo(() => {
+    return generateAiRecommendation({
+      demandForecast,
+      currentDeployed: deployedBuses,
+      routeInfo,
+      agencyConfig,
+      eventContext
+    });
+  }, [demandForecast, deployedBuses, routeInfo, agencyConfig, eventContext]);
+
+  // Auto-adapt initial deployment when route or event changes
+  useEffect(() => {
+    if (aiRecommendation) {
+      setDeployedBuses(aiRecommendation.recommended_buses);
+    }
+  }, [routeInfo.route_key, eventContext.event_name]);
+
+  // Step 6: Fleet Operations Simulation (Dynamic to slider changes)
+  const simulationResult = useMemo(() => {
+    return simulateOperations({
+      deployedBuses,
+      demandForecast,
+      forwardFare: 1000,
+      returnFare: 1000,
+      routeInfo,
+      agencyConfig
+    });
+  }, [deployedBuses, demandForecast, routeInfo, agencyConfig]);
+
+  // Handle explicit [Analyze Route] button trigger
+  const handleAnalyze = () => {
+    setIsAnalyzing(true);
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      notify(`⚡ Route analysis refreshed for ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`);
+    }, 450);
+  };
+
+  // 1-Click apply AI recommendation
+  const handleApplyAiRecommendation = () => {
+    if (aiRecommendation) {
+      setDeployedBuses(aiRecommendation.recommended_buses);
+      notify(`✨ Applied AI Recommended deployment: ${aiRecommendation.recommended_buses} buses (${(aiRecommendation.recommended_buses * agencyConfig.bus_seat_capacity).toLocaleString()} seats) on ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`);
+    }
+  };
 
   // Load all transit nodes from backend
   const loadNodes = useCallback(async (explicitId = null) => {
@@ -168,20 +282,22 @@ export default function TravelCompanyDashboard({
     }
   };
 
-  // Dispatch Bus Action (strictly integer count for physical deployment)
-  const handleDispatchBus = async (busesToDeploy = 1) => {
-    try {
-      setIsDispatching(true);
-      const res = await dispatchLocalTransitBus(selectedNodeId, busesToDeploy);
-      notify(`🚌 ${res?.message || `Dispatched ${busesToDeploy} local transit bus(es)!`}`);
-      await loadNodes(selectedNodeId);
-    } catch (err) {
-      console.error('Dispatch failed:', err);
-      notify(`❌ Dispatch failed: ${err.message || 'Server error'}`);
-    } finally {
-      setIsDispatching(false);
-    }
-  };
+  // Safe Normalized Active Node Data
+  const currNode = activeNodeData || {};
+  const currNodeName = currNode.name || currNode.node_name || 'Haridwar Railway Station & Bus Terminal';
+  const currRegion = currNode.region || 'Transit Corridor';
+  const cameraName = currNode.camera_name || 'Corridor Camera Feed';
+
+  const inflow = currNode.inflow_per_min ?? currNode.observation?.inflow_rate_per_min ?? 0;
+  const outflow = currNode.outflow_per_min ?? currNode.observation?.outflow_rate_per_min ?? 0;
+  const confidence = currNode.confidence ?? (currNode.observation?.confidence_score ? currNode.observation.confidence_score * 100 : 94.5);
+
+  const totalFlow = Math.max(1, inflow + outflow);
+  const inflowPct = Math.round((inflow / totalFlow) * 100);
+  const outflowPct = Math.round((outflow / totalFlow) * 100);
+
+  const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
+  const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
 
   // Run Surge Simulation
   const handleRunSimulation = async () => {
@@ -216,78 +332,11 @@ export default function TravelCompanyDashboard({
     }
   };
 
-  // Safe Normalized Active Node Data
-  const currNode = activeNodeData || {};
-  const nodeId = currNode.id || currNode.node_id || selectedNodeId || 'NODE_HARIDWAR_HW';
-  const currNodeId = nodeId;
-  const nodeName = currNode.name || currNode.node_name || 'Haridwar Railway Station & Bus Terminal';
-  const currNodeName = nodeName;
-  const region = currNode.region || 'Transit Corridor';
-  const currRegion = region;
-  const feedId = currNode.feed_id || 'FEED-LIVE';
-  const cameraName = currNode.camera_name || 'Corridor Camera Feed';
-
-  const headcount = currNode.headcount ?? currNode.observation?.people_count ?? 0;
-  const inflow = currNode.inflow_per_min ?? currNode.observation?.inflow_rate_per_min ?? 0;
-  const outflow = currNode.outflow_per_min ?? currNode.observation?.outflow_rate_per_min ?? 0;
-  const confidence = currNode.confidence ?? (currNode.observation?.confidence_score ? currNode.observation.confidence_score * 100 : 94.5);
-
-  const funnel = currNode.funnel || currNode.reroute_funnel || {
-    offered: currNode.reroutes_offered ?? 100,
-    accepted: currNode.reroutes_accepted ?? 70,
-    confirmed: currNode.reroutes_confirmed ?? 55,
-    waiting: currNode.passengers_waiting ?? 30,
-    boarded: currNode.passengers_boarded ?? 20,
-    completed: currNode.passengers_completed ?? 35
-  };
-
-  const waiting = currNode.passengers_waiting ?? funnel.waiting ?? 0;
-  const incoming = currNode.expected_incoming ?? Math.round(inflow * 0.75) ?? 0;
-  const expectedDemand = currNode.expected_demand ?? (waiting + incoming);
-  const requiredBuses = currNode.required_buses ?? 0;
-  const availableBuses = currNode.available_buses ?? 1;
-  const shortageBuses = currNode.shortage_buses ?? currNode.fleet?.net_shortage ?? Math.max(0, requiredBuses - availableBuses);
-  const usableCap = currNode.usable_capacity ?? currNode.usable_seat_capacity ?? 36;
-  const nextDepartureMins = currNode.next_departure_mins ?? 12;
-  const transitEta = currNode.transit_eta ?? '1h 30m';
-  const nextHub = currNode.next_hub ?? 'Next Staging Base';
-
-  // Capacity & Flow Ratios (Strictly Percentage Primary)
-  const nominalCapacity = currNode.nominal_capacity || 2500;
-  const crowdLoadPct = currNode.crowd_load_pct ?? Math.min(100, Math.max(10, Math.round((headcount / (nominalCapacity * 0.15)) * 100)));
-  const totalFlow = Math.max(1, inflow + outflow);
-  const inflowPct = Math.round((inflow / totalFlow) * 100);
-  const outflowPct = Math.round((outflow / totalFlow) * 100);
-  const waitingPressurePct = Math.round((waiting / Math.max(1, expectedDemand)) * 100);
-
-  // Forward vs Return Occupancy Metrics
-  const forwardOccupancyPct = currNode.forward_occupancy_pct ?? Math.min(100, Math.max(25, Math.round((expectedDemand / Math.max(1, availableBuses * usableCap)) * 88)));
-  const returnOccupancyPct = currNode.return_occupancy_pct ?? Math.max(18, Math.min(55, Math.round(forwardOccupancyPct * 0.35)));
-  const imbalancePct = forwardOccupancyPct - returnOccupancyPct;
-
-  // Status Levels: Normal / Moderate / High / Critical
-  const crowdStatusLevel = crowdLoadPct >= 85 ? 'Critical' : crowdLoadPct >= 65 ? 'High' : crowdLoadPct >= 40 ? 'Moderate' : 'Normal';
-  const crowdStatusColor = crowdStatusLevel === 'Critical' ? '#DC2626' : crowdStatusLevel === 'High' ? '#EA580C' : crowdStatusLevel === 'Moderate' ? '#D97706' : '#16A34A';
-
-  const forwardStatusLevel = forwardOccupancyPct >= 90 ? 'Critical' : forwardOccupancyPct >= 75 ? 'High' : 'Normal';
-  const forwardStatusColor = forwardStatusLevel === 'Critical' ? '#DC2626' : forwardStatusLevel === 'High' ? '#EA580C' : '#16A34A';
-
-  // Fleet Totals Across Company
-  const totalCoachesInService = fleetRoutes.reduce((acc, r) => acc + (r.buses || 0), 0);
-  const totalCorridorShortage = nodes.reduce((acc, n) => acc + (n.shortage_buses ?? n.fleet?.net_shortage ?? 0), 0);
-
-  // Human-Readable Rationale for the Recommendation Card
-  const rationale = shortageBuses > 0
-    ? `Waiting pressure is at ${waitingPressurePct}% with ${inflowPct}% incoming flow velocity. Deploying ${shortageBuses} additional coach will clear the queued passengers and absorb incoming pilgrims without delay.`
-    : `Current fleet deployment of ${availableBuses} coach(es) safely covers 100% of forward demand. Next departure in ${nextDepartureMins}m.`;
-
-  const alerts = Array.isArray(currNode.alerts) ? currNode.alerts : [];
-
   return (
     <div className="travel-dashboard-root" id="travel-dashboard" style={{ padding: '0.5rem 1.5rem 2.5rem', fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#0F172A', backgroundColor: '#F8FAFC' }}>
       
       {/* ========================================================================= */}
-      {/* 1. COMPANY HEADER & NAVIGATION (Himalaya Yatra Travels Identity)           */}
+      {/* 1. COMPANY HEADER (Himalaya Yatra Travels Identity & Top Bar)              */}
       {/* ========================================================================= */}
       <div style={{
         backgroundColor: '#FFFFFF',
@@ -319,20 +368,40 @@ export default function TravelCompanyDashboard({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: '800', color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Himalaya Yatra Travels
+                {agencyConfig.agency_name}
               </span>
               <span style={{ fontSize: '0.65rem', backgroundColor: '#DCFCE7', color: '#166534', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: '800', border: '1px solid #86EFAC' }}>
-                ● LIVE GPS &amp; YOLO AI ACTIVE
+                ● {agencyConfig.partner_tier || 'Verified Yatra Partner'} · Fleet: {agencyConfig.total_fleet_capacity} Coaches
               </span>
             </div>
             <h1 style={{ fontSize: '1.35rem', fontWeight: '900', color: '#0F172A', margin: '0.1rem 0 0' }}>
-              Fleet Operations Command Center
+              Fleet Operations &amp; Route Intelligence Command Center
             </h1>
           </div>
         </div>
 
-        {/* Quick Operational Actions */}
+        {/* Header Actions */}
         <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowDataSources(true)}
+            style={{
+              backgroundColor: '#FFFFFF',
+              color: '#334155',
+              border: '1px solid #CBD5E1',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 0.85rem',
+              fontSize: '0.82rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+            }}
+          >
+            🛡️ Data Sources &amp; Confidence
+          </button>
           <button
             type="button"
             onClick={() => setShowFleetModal(true)}
@@ -407,83 +476,60 @@ export default function TravelCompanyDashboard({
       )}
 
       {/* ========================================================================= */}
-      {/* 2. ABOVE THE FOLD: TODAY'S PASSENGER & CAPACITY SUMMARY (PERCENTAGE-FIRST)*/}
+      {/* 2. TOP BLACK ROUTE SELECTION COMMAND BAR (MULTI-ROUTE ENABLED)            */}
       {/* ========================================================================= */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-        gap: '0.75rem',
-        marginBottom: '1rem'
-      }}>
-        {/* Metric 1: Forward Occupancy */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🚌 Forward Occupancy</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: forwardStatusColor, marginTop: '0.1rem' }}>
-            {forwardOccupancyPct}%
-          </div>
-          <div style={{ fontSize: '0.72rem', color: forwardStatusColor, fontWeight: '700' }}>
-            {forwardStatusLevel === 'Critical' ? '🔴 Capacity Saturated' : forwardStatusLevel === 'High' ? '🟡 High Demand' : '🟢 Normal Flow'}
-          </div>
-        </div>
-
-        {/* Metric 2: Return Occupancy */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🔄 Return Occupancy</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0284C7', marginTop: '0.1rem' }}>
-            {returnOccupancyPct}%
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#0284C7', fontWeight: '700' }}>
-            Available Return Seats
-          </div>
-        </div>
-
-        {/* Metric 3: Fleet In-Service & Utilization */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🚍 Fleet Status</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0F172A', marginTop: '0.1rem' }}>
-            {totalCoachesInService} <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#64748B' }}>Active</span>
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: '700' }}>
-            4 Reserve Coaches Standby
-          </div>
-        </div>
-
-        {/* Metric 4: Concourse Crowd Load */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>👥 Crowd Load</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: crowdStatusColor, marginTop: '0.1rem' }}>
-            {crowdLoadPct}%
-          </div>
-          <div style={{ fontSize: '0.72rem', color: crowdStatusColor, fontWeight: '700' }}>
-            Status: {crowdStatusLevel}
-          </div>
-        </div>
-
-        {/* Metric 5: Inflow Velocity */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>🌊 Inflow Velocity</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#2563EB', marginTop: '0.1rem' }}>
-            {inflowPct}%
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#2563EB', fontWeight: '700' }}>
-            {inflowPct > 50 ? 'Inflow Exceeds Outflow' : 'Steady Transit Rate'}
-          </div>
-        </div>
-
-        {/* Metric 6: Next Scheduled Departure */}
-        <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.65rem', padding: '0.85rem 1rem', border: '1px solid #E2E8F0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-          <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: '800', textTransform: 'uppercase' }}>⏱️ Next Departure</div>
-          <div style={{ fontSize: '1.55rem', fontWeight: '900', color: '#0F172A', marginTop: '0.1rem' }}>
-            {nextDepartureMins}m
-          </div>
-          <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '700' }}>
-            To {nextHub.split(' ')[0]} ({transitEta})
-          </div>
-        </div>
-      </div>
+      <RouteCommandBar
+        source={source}
+        setSource={setSource}
+        destination={destination}
+        setDestination={setDestination}
+        dateInput={dateInput}
+        setDateInput={setDateInput}
+        onAnalyze={handleAnalyze}
+        isAnalyzing={isAnalyzing}
+      />
 
       {/* ========================================================================= */}
-      {/* 3. COMPACT PILGRIMAGE CORRIDOR (Delhi → Sonprayag Stepper)                */}
+      {/* 3. DYNAMIC EVENT & YATRA CONTEXT BANNER                                   */}
+      {/* ========================================================================= */}
+      <EventContextBanner
+        eventContext={eventContext}
+        routeInfo={routeInfo}
+        dateSelection={dateSelection}
+      />
+
+      {/* ========================================================================= */}
+      {/* 4. ROUTE INTELLIGENCE KPI ROW (6 CORE OPERATIONAL METRICS)                */}
+      {/* ========================================================================= */}
+      <RouteKpiRow
+        demandForecast={demandForecast}
+        simulationResult={simulationResult}
+        agencyConfig={agencyConfig}
+      />
+
+      {/* ========================================================================= */}
+      {/* 5. AI ROUTE INTELLIGENCE PLAN (OPTIMIZED ALGORITHMIC RECOMMENDATION)      */}
+      {/* ========================================================================= */}
+      <AiRecommendationPanel
+        aiRecommendation={aiRecommendation}
+        onApplyRecommendation={handleApplyAiRecommendation}
+        routeInfo={routeInfo}
+      />
+
+      {/* ========================================================================= */}
+      {/* 6. FLEET DEPLOYMENT SIMULATOR (+5, +10 BUSSES INTERACTIVE CONTROLS)       */}
+      {/* ========================================================================= */}
+      <FleetSimulator
+        deployedBuses={deployedBuses}
+        setDeployedBuses={setDeployedBuses}
+        simulationResult={simulationResult}
+        aiRecommendation={aiRecommendation}
+        agencyConfig={agencyConfig}
+        demandForecast={demandForecast}
+      />
+
+      {/* ========================================================================= */}
+      {/* 7. PILGRIMAGE CORRIDOR & LIVE YOLO TRANSIT FLOW                           */}
       {/* ========================================================================= */}
       <div style={{
         backgroundColor: '#FFFFFF',
@@ -497,19 +543,20 @@ export default function TravelCompanyDashboard({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ fontSize: '1rem' }}>🛣️</span>
             <span style={{ fontSize: '0.92rem', fontWeight: '800', color: '#0F172A' }}>
-              Pilgrimage Corridor Status (Delhi ➔ Haridwar ➔ Rishikesh ➔ Rudraprayag ➔ Guptkashi ➔ Sonprayag)
+              Active Transit Corridor: {routeInfo.source.name} ➔ {routeInfo.destination.name}
             </span>
           </div>
           <div style={{ fontSize: '0.75rem', color: '#64748B' }}>
-            Total Corridor Shortage: <strong style={{ color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A' }}>{totalCorridorShortage > 0 ? `${totalCorridorShortage} Coaches Needed` : '0 (Optimal)'}</strong>
+            Corridor Shortage: <strong style={{ color: totalCorridorShortage > 0 ? '#DC2626' : '#16A34A' }}>{totalCorridorShortage > 0 ? `${totalCorridorShortage} Coaches Needed` : '0 (Optimal)'}</strong>
           </div>
         </div>
 
-        {/* 6 Node Pills */}
+        {/* Node Station Pills */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-          gap: '0.55rem'
+          gap: '0.55rem',
+          marginBottom: '0.85rem'
         }}>
           {nodes.map((node, sIdx) => {
             const id = node.id || node.node_id;
@@ -558,184 +605,52 @@ export default function TravelCompanyDashboard({
             );
           })}
         </div>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* 4. PRIMARY OPERATIONAL ROW: AI ACTION CARD + COMPACT SELECTED NODE CARD   */}
-      {/* ========================================================================= */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-        gap: '0.85rem',
-        marginBottom: '1rem'
-      }}>
-        
-        {/* LEFT: Prominent but Compact AI Bus Deployment Recommendation */}
+        {/* Selected Hub YOLO & Real-Time Flow Sub-Card */}
         <div style={{
-          backgroundColor: shortageBuses > 0 ? '#FEF2F2' : '#F0FDF4',
-          borderRadius: '0.75rem',
-          border: shortageBuses > 0 ? '2px solid #FCA5A5' : '2px solid #BBF7D0',
-          padding: '1rem 1.25rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          gap: '0.75rem',
-          boxShadow: shortageBuses > 0 ? '0 4px 12px rgba(220,38,38,0.1)' : '0 2px 6px rgba(22,163,74,0.06)'
-        }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>{shortageBuses > 0 ? '🚨' : '✅'}</span>
-                <span style={{
-                  fontSize: '0.72rem',
-                  fontWeight: '900',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  color: shortageBuses > 0 ? '#DC2626' : '#16A34A',
-                  backgroundColor: shortageBuses > 0 ? '#FEE2E2' : '#DCFCE7',
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '0.3rem'
-                }}>
-                  {shortageBuses > 0 ? `ACTION REQUIRED: ${shortageBuses} BUS SHORTAGE` : 'FLEET OPTIMAL: DEMAND COVERED'}
-                </span>
-              </div>
-              <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '700' }}>
-                {currNodeName.split('&')[0]}
-              </span>
-            </div>
-
-            <h3 style={{ margin: '0.15rem 0 0.35rem', fontSize: '1.15rem', fontWeight: '900', color: shortageBuses > 0 ? '#991B1B' : '#166534' }}>
-              {shortageBuses > 0
-                ? `Deploy ${shortageBuses} Standby Coach to ${currNodeName.split('&')[0]}`
-                : `All Departures at ${currNodeName.split('&')[0]} are Adequately Sized`}
-            </h3>
-
-            <p style={{ margin: 0, fontSize: '0.82rem', color: shortageBuses > 0 ? '#7F1D1D' : '#14532D', fontWeight: '600', lineHeight: 1.4 }}>
-              💡 <strong>Reason:</strong> {rationale}
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', borderTop: `1px solid ${shortageBuses > 0 ? '#FECACA' : '#BBF7D0'}`, paddingTop: '0.65rem' }}>
-            <div style={{ fontSize: '0.76rem', color: shortageBuses > 0 ? '#991B1B' : '#166534', fontWeight: '700' }}>
-              Forward Rush: <strong>{forwardOccupancyPct}%</strong> · Waiting Pressure: <strong>{waitingPressurePct}%</strong>
-            </div>
-
-            {shortageBuses > 0 ? (
-              <button
-                type="button"
-                disabled={isDispatching}
-                onClick={() => handleDispatchBus(shortageBuses)}
-                style={{
-                  backgroundColor: '#DC2626',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '0.45rem',
-                  padding: '0.55rem 1.15rem',
-                  fontSize: '0.88rem',
-                  fontWeight: '900',
-                  cursor: isDispatching ? 'not-allowed' : 'pointer',
-                  boxShadow: '0 2px 8px rgba(220,38,38,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                <span>{isDispatching ? '⏳' : '🚀'}</span>
-                <span>{isDispatching ? 'Deploying...' : `Deploy ${shortageBuses} Bus Now`}</span>
-              </button>
-            ) : (
-              <div style={{
-                backgroundColor: '#DCFCE7',
-                color: '#166534',
-                padding: '0.4rem 0.85rem',
-                borderRadius: '0.4rem',
-                fontWeight: '800',
-                fontSize: '0.82rem',
-                border: '1px solid #86EFAC'
-              }}>
-                ✓ 100% Demand Covered
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT: Compact Selected-Node Live Flow & Video Telemetry Ingest Card */}
-        <div style={{
-          backgroundColor: '#FFFFFF',
-          borderRadius: '0.75rem',
+          backgroundColor: '#F8FAFC',
+          borderRadius: '0.65rem',
           border: '1px solid #E2E8F0',
-          padding: '1rem 1.25rem',
+          padding: '0.85rem 1rem',
           display: 'flex',
-          flexDirection: 'column',
           justifyContent: 'space-between',
-          gap: '0.75rem',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.03)'
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '0.75rem'
         }}>
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <span style={{ fontSize: '0.7rem', fontWeight: '800', color: '#0284C7', textTransform: 'uppercase' }}>
-                Selected Hub: {currRegion}
-              </span>
-              <span style={{ fontSize: '0.68rem', backgroundColor: '#F1F5F9', color: '#475569', padding: '0.15rem 0.45rem', borderRadius: '0.25rem', fontWeight: '700' }}>
-                📹 {cameraName}
-              </span>
+            <div style={{ fontSize: '0.7rem', color: '#0284C7', fontWeight: '800', textTransform: 'uppercase' }}>
+              Selected Transit Hub: {currRegion} · {cameraName}
             </div>
-
-            <h3 style={{ margin: '0.1rem 0 0.35rem', fontSize: '1.15rem', fontWeight: '900', color: '#0F172A' }}>
-              {currNodeName}
-            </h3>
-
-            {/* Quick Flow & Pressure Meters */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem', margin: '0.5rem 0' }}>
-              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Flow Velocity</div>
-                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#0F172A', marginTop: '0.1rem' }}>
-                  Inflow: <strong style={{ color: '#2563EB' }}>{inflowPct}%</strong> · Out: {outflowPct}%
-                </div>
-              </div>
-
-              <div style={{ backgroundColor: '#F8FAFC', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: '0.66rem', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Reroute Activity</div>
-                <div style={{ fontSize: '0.84rem', fontWeight: '800', color: '#7C3AED', marginTop: '0.1rem' }}>
-                  {funnel.confirmed || 45} Confirmed · {funnel.waiting || 25} Waiting
-                </div>
-              </div>
+            <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0F172A', marginTop: '0.1rem' }}>
+              {currNodeName} — Inflow: <strong style={{ color: '#2563EB' }}>{inflowPct}%</strong> · Outflow: {outflowPct}% · YOLO Confidence: <strong style={{ color: '#059669' }}>{Number(confidence).toFixed(1)}%</strong>
             </div>
           </div>
 
-          {/* Dynamic Video Ingest Trigger */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px solid #F1F5F9', paddingTop: '0.65rem' }}>
-            <div style={{ fontSize: '0.72rem', color: '#64748B' }}>
-              YOLO Class 0 Confidence: <strong style={{ color: '#059669' }}>{Number(confidence).toFixed(1)}%</strong>
-            </div>
-
-            <label style={{
-              backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
-              color: '#FFFFFF',
-              borderRadius: '0.45rem',
-              padding: '0.5rem 0.95rem',
-              fontSize: '0.82rem',
-              fontWeight: '800',
-              cursor: isUploading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              boxShadow: '0 2px 6px rgba(2,132,199,0.2)'
-            }}>
-              <span>{isUploading ? '⏳' : '📹'}</span>
-              <span>{isUploading ? 'Processing...' : 'Upload Video to YOLO'}</span>
-              <input
-                type="file"
-                accept="video/*"
-                style={{ display: 'none' }}
-                disabled={isUploading}
-                onChange={handleVideoUpload}
-              />
-            </label>
-          </div>
+          <label style={{
+            backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
+            color: '#FFFFFF',
+            borderRadius: '0.45rem',
+            padding: '0.45rem 0.9rem',
+            fontSize: '0.82rem',
+            fontWeight: '800',
+            cursor: isUploading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            boxShadow: '0 2px 6px rgba(2,132,199,0.2)'
+          }}>
+            <span>{isUploading ? '⏳' : '📹'}</span>
+            <span>{isUploading ? 'Processing...' : 'Upload Video to YOLO'}</span>
+            <input
+              type="file"
+              accept="video/*"
+              style={{ display: 'none' }}
+              disabled={isUploading}
+              onChange={handleVideoUpload}
+            />
+          </label>
         </div>
-
       </div>
 
       {/* OPERATIONAL ALERTS (If meaningful conditions exist) */}
@@ -774,7 +689,7 @@ export default function TravelCompanyDashboard({
       )}
 
       {/* ========================================================================= */}
-      {/* 5. SCHEDULED COACH ROUTES & FLEET ALLOCATION MATRIX                       */}
+      {/* 8. SCHEDULED COACH ROUTES & FLEET ALLOCATION MATRIX                       */}
       {/* ========================================================================= */}
       <div style={{
         backgroundColor: '#FFFFFF',
@@ -788,7 +703,7 @@ export default function TravelCompanyDashboard({
             <span style={{ fontSize: '1.1rem' }}>🚌</span>
             <div>
               <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>
-                Active Coach Routes &amp; Fleet Allocations
+                Active Company Coach Routes &amp; Fleet Allocations
               </span>
               <span style={{ fontSize: '0.75rem', color: '#64748B', marginLeft: '0.5rem' }}>
                 ({fleetRoutes.length} Active Corridors)
@@ -834,13 +749,41 @@ export default function TravelCompanyDashboard({
         </div>
       </div>
 
-      {/* 8. SURGE SIMULATION MODAL */}
+      {/* ========================================================================= */}
+      {/* 9. MODALS & OVERLAYS                                                      */}
+      {/* ========================================================================= */}
+
+      {/* DATA SOURCES MODAL */}
+      {showDataSources && (
+        <DataSourcesModal
+          onClose={() => setShowDataSources(false)}
+          eventContext={eventContext}
+          routeInfo={routeInfo}
+        />
+      )}
+
+      {/* DISPATCH SUMMARY MODAL */}
+      {showDispatchSummary && (
+        <DispatchSummaryModal
+          onClose={() => setShowDispatchSummary(false)}
+          routeInfo={routeInfo}
+          simulationResult={simulationResult}
+          dateSelection={dateSelection}
+          agencyConfig={agencyConfig}
+          onConfirmDispatch={(payload) => {
+            notify(`✅ Bus schedule confirmed & dispatched: ${payload.deployed_buses} buses to ${routeInfo.source.name} ⇄ ${routeInfo.destination.name}`);
+            setShowDispatchSummary(false);
+          }}
+        />
+      )}
+
+      {/* SURGE SIMULATION MODAL */}
       {showSimModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ backgroundColor: '#FFFFFF', borderRadius: '0.75rem', maxWidth: '440px', width: '100%', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <h3 style={{ margin: '0 0 0.5rem', fontSize: '1.2rem', fontWeight: '800' }}>⚡ Test Corridor Surge</h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '0.84rem', color: '#64748B' }}>
-              Simulate an influx at <strong>{nodeName}</strong> to verify real-time alert triggers and bus recommendation.
+              Simulate an influx at <strong>{currNodeName}</strong> to verify real-time alert triggers and bus recommendation.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
@@ -872,7 +815,7 @@ export default function TravelCompanyDashboard({
         </div>
       )}
 
-      {/* 9. FLEET SCHEDULE ADJUSTMENT MODAL */}
+      {/* FLEET SCHEDULE ADJUSTMENT MODAL */}
       {showFleetModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div style={{ backgroundColor: '#FFF', borderRadius: '1rem', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.4)' }}>
@@ -921,7 +864,7 @@ export default function TravelCompanyDashboard({
                 onClick={async () => {
                   setIsSaving(true);
                   try {
-                    const payload = fleetRoutes.map((r) => ({ id: r.id, buses: r.buses, operator: 'Himalaya Yatra Travels' }));
+                    const payload = fleetRoutes.map((r) => ({ id: r.id, buses: r.buses, operator: agencyConfig.agency_name }));
                     await saveFleetSchedules(payload);
                     setShowFleetModal(false);
                     notify('✅ Fleet schedule saved & synchronized with Hotel & Government dashboards.');
@@ -944,3 +887,4 @@ export default function TravelCompanyDashboard({
     </div>
   );
 }
+
