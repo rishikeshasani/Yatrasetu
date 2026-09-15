@@ -396,6 +396,52 @@ export default function TravelCompanyDashboard({
   const nextHubName = routeInfo?.destination?.name ? routeInfo.destination.name.split(' ')[0] : 'Haridwar';
   const transitEta = routeInfo?.estimated_travel_time || '4h 15m';
 
+  // Dynamic Hotspot / Highest Demand Staging Hub across the 6 Corridor Stops
+  const hotspotNode = useMemo(() => {
+    if (!nodes || nodes.length === 0) return null;
+    const sorted = [...nodes].sort((a, b) => {
+      const aShortage = a.shortage_buses ?? a.fleet?.net_shortage ?? 0;
+      const bShortage = b.shortage_buses ?? b.fleet?.net_shortage ?? 0;
+      if (bShortage !== aShortage) return bShortage - aShortage;
+      return (b.crowd_load_pct || 0) - (a.crowd_load_pct || 0);
+    });
+    return sorted[0];
+  }, [nodes]);
+
+  const hotspotShortage = hotspotNode ? Math.max(1, hotspotNode.shortage_buses ?? hotspotNode.fleet?.net_shortage ?? 1) : 1;
+  const hotspotNodeId = hotspotNode ? (hotspotNode.id || hotspotNode.node_id) : 'NODE_01';
+  const hotspotNodeName = hotspotNode ? (hotspotNode.name || hotspotNode.node_name || 'Delhi Railway Station') : 'Corridor Transit Station';
+  const hotspotWaitingPressure = hotspotNode ? Math.min(95, Math.max(35, Math.round((hotspotNode.crowd_load_pct || 70) * 0.74))) : 52;
+  const hotspotInflowVelocity = hotspotNode ? Math.min(95, Math.max(40, Math.round(((hotspotNode.inflow_per_min || 40) / Math.max(1, (hotspotNode.inflow_per_min || 40) + (hotspotNode.outflow_per_min || 35))) * 100))) : 54;
+  const hasShortage = totalCorridorShortage > 0;
+
+  // Immediate Hotspot Deployment Action
+  const handleDeployHotspotBus = (stopId, busCount = 1) => {
+    setNodes(prev => prev.map(n => {
+      if ((n.id || n.node_id) === stopId) {
+        return {
+          ...n,
+          shortage_buses: 0,
+          fleet: { ...n.fleet, net_shortage: 0, recommended_buses: 0 },
+          available_buses: (n.available_buses || 1) + busCount,
+          crowd_load_pct: Math.max(20, (n.crowd_load_pct || 50) - 18)
+        };
+      }
+      return n;
+    }));
+    if ((activeNodeData?.id || activeNodeData?.node_id) === stopId) {
+      setActiveNodeData(prev => ({
+        ...prev,
+        shortage_buses: 0,
+        fleet: { ...prev?.fleet, net_shortage: 0, recommended_buses: 0 },
+        available_buses: (prev?.available_buses || 1) + busCount,
+        crowd_load_pct: Math.max(20, (prev?.crowd_load_pct || 50) - 18)
+      }));
+    }
+    setDeployedBuses(prev => prev + busCount);
+    notify(`🚀 Deployed ${busCount} ${busCount > 1 ? 'Standby Coaches' : 'Standby Coach'} to ${hotspotNodeName}! Queues cleared.`);
+  };
+
   // Run Surge Simulation
   const handleRunSimulation = async () => {
     try {
@@ -541,11 +587,86 @@ export default function TravelCompanyDashboard({
         </div>
       </div>
 
-      {/* EMERGENCY REROUTE DIRECTIVE (If state alert active) */}
-      {activeReroute?.is_active && (
+      {/* ========================================================================= */}
+      {/* 2. IMMEDIATE ACTION REQUIRED DEPLOYMENT CARD (HOTSPOT DEMAND RESOLUTION)  */}
+      {/* ========================================================================= */}
+      {hasShortage ? (
         <div style={{
-          backgroundColor: '#FEF2F2',
-          border: '1.5px solid #F87171',
+          backgroundColor: '#FFF5F5',
+          border: '1.5px solid #FECACA',
+          borderRadius: '0.75rem',
+          padding: '1rem 1.25rem',
+          marginBottom: '1rem',
+          boxShadow: '0 2px 8px rgba(220, 38, 38, 0.06)'
+        }}>
+          {/* Header row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: '#FFE4E6',
+              padding: '0.22rem 0.65rem',
+              borderRadius: '9999px',
+              fontSize: '0.72rem',
+              fontWeight: '900',
+              color: '#BE123C',
+              letterSpacing: '0.04em'
+            }}>
+              <span>🚨</span>
+              <span>ACTION REQUIRED: {hotspotShortage} {hotspotShortage > 1 ? 'BUSES' : 'BUS'} SHORTAGE</span>
+            </div>
+            <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#64748B' }}>
+              {hotspotNodeName}
+            </div>
+          </div>
+
+          {/* Main Title */}
+          <div style={{ fontSize: '1.08rem', fontWeight: '900', color: '#991B1B', marginBottom: '0.35rem' }}>
+            Deploy {hotspotShortage} Standby {hotspotShortage > 1 ? 'Coaches' : 'Coach'} to {hotspotNodeName}
+          </div>
+
+          {/* Reason Description */}
+          <div style={{ fontSize: '0.85rem', color: '#7F1D1D', lineHeight: '1.45', marginBottom: '0.75rem' }}>
+            💡 <strong>Reason:</strong> Waiting pressure is at {hotspotWaitingPressure}% with {hotspotInflowVelocity}% incoming flow velocity. Deploying {hotspotShortage} additional {hotspotShortage > 1 ? 'coaches' : 'coach'} will clear the queued passengers and absorb incoming pilgrims without delay.
+          </div>
+
+          <div style={{ borderTop: '1px solid #FEE2E2', margin: '0.65rem 0 0.85rem' }} />
+
+          {/* Action Footer */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ fontSize: '0.84rem', color: '#991B1B', fontWeight: '800' }}>
+              Forward Rush: <strong>{forwardOccupancyPct}%</strong> · Waiting Pressure: <strong>{hotspotWaitingPressure}%</strong>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleDeployHotspotBus(hotspotNodeId, hotspotShortage)}
+              style={{
+                backgroundColor: '#DC2626',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.55rem 1.25rem',
+                fontSize: '0.86rem',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🚀</span>
+              <span>Deploy {hotspotShortage} {hotspotShortage > 1 ? 'Buses' : 'Bus'} Now</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{
+          backgroundColor: '#F0FDF4',
+          border: '1.5px solid #BBF7D0',
           borderRadius: '0.75rem',
           padding: '0.85rem 1.25rem',
           marginBottom: '1rem',
@@ -555,19 +676,19 @@ export default function TravelCompanyDashboard({
           flexWrap: 'wrap',
           gap: '0.75rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <span style={{ fontSize: '1.4rem' }}>🚨</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ fontSize: '1.2rem' }}>✅</span>
             <div>
-              <div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#DC2626', textTransform: 'uppercase' }}>
-                STATE EMERGENCY DIRECTIVE ACTIVE
+              <div style={{ fontSize: '0.88rem', fontWeight: '900', color: '#166534' }}>
+                Corridor Capacity Fully Balanced across all 6 Staging Hubs
               </div>
-              <div style={{ fontSize: '0.92rem', fontWeight: '800', color: '#991B1B' }}>
-                {activeReroute.message || 'Haridwar Corridor Overtourism: Divert scheduled coaches to satellite basecamp.'}
+              <div style={{ fontSize: '0.78rem', color: '#15803D' }}>
+                No critical bus shortages on {routeInfo.source.name} ➔ {routeInfo.destination.name}. Active standby coaches are in optimal reserve.
               </div>
             </div>
           </div>
-          <div style={{ fontSize: '0.8rem', color: '#7F1D1D', fontWeight: '700' }}>
-            Diverted: <strong>{activeReroute.diverted_tourists_count || 320} Pilgrims</strong> · Assigned: <strong>{activeReroute.assigned_buses_count || 8} Coaches</strong>
+          <div style={{ fontSize: '0.8rem', color: '#166534', fontWeight: '800' }}>
+            Fleet Status: <strong>Optimal (0 Shortage)</strong>
           </div>
         </div>
       )}
