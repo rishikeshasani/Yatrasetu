@@ -748,22 +748,6 @@ export default function TouristDashboard({
               <div style={{ display: 'flex', gap: '0.75rem' }}>
                 <button
                   type="button"
-                  onClick={() => setIsDetailsModalOpen(true)}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.8rem',
-                    fontWeight: '700',
-                    color: '#334155',
-                    background: '#F8FAFC',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: '0.55rem',
-                    cursor: 'pointer'
-                  }}
-                >
-                  📖 {t('details.fullShrineGuide', 'Full Shrine Guide')}
-                </button>
-                <button
-                  type="button"
                   onClick={() => (onOpenSOS ? onOpenSOS() : onTriggerSOS(currentDisplayShrine))}
                   style={{
                     padding: '0.5rem 1rem',
