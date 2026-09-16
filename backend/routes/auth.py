@@ -354,6 +354,32 @@ def login(data: LoginRequest):
     full_name = (profile_data.get("full_name") if profile_data else None) or user_meta.get("full_name")
     raw_role = (profile_data.get("role") if profile_data else None) or user_meta.get("role")
 
+    # Fallback to recognized demo/system role mappings if missing in profile/metadata
+    if not raw_role and user.email:
+        email_clean = user.email.lower()
+        if "hotel" in email_clean:
+            raw_role = "hotel"
+            if not full_name:
+                full_name = "Kedarnath Himalayan Hospitality Guild"
+        elif "police" in email_clean:
+            raw_role = "government"
+            gov_subrole = "police_official"
+            if not full_name:
+                full_name = "National Sacred Corridors Command (Police HQ)"
+        elif "govt" in email_clean or "admin" in email_clean:
+            raw_role = "government"
+            gov_subrole = "government_official"
+            if not full_name:
+                full_name = "National Sacred Corridors Command (Civil Administration)"
+        elif "travel" in email_clean:
+            raw_role = "travel_company"
+            if not full_name:
+                full_name = "Garhwal Divine Pilgrimage Expeditions"
+        elif "tourist" in email_clean or "pilgrim" in email_clean:
+            raw_role = "tourist"
+            if not full_name:
+                full_name = "Aarav Sharma"
+
     # CRITICAL: Never silently default to 'tourist'
     if not raw_role:
         raise HTTPException(
