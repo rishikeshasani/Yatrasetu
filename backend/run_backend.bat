@@ -9,21 +9,23 @@ echo.
 cd /d "%~dp0"
 
 :: 1. Activate Python Virtual Environment if present
-if exist .venv\Scripts\activate.bat (
-    echo [*] Activating local virtual environment (.venv)...
+if exist ".venv\Scripts\activate.bat" (
+    echo [*] Activating local virtual environment
     call .venv\Scripts\activate.bat
-) else if exist ..\.venv\Scripts\activate.bat (
-    echo [*] Activating parent virtual environment (..\.venv)...
+)
+if exist "..\.venv\Scripts\activate.bat" (
+    echo [*] Activating parent virtual environment
     call ..\.venv\Scripts\activate.bat
-) else if exist "%USERPROFILE%\.venv\Scripts\activate.bat" (
-    echo [*] Activating user virtual environment...
+)
+if exist "%USERPROFILE%\.venv\Scripts\activate.bat" (
+    echo [*] Activating user virtual environment
     call "%USERPROFILE%\.venv\Scripts\activate.bat"
 )
 
 :: 2. Ensure Port 8000 is clean and available
 echo [*] Checking port 8000 availability...
-for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr /r "\<8000\>" ^| findstr "LISTENING"') do (
-    echo [!] Found existing process (PID %%a) on port 8000. Terminating old instance...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr /c:":8000" ^| findstr "LISTENING"') do (
+    echo [!] Found existing process PID %%a on port 8000. Terminating old instance...
     taskkill /f /pid %%a >nul 2>&1
 )
 timeout /t 1 /nobreak >nul 2>&1
@@ -44,13 +46,12 @@ echo   - Hotel Partner         : hotel_partner@yatrasetu.org  / DemoPassword123!
 echo ======================================================================
 echo.
 echo [*] Starting Uvicorn server with Hot Reload on 0.0.0.0:8000...
+echo [*] (Press Ctrl+C to stop the server)
 echo.
 
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo [!] Backend exited with error code %ERRORLEVEL%.
-    pause
-)
+echo.
+echo [!] Backend server stopped.
+pause
 
