@@ -43,20 +43,6 @@ export default function DestinationCard({
   const statusClass = `status-${status.toLowerCase()}`;
   const waitMins = density?.wait_time_minutes != null ? density.wait_time_minutes : Math.max(15, Math.round((occupancy / 100) * 120));
 
-  const SOURCE_CONFIG = {
-    fused_yolo_gps: { label: 'Multi-Source Fusion — YOLO + GPS', icon: '⚡', badgeClass: 'source-fused' },
-    yolo_video: { label: 'YOLO Video Headcount', icon: '📹', badgeClass: 'source-yolo' },
-    gps_crowd: { label: 'Mobile GPS Crowd Signal', icon: '📡', badgeClass: 'source-gps' },
-    gps_crowd_demo: { label: 'Mobile GPS Crowd Signal (Demo)', icon: '📡', badgeClass: 'source-demo' },
-    live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
-    demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
-    historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
-    historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
-  };
-
-  const rawSource = density?.source || 'demo_simulation';
-  const sourceInfo = SOURCE_CONFIG[rawSource] || SOURCE_CONFIG.demo_simulation;
-
   return (
     <div
       className={`shrine-grid-card ${isSelected ? 'card-selected' : ''}`}
@@ -142,16 +128,12 @@ export default function DestinationCard({
           ></div>
         </div>
 
-        <div className="card-meta-row" style={{ marginTop: '0.35rem' }}>
+        <div className="card-meta-row" style={{ marginTop: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="meta-cap">
-            ⏱️ Wait: <strong>~{waitMins} min</strong>
+            ⏱️ Est. Wait: <strong>~{waitMins} min</strong>
           </span>
-          <span
-            className={`source-badge-pill ${sourceInfo.badgeClass}`}
-            title={`Authoritative Data Source: ${sourceInfo.label}`}
-            style={{ maxWidth: '175px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block' }}
-          >
-            {sourceInfo.icon} {sourceInfo.label}
+          <span style={{ fontSize: '0.74rem', color: '#64748B', fontWeight: 600 }}>
+            ⚡ Real-Time
           </span>
         </div>
 

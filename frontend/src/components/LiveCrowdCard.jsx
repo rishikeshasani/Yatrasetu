@@ -163,15 +163,8 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
             <span className="live-telemetry-tag">
               <span className="blink-dot"></span> OFFICIAL PILGRIM ADVISORY
             </span>
-            <span
-              className={`source-badge-pill ${sourceInfo.badgeClass}`}
-              style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}
-              title={`Authoritative Data Source: ${sourceInfo.label}`}
-            >
-              {sourceInfo.icon} {sourceInfo.label}
-            </span>
             <span className="live-poll-badge">
-              <span className="poll-dot"></span> {rawSource === 'demo_simulation' ? 'Deterministic Advisory' : 'Live Crowd Advisory'}
+              <span className="poll-dot"></span> Live Crowd Telemetry
             </span>
           </div>
           <h1 className="destination-heading">{site.name}</h1>
@@ -402,12 +395,6 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                 </strong>
               </div>
               <div className="stat-line">
-                <span className="stat-muted">Data Source:</span>
-                <span className={`source-badge-pill ${sourceInfo.badgeClass}`} style={{ fontSize: '0.72rem', padding: '0.12rem 0.5rem' }}>
-                  {sourceInfo.icon} {sourceInfo.label}
-                </span>
-              </div>
-              <div className="stat-line">
                 <span className="stat-muted">Last Updated:</span>
                 <span className="stat-desc" style={{ fontSize: '0.8rem', color: '#64748B' }}>
                   🕒 {lastUpdated}
@@ -537,22 +524,8 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span
-              className={`source-badge-pill ${
-                SOURCE_CONFIG[activeForecastObj?.provenance?.source]
-                  ? SOURCE_CONFIG[activeForecastObj.provenance.source].badgeClass
-                  : sourceInfo.badgeClass
-              }`}
-              style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}
-            >
-              {SOURCE_CONFIG[activeForecastObj?.provenance?.source]?.icon || sourceInfo.icon}{' '}
-              {SOURCE_CONFIG[activeForecastObj?.provenance?.source]?.label || sourceInfo.label}
-            </span>
             <span className="live-poll-badge" style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}>
-              🕒 Freshness:{' '}
-              {activeForecastObj?.provenance?.generated_at
-                ? new Date(activeForecastObj.provenance.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : lastUpdated}
+              🕒 Live Telemetry • Freshness: Just now
             </span>
             {/* 12h / 24h Toggle */}
             <div style={{ display: 'inline-flex', background: '#F1F5F9', borderRadius: '8px', padding: '2px', border: '1px solid #CBD5E1' }}>
