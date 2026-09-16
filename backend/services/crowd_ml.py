@@ -12,65 +12,14 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
-
-# Safe sklearn import with pure-NumPy regression fallback for OS-restricted environments
 try:
     from sklearn.ensemble import RandomForestRegressor
-    SKLEARN_AVAILABLE = True
-except Exception as _sk_err:
-    SKLEARN_AVAILABLE = False
+except Exception:
     RandomForestRegressor = None
-
-
-class FallbackCrowdRegressor:
-    """
-    High-fidelity pure NumPy historical pattern regressor used when
-    scikit-learn / scipy C-extension DLLs are blocked by Windows Application Control policies.
-    """
-    def __init__(self, n_estimators=100, random_state=42):
-        self.n_estimators = n_estimators
-        self.random_state = random_state
-        self.hourly_means = {}
-        self.default_mean = 25.0
-
-    def fit(self, X, y):
-        try:
-            if hasattr(X, "columns") and "day_of_week" in X.columns and "hour" in X.columns:
-                df = X.copy()
-                df["_y_"] = y.values if hasattr(y, "values") else np.array(y)
-                grouped = df.groupby(["day_of_week", "hour"])["_y_"].mean()
-                self.hourly_means = {(int(k[0]), int(k[1])): float(v) for k, v in grouped.items()}
-                self.default_mean = float(df["_y_"].mean()) if len(df) > 0 else 25.0
-            else:
-                self.default_mean = float(np.mean(y)) if len(y) > 0 else 25.0
-        except Exception:
-            self.default_mean = 25.0
-        return self
-
-    def predict(self, X):
-        preds = []
-        if hasattr(X, "iterrows"):
-            for _, row in X.iterrows():
-                dow = int(row.get("day_of_week", 0))
-                hr = int(row.get("hour", 12))
-                val = self.hourly_means.get((dow, hr), self.default_mean)
-                preds.append(val)
-        elif isinstance(X, (list, np.ndarray)):
-            preds = [self.default_mean] * len(X)
-        else:
-            preds = [self.default_mean]
-        return np.array(preds, dtype=float)
-
 
 class CrowdPredictorService:
     def __init__(self, data_path=None):
-        if SKLEARN_AVAILABLE and RandomForestRegressor is not None:
-            try:
-                self.model = RandomForestRegressor(n_estimators=100, random_state=42)
-            except Exception:
-                self.model = FallbackCrowdRegressor(n_estimators=100, random_state=42)
-        else:
-            self.model = FallbackCrowdRegressor(n_estimators=100, random_state=42)
+        self.model = RandomForestRegressor(n_estimators=100, random_state=42) if RandomForestRegressor else None
         self.baseline_stats = {}
         self.is_trained = False
         self.default_capacity = 200
@@ -96,8 +45,6 @@ class CrowdPredictorService:
         base_dir = Path(__file__).parent.parent.parent
         possible_paths = [
             data_path,
-            base_dir / "historical_crowd_data.csv",
-            base_dir / "backend" / "data" / "historical_crowd_data.csv",
             base_dir / "data" / "historical_crowd_data.csv",
             base_dir / "ai_pipeline" / "historical_crowd_data.csv",
         ]
@@ -138,7 +85,8 @@ class CrowdPredictorService:
 
         X = self._extract_features(df)
         y = df["person_count"]
-        self.model.fit(X, y)
+        if self.model:
+            self.model.fit(X, y)
         self.is_trained = True
         print("[+] CrowdPredictorService successfully trained.")
 
@@ -170,136 +118,54 @@ class CrowdPredictorService:
             })
         return pd.DataFrame(records)
 
-    def predict_24h_forecast(
-        self,
-        site_id: str,
-        capacity: int = 200,
-        start_time: datetime = None,
-        site_name: str = None,
-        current_state: dict = None
-    ):
+    def predict_24h_forecast(self, site_id: str, capacity: int = 200, start_time: datetime = None):
         if start_time is None:
             start_time = datetime.now().replace(minute=0, second=0, microsecond=0)
-
-        # 1. Resolve site state if not explicitly passed
-        if current_state is None:
-            try:
-                from services.crowd_service import resolve_site_crowd_state
-                current_state = resolve_site_crowd_state(site_id)
-            except Exception:
-                current_state = {}
-
-        canonical_id = current_state.get("canonical_id") or site_id
-        resolved_name = site_name or current_state.get("site_name") or canonical_id
-        current_source = current_state.get("source", "demo_simulation")
-        last_updated = current_state.get("last_updated", "Live Synchronized")
-        live_occ = float(current_state.get("occupancy_percentage", 25.0))
-        live_count = int(current_state.get("people_count", int(round(capacity * (live_occ / 100.0)))))
-        live_status = current_state.get("status", "NORMAL")
-
-        # 2. Extract base hour 0 model prediction for relative diurnal scaling
-        row_0 = pd.DataFrame([{
-            "hour": start_time.hour,
-            "day_of_week": start_time.weekday(),
-            "is_weekend": 1 if start_time.weekday() >= 5 else 0
-        }])
-        X_0 = self._extract_features(row_0)
-        base_pred_raw = max(1.0, float(self.model.predict(X_0)[0]))
-
-        # Helper for deterministic diurnal baseline per site
-        try:
-            from services.crowd_service import compute_deterministic_demo_occupancy
-        except Exception:
-            compute_deterministic_demo_occupancy = None
 
         hours_forecast = []
         for i in range(24):
             future_dt = start_time + timedelta(hours=i)
+            row = pd.DataFrame([{
+                "hour": future_dt.hour,
+                "day_of_week": future_dt.weekday(),
+                "is_weekend": 1 if future_dt.weekday() >= 5 else 0
+            }])
+            X = self._extract_features(row)
+            if self.model:
+                pred_count = max(0, int(round(self.model.predict(X)[0])))
+            else:
+                stat = self.baseline_stats.get((future_dt.weekday(), future_dt.hour), {"mean": 50})
+                pred_count = max(0, int(round(stat.get("mean", 50))))
+            pred_occ = round((pred_count / capacity) * 100, 1)
+
+            if pred_occ < 50:
+                status = "NORMAL"
+            elif pred_occ < 75:
+                status = "MODERATE"
+            elif pred_occ < 90:
+                status = "HIGH"
+            else:
+                status = "CRITICAL"
+
             hr_12 = future_dt.strftime("%I").lstrip("0") or "12"
             am_pm = future_dt.strftime("%p")
             time_str = f"{hr_12}:00 {am_pm}"
-
-            if i == 0:
-                # Strictly anchor current hour to genuine observation / state
-                pred_count = live_count
-                pred_occ = live_occ
-                status = live_status
-                hour_source = current_source
-            else:
-                # Extract ML diurnal features for future hour
-                row = pd.DataFrame([{
-                    "hour": future_dt.hour,
-                    "day_of_week": future_dt.weekday(),
-                    "is_weekend": 1 if future_dt.weekday() >= 5 else 0
-                }])
-                X = self._extract_features(row)
-                pred_raw = max(0.0, float(self.model.predict(X)[0]))
-
-                # Relative diurnal multiplier from ML model
-                ml_ratio = pred_raw / base_pred_raw
-
-                # Site-specific baseline for this future hour
-                if compute_deterministic_demo_occupancy:
-                    _, site_base_occ = compute_deterministic_demo_occupancy(canonical_id, capacity, future_dt.hour)
-                else:
-                    site_base_occ = live_occ
-
-                # Smooth temporal blending from current live state to diurnal baseline
-                # Alpha decays over 18 hours so near-term reflects current momentum
-                alpha = max(0.0, 1.0 - (i / 18.0))
-                projected_occ = alpha * (live_occ * ml_ratio) + (1.0 - alpha) * site_base_occ
-                pred_occ = max(5.0, min(96.0, round(projected_occ, 1)))
-                pred_count = max(10, int(round(capacity * (pred_occ / 100.0))))
-
-                # Canonical status thresholds: <50% NORMAL, 50-<75% MODERATE, 75-<90% HIGH, >=90% CRITICAL
-                if pred_occ < 50.0:
-                    status = "NORMAL"
-                elif pred_occ < 75.0:
-                    status = "MODERATE"
-                elif pred_occ < 90.0:
-                    status = "HIGH"
-                else:
-                    status = "CRITICAL"
-
-                if current_source in ["yolo_video", "gps_crowd", "fused_yolo_gps", "live_telemetry"]:
-                    hour_source = "ml_projection_live"
-                elif current_source in ["historical_baseline", "historical"]:
-                    hour_source = "ml_projection_historical"
-                else:
-                    hour_source = "ml_projection_demo"
-
             hours_forecast.append({
                 "datetime": future_dt.strftime("%Y-%m-%dT%H:%M:%S"),
                 "hour": future_dt.hour,
                 "time_label": time_str,
                 "day_name": future_dt.strftime("%A"),
-                "is_current": i == 0,
                 "predicted_count": pred_count,
                 "occupancy_percentage": pred_occ,
-                "status": status,
-                "source": hour_source
+                "status": status
             })
 
-        source_labels = {
-            "yolo_video": "Live YOLO Video Headcount",
-            "gps_crowd": "Live Mobile GPS Crowd Signal",
-            "fused_yolo_gps": "Multi-Source Fusion (YOLO + GPS)",
-            "live_telemetry": "Live Telemetry Observation",
-            "historical_baseline": "Historical Baseline Telemetry",
-            "demo_simulation": "Deterministic Simulation Baseline"
-        }
-
         return {
-            "site_id": canonical_id,
-            "site_name": resolved_name,
+            "site_id": site_id,
             "capacity": capacity,
-            "source": current_source,
-            "source_label": source_labels.get(current_source, "Historical Baseline"),
-            "last_updated": last_updated,
             "forecast_period": "24h",
             "forecasts": hours_forecast
         }
-
 
     def check_relative_surge(self, site_id: str, people_count: int, dt: datetime = None, capacity: int = 200):
         if dt is None:

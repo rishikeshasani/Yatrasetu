@@ -23,6 +23,12 @@ class DummyTable:
         return self
     def eq(self, *args, **kwargs):
         return self
+    def in_(self, *args, **kwargs):
+        return self
+    def gte(self, *args, **kwargs):
+        return self
+    def lte(self, *args, **kwargs):
+        return self
     def order(self, *args, **kwargs):
         return self
     def limit(self, *args, **kwargs):

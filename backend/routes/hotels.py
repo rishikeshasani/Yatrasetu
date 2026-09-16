@@ -7,23 +7,11 @@ from postgrest.exceptions import APIError
 
 from database import supabase, supabase_admin
 from routes.crowd import get_site_density, get_site_meta, latest_observations
-from dependencies import require_role, AuthenticatedUser
-from pathlib import Path
-import math
-import json
+from dependencies import AuthenticatedUser, get_current_user, require_role
 
 router = APIRouter(tags=["hotels"])
 
 LOCAL_HOTEL_BOOKINGS: list[dict] = []
-MASTER_HOTELS_FILE = Path(__file__).resolve().parent.parent / "data" / "hotels_50_master.json"
-
-def _haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    r = 6371.0
-    d_lat = math.radians(lat2 - lat1)
-    d_lon = math.radians(lon2 - lon1)
-    a = math.sin(d_lat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return r * c
 
 # ============================================================================
 # Pydantic Request & Response Models
@@ -84,25 +72,6 @@ class HotelResponse(BaseModel):
     verified: bool
     created_at: Optional[str] = None
     rooms: Optional[List[RoomResponse]] = None
-    site_id: Optional[str] = None
-    site_name: Optional[str] = None
-    city: Optional[str] = None
-    state: Optional[str] = None
-    email: Optional[str] = None
-    rating: Optional[float] = None
-    price_per_night: Optional[float] = None
-    distance_km: Optional[float] = None
-
-
-def _normalize_site_id(sid: Optional[str]) -> str:
-    if not sid:
-        return ""
-    s = str(sid).strip().upper()
-    if s.startswith("TS"):
-        num_part = s[2:]
-        if num_part.isdigit():
-            return f"TS{int(num_part):03d}"
-    return s
 
 
 class BookingCreateRequest(BaseModel):
@@ -120,8 +89,6 @@ class BookingCreateRequest(BaseModel):
                 raise ValueError("Check-out date must be after check-in date.")
             if check_in < date.today():
                 raise ValueError("Check-in date cannot be in the past.")
-            if check_in > date.today() + timedelta(days=365):
-                raise ValueError("Check-in date cannot exceed the 365-day advance booking window.")
         return v
 
 
@@ -138,7 +105,6 @@ class BookingResponse(BaseModel):
     hotel_name: Optional[str] = None
     room_type: Optional[str] = None
     total_price: Optional[float] = None
-    guest_name: Optional[str] = None
 
 
 class HotelAvailabilityResponse(BaseModel):
@@ -162,9 +128,9 @@ class GovernmentDemandReport(BaseModel):
 
 
 def validate_uuid(val: str, entity_name: str = "Hotel") -> None:
-    """Helper to validate hotel ID or UUID; allows all friendly and master hotel IDs."""
+    """Helper to validate UUID format; gracefully allows standard IDs like H001 and R204."""
     s_val = str(val).strip()
-    if s_val.startswith("hotel-") or s_val.startswith("owner-") or s_val in ["H001", "H002", "H003"] or s_val.startswith("R") or len(s_val) > 4:
+    if s_val in ["H001", "hotel-kedarnath-1", "H002", "H003"] or s_val.startswith("R"):
         return
     try:
         uuid.UUID(s_val)
@@ -178,145 +144,51 @@ def validate_uuid(val: str, entity_name: str = "Hotel") -> None:
 @router.get("/hotels", response_model=List[HotelResponse])
 def list_hotels(
     search: Optional[str] = Query(None, description="Search by hotel name or location"),
-    site_id: Optional[str] = Query(None, description="Filter by shrine site ID, e.g. TS001"),
-    latitude: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Shrine or user latitude"),
-    longitude: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Shrine or user longitude"),
-    radius_km: Optional[float] = Query(35.0, ge=0.0, description="Search radius in kilometers"),
     verified_only: bool = Query(False, description="Filter only verified hotels"),
     min_price: Optional[float] = Query(None, ge=0.0, description="Minimum room price"),
     max_price: Optional[float] = Query(None, ge=0.0, description="Maximum room price")
 ):
     """
-    Public endpoint: Tourists and pilgrims browse and search verified hotels across the 25 sacred shrines.
+    Public endpoint: Tourists and pilgrims can browse and search hotels with live room details from Supabase.
     """
-    # Guard Query objects if called directly outside FastAPI dependency injection
-    if not isinstance(search, str):
-        search = None
-    if not isinstance(site_id, str):
-        site_id = None
-    if not isinstance(latitude, (int, float)):
-        latitude = None
-    if not isinstance(longitude, (int, float)):
-        longitude = None
-    if not isinstance(radius_km, (int, float)):
-        radius_km = 35.0
-    if not isinstance(verified_only, bool):
-        verified_only = False
-    if not isinstance(min_price, (int, float)):
-        min_price = None
-    if not isinstance(max_price, (int, float)):
-        max_price = None
-
-    # Load 50 master hotels
-    master_hotels = []
-    if MASTER_HOTELS_FILE.exists():
-        try:
-            with open(MASTER_HOTELS_FILE, "r", encoding="utf-8") as f:
-                master_hotels = json.load(f).get("hotels", [])
-        except Exception:
-            pass
-
-    # Fetch any dynamic custom hotels from Supabase
-    db_hotels = []
     try:
         query = supabase_admin.table("hotels").select("*")
         if verified_only:
             query = query.eq("verified", True)
         res = query.execute()
-        raw_db = res.data or []
-        if raw_db:
-            rooms_by_hotel = {}
-            try:
-                r_res = supabase_admin.table("hotel_rooms").select("*").execute()
-                for r in (r_res.data or []):
-                    hid = r.get("hotel_id")
-                    if hid not in rooms_by_hotel:
-                        rooms_by_hotel[hid] = []
-                    rooms_by_hotel[hid].append(RoomResponse(**r))
-            except Exception:
-                rooms_by_hotel = {}
+        hotels = res.data or []
+    except APIError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database error querying hotels: {e.message}"
+        )
 
-            for h in raw_db:
-                h_copy = dict(h)
-                h_copy["rooms"] = rooms_by_hotel.get(h["id"], [])
-                db_hotels.append(h_copy)
-    except Exception:
-        pass
+    if search:
+        s = search.lower()
+        hotels = [h for h in hotels if s in h.get("name", "").lower() or s in h.get("address", "").lower()]
 
-    # Merge master hotels and db_hotels, deduplicating by normalized name & id
-    combined = []
-    seen_ids = set()
-    seen_names = set()
+    results = []
+    for h in hotels:
+        try:
+            r_res = supabase_admin.table("hotel_rooms").select("*").eq("hotel_id", h["id"]).execute()
+            rooms = r_res.data or []
+        except Exception:
+            rooms = []
 
-    for h in master_hotels + db_hotels:
-        hid = str(h.get("id", "")).strip()
-        norm_name = str(h.get("name", "")).strip().lower()
-        if (hid and hid in seen_ids) or (norm_name and norm_name in seen_names):
+        # Price filtering
+        if min_price is not None:
+            rooms = [r for r in rooms if r.get("price_per_night", 0) >= min_price]
+        if max_price is not None:
+            rooms = [r for r in rooms if r.get("price_per_night", 0) <= max_price]
+
+        if (min_price is not None or max_price is not None) and not rooms:
             continue
-        if hid:
-            seen_ids.add(hid)
-        if norm_name:
-            seen_names.add(norm_name)
 
-        # Map rooms
-        rooms = [RoomResponse(**r) if isinstance(r, dict) else r for r in h.get("rooms", [])]
-        h_obj = dict(h)
-        h_obj["rooms"] = rooms
+        h_copy = dict(h)
+        h_copy["rooms"] = [RoomResponse(**r) for r in rooms]
+        results.append(HotelResponse(**h_copy))
 
-        # Compute distance if query coordinates provided and hotel has coords
-        if latitude is not None and longitude is not None and h_obj.get("latitude") is not None and h_obj.get("longitude") is not None:
-            try:
-                h_lat = float(h_obj["latitude"])
-                h_lon = float(h_obj["longitude"])
-                dist = _haversine_distance_km(latitude, longitude, h_lat, h_lon)
-                h_obj["distance_km"] = round(dist, 2)
-            except Exception:
-                pass
-
-        combined.append(h_obj)
-
-    # Filter verified_only
-    if verified_only:
-        combined = [h for h in combined if h.get("verified") is True]
-
-    # Filter by search term
-    if search and isinstance(search, str) and search.strip():
-        s = search.lower().strip()
-        combined = [
-            h for h in combined
-            if s in str(h.get("name", "")).lower()
-            or s in str(h.get("address", "")).lower()
-            or s in str(h.get("city", "")).lower()
-            or s in str(h.get("site_name", "")).lower()
-        ]
-
-    # Filter by site_id if provided
-    if site_id and isinstance(site_id, str) and site_id.strip():
-        norm_sid = _normalize_site_id(site_id)
-        raw_sid = site_id.strip().upper()
-        combined = [
-            h for h in combined
-            if _normalize_site_id(h.get("site_id")) == norm_sid
-            or str(h.get("site_id", "")).upper() == raw_sid
-            or (norm_sid and norm_sid in str(h.get("id", "")).upper())
-        ]
-
-    # If coordinates provided but NO site_id, filter by radius_km
-    if latitude is not None and longitude is not None and not (site_id and isinstance(site_id, str) and site_id.strip()):
-        max_r = radius_km if radius_km is not None else 35.0
-        combined = [h for h in combined if h.get("distance_km") is not None and h.get("distance_km") <= max_r]
-
-    # Sort by distance if distance available
-    if latitude is not None and longitude is not None:
-        combined.sort(key=lambda h: h.get("distance_km") if h.get("distance_km") is not None else 999999.0)
-
-    # Price filtering
-    if min_price is not None:
-        combined = [h for h in combined if (h.get("price_per_night") is not None and h.get("price_per_night") >= min_price) or any(r.price_per_night >= min_price for r in h.get("rooms", []))]
-    if max_price is not None:
-        combined = [h for h in combined if (h.get("price_per_night") is not None and h.get("price_per_night") <= max_price) or any(r.price_per_night <= max_price for r in h.get("rooms", []))]
-
-    return [HotelResponse(**h) for h in combined]
+    return results
 
 
 @router.get("/hotels/{hotel_id}", response_model=HotelResponse)
@@ -325,38 +197,23 @@ def get_hotel(hotel_id: str):
     Public endpoint: Get detailed hotel profile including all room categories and real-time inventory.
     """
     validate_uuid(hotel_id, "Hotel")
-    
-    # Check 50 master hotels first
-    if MASTER_HOTELS_FILE.exists():
-        try:
-            with open(MASTER_HOTELS_FILE, "r", encoding="utf-8") as f:
-                master_hotels = json.load(f).get("hotels", [])
-                match = next((h for h in master_hotels if h.get("id") == hotel_id or h.get("owner_id") == hotel_id), None)
-                if match:
-                    rooms = [RoomResponse(**r) for r in match.get("rooms", [])]
-                    h_copy = dict(match)
-                    h_copy["rooms"] = rooms
-                    return HotelResponse(**h_copy)
-        except Exception:
-            pass
-
     if hotel_id == "H001":
         _init_hotel_data()
         return HotelResponse(
             id="H001",
             owner_id="00000000-0000-0000-0000-000000000001",
-            name="Kedarnath Real Pilgrimage Lodge",
-            description="Premium pilgrimage transit lodge near Kedarnath Main Temple Path. 50 verified rooms.",
-            address="Main Temple Path, Zone B, Kedarnath Dham, Rudraprayag, Uttarakhand",
-            latitude=30.7352,
-            longitude=79.0669,
-            contact="+91-9876501001",
+            name="Hotel Ganga Heritage",
+            description="Premium pilgrimage transit lodge near Kashi Vishwanath Corridor (Zone B-2). 50 verified rooms.",
+            address="D48/142 Kashi Corridor, Dashashwamedh Zone B-2, Varanasi, Uttar Pradesh",
+            latitude=25.3109,
+            longitude=83.0107,
+            contact="+91-9876504321",
             verified=True,
             created_at="2026-09-01T00:00:00Z",
             rooms=[
-                RoomResponse(id="R-STD", hotel_id="H001", room_type="Standard Yatri Room", total_rooms=20, available_rooms=8, price_per_night=1200.0),
-                RoomResponse(id="R-DLX", hotel_id="H001", room_type="Deluxe Mountain View", total_rooms=12, available_rooms=4, price_per_night=1800.0),
-                RoomResponse(id="R-FAM", hotel_id="H001", room_type="Family Suite Hall", total_rooms=5, available_rooms=2, price_per_night=2400.0)
+                RoomResponse(id="R-STD", hotel_id="H001", room_type="Standard", total_rooms=30, available_rooms=22, price_per_night=1000.0),
+                RoomResponse(id="R-DLX", hotel_id="H001", room_type="Deluxe", total_rooms=15, available_rooms=11, price_per_night=1300.0),
+                RoomResponse(id="R-FAM", hotel_id="H001", room_type="Family", total_rooms=5, available_rooms=3, price_per_night=1600.0)
             ]
         )
 
@@ -764,6 +621,13 @@ def get_owner_bookings(
         my_hotels = []
 
     if not my_hotels:
+        try:
+            all_h = supabase_admin.table("hotels").select("id, name").execute()
+            my_hotels = all_h.data or []
+        except Exception:
+            my_hotels = []
+
+    if not my_hotels:
         return []
 
     my_hotel_map = {h["id"]: h["name"] for h in my_hotels}
@@ -802,27 +666,11 @@ def get_owner_bookings(
         except Exception:
             pass
 
-        # Resolve human-readable guest name
-        guest_name = b.get("guest_name")
-        if not guest_name:
-            t_id = str(b.get("tourist_id", ""))
-            try:
-                u_res = supabase_admin.table("users").select("full_name").eq("id", t_id).execute()
-                if u_res.data and len(u_res.data) > 0 and u_res.data[0].get("full_name"):
-                    guest_name = u_res.data[0]["full_name"]
-            except Exception:
-                pass
-        if not guest_name:
-            pilgrim_names = ["Ramesh Sharma", "Priya Patel", "Amitabh Sen", "Sunita Rao", "Vikas Gupta", "Aarav Mehta", "Meera Nair", "Rajeshwari Devi"]
-            name_idx = sum(ord(c) for c in str(b.get("id", "0"))) % len(pilgrim_names)
-            guest_name = pilgrim_names[name_idx]
-
         results.append(BookingResponse(
             id=b["id"],
             hotel_id=b["hotel_id"],
             room_id=b["room_id"],
             tourist_id=b["tourist_id"],
-            guest_name=guest_name,
             check_in=b["check_in"],
             check_out=b["check_out"],
             guests=b.get("guests", 1),
@@ -884,8 +732,6 @@ def update_booking_status(
 
 @router.get("/hotels/tourist/bookings", response_model=List[BookingResponse])
 def get_tourist_bookings(
-    limit: int = Query(default=100, ge=1, le=500, description="Max bookings to return"),
-    offset: int = Query(default=0, ge=0, description="Offset for pagination"),
     current_user: AuthenticatedUser = Depends(require_role(["tourist", "government"]))
 ):
     """
@@ -895,7 +741,7 @@ def get_tourist_bookings(
         q = supabase_admin.table("hotel_bookings").select("*")
         if not current_user.id.startswith("00000000-"):
             q = q.eq("tourist_id", current_user.id)
-        b_res = q.order("created_at", desc=True).limit(limit).offset(offset).execute()
+        b_res = q.order("created_at", desc=True).limit(10).execute()
         bookings = b_res.data or []
     except Exception:
         bookings = []
@@ -903,39 +749,23 @@ def get_tourist_bookings(
     existing_ids = {b.get("id") for b in bookings}
     for lb in LOCAL_HOTEL_BOOKINGS:
         if lb.get("id") not in existing_ids:
-            if not current_user.id.startswith("00000000-") and lb.get("tourist_id") != current_user.id:
-                continue
             bookings.insert(0, lb)
-
-    # Bulk-fetch hotel names and room details to eliminate N+1 latency
-    hotel_ids = list({b.get("hotel_id") for b in bookings if b.get("hotel_id")})
-    room_ids = list({b.get("room_id") for b in bookings if b.get("room_id")})
-
-    hotels_map = {}
-    rooms_map = {}
-
-    if hotel_ids:
-        try:
-            h_res = supabase_admin.table("hotels").select("id, name").in_("id", hotel_ids).execute()
-            if h_res.data:
-                hotels_map = {h["id"]: h.get("name", "Shrine Pilgrimage Lodge") for h in h_res.data}
-        except Exception:
-            pass
-
-    if room_ids:
-        try:
-            r_res = supabase_admin.table("hotel_rooms").select("id, room_type, price_per_night").in_("id", room_ids).execute()
-            if r_res.data:
-                rooms_map = {r["id"]: (r.get("room_type", "Standard Deluxe"), r.get("price_per_night", 1200.0)) for r in r_res.data}
-        except Exception:
-            pass
 
     results = []
     for b in bookings:
-        hotel_name = hotels_map.get(b.get("hotel_id"), "Shrine Pilgrimage Lodge")
-        room_meta = rooms_map.get(b.get("room_id"))
-        room_type = room_meta[0] if room_meta else "Standard Deluxe"
-        price = room_meta[1] if room_meta else 1200.0
+        hotel_name = "Shrine Pilgrimage Lodge"
+        room_type = "Standard Deluxe"
+        price = 1200.0
+        try:
+            h = supabase_admin.table("hotels").select("name").eq("id", b.get("hotel_id")).execute()
+            if h.data and len(h.data) > 0:
+                hotel_name = h.data[0].get("name", hotel_name)
+            r = supabase_admin.table("hotel_rooms").select("room_type, price_per_night").eq("id", b.get("room_id")).execute()
+            if r.data and len(r.data) > 0:
+                room_type = r.data[0].get("room_type", room_type)
+                price = r.data[0].get("price_per_night", price)
+        except Exception:
+            pass
 
         results.append(BookingResponse(
             id=b["id"],
@@ -1037,18 +867,23 @@ def calculate_dynamic_hourly_price(
     multiplier_override: Optional[float] = None
 ) -> dict:
     """
-    Computes dynamic hourly room price based on exact stay duration and live pilgrimage crowd density.
-    Room base rates: Standard = 40/hr, Deluxe = 50/hr, Family = 70/hr.
-    Formula: total_amount = duration_in_hours * (base_hourly_rate * pricing_multiplier)
+    Computes dynamic hourly room price based on exact stay duration, room type,
+    demand surge percentage, and date/time multipliers.
+    Room base rates: Standard = 500/hr, Deluxe = 750/hr, Suite/Family = 1000/hr.
+    Formula:
+      final_hourly_rate = base_hourly_rate * demand_multiplier * datetime_multiplier
+      total_amount = duration_hours * final_hourly_rate
     """
-    # 1. Room base rate
+    from datetime import timedelta
+
+    # 1. Room base rate per configurable rules
     r_low = (room_type or "").lower()
     if "standard" in r_low:
-        base_rate = 40.0
-    elif "family" in r_low:
-        base_rate = 70.0
+        base_rate = 500.0
+    elif "suite" in r_low or "family" in r_low:
+        base_rate = 1000.0
     else:
-        base_rate = 50.0  # Deluxe / Default
+        base_rate = 750.0  # Deluxe / Default
 
     # 2. Duration in hours
     diff_seconds = max(0.0, (check_out_dt - check_in_dt).total_seconds())
@@ -1070,6 +905,26 @@ def calculate_dynamic_hourly_price(
     else:
         site_id = "TS003"  # Kashi Vishwanath for H001
 
+    # Ensure TS003 observation exists matching Kashi Corridor
+    if "TS003" not in latest_observations:
+        latest_observations["TS003"] = {
+            "site_id": "TS003",
+            "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
+            "people_count": 104400,
+            "occupancy_percentage": 87.0,
+            "status": "HIGH",
+            "relative_surge_alert": {
+                "site_id": "TS003",
+                "is_relative_surge": True,
+                "severity": "HIGH",
+                "current_count": 104400,
+                "expected_mean": 80000.0,
+                "z_score": 2.5,
+                "surge_percentage": "+50%",
+                "message": "High pilgrim density in sanctum sanctorum & Godowlia perimeter."
+            },
+            "last_updated": "Just now (Live YOLO CCTV Feed)"
+        }
 
     # 4. Fetch live crowd density
     try:
@@ -1084,39 +939,90 @@ def calculate_dynamic_hourly_price(
 
     crowd_density = round(occupancy_pct / 100.0, 2)
 
-    # 5. Pricing multiplier based on crowd saturation or explicit multiplier override
-    # Standardized crowd demand levels per specification:
-    # NORMAL       -> 1.0x (occupancy < 50%)
-    # RISING       -> 1.1x (occupancy 50% - 74%)
-    # HIGH_SURGE   -> 1.3x (occupancy 75% - 89%)
-    # CRITICAL_SURGE -> 1.5x (occupancy >= 90%)
+    # 5. Demand multiplier based on surge percentage
+    # Rules:
+    # <= 0%       -> 1.00x
+    # +1% to +20% -> 1.10x
+    # +21% to +40%-> 1.25x
+    # +41% to +60%-> 1.50x
+    # +61% to +80%-> 1.75x
+    # > +80%      -> 2.00x
     if multiplier_override is not None and multiplier_override > 0:
-        multiplier = float(multiplier_override)
-        if multiplier >= 1.5:
+        demand_mult = float(multiplier_override)
+        if demand_mult >= 2.0:
             crowd_level = "CRITICAL_SURGE"
-        elif multiplier >= 1.3:
+            demand_pct_label = "+85%"
+        elif demand_mult >= 1.75:
+            crowd_level = "CRITICAL_SURGE"
+            demand_pct_label = "+70%"
+        elif demand_mult >= 1.5:
             crowd_level = "HIGH_SURGE"
-        elif multiplier >= 1.1:
-            crowd_level = "RISING"
+            demand_pct_label = "+50%"
+        elif demand_mult >= 1.25:
+            crowd_level = "MODERATE_SURGE"
+            demand_pct_label = "+30%"
+        elif demand_mult >= 1.1:
+            crowd_level = "LOW_SURGE"
+            demand_pct_label = "+20%"
         else:
             crowd_level = "NORMAL"
+            demand_pct_label = "0%"
     else:
-        if occupancy_pct < 50.0:
-            crowd_level = "NORMAL"
-            multiplier = 1.0
-        elif occupancy_pct < 75.0:
-            crowd_level = "RISING"
-            multiplier = 1.10
-        elif occupancy_pct < 90.0:
-            crowd_level = "HIGH_SURGE"
-            multiplier = 1.30
-        else:
+        # Map occupancy percentage to surge percentage
+        # e.g., baseline occupancy is ~50%. If occupancy >= 85%, surge is +50%
+        if occupancy_pct >= 95.0:
+            demand_mult = 2.00
             crowd_level = "CRITICAL_SURGE"
-            multiplier = 1.50
+            demand_pct_label = "+90%"
+        elif occupancy_pct >= 90.0:
+            demand_mult = 1.75
+            crowd_level = "CRITICAL_SURGE"
+            demand_pct_label = "+75%"
+        elif occupancy_pct >= 75.0:
+            demand_mult = 1.50
+            crowd_level = "HIGH_SURGE"
+            demand_pct_label = "+50%"
+        elif occupancy_pct >= 60.0:
+            demand_mult = 1.25
+            crowd_level = "MODERATE_SURGE"
+            demand_pct_label = "+30%"
+        elif occupancy_pct >= 50.0:
+            demand_mult = 1.10
+            crowd_level = "LOW_SURGE"
+            demand_pct_label = "+20%"
+        else:
+            demand_mult = 1.00
+            crowd_level = "NORMAL"
+            demand_pct_label = "0%"
 
-    dynamic_hourly_rate = round(base_rate * multiplier, 2)
-    total_amount = round(duration_hours * dynamic_hourly_rate, 2)
-    adj_pct = f"+{int(round((multiplier - 1.0) * 100))}%" if multiplier >= 1.0 else f"{int(round((multiplier - 1.0) * 100))}%"
+    # 6. Date/Time multiplier
+    # Peak hours: Morning 6:00-10:00, Evening 17:00-22:00 -> 1.20x
+    # Weekend: Friday 17:00 through Sunday 23:59 -> 1.15x
+    # Normal: 1.00x
+    has_peak = False
+    cur = check_in_dt
+    # Check each hour in interval (capped to avoid huge loops)
+    step_count = min(int(duration_hours) + 1, 168)
+    for _ in range(step_count):
+        h = cur.hour
+        if (6 <= h <= 10) or (17 <= h <= 22):
+            has_peak = True
+            break
+        cur += timedelta(hours=1)
+
+    if has_peak:
+        datetime_mult = 1.20
+    else:
+        # Weekend check
+        weekday = check_in_dt.weekday() # 4=Fri, 5=Sat, 6=Sun
+        if weekday in (5, 6) or (weekday == 4 and check_in_dt.hour >= 17):
+            datetime_mult = 1.15
+        else:
+            datetime_mult = 1.00
+
+    final_hourly_rate = round(base_rate * demand_mult * datetime_mult, 2)
+    total_amount = round(duration_hours * final_hourly_rate, 2)
+    adj_pct = f"+{int(round((demand_mult * datetime_mult - 1.0) * 100))}%" if (demand_mult * datetime_mult) >= 1.0 else f"{int(round((demand_mult * datetime_mult - 1.0) * 100))}%"
 
     return {
         "hotel_id": hotel_id,
@@ -1130,10 +1036,13 @@ def calculate_dynamic_hourly_price(
         "crowd_density": crowd_density,
         "crowd_percentage": occupancy_pct,
         "crowd_level": crowd_level,
-        "pricing_multiplier": multiplier,
-        "crowd_multiplier": multiplier,
-        "dynamic_hourly_rate": dynamic_hourly_rate,
-        "final_hourly_rate": dynamic_hourly_rate,
+        "demand_percentage": demand_pct_label,
+        "pricing_multiplier": round(demand_mult * datetime_mult, 2),
+        "demand_multiplier": demand_mult,
+        "datetime_multiplier": datetime_mult,
+        "crowd_multiplier": demand_mult,
+        "dynamic_hourly_rate": final_hourly_rate,
+        "final_hourly_rate": final_hourly_rate,
         "total_amount": total_amount,
         "total_price": total_amount,
         "price_adjustment_pct": adj_pct
@@ -1301,12 +1210,14 @@ def _init_hotel_data():
                 "check_out": "2026-09-10T11:00:00",
                 "special_request": "Near elevator",
                 "duration_hours": 21.0,
-                "base_hourly_rate": 50.0,
-                "pricing_multiplier": 1.5,
-                "final_hourly_rate": 75.0,
-                "dynamic_hourly_rate": 75.0,
-                "total_amount": 1575.0,
-                "price": 1575.0,
+                "base_hourly_rate": 750.0,
+                "pricing_multiplier": 1.8,
+                "demand_multiplier": 1.5,
+                "datetime_multiplier": 1.2,
+                "final_hourly_rate": 1350.0,
+                "dynamic_hourly_rate": 1350.0,
+                "total_amount": 28350.0,
+                "price": 28350.0,
                 "crowd_level_at_booking": "HIGH",
                 "crowd_density_at_booking": 0.87,
                 "site_id": "TS003",
@@ -1520,29 +1431,19 @@ def create_booking_request(req: BookingRequestCreate):
     if dt_in >= dt_out:
         raise HTTPException(status_code=400, detail="Check-in must be before check-out.")
 
-    now_dt = datetime.now()
-    if dt_in < now_dt - timedelta(hours=1):
-        raise HTTPException(status_code=400, detail="Check-in date/time cannot be in the past.")
+    room_num = str(req.room_number).strip()
 
-    if dt_in > now_dt + timedelta(days=365):
-        raise HTTPException(status_code=400, detail="Check-in date cannot exceed the 365-day advance booking window.")
-
-    room_num = str(req.room_number).strip() if req.room_number else "101"
-
-    # Verify that the room exists in inventory or pick an available room
+    # Verify that the room exists in inventory
     matched_room = next((r for r in _ROOMS_DATA if str(r.get("room_number")) == room_num), None)
-    if not matched_room or _check_room_conflict(room_num, dt_in, dt_out):
-        # Auto-assign next vacant room in same room_type or any vacant room
-        r_type_filter = (req.room_type or "").lower()
-        alt_room = next((r for r in _ROOMS_DATA if r_type_filter in r.get("room_type", "").lower() and not _check_room_conflict(str(r.get("room_number")), dt_in, dt_out)), None)
-        if not alt_room:
-            alt_room = next((r for r in _ROOMS_DATA if not _check_room_conflict(str(r.get("room_number")), dt_in, dt_out)), None)
-        if alt_room:
-            room_num = str(alt_room["room_number"])
-            matched_room = alt_room
-        elif not matched_room:
-            matched_room = _ROOMS_DATA[0] if _ROOMS_DATA else {"room_number": "101", "room_type": "Deluxe", "room_id": "R101"}
-            room_num = str(matched_room.get("room_number", "101"))
+    if not matched_room:
+        raise HTTPException(status_code=404, detail=f"Room #{room_num} not found in hotel inventory.")
+
+    # Strict Overlap Validation against confirmed bookings
+    if _check_room_conflict(room_num, dt_in, dt_out):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Room {room_num} is unavailable for the selected time slot."
+        )
 
     clean_in_iso = dt_in.isoformat()
     clean_out_iso = dt_out.isoformat()
@@ -1632,20 +1533,7 @@ def get_hotel_booking_requests(
     status_filter: Optional[str] = Query(None, description="pending | confirmed | declined | cancelled | ALL")
 ):
     _init_hotel_data()
-    hid = str(hotel_id).strip().lower()
-
-    def matches_hotel(r):
-        r_hid = str(r.get("hotel_id", "")).strip().lower()
-        if not r_hid:
-            return False
-        if r_hid == hid:
-            return True
-        # Standard alias: H001 <-> hotel-kedarnath-1
-        if hid in ["h001", "hotel-kedarnath-1"] and r_hid in ["h001", "hotel-kedarnath-1"]:
-            return True
-        return False
-
-    filtered = [r for r in _REQUESTS_DATA if matches_hotel(r)]
+    filtered = [r for r in _REQUESTS_DATA if r.get("hotel_id") == hotel_id or hotel_id in ["H001", "hotel-kedarnath-1"]]
     if status_filter and status_filter.lower() != "all":
         filtered = [r for r in filtered if r["status"].lower() == status_filter.lower()]
     return [BookingRequestResponse(**r) for r in filtered]
@@ -1662,10 +1550,10 @@ def get_user_booking_requests(
 ):
     _init_hotel_data()
     results = _REQUESTS_DATA
+    if guest_name:
+        results = [r for r in results if guest_name.lower() in r["guest_name"].lower()]
     if tourist_id:
         results = [r for r in results if r.get("tourist_id") == tourist_id]
-    elif guest_name:
-        results = [r for r in results if guest_name.lower() in r["guest_name"].lower()]
     return [BookingRequestResponse(**r) for r in results]
 
 
