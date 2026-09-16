@@ -11,7 +11,10 @@ import {
   deleteCrowdSimulation,
   dispatchPoliceSOSAlert,
   fetchPoliceSOSStatus,
-  getAuthToken
+  getAuthToken,
+  fetchSiteDensity,
+  fetchSiteQueueForecast,
+  fetchSafetyInfo
 } from '../api/api';
 import { supabase } from '../supabaseClient';
 import './GovernmentDashboard.css';
@@ -264,8 +267,19 @@ export default function GovernmentDashboard({
   // Hospitality Report
   const [hotelReport, setHotelReport] = useState(null);
 
-  // Inspect Modal
+  // Inspect & Detailed Surveillance Dossier State
   const [inspectSite, setInspectSite] = useState(null);
+  const [inspectionData, setInspectionData] = useState(null);
+  const [isLoadingInspection, setIsLoadingInspection] = useState(false);
+  const [inspectionError, setInspectionError] = useState(null);
+
+  // Explicit Telemetry Broadcast Confirmation State
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastTargetSite, setBroadcastTargetSite] = useState(null);
+  const [broadcastPeopleCount, setBroadcastPeopleCount] = useState(12350);
+  const [broadcastQueueLength, setBroadcastQueueLength] = useState(480);
+  const [broadcastWaitTime, setBroadcastWaitTime] = useState(540);
+  const [isBroadcastingExplicit, setIsBroadcastingExplicit] = useState(false);
 
   // Surge Warning Banner
   const [surgeAlertVisible, setSurgeAlertVisible] = useState(true);
@@ -555,12 +569,73 @@ export default function GovernmentDashboard({
     setUpdateWaitTime(25);
   };
 
-  const handleInspect = (site) => {
-    setInspectSite(site);
-    setUpdateSiteId(site.id);
-    setUpdatePeopleCount(site.people_count);
-    setUpdateQueueLength(Math.round(site.people_count * 0.05));
-    setUpdateWaitTime(site.estimated_wait_mins);
+  const handleInspect = async (siteOrId) => {
+    const baseSite = typeof siteOrId === 'object' && siteOrId ? siteOrId : (sites.find((s) => s.id === siteOrId) || { id: siteOrId, name: siteOrId });
+    const sId = baseSite.id;
+    if (!sId) return;
+
+    if (onSelectSite) {
+      onSelectSite(sId);
+    }
+    setInternalMonitoringSiteId(sId);
+    setUpdateSiteId(sId);
+
+    setInspectSite(baseSite);
+    setIsLoadingInspection(true);
+    setInspectionError(null);
+    setInspectionData(null);
+
+    try {
+      const [density, forecast, safety] = await Promise.all([
+        fetchSiteDensity(sId).catch(() => null),
+        fetchSiteQueueForecast(sId).catch(() => null),
+        fetchSafetyInfo(sId).catch(() => null)
+      ]);
+
+      setInspectionData({
+        density,
+        forecast,
+        safety
+      });
+    } catch (err) {
+      console.error(`[Inspect] Error fetching inspection details for ${sId}:`, err);
+      setInspectionError(err.message || 'Failed to fetch live site details from backend.');
+    } finally {
+      setIsLoadingInspection(false);
+    }
+  };
+
+  const handleExplicitBroadcastSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!broadcastTargetSite) return;
+    setIsBroadcastingExplicit(true);
+    try {
+      const res = await updateCrowdObservation(
+        broadcastTargetSite.id,
+        broadcastPeopleCount,
+        broadcastQueueLength,
+        broadcastWaitTime
+      );
+      if (res && (res.status === 'success' || res.data)) {
+        const updatedData = res.data || res;
+        if (showToast) {
+          showToast(`🚀 Official Telemetry Broadcasted for ${broadcastTargetSite.name}! Headcount: ${broadcastPeopleCount.toLocaleString()}`);
+        }
+        if (onCrowdUpdated) {
+          onCrowdUpdated(broadcastTargetSite.id, updatedData);
+        }
+        setIsBroadcastModalOpen(false);
+        setInspectSite(null);
+      } else {
+        throw new Error(res?.message || 'Broadcast update failed');
+      }
+    } catch (err) {
+      console.error('[Gov] Explicit broadcast error:', err);
+      const errMsg = err.message || err.detail || 'Broadcast failed. Verification required.';
+      if (showToast) showToast(`⚠️ Broadcast Failed: ${errMsg}`);
+    } finally {
+      setIsBroadcastingExplicit(false);
+    }
   };
 
   const handleDispatchRescue = (alertId) => {
@@ -3640,20 +3715,41 @@ export default function GovernmentDashboard({
       )}
 
       {/* ===================================================================== */}
-      {/* 7. INSPECTION MODAL DOSSIER                                           */}
+      {/* 7. DEDICATED SITE INSPECTION SURVEILLANCE DOSSIER                     */}
       {/* ===================================================================== */}
       {inspectSite && (
         <div className="gov-modal-backdrop" onClick={() => setInspectSite(null)}>
-          <div className="gov-modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="gov-modal-header">
-              <div className="modal-title-wrap">
-                <span className="modal-icon">🏛️</span>
+          <div className="gov-modal-dialog gov-inspection-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '860px', width: '92%' }}>
+            {/* Header with Back Navigation */}
+            <div className="gov-modal-header" style={{ background: '#0F172A', color: '#F8FAFC', borderBottom: '1px solid #1E293B', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="modal-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setInspectSite(null)}
+                  className="btn-back-monitoring"
+                  style={{
+                    background: '#1E293B',
+                    color: '#93C5FD',
+                    border: '1px solid #3B82F6',
+                    padding: '0.45rem 0.9rem',
+                    borderRadius: '0.4rem',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}
+                  title="Return to Pilgrimage Site Monitoring"
+                >
+                  ← Back to Monitoring
+                </button>
                 <div>
-                  <h3 className="modal-heading">
-                    {inspectSite.name}
+                  <h3 className="modal-heading" style={{ margin: 0, fontSize: '1.25rem', color: '#FFFFFF', fontWeight: 800 }}>
+                    🏛️ [{inspectSite.id}] {inspectSite.name}
                   </h3>
-                  <div className="modal-sub">
-                    Site ID: {inspectSite.id} • {inspectSite.city}, {inspectSite.state}
+                  <div className="modal-sub" style={{ fontSize: '0.8rem', color: '#94A3B8', marginTop: '0.25rem' }}>
+                    Authoritative Surveillance Dossier • {[inspectSite.city, inspectSite.state].filter(Boolean).join(', ') || 'Canonical Shrine'}
                   </div>
                 </div>
               </div>
@@ -3661,47 +3757,285 @@ export default function GovernmentDashboard({
                 type="button"
                 className="gov-modal-close"
                 onClick={() => setInspectSite(null)}
+                style={{ color: '#94A3B8', fontSize: '1.25rem', background: 'transparent', border: 'none', cursor: 'pointer' }}
               >
                 ✕
               </button>
             </div>
 
-            <div className="gov-modal-body">
-              <div className="modal-stats-grid">
-                <div className="m-stat-box">
-                  <span className="ms-lbl">Safe Holding Capacity</span>
-                  <span className="ms-val font-mono">{(inspectSite.capacity || 10000).toLocaleString()} devotees</span>
+            <div className="gov-modal-body" style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto' }}>
+              {/* Loading Indicator */}
+              {isLoadingInspection && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#0284C7', fontWeight: 600 }}>
+                  <div style={{ marginBottom: '0.75rem', fontSize: '1.5rem' }}>🔄</div>
+                  Fetching authoritative live telemetry, queue forecasts, and safety contacts for {inspectSite.id}...
                 </div>
-                <div className="m-stat-box">
-                  <span className="ms-lbl">Live Devotee Headcount</span>
-                  <span className="ms-val font-mono font-bold text-navy">{inspectSite.people_count?.toLocaleString()}</span>
+              )}
+
+              {/* Error Banner */}
+              {inspectionError && (
+                <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '0.85rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem', fontSize: '0.88rem' }}>
+                  ⚠️ <strong>Telemetry Fetch Error:</strong> {inspectionError}
                 </div>
-                <div className="m-stat-box">
-                  <span className="ms-lbl">Current Occupancy</span>
-                  <span className={`ms-val font-bold status-${inspectSite.status.toLowerCase()}`}>
-                    {inspectSite.occupancy_percentage}% ({inspectSite.status})
+              )}
+
+              {/* Main Live Telemetry Grid */}
+              <div className="modal-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="m-stat-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem' }}>
+                  <span className="ms-lbl" style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Live Devotee Headcount</span>
+                  <span className="ms-val font-mono font-bold text-navy" style={{ fontSize: '1.5rem', color: '#0F172A', marginTop: '0.25rem', display: 'block' }}>
+                    {(inspectionData?.density?.people_count ?? inspectSite.people_count ?? 0).toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748B' }}>devotees in FOV / geofence</span>
+                </div>
+
+                <div className="m-stat-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem' }}>
+                  <span className="ms-lbl" style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Safe Holding Capacity</span>
+                  <span className="ms-val font-mono" style={{ fontSize: '1.5rem', color: '#334155', marginTop: '0.25rem', display: 'block' }}>
+                    {(inspectionData?.density?.capacity ?? inspectSite.capacity ?? 10000).toLocaleString()}
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748B' }}>maximum safe corridor threshold</span>
+                </div>
+
+                <div className="m-stat-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem' }}>
+                  <span className="ms-lbl" style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Current Occupancy</span>
+                  <span className={`ms-val font-bold status-${(inspectionData?.density?.status || inspectSite.status || 'NORMAL').toLowerCase()}`} style={{ fontSize: '1.5rem', marginTop: '0.25rem', display: 'block' }}>
+                    {inspectionData?.density?.occupancy_percentage ?? inspectSite.occupancy_percentage ?? 0}%
+                  </span>
+                  <span className={`gov-status-badge status-${(inspectionData?.density?.status || inspectSite.status || 'NORMAL').toLowerCase()}`} style={{ marginTop: '0.25rem' }}>
+                    {inspectionData?.density?.status || inspectSite.status || 'NORMAL'}
                   </span>
                 </div>
-                <div className="m-stat-box">
-                  <span className="ms-lbl">Estimated Queue Time</span>
-                  <span className="ms-val font-mono">⏱️ {inspectSite.estimated_wait_mins} mins</span>
+
+                <div className="m-stat-box" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem' }}>
+                  <span className="ms-lbl" style={{ display: 'block', fontSize: '0.75rem', color: '#64748B', fontWeight: 700, textTransform: 'uppercase' }}>Estimated Queue Wait</span>
+                  <span className="ms-val font-mono" style={{ fontSize: '1.5rem', color: '#2563EB', marginTop: '0.25rem', display: 'block' }}>
+                    ⏱️ {inspectionData?.forecast?.queue_forecast?.estimated_current_wait_mins ?? inspectSite.estimated_wait_mins ?? 25} mins
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                    Queue length: ~{Math.round((inspectionData?.density?.people_count ?? inspectSite.people_count ?? 1000) * 0.05)} meters
+                  </span>
                 </div>
               </div>
+
+              {/* Data Provenance & Source Label Box */}
+              <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', padding: '1rem 1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#0369A1', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block' }}>
+                      Operational Provenance &amp; Sensor Hierarchy
+                    </span>
+                    <strong style={{ fontSize: '0.95rem', color: '#0C4A6E' }}>
+                      📡 {formatTelemetrySource(inspectionData?.density?.source || inspectSite.source)}
+                    </strong>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#0369A1', display: 'block' }}>Last Updated</span>
+                    <span style={{ fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                      {inspectionData?.density?.last_updated || inspectSite.last_updated || 'Live Telemetry'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Emergency Safety Contacts & Healthcare Info (from backend /sites/{id}/safety-info) */}
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '0.5rem', padding: '1.25rem', marginBottom: '1.5rem' }}>
+                <h4 style={{ margin: '0 0 1rem 0', color: '#0F172A', fontSize: '0.95rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  🛡️ Emergency Response &amp; Healthcare Network
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+                  <div style={{ background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '0.4rem', border: '1px solid #F1F5F9' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, display: 'block' }}>NEAREST MEDICAL HOSPITAL</span>
+                    <strong style={{ fontSize: '0.88rem', color: '#0F172A' }}>
+                      🏥 {inspectionData?.safety?.nearest_hospital || 'Base Civil Hospital'}
+                    </strong>
+                    <div style={{ fontSize: '0.78rem', color: '#2563EB', marginTop: '0.2rem', fontFamily: 'monospace' }}>
+                      📞 {inspectionData?.safety?.hospital_phone || '108'} • {inspectionData?.safety?.hospital_distance_km || 1.8} km
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '0.4rem', border: '1px solid #F1F5F9' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, display: 'block' }}>NEAREST POLICE CONTROL POST</span>
+                    <strong style={{ fontSize: '0.88rem', color: '#0F172A' }}>
+                      👮 {inspectionData?.safety?.nearest_police || 'Shrine Police Outpost'}
+                    </strong>
+                    <div style={{ fontSize: '0.78rem', color: '#2563EB', marginTop: '0.2rem', fontFamily: 'monospace' }}>
+                      📞 {inspectionData?.safety?.police_phone || '112'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '0.4rem', border: '1px solid #F1F5F9' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 700, display: 'block' }}>DISASTER MANAGEMENT HELPLINE</span>
+                    <strong style={{ fontSize: '0.88rem', color: '#0F172A' }}>
+                      🚨 National Helpline: {inspectionData?.safety?.disaster_control_room || '1070'}
+                    </strong>
+                    <div style={{ fontSize: '0.78rem', color: '#64748B', marginTop: '0.2rem' }}>
+                      State Emergency Response Node
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #F1F5F9', fontSize: '0.82rem', color: '#475569' }}>
+                  <strong>Evacuation &amp; Safety Protocol:</strong>{' '}
+                  {inspectionData?.safety?.evacuation_routes || 'Follow designated emergency exit signs and SDRF holding corridors.'}
+                </div>
+              </div>
+
+              {/* Queue Forecast Context */}
+              {inspectionData?.forecast?.seasonal_context && (
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '0.5rem', padding: '1rem 1.25rem', marginBottom: '1rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#92400E', fontSize: '0.88rem', fontWeight: 800 }}>
+                    📅 Seasonal &amp; Queue Forecast Context
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '0.82rem', color: '#78350F', lineHeight: '1.5' }}>
+                    <strong>Peak Festivals:</strong> {inspectionData.forecast.seasonal_context.upcoming_peak_festivals || 'Seasonal Utsav'} | {' '}
+                    <strong>Weather Advisory:</strong> {inspectionData.forecast.seasonal_context.weather_warnings || 'Comfortable darshan conditions.'}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <div className="gov-modal-footer">
+            {/* Footer with Clear Back Button and Explicit Broadcast Button */}
+            <div className="gov-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F8FAFC', padding: '1rem 1.5rem', borderTop: '1px solid #E2E8F0' }}>
               <button
                 type="button"
-                className="btn-modal-action"
-                onClick={() => {
-                  onSelectSite && onSelectSite(inspectSite.id);
-                  setInspectSite(null);
-                  window.scrollTo({ top: 180, behavior: 'smooth' });
+                className="btn-back-monitoring"
+                onClick={() => setInspectSite(null)}
+                style={{
+                  background: '#FFFFFF',
+                  color: '#475569',
+                  border: '1px solid #CBD5E1',
+                  padding: '0.6rem 1.2rem',
+                  borderRadius: '0.4rem',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer'
                 }}
               >
-                Load into Telemetry Broadcast Form ➔
+                ← Back to Pilgrimage Site Monitoring
               </button>
+
+              {(subrole === 'police_official' || subrole === 'government_official' || currentUser?.role === 'government' || currentUser?.role === 'police') && (
+                <button
+                  type="button"
+                  className="btn-modal-action"
+                  onClick={() => {
+                    setBroadcastTargetSite(inspectSite);
+                    setBroadcastPeopleCount(inspectionData?.density?.people_count ?? inspectSite.people_count ?? 1000);
+                    setBroadcastQueueLength(Math.round((inspectionData?.density?.people_count ?? inspectSite.people_count ?? 1000) * 0.05));
+                    setBroadcastWaitTime(inspectionData?.forecast?.queue_forecast?.estimated_current_wait_mins ?? inspectSite.estimated_wait_mins ?? 25);
+                    setIsBroadcastModalOpen(true);
+                  }}
+                  style={{
+                    background: '#2563EB',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '0.6rem 1.2rem',
+                    borderRadius: '0.4rem',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📡 Broadcast Verified Telemetry Update...
+                </button>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Explicit Telemetry Broadcast Modal */}
+      {isBroadcastModalOpen && broadcastTargetSite && (
+        <div className="gov-modal-backdrop" onClick={() => setIsBroadcastModalOpen(false)}>
+          <div className="gov-modal-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '560px', width: '90%' }}>
+            <div className="gov-modal-header" style={{ background: '#0F172A', color: '#FFF', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="modal-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="modal-icon" style={{ fontSize: '1.5rem' }}>📡</span>
+                <div>
+                  <h3 className="modal-heading" style={{ color: '#FFF', margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
+                    Broadcast Verified Telemetry Update
+                  </h3>
+                  <div className="modal-sub" style={{ color: '#94A3B8', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                    Target Shrine: [{broadcastTargetSite.id}] {broadcastTargetSite.name}
+                  </div>
+                </div>
+              </div>
+              <button type="button" className="gov-modal-close" onClick={() => setIsBroadcastModalOpen(false)} style={{ color: '#94A3B8', background: 'transparent', border: 'none', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <form onSubmit={handleExplicitBroadcastSubmit}>
+              <div className="gov-modal-body" style={{ padding: '1.25rem' }}>
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', padding: '0.75rem 1rem', borderRadius: '0.4rem', marginBottom: '1rem', fontSize: '0.82rem', color: '#92400E' }}>
+                  ⚠️ <strong>Official Government Broadcast (POST /crowd/update):</strong> This action updates the live crowd telemetry across all Tourist, Government, Police, and God's-Eye command center dashboards.
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                      Devotee Headcount (FOV / RFID Count):
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="300000"
+                      value={broadcastPeopleCount}
+                      onChange={(e) => setBroadcastPeopleCount(Number(e.target.value))}
+                      className="gov-input"
+                      style={{ width: '100%', padding: '0.65rem', borderRadius: '0.4rem', border: '1px solid #CBD5E1', fontSize: '0.95rem', fontFamily: 'monospace' }}
+                      required
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                        Queue Length (meters):
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={broadcastQueueLength}
+                        onChange={(e) => setBroadcastQueueLength(Number(e.target.value))}
+                        className="gov-input"
+                        style={{ width: '100%', padding: '0.65rem', borderRadius: '0.4rem', border: '1px solid #CBD5E1', fontSize: '0.95rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#334155', marginBottom: '0.3rem' }}>
+                        Estimated Wait (mins):
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={broadcastWaitTime}
+                        onChange={(e) => setBroadcastWaitTime(Number(e.target.value))}
+                        className="gov-input"
+                        style={{ width: '100%', padding: '0.65rem', borderRadius: '0.4rem', border: '1px solid #CBD5E1', fontSize: '0.95rem', fontFamily: 'monospace' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="gov-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1rem 1.25rem', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsBroadcastModalOpen(false)}
+                  style={{ background: '#FFFFFF', border: '1px solid #CBD5E1', padding: '0.55rem 1.1rem', borderRadius: '0.4rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isBroadcastingExplicit}
+                  style={{ background: '#16A34A', color: '#FFF', border: 'none', padding: '0.55rem 1.25rem', borderRadius: '0.4rem', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  {isBroadcastingExplicit ? 'Broadcasting...' : 'Confirm & Broadcast Live Telemetry'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

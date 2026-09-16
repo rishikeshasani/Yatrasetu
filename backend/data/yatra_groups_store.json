@@ -59,9 +59,32 @@
       "status": "ARCHIVED",
       "created_at": "2026-09-11T15:26:17.537400+00:00",
       "updated_at": "2026-09-11T15:26:17.537400+00:00"
+    },
+    {
+      "id": "fdd041e9-e727-4fd4-ae0f-27224772a0d3",
+      "group_name": "yioo",
+      "site_id": "TS024",
+      "site_name": "Rohtang Pass & Solang Valley Adventure Zone",
+      "yatra_date": "2026-09-15",
+      "join_code": "EC8D9G",
+      "created_by": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "status": "ACTIVE",
+      "created_at": "2026-09-14T16:35:30.075233+00:00",
+      "updated_at": "2026-09-14T16:35:30.075233+00:00"
     }
   ],
-  "members": [],
+  "members": [
+    {
+      "id": "255d96d6-d95a-4560-b30f-d3b1d80f2e1f",
+      "group_id": "fdd041e9-e727-4fd4-ae0f-27224772a0d3",
+      "user_id": "2fe9818d-6c8d-4a21-a1c3-fa1de280b293",
+      "user_name": "tourist_demo",
+      "user_email": "tourist_demo@yatrasetu.org",
+      "role": "ADMIN",
+      "joined_at": "2026-09-14T16:35:30.075233+00:00",
+      "last_seen_at": "2026-09-16T13:53:39.144781+00:00"
+    }
+  ],
   "locations": [],
   "alerts": [
     {

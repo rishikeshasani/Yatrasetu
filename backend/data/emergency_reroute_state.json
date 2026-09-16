@@ -1,3 +1,49 @@
 {
-  "id": "reroute-mock"
+  "id": "09cd88ec-7a23-4971-8153-3d20a8cb0f24",
+  "site_id": "TS001",
+  "site_name": "Kedarnath Temple",
+  "crowd_status": "CRITICAL",
+  "occupancy_percentage": 95.0,
+  "people_count": 12350,
+  "alert_type": "EMERGENCY_REROUTE",
+  "status": "ACTIVE",
+  "diverted_tourists": 350,
+  "partner_buses": 14,
+  "partner_hotels": 22,
+  "alternative_routes": [
+    {
+      "alternative_id": "ALT001",
+      "name": "Madhyamaheshwar Temple (Second Kedar)",
+      "type": "Pristine High-Altitude Alpine Shrine & Trek",
+      "latitude": 30.638,
+      "longitude": 79.2198,
+      "distance_km": 42.0,
+      "travel_time_mins": 360,
+      "crowd_percentage": 5,
+      "relative_crowd_percentage": 5,
+      "crowd_savings": "95% less crowded",
+      "why_visit": "Serene spiritual atmosphere, untouched Bugyal (alpine meadow) views of Chaukhamba peaks, zero queue time",
+      "best_time_to_visit": "May - June, September - October",
+      "road_connectivity": "Motorable road till Ransi village + 16 km scenic mountain trek path"
+    },
+    {
+      "alternative_id": "ALT002",
+      "name": "Triyuginarayan Temple",
+      "type": "Ancient Mythological Himalayan Stone Temple",
+      "latitude": 30.5983,
+      "longitude": 78.9839,
+      "distance_km": 25.0,
+      "travel_time_mins": 90,
+      "crowd_percentage": 12,
+      "relative_crowd_percentage": 12,
+      "crowd_savings": "88% less crowded",
+      "why_visit": "Site of divine Shiva-Parvati wedding with perpetual sacred flame (Akhand Dhuni); peaceful darshan without long queues",
+      "best_time_to_visit": "April - June, September - November",
+      "road_connectivity": "All-weather motorable road connected from Sonprayag"
+    }
+  ],
+  "notes": "EMERGENCY: Haridwar corridor reroute enforced by Uttarakhand State Police & SDRF Command. Inbound vehicles diverted to BHEL Satellite Hub.",
+  "activated_by": "851545f1-06a6-478b-9e5f-e75d24d9cab0",
+  "activated_at": "2026-09-15T15:38:51.156767+00:00",
+  "resolved_at": null
 }
