@@ -96,6 +96,8 @@ class CrowdPredictorService:
         base_dir = Path(__file__).parent.parent.parent
         possible_paths = [
             data_path,
+            base_dir / "historical_crowd_data.csv",
+            base_dir / "backend" / "data" / "historical_crowd_data.csv",
             base_dir / "data" / "historical_crowd_data.csv",
             base_dir / "ai_pipeline" / "historical_crowd_data.csv",
         ]

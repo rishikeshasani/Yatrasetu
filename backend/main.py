@@ -31,7 +31,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +54,17 @@ app.include_router(gps_crowd_router)
 @app.get("/")
 def home():
     return {
-        "message": "YatraSetu Backend Running"
+        "status": "online",
+        "service": "YatraSetu Backend API",
+        "version": "2.0",
+        "docs_url": "/docs"
+    }
+
+@app.get("/health")
+def health():
+    return {
+        "status": "healthy",
+        "timestamp": True
     }
 
 
