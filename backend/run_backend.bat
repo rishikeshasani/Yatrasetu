@@ -18,19 +18,32 @@ if not exist ".env" (
 
 :: 2. Activate Python Virtual Environment if present
 if exist ".venv\Scripts\activate.bat" (
-    echo [*] Activating local virtual environment
+    echo [*] Activating local virtual environment (.venv)
     call .venv\Scripts\activate.bat
-)
-if exist "..\.venv\Scripts\activate.bat" (
-    echo [*] Activating parent virtual environment
+) else if exist "..\.venv\Scripts\activate.bat" (
+    echo [*] Activating parent virtual environment (..\.venv)
     call ..\.venv\Scripts\activate.bat
-)
-if exist "%USERPROFILE%\.venv\Scripts\activate.bat" (
-    echo [*] Activating user virtual environment
+) else if exist "%USERPROFILE%\.venv\Scripts\activate.bat" (
+    echo [*] Activating user virtual environment (%USERPROFILE%\.venv)
     call "%USERPROFILE%\.venv\Scripts\activate.bat"
 )
 
-:: 2. Ensure Port 8000 is clean and available
+:: 3. Check for python in PATH
+where python >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    echo [!] Python is not found in PATH. Please install Python 3.10+ from python.org
+    pause
+    exit /b 1
+)
+
+:: 4. Verify required packages (fastapi, uvicorn, python-multipart)
+python -c "import fastapi, uvicorn, multipart" >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [*] Installing or updating missing backend packages...
+    python -m pip install -r requirements.txt
+)
+
+:: 5. Ensure Port 8000 is clean and available
 echo [*] Checking port 8000 availability...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr /c:":8000" ^| findstr "LISTENING"') do (
     echo [!] Found existing process PID %%a on port 8000. Terminating old instance...
