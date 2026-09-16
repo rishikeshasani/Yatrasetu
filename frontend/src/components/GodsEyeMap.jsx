@@ -500,7 +500,7 @@ export default function GodsEyeMap({
                       </div>
                       <div className="popup-row">
                         <span className="popup-label">{t('godsEye.dataSource', 'Source')}:</span>
-                        <span className="popup-val" style={{ fontSize: '0.72rem', color: '#38BDF8' }} title={getSourceLabel(site.source)}>
+                        <span className="popup-val" style={{ fontSize: '0.72rem', color: '#0284C7' }} title={getSourceLabel(site.source)}>
                           {getSourceLabel(site.source)}
                         </span>
                       </div>
@@ -547,7 +547,7 @@ export default function GodsEyeMap({
                 {/* Occupancy Progress Bar */}
                 <div className="intel-occupancy-wrap">
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', fontWeight: 700 }}>
-                    <span style={{ color: '#94A3B8' }}>{t('godsEye.occupancy', 'Capacity Occupancy')}</span>
+                    <span style={{ color: '#64748B' }}>{t('godsEye.occupancy', 'Capacity Occupancy')}</span>
                     <span className={`text-${activeSelectedSite.status.toLowerCase()}`}>
                       {activeSelectedSite.occupancy_percentage}% ({activeSelectedSite.status})
                     </span>
@@ -572,13 +572,13 @@ export default function GodsEyeMap({
                   </div>
                   <div className="intel-stat-box">
                     <span className="isb-label">{t('godsEye.estimatedWait', 'Estimated Wait')}</span>
-                    <span className="isb-val" style={{ color: activeSelectedSite.wait_time_minutes > 120 ? '#F87171' : '#60A5FA' }}>
+                    <span className="isb-val" style={{ color: activeSelectedSite.wait_time_minutes > 120 ? '#DC2626' : '#2563EB' }}>
                       ~{activeSelectedSite.wait_time_minutes}m
                     </span>
                   </div>
                   <div className="intel-stat-box">
                     <span className="isb-label">{t('godsEye.dataSource', 'Data Source')}</span>
-                    <span className="isb-val" style={{ fontSize: '0.78rem', color: '#38BDF8', lineHeight: 1.25 }} title={getSourceLabel(activeSelectedSite.source)}>
+                    <span className="isb-val" style={{ fontSize: '0.78rem', color: '#0284C7', lineHeight: 1.25 }} title={getSourceLabel(activeSelectedSite.source)}>
                       {getSourceLabel(activeSelectedSite.source)}
                     </span>
                   </div>
@@ -614,11 +614,11 @@ export default function GodsEyeMap({
                     )}
 
                     {activeSelectedSite.fused_people_count != null && (
-                      <div className="ifc-row" style={{ borderTop: '1px solid #334155', paddingTop: '0.4rem', marginTop: '0.2rem' }}>
-                        <span className="ifc-label" style={{ fontWeight: 700, color: '#F8FAFC' }}>
+                      <div className="ifc-row" style={{ borderTop: '1px solid #E2E8F0', paddingTop: '0.4rem', marginTop: '0.2rem' }}>
+                        <span className="ifc-label" style={{ fontWeight: 700, color: '#0F172A' }}>
                           🎯 {t('godsEye.fusedCount', 'Fused Operational Count')}:
                         </span>
-                        <span className="ifc-val" style={{ color: '#34D399', fontSize: '1.05rem' }}>
+                        <span className="ifc-val" style={{ color: '#16A34A', fontSize: '1.05rem' }}>
                           {activeSelectedSite.fused_people_count.toLocaleString()}
                         </span>
                       </div>
@@ -636,7 +636,7 @@ export default function GodsEyeMap({
                     </div>
                     <div className="ifc-row">
                       <span className="ifc-label">Telemetry Tier:</span>
-                      <span className="ifc-val" style={{ textTransform: 'none', color: '#38BDF8', fontSize: '0.85rem' }}>
+                      <span className="ifc-val" style={{ textTransform: 'none', color: '#0284C7', fontSize: '0.85rem' }}>
                         {getSourceLabel(activeSelectedSite.source)}
                       </span>
                     </div>
@@ -686,7 +686,7 @@ export default function GodsEyeMap({
       {/* 6. Footer Legend & Integrity Disclaimer */}
       <div className="godseye-footer">
         <div className="godseye-legend">
-          <span style={{ fontWeight: 700, color: '#F8FAFC' }}>{t('godsEye.legendTitle', 'Legend')}:</span>
+          <span style={{ fontWeight: 700, color: '#0F172A' }}>{t('godsEye.legendTitle', 'Legend')}:</span>
           <div className="legend-item">
             <span className="legend-dot dot-normal"></span>
             <span>{t('godsEye.legendNormal', 'Normal (<50%)')}</span>

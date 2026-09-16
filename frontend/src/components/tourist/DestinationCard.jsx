@@ -42,13 +42,17 @@ export default function DestinationCard({
   const sourceInfo = SOURCE_CONFIG[rawSource] || SOURCE_CONFIG.demo_simulation;
 
   return (
-    <div className={`shrine-grid-card ${isSelected ? 'card-selected' : ''}`}>
+    <div
+      className={`shrine-grid-card ${isSelected ? 'card-selected' : ''}`}
+      onClick={() => onSelect(site.id)}
+      style={{ cursor: 'pointer' }}
+    >
       {/* Media Box */}
       <div
         className="card-media-wrap"
-        onClick={() => onViewDetails(site)}
+        onClick={() => onSelect(site.id)}
         style={{ cursor: 'pointer' }}
-        title="Click to view detailed darshan & safety profile"
+        title="Click to select and monitor live shrine"
       >
         <img
           src={shrineImg}

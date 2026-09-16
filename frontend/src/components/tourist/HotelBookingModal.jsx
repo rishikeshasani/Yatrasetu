@@ -117,6 +117,11 @@ export default function HotelBookingModal({
     }
   }
 
+  const now = new Date();
+  const minDateTimeStr = formatForDatetimeInput(now);
+  const maxBookingDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  const maxDateTimeStr = formatForDatetimeInput(maxBookingDate);
+
   const pricePerNight = selectedRoom.price_per_night || hotel.price_per_night || 1200;
   const totalPrice = Math.round(pricePerNight * durationNights);
 
@@ -126,6 +131,16 @@ export default function HotelBookingModal({
 
     if (!isValidDateRange) {
       setErrorMsg('Check-out date/time must be strictly after Check-in date/time.');
+      return;
+    }
+
+    if (new Date(checkIn) < new Date(now.getTime() - 5 * 60 * 1000)) {
+      setErrorMsg('Check-in date/time cannot be in the past.');
+      return;
+    }
+
+    if (new Date(checkIn) > maxBookingDate) {
+      setErrorMsg('Bookings cannot be made more than 365 days in advance.');
       return;
     }
 
@@ -289,7 +304,8 @@ export default function HotelBookingModal({
                   type="datetime-local"
                   required
                   value={checkIn}
-                  min={formatForDatetimeInput(new Date())}
+                  min={minDateTimeStr}
+                  max={maxDateTimeStr}
                   onChange={(e) => setCheckIn(e.target.value)}
                   style={{
                     width: '100%',
@@ -313,7 +329,8 @@ export default function HotelBookingModal({
                   type="datetime-local"
                   required
                   value={checkOut}
-                  min={checkIn || formatForDatetimeInput(new Date())}
+                  min={checkIn || minDateTimeStr}
+                  max={maxDateTimeStr}
                   onChange={(e) => setCheckOut(e.target.value)}
                   style={{
                     width: '100%',

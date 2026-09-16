@@ -12,10 +12,12 @@ import './HotelBookingWidget.css';
 
 export default function HotelBookingWidget({ currentUser, onShowToast }) {
   const today = new Date();
-  const plusTwoDays = new Date(today);
-  plusTwoDays.setDate(today.getDate() + 2);
-  const defaultCheckIn = today.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0];
+  const plusTwoDays = new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const maxDate = new Date(today.getTime() + 365 * 24 * 60 * 60 * 1000);
+  const defaultCheckIn = todayStr;
   const defaultCheckOut = plusTwoDays.toISOString().split('T')[0];
+  const maxDateStr = maxDate.toISOString().split('T')[0];
 
   // 1. Hotel & Room state
   const [hotelId, setHotelId] = useState(currentUser?.hotel_id || '');
@@ -223,6 +225,16 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
       return;
     }
 
+    if (new Date(inIso) < new Date(today.getTime() - 5 * 60 * 1000)) {
+      setSubmissionError('Check-in date cannot be in the past.');
+      return;
+    }
+
+    if (new Date(inIso) > maxDate) {
+      setSubmissionError('Bookings cannot be made more than 365 days in advance.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
@@ -402,8 +414,8 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
                   value={checkInDate}
                   onChange={(e) => setCheckInDate(e.target.value)}
                   className="field-input"
-                  min="2026-09-04"
-                  max="2026-09-10"
+                  min={todayStr}
+                  max={maxDateStr}
                   required
                 />
                 <select
@@ -432,8 +444,8 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
                   value={checkOutDate}
                   onChange={(e) => setCheckOutDate(e.target.value)}
                   className="field-input"
-                  min="2026-09-04"
-                  max="2026-09-10"
+                  min={checkInDate || todayStr}
+                  max={maxDateStr}
                   required
                 />
                 <select

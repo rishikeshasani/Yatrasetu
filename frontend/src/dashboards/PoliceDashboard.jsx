@@ -48,14 +48,30 @@ export default function PoliceDashboard({
   onTabChange,
   activeRerouteAlert: propRerouteAlert
 }) {
-  // Navigation Tabs (9 Tabs):
-  // 'overview' | 'live-crowd' | 'surge-alerts' | 'emergency-response' |
-  // 'police-simulation' | 'traffic-control' | 'sos-response' | 'safety-zones' | 'reports-analytics'
-  const [activeTab, setActiveTab] = useState(() => propActiveTab || 'overview');
+  // Navigation Tabs (7 Tabs):
+  // 'overview' | 'live-crowd' | 'surge-alerts' | 'police-simulation' | 'sos-response' | 'safety-zones' | 'reports-analytics'
+  const ALLOWED_POLICE_TABS = [
+    'overview',
+    'live-crowd',
+    'surge-alerts',
+    'police-simulation',
+    'sos-response',
+    'safety-zones',
+    'reports-analytics'
+  ];
+
+  const [activeTab, setActiveTab] = useState(() => {
+    if (propActiveTab && ALLOWED_POLICE_TABS.includes(propActiveTab)) return propActiveTab;
+    return 'overview';
+  });
 
   useEffect(() => {
     if (propActiveTab && propActiveTab !== activeTab) {
-      setActiveTab(propActiveTab);
+      if (ALLOWED_POLICE_TABS.includes(propActiveTab)) {
+        setActiveTab(propActiveTab);
+      } else {
+        setActiveTab('overview');
+      }
     }
   }, [propActiveTab]);
 
@@ -468,25 +484,10 @@ export default function PoliceDashboard({
           </button>
           <button
             type="button"
-            className={`police-nav-tab ${activeTab === 'emergency-response' ? 'active' : ''}`}
-            onClick={() => handleSwitchTab('emergency-response')}
-          >
-            <span>⚡ Emergency Response</span>
-            {isRerouteActive && <span className="police-tab-badge">ACTIVE</span>}
-          </button>
-          <button
-            type="button"
             className={`police-nav-tab ${activeTab === 'police-simulation' ? 'active' : ''}`}
             onClick={() => handleSwitchTab('police-simulation')}
           >
             <span>👮 Police &amp; Crowd Simulation</span>
-          </button>
-          <button
-            type="button"
-            className={`police-nav-tab ${activeTab === 'traffic-control' ? 'active' : ''}`}
-            onClick={() => handleSwitchTab('traffic-control')}
-          >
-            <span>🚦 Traffic &amp; Route Control</span>
           </button>
           <button
             type="button"
@@ -618,9 +619,9 @@ export default function PoliceDashboard({
                     type="button"
                     className="police-preset-btn"
                     style={{ padding: '0.75rem', textAlign: 'center' }}
-                    onClick={() => handleSwitchTab('traffic-control')}
+                    onClick={() => handleSwitchTab('safety-zones')}
                   >
-                    🚦 Manage Satellite Holding Corridors &amp; Toll Bypasses ➔
+                    🛡️ Inspect Tactical Safety &amp; Holding Corridors ➔
                   </button>
                 </div>
               </div>
@@ -645,8 +646,8 @@ export default function PoliceDashboard({
                     <div
                       key={a.id}
                       style={{
-                        background: '#080E1A',
-                        border: a.status === 'ACTIVE' ? '1px solid #DC2626' : '1px solid #1E293B',
+                        background: a.status === 'ACTIVE' ? '#FEF2F2' : '#F8FAFC',
+                        border: a.status === 'ACTIVE' ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
                         borderRadius: '0.5rem',
                         padding: '0.75rem 1rem',
                         display: 'flex',
@@ -655,8 +656,8 @@ export default function PoliceDashboard({
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.88rem' }}>
-                          {a.user_name} • <span style={{ color: '#94A3B8' }}>{a.emergency_type}</span>
+                        <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.88rem' }}>
+                          {a.user_name} • <span style={{ color: a.status === 'ACTIVE' ? '#DC2626' : '#64748B' }}>{a.emergency_type}</span>
                         </div>
                         <div style={{ color: '#64748B', fontSize: '0.78rem', marginTop: '0.2rem' }}>
                           📍 {a.site_name} • {a.timestamp}
@@ -713,19 +714,20 @@ export default function PoliceDashboard({
                   <tbody>
                     {siteTelemetryList.slice(0, 6).map((s) => (
                       <tr key={s.id}>
-                        <td style={{ fontWeight: 600, color: '#F8FAFC' }}>
-                          [{s.id}] {s.name} ({s.city || s.state})
+                        <td style={{ fontWeight: 600, color: '#0F172A' }}>
+                          <span style={{ fontFamily: 'monospace', color: '#1E40AF', fontWeight: 700, marginRight: '6px' }}>[{s.id}]</span>
+                          {s.name} <span style={{ color: '#64748B', fontWeight: 400 }}>({s.city || s.state})</span>
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
                           {s.people_count.toLocaleString()}
                         </td>
-                        <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
+                        <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
                           {s.capacity.toLocaleString()}
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: s.occupancy_percentage >= 90 ? '#DC2626' : s.occupancy_percentage >= 70 ? '#B45309' : '#16A34A' }}>
                           {s.occupancy_percentage}%
                         </td>
-                        <td style={{ fontFamily: 'monospace', color: s.wait_time_minutes > 60 ? '#F87171' : '#60A5FA' }}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 600, color: s.wait_time_minutes > 60 ? '#DC2626' : '#2563EB' }}>
                           ~{s.wait_time_minutes} mins
                         </td>
                         <td>
@@ -766,8 +768,8 @@ export default function PoliceDashboard({
             </div>
 
             {/* Field Officer Telemetry Update Tool */}
-            <form onSubmit={handleReportFieldHeadcount} style={{ background: '#080E1A', padding: '1rem 1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.88rem' }}>
+            <form onSubmit={handleReportFieldHeadcount} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem 1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.88rem' }}>
                 📡 Field Officer Telemetry Report:
               </span>
               <select
@@ -808,31 +810,28 @@ export default function PoliceDashboard({
                     <th>SAFE CAPACITY</th>
                     <th>OCCUPANCY</th>
                     <th>WAIT TIME</th>
-                    <th>FLOW TREND</th>
                     <th>ENFORCEMENT STATUS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredSites.map((s) => (
                     <tr key={s.id}>
-                      <td style={{ fontWeight: 600, color: '#F8FAFC' }}>
-                        [{s.id}] {s.name}
+                      <td style={{ fontWeight: 600, color: '#0F172A' }}>
+                        <span style={{ fontFamily: 'monospace', color: '#1E40AF', fontWeight: 700, marginRight: '6px' }}>[{s.id}]</span>
+                        {s.name}
                         <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{s.city || s.state}</div>
                       </td>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
                         {s.people_count.toLocaleString()}
                       </td>
-                      <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
+                      <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
                         {s.capacity.toLocaleString()}
                       </td>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 700, color: s.occupancy_percentage >= 90 ? '#DC2626' : s.occupancy_percentage >= 70 ? '#B45309' : '#16A34A' }}>
                         {s.occupancy_percentage}%
                       </td>
-                      <td style={{ fontFamily: 'monospace', color: s.wait_time_minutes > 60 ? '#F87171' : '#60A5FA' }}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 600, color: s.wait_time_minutes > 60 ? '#DC2626' : '#2563EB' }}>
                         ~{s.wait_time_minutes} mins
-                      </td>
-                      <td style={{ fontWeight: 700, textAlign: 'center' }}>
-                        {s.trend}
                       </td>
                       <td>
                         <span className={`police-badge-status status-${s.status.toLowerCase()}`}>
@@ -864,8 +863,8 @@ export default function PoliceDashboard({
                 <div
                   key={s.id}
                   style={{
-                    background: '#080E1A',
-                    border: s.occupancy_percentage >= 90 ? '1px solid #DC2626' : '1px solid #F59E0B',
+                    background: s.occupancy_percentage >= 90 ? '#FEF2F2' : '#FFFBEB',
+                    border: s.occupancy_percentage >= 90 ? '1px solid #FCA5A5' : '1px solid #FDE68A',
                     borderRadius: '0.65rem',
                     padding: '1.25rem',
                     display: 'flex',
@@ -878,11 +877,11 @@ export default function PoliceDashboard({
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>{s.occupancy_percentage >= 90 ? '🔴' : '🟡'}</span>
-                      <h4 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.05rem' }}>
+                      <h4 style={{ margin: 0, color: '#0F172A', fontSize: '1.05rem' }}>
                         [{s.id}] {s.name} • {s.occupancy_percentage}% Capacity ({s.people_count.toLocaleString()} / {s.capacity.toLocaleString()})
                       </h4>
                     </div>
-                    <p style={{ margin: '0.4rem 0 0 0', color: '#94A3B8', fontSize: '0.85rem' }}>
+                    <p style={{ margin: '0.4rem 0 0 0', color: '#475569', fontSize: '0.85rem' }}>
                       Queue wait time estimated at ~{s.wait_time_minutes} minutes. Approaching critical threshold. Deploy holding pens and prepare diversion protocols.
                     </p>
                   </div>
@@ -919,49 +918,7 @@ export default function PoliceDashboard({
           </div>
         )}
 
-        {/* ------------------------------------------------------------------- */}
-        {/* TAB 4: EMERGENCY RESPONSE                                           */}
-        {/* ------------------------------------------------------------------- */}
-        {activeTab === 'emergency-response' && (
-          <div className="police-panel">
-            <div className="police-panel-header">
-              <div className="police-panel-title">
-                <span>⚡ EMERGENCY CORRIDOR OVERRIDE &amp; REROUTING DISPATCH</span>
-              </div>
-              <span className="police-panel-badge">FIELD COMMAND AUTHORITY</span>
-            </div>
 
-            <div style={{ background: '#080E1A', padding: '1.5rem', borderRadius: '0.65rem', border: '1px solid #1E293B', marginBottom: '1.5rem' }}>
-              <h3 style={{ margin: '0 0 0.5rem', color: '#60A5FA' }}>
-                National &amp; State Pilgrimage Reroute Protocol
-              </h3>
-              <p style={{ color: '#94A3B8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                When activated by Police HQ, all connected tourist navigation views, hotel logistics portals, and travel operator fleet consoles receive real-time notifications to bypass congested sanctum bottlenecks via designated sister shrine bypass routes and peripheral satellite parking.
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
-                <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>DIVERSION STATUS</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isRerouteActive ? '#4ADE80' : '#94A3B8', marginTop: '0.25rem' }}>
-                    {isRerouteActive ? 'ACTIVE' : 'STANDBY'}
-                  </div>
-                </div>
-                <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>PARTNER FLEET BUSES</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.25rem' }}>
-                    14 Buses (420 Seats)
-                  </div>
-                </div>
-                <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>SATELLITE CAPACITY</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.25rem' }}>
-                    BHEL Hub (800 Vehicles)
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ------------------------------------------------------------------- */}
         {/* TAB 5: POLICE & CROWD SIMULATION (AI SURGE SCENARIO BUILDER)        */}
@@ -1140,7 +1097,7 @@ export default function PoliceDashboard({
             </form>
 
             {simError && (
-              <div style={{ background: '#450A0A', border: '1px solid #DC2626', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', color: '#FCA5A5' }}>
+              <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', color: '#991B1B' }}>
                 <strong>Simulation Execution Error:</strong> {simError}
               </div>
             )}
@@ -1182,24 +1139,24 @@ export default function PoliceDashboard({
                   </div>
                   <div className="psm-card">
                     <span className="psm-lbl">SIMULATED HEADCOUNT</span>
-                    <span className="psm-val" style={{ color: '#60A5FA' }}>{activeSimulationResult.simulated_people_count.toLocaleString()}</span>
+                    <span className="psm-val" style={{ color: '#2563EB' }}>{activeSimulationResult.simulated_people_count.toLocaleString()}</span>
                     <span className="psm-sub">Total simulated volume</span>
                   </div>
                   <div className="psm-card">
                     <span className="psm-lbl">VENUE CAPACITY</span>
-                    <span className="psm-val" style={{ color: '#94A3B8' }}>{(activeSimulationResult.site_capacity || 10000).toLocaleString()}</span>
+                    <span className="psm-val" style={{ color: '#64748B' }}>{(activeSimulationResult.site_capacity || 10000).toLocaleString()}</span>
                     <span className="psm-sub">Official safe limit</span>
                   </div>
                   <div className="psm-card">
                     <span className="psm-lbl">OCCUPANCY %</span>
-                    <span className="psm-val" style={{ color: activeSimulationResult.simulated_occupancy_percentage >= 90 ? '#F87171' : '#FBBF24' }}>
+                    <span className="psm-val" style={{ color: activeSimulationResult.simulated_occupancy_percentage >= 90 ? '#DC2626' : '#D97706' }}>
                       {activeSimulationResult.simulated_occupancy_percentage}%
                     </span>
                     <span className="psm-sub">Capacity utilization</span>
                   </div>
                   <div className="psm-card">
                     <span className="psm-lbl">TRAFFIC IMPACT</span>
-                    <span className="psm-val" style={{ color: activeSimulationResult.traffic_impact === 'SEVERE' ? '#F87171' : '#FBBF24' }}>
+                    <span className="psm-val" style={{ color: activeSimulationResult.traffic_impact === 'SEVERE' ? '#DC2626' : '#D97706' }}>
                       {activeSimulationResult.traffic_impact}
                     </span>
                     <span className="psm-sub">Highway flow grade</span>
@@ -1212,11 +1169,11 @@ export default function PoliceDashboard({
                 </div>
 
                 {/* Risk Explanation Note */}
-                <div style={{ background: '#0F172A', borderLeft: '4px solid #F59E0B', padding: '1rem', borderRadius: '0.4rem', marginBottom: '1.5rem' }}>
-                  <div style={{ fontWeight: 700, color: '#FCD34D', marginBottom: '0.25rem' }}>
+                <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '4px solid #D97706', padding: '1rem', borderRadius: '0.4rem', marginBottom: '1.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#92400E', marginBottom: '0.25rem' }}>
                     AI Predictive Congestion &amp; Bottleneck Assessment:
                   </div>
-                  <div style={{ color: '#E2E8F0', fontSize: '0.88rem', lineHeight: '1.5' }}>
+                  <div style={{ color: '#78350F', fontSize: '0.88rem', lineHeight: '1.5' }}>
                     {activeSimulationResult.risk_explanation}
                   </div>
                 </div>
@@ -1251,7 +1208,7 @@ export default function PoliceDashboard({
                 {/* High-Risk Zones Feed */}
                 {activeSimulationResult.high_risk_zones && activeSimulationResult.high_risk_zones.length > 0 && (
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
                       🔴 High-Risk Chokepoints &amp; Mitigation Plans ({activeSimulationResult.high_risk_zones.length})
                     </div>
                     <div className="police-zones-feed">
@@ -1278,17 +1235,17 @@ export default function PoliceDashboard({
                 {/* Low-Density Alternatives Feed */}
                 {activeSimulationResult.low_density_alternatives && activeSimulationResult.low_density_alternatives.length > 0 && (
                   <div>
-                    <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                    <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
                       🧭 Surrounding Low-Density Relief Shrines
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
                       {activeSimulationResult.low_density_alternatives.slice(0, 4).map((alt, idx) => (
-                        <div key={idx} style={{ background: '#0F172A', border: '1px solid #1E293B', padding: '0.85rem', borderRadius: '0.5rem' }}>
+                        <div key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.9rem' }}>{alt.name}</span>
-                            <span style={{ color: '#4ADE80', fontWeight: 700, fontSize: '0.8rem' }}>{alt.crowd_savings}</span>
+                            <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>{alt.name}</span>
+                            <span style={{ color: '#16A34A', fontWeight: 700, fontSize: '0.8rem' }}>{alt.crowd_savings}</span>
                           </div>
-                          <div style={{ color: '#94A3B8', fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                          <div style={{ color: '#64748B', fontSize: '0.78rem', marginTop: '0.25rem' }}>
                             📍 {alt.distance_km} km • ⏱️ ~{alt.travel_time_mins} mins
                           </div>
                         </div>
@@ -1315,7 +1272,7 @@ export default function PoliceDashboard({
               </div>
 
               {isLoadingHistory && simulationsHistory.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
                   Loading simulation logs from database...
                 </div>
               ) : simulationsHistory.length === 0 ? (
@@ -1340,16 +1297,16 @@ export default function PoliceDashboard({
                       {simulationsHistory.map((h) => (
                         <tr key={h.id}>
                           <td>
-                            <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{h.event_name || 'Planned Event'}</div>
+                            <div style={{ fontWeight: 600, color: '#0F172A' }}>{h.event_name || 'Planned Event'}</div>
                             <div style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>[{h.site_id}] {h.site_name}</div>
                           </td>
-                          <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
+                          <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
                             {h.event_date} {h.event_time}
                           </td>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#F87171' }}>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#DC2626' }}>
                             +{Number(h.expected_crowd_increase).toLocaleString()}
                           </td>
-                          <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>
                             {h.simulated_occupancy_percentage}% ({h.simulated_crowd_status})
                           </td>
                           <td>
@@ -1376,7 +1333,7 @@ export default function PoliceDashboard({
                               <button
                                 type="button"
                                 className="police-preset-btn"
-                                style={{ padding: '0.25rem 0.65rem', borderColor: '#DC2626', color: '#FCA5A5' }}
+                                style={{ padding: '0.25rem 0.65rem', borderColor: '#DC2626', color: '#DC2626' }}
                                 onClick={() => handleDeleteSimulation(h.id)}
                               >
                                 ✕
@@ -1393,82 +1350,7 @@ export default function PoliceDashboard({
           </section>
         )}
 
-        {/* ------------------------------------------------------------------- */}
-        {/* TAB 6: TRAFFIC & ROUTE CONTROL                                      */}
-        {/* ------------------------------------------------------------------- */}
-        {activeTab === 'traffic-control' && (
-          <div>
-            <div className="police-panel">
-              <div className="police-panel-header">
-                <div className="police-panel-title">
-                  <span>🚦 ARTERIAL CHOKEPOINTS &amp; HIGHWAY BYPASS CORRIDORS</span>
-                </div>
-                <span className="police-panel-badge">TRAFFIC DIVISION HQ</span>
-              </div>
 
-              <div className="police-chokepoints-grid">
-                <div className="police-chokepoint-card">
-                  <div className="pcc-header">
-                    <span className="pcc-name">NH-334 Haridwar Highway</span>
-                    <span className={`police-badge-status ${isRerouteActive ? 'status-normal' : 'status-critical'}`}>
-                      {isRerouteActive ? 'DIVERTED' : 'HEAVY INFLUX'}
-                    </span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Current Speed Grade</span>
-                    <span className="pcc-metric-val">{isRerouteActive ? '45 km/h (Smooth)' : '12 km/h (Choked)'}</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Holding Staging Hub</span>
-                    <span className="pcc-metric-val">Raiwala Staging Area</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Emergency Priority</span>
-                    <span className="pcc-metric-val" style={{ color: '#4ADE80' }}>FASTag Lane 1 Active</span>
-                  </div>
-                </div>
-
-                <div className="police-chokepoint-card">
-                  <div className="pcc-header">
-                    <span className="pcc-name">Rishikesh Bypass Corridor</span>
-                    <span className="police-badge-status status-moderate">OPTIMAL</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Current Transit Time</span>
-                    <span className="pcc-metric-val">38 Minutes (Zone C)</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Buses En Route</span>
-                    <span className="pcc-metric-val">14 Partner Shuttles</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Time Saved / Yatri</span>
-                    <span className="pcc-metric-val" style={{ color: '#4ADE80' }}>107 Minutes</span>
-                  </div>
-                </div>
-
-                <div className="police-chokepoint-card">
-                  <div className="pcc-header">
-                    <span className="pcc-name">BHEL Satellite Transit Hub</span>
-                    <span className="police-badge-status status-normal">OPERATIONAL</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Parking Lot Capacity</span>
-                    <span className="pcc-metric-val">800 Vehicles / 450 Buses</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Occupancy Margin</span>
-                    <span className="pcc-metric-val">42% (Ample Buffer)</span>
-                  </div>
-                  <div className="pcc-metric-row">
-                    <span>Feeder Shuttles</span>
-                    <span className="pcc-metric-val">Every 10 Minutes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ------------------------------------------------------------------- */}
         {/* TAB 7: SOS / DISTRESS RESPONSE                                      */}
@@ -1505,20 +1387,20 @@ export default function PoliceDashboard({
                   {sosAlerts.map((a) => (
                     <tr key={a.id}>
                       <td>
-                        <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{a.user_name}</div>
-                        <div style={{ color: '#94A3B8', fontSize: '0.78rem' }}>{a.phone}</div>
+                        <div style={{ fontWeight: 700, color: '#0F172A' }}>{a.user_name}</div>
+                        <div style={{ color: '#64748B', fontSize: '0.78rem' }}>{a.phone}</div>
                       </td>
-                      <td style={{ color: '#FCA5A5', fontWeight: 600 }}>
+                      <td style={{ color: '#DC2626', fontWeight: 600 }}>
                         {a.emergency_type}
                       </td>
                       <td>
-                        <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{a.site_name}</div>
+                        <div style={{ fontWeight: 600, color: '#0F172A' }}>{a.site_name}</div>
                         <div style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>[{a.site_id || 'GPS'}]</div>
                       </td>
-                      <td style={{ fontFamily: 'monospace', color: '#94A3B8', fontSize: '0.78rem' }}>
+                      <td style={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.78rem' }}>
                         {a.latitude?.toFixed(4)}, {a.longitude?.toFixed(4)}
                       </td>
-                      <td style={{ color: '#94A3B8', fontSize: '0.8rem' }}>
+                      <td style={{ color: '#64748B', fontSize: '0.8rem' }}>
                         {a.timestamp}
                       </td>
                       <td>
@@ -1564,32 +1446,32 @@ export default function PoliceDashboard({
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-              <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem', color: '#F87171' }}>🔴 Har Ki Pauri Sanctum (Zone A)</h4>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h4 style={{ margin: '0 0 0.5rem', color: '#DC2626' }}>🔴 Har Ki Pauri Sanctum (Zone A)</h4>
+                <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                   Narrow river bank stairs and bridge approach. Barricaded holding pens at Upper Road to prevent surge crush.
                 </div>
-                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                   <strong>Police Post:</strong> Ghat Kotwali Sector 1 • 14 Officers on Duty
                 </div>
               </div>
 
-              <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem', color: '#FBBF24' }}>🟡 Ram Jhula Suspension Bridge (Zone B)</h4>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h4 style={{ margin: '0 0 0.5rem', color: '#D97706' }}>🟡 Ram Jhula Suspension Bridge (Zone B)</h4>
+                <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                   Suspension bridge pedestrian bottleneck. Alternating one-way crossing enforcement active during peak evening aarti.
                 </div>
-                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                   <strong>Police Post:</strong> Muni Ki Reti Outpost • 8 Marshals Deployed
                 </div>
               </div>
 
-              <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-                <h4 style={{ margin: '0 0 0.5rem', color: '#4ADE80' }}>🟢 BHEL Transit Evacuation Corridor (Zone C)</h4>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+              <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h4 style={{ margin: '0 0 0.5rem', color: '#16A34A' }}>🟢 BHEL Transit Evacuation Corridor (Zone C)</h4>
+                <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                   Primary high-capacity relief staging ground with 5 active oxygen medical tents and 18 mobile stretchers.
                 </div>
-                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+                <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                   <strong>Police Post:</strong> SDRF Camp Commander • 22 Tactical Personnel
                 </div>
               </div>
@@ -1655,12 +1537,12 @@ export default function PoliceDashboard({
             </div>
 
             <div className="police-modal-body">
-              <div style={{ background: '#080E1A', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ color: '#94A3B8', fontSize: '0.8rem' }}>INCIDENT DETAILS</div>
-                <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '1rem', marginTop: '0.25rem' }}>
-                  {dispatchModalAlert.user_name} • <span style={{ color: '#FCA5A5' }}>{dispatchModalAlert.emergency_type}</span>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700 }}>INCIDENT DETAILS</div>
+                <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem', marginTop: '0.25rem' }}>
+                  {dispatchModalAlert.user_name} • <span style={{ color: '#DC2626' }}>{dispatchModalAlert.emergency_type}</span>
                 </div>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                <div style={{ color: '#475569', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                   📍 {dispatchModalAlert.site_name}
                 </div>
               </div>

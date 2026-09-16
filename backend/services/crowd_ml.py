@@ -168,50 +168,136 @@ class CrowdPredictorService:
             })
         return pd.DataFrame(records)
 
-    def predict_24h_forecast(self, site_id: str, capacity: int = 200, start_time: datetime = None):
+    def predict_24h_forecast(
+        self,
+        site_id: str,
+        capacity: int = 200,
+        start_time: datetime = None,
+        site_name: str = None,
+        current_state: dict = None
+    ):
         if start_time is None:
             start_time = datetime.now().replace(minute=0, second=0, microsecond=0)
+
+        # 1. Resolve site state if not explicitly passed
+        if current_state is None:
+            try:
+                from services.crowd_service import resolve_site_crowd_state
+                current_state = resolve_site_crowd_state(site_id)
+            except Exception:
+                current_state = {}
+
+        canonical_id = current_state.get("canonical_id") or site_id
+        resolved_name = site_name or current_state.get("site_name") or canonical_id
+        current_source = current_state.get("source", "demo_simulation")
+        last_updated = current_state.get("last_updated", "Live Synchronized")
+        live_occ = float(current_state.get("occupancy_percentage", 25.0))
+        live_count = int(current_state.get("people_count", int(round(capacity * (live_occ / 100.0)))))
+        live_status = current_state.get("status", "NORMAL")
+
+        # 2. Extract base hour 0 model prediction for relative diurnal scaling
+        row_0 = pd.DataFrame([{
+            "hour": start_time.hour,
+            "day_of_week": start_time.weekday(),
+            "is_weekend": 1 if start_time.weekday() >= 5 else 0
+        }])
+        X_0 = self._extract_features(row_0)
+        base_pred_raw = max(1.0, float(self.model.predict(X_0)[0]))
+
+        # Helper for deterministic diurnal baseline per site
+        try:
+            from services.crowd_service import compute_deterministic_demo_occupancy
+        except Exception:
+            compute_deterministic_demo_occupancy = None
 
         hours_forecast = []
         for i in range(24):
             future_dt = start_time + timedelta(hours=i)
-            row = pd.DataFrame([{
-                "hour": future_dt.hour,
-                "day_of_week": future_dt.weekday(),
-                "is_weekend": 1 if future_dt.weekday() >= 5 else 0
-            }])
-            X = self._extract_features(row)
-            pred_count = max(0, int(round(self.model.predict(X)[0])))
-            pred_occ = round((pred_count / capacity) * 100, 1)
-
-            if pred_occ < 50:
-                status = "NORMAL"
-            elif pred_occ < 75:
-                status = "MODERATE"
-            elif pred_occ < 90:
-                status = "HIGH"
-            else:
-                status = "CRITICAL"
-
             hr_12 = future_dt.strftime("%I").lstrip("0") or "12"
             am_pm = future_dt.strftime("%p")
             time_str = f"{hr_12}:00 {am_pm}"
+
+            if i == 0:
+                # Strictly anchor current hour to genuine observation / state
+                pred_count = live_count
+                pred_occ = live_occ
+                status = live_status
+                hour_source = current_source
+            else:
+                # Extract ML diurnal features for future hour
+                row = pd.DataFrame([{
+                    "hour": future_dt.hour,
+                    "day_of_week": future_dt.weekday(),
+                    "is_weekend": 1 if future_dt.weekday() >= 5 else 0
+                }])
+                X = self._extract_features(row)
+                pred_raw = max(0.0, float(self.model.predict(X)[0]))
+
+                # Relative diurnal multiplier from ML model
+                ml_ratio = pred_raw / base_pred_raw
+
+                # Site-specific baseline for this future hour
+                if compute_deterministic_demo_occupancy:
+                    _, site_base_occ = compute_deterministic_demo_occupancy(canonical_id, capacity, future_dt.hour)
+                else:
+                    site_base_occ = live_occ
+
+                # Smooth temporal blending from current live state to diurnal baseline
+                # Alpha decays over 18 hours so near-term reflects current momentum
+                alpha = max(0.0, 1.0 - (i / 18.0))
+                projected_occ = alpha * (live_occ * ml_ratio) + (1.0 - alpha) * site_base_occ
+                pred_occ = max(5.0, min(96.0, round(projected_occ, 1)))
+                pred_count = max(10, int(round(capacity * (pred_occ / 100.0))))
+
+                # Canonical status thresholds: <50% NORMAL, 50-<75% MODERATE, 75-<90% HIGH, >=90% CRITICAL
+                if pred_occ < 50.0:
+                    status = "NORMAL"
+                elif pred_occ < 75.0:
+                    status = "MODERATE"
+                elif pred_occ < 90.0:
+                    status = "HIGH"
+                else:
+                    status = "CRITICAL"
+
+                if current_source in ["yolo_video", "gps_crowd", "fused_yolo_gps", "live_telemetry"]:
+                    hour_source = "ml_projection_live"
+                elif current_source in ["historical_baseline", "historical"]:
+                    hour_source = "ml_projection_historical"
+                else:
+                    hour_source = "ml_projection_demo"
+
             hours_forecast.append({
                 "datetime": future_dt.strftime("%Y-%m-%dT%H:%M:%S"),
                 "hour": future_dt.hour,
                 "time_label": time_str,
                 "day_name": future_dt.strftime("%A"),
+                "is_current": i == 0,
                 "predicted_count": pred_count,
                 "occupancy_percentage": pred_occ,
-                "status": status
+                "status": status,
+                "source": hour_source
             })
 
+        source_labels = {
+            "yolo_video": "Live YOLO Video Headcount",
+            "gps_crowd": "Live Mobile GPS Crowd Signal",
+            "fused_yolo_gps": "Multi-Source Fusion (YOLO + GPS)",
+            "live_telemetry": "Live Telemetry Observation",
+            "historical_baseline": "Historical Baseline Telemetry",
+            "demo_simulation": "Deterministic Simulation Baseline"
+        }
+
         return {
-            "site_id": site_id,
+            "site_id": canonical_id,
+            "site_name": resolved_name,
             "capacity": capacity,
+            "source": current_source,
+            "source_label": source_labels.get(current_source, "Historical Baseline"),
+            "last_updated": last_updated,
             "forecast_period": "24h",
             "forecasts": hours_forecast
         }
+
 
     def check_relative_surge(self, site_id: str, people_count: int, dt: datetime = None, capacity: int = 200):
         if dt is None:

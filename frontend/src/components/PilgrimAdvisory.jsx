@@ -1,6 +1,106 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getShrineImage } from '../utils/shrineImages';
+import { getVerifiedDestinationImage } from '../utils/shrineImages';
+
+/**
+ * Alternative destination visual thumbnail.
+ * If verified destination image exists in local verified assets, renders it.
+ * Otherwise, renders an elegant, high-contrast spiritual placeholder card.
+ * Never defaults to Kedarnath or invented stock photos.
+ */
+function AlternativeThumbnail({ alt, siteName }) {
+  const [imgError, setImgError] = useState(false);
+  const verifiedImg = React.useMemo(() => {
+    return getVerifiedDestinationImage(alt?.alternative_id, alt?.name);
+  }, [alt?.alternative_id, alt?.name]);
+
+  const getIcon = (type = '', name = '') => {
+    const s = `${type} ${name}`.toLowerCase();
+    if (s.includes('ghat') || s.includes('river') || s.includes('lake') || s.includes('tso') || s.includes('kund') || s.includes('sangam')) return '🌊';
+    if (s.includes('peak') || s.includes('pass') || s.includes('valley') || s.includes('cave') || s.includes('hill') || s.includes('mountain') || s.includes('rock')) return '⛰️';
+    if (s.includes('fort') || s.includes('palace') || s.includes('monument') || s.includes('minar')) return '🏰';
+    if (s.includes('ashram') || s.includes('math') || s.includes('dham') || s.includes('peeth')) return '🧘';
+    return '🏛️';
+  };
+
+  if (verifiedImg && !imgError) {
+    return (
+      <div
+        className="alt-shrine-thumb-wrap"
+        style={{
+          width: '100px',
+          height: '72px',
+          borderRadius: '0.65rem',
+          overflow: 'hidden',
+          flexShrink: 0,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}
+      >
+        <img
+          src={verifiedImg}
+          alt={alt?.name || 'Alternative Destination'}
+          onError={() => setImgError(true)}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  // Clean, high-contrast spiritual destination placeholder
+  const icon = getIcon(alt?.type, alt?.name);
+  return (
+    <div
+      className="alt-shrine-thumb-wrap alt-shrine-thumb-placeholder"
+      style={{
+        width: '100px',
+        height: '72px',
+        borderRadius: '0.65rem',
+        overflow: 'hidden',
+        flexShrink: 0,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        border: '1px solid rgba(245, 158, 11, 0.35)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4px',
+        textAlign: 'center',
+        boxSizing: 'border-box'
+      }}
+      title={alt?.name || siteName}
+    >
+      <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{icon}</span>
+      <span
+        style={{
+          fontSize: '0.65rem',
+          fontWeight: 600,
+          color: '#f8fafc',
+          marginTop: '3px',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: '90px',
+          letterSpacing: '0.01em'
+        }}
+      >
+        {alt?.name || 'Destination'}
+      </span>
+      <span
+        style={{
+          fontSize: '0.55rem',
+          color: '#fbbf24',
+          textTransform: 'uppercase',
+          letterSpacing: '0.04em',
+          fontWeight: 700
+        }}
+      >
+        {alt?.type || 'Spiritual Shrine'}
+      </span>
+    </div>
+  );
+}
 
 /**
  * Calculates distance in meters between two lat/lon coordinates using the Haversine formula.
@@ -54,6 +154,11 @@ export default function PilgrimAdvisory({
   const [gpsStatus, setGpsStatus] = useState('initializing'); // 'active' | 'denied' | 'unavailable' | 'unsupported'
   const [gpsDistanceMeters, setGpsDistanceMeters] = useState(null);
   const isArrivingRef = useRef(false);
+
+  // Reset selected alternative card index when current shrine changes
+  useEffect(() => {
+    setSelectedAltIndex(0);
+  }, [currentSite?.id]);
 
   const siteName = currentSite?.name || 'Main Shrine';
 
@@ -432,14 +537,7 @@ export default function PilgrimAdvisory({
 
                 {/* Destination Title & Primary Stats */}
                 <div className="alt-card-main-header" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
-                  <div className="alt-shrine-thumb-wrap" style={{ width: '100px', height: '72px', borderRadius: '0.65rem', overflow: 'hidden', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                    <img
-                      src={getShrineImage(alt.alternative_id || alt.name)}
-                      alt={alt.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      loading="lazy"
-                    />
-                  </div>
+                  <AlternativeThumbnail alt={alt} siteName={siteName} />
                   <div style={{ flex: 1, minWidth: '220px' }}>
                     <h3 className="alt-destination-name">{alt.name}</h3>
                     <p className="alt-crowd-savings-note">

@@ -1,21 +1,22 @@
 /* ==========================================================================
    POLICE COMMAND & LAW ENFORCEMENT DASHBOARD STYLES
-   Theme: Command Center Deep Navy, Tactical Slate, Blue Accent, Gold/Amber Badges
+   Theme: Authoritative Light Enterprise Console with Navy & Gold Accents
+   Aligned with YatraSetu Unified Design Language
    ========================================================================== */
 
 .police-command-root {
   min-height: 100vh;
-  background: #080E1A;
-  color: #E2E8F0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   padding-bottom: 4rem;
 }
 
 /* HEADER & TOP BADGES */
 .police-header {
-  background: linear-gradient(180deg, #0D1B2A 0%, #080E1A 100%);
-  border-bottom: 1px solid #1E293B;
-  padding: 1.5rem 2rem;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 1.25rem 2rem;
   position: relative;
 }
 
@@ -36,22 +37,22 @@
 }
 
 .police-emblem {
-  width: 54px;
-  height: 54px;
-  background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
-  border: 2px solid #3B82F6;
-  border-radius: 12px;
+  width: 50px;
+  height: 50px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.75rem;
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  font-size: 1.6rem;
+  color: #1E3A8A;
 }
 
 .police-main-title {
-  font-size: 1.6rem;
+  font-size: 1.45rem;
   font-weight: 800;
-  color: #F8FAFC;
+  color: #0F172A;
   letter-spacing: -0.02em;
   margin: 0;
   display: flex;
@@ -60,21 +61,21 @@
 }
 
 .police-badge-gold {
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
   padding: 0.25rem 0.65rem;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .police-subtitle {
-  color: #94A3B8;
-  font-size: 0.88rem;
-  margin: 0.25rem 0 0 0;
+  color: #64748B;
+  font-size: 0.85rem;
+  margin: 0.2rem 0 0 0;
 }
 
 .police-status-indicator {
@@ -87,34 +88,34 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  color: #4ADE80;
-  padding: 0.45rem 0.85rem;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
+  padding: 0.4rem 0.85rem;
   border-radius: 9999px;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .police-pulse-dot {
   width: 8px;
   height: 8px;
-  background: #22C55E;
+  background: #16A34A;
   border-radius: 50%;
-  box-shadow: 0 0 8px #22C55E;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
   animation: policePulse 1.8s infinite;
 }
 
 @keyframes policePulse {
   0% { transform: scale(0.95); opacity: 0.7; }
-  50% { transform: scale(1.3); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 1; }
   100% { transform: scale(0.95); opacity: 0.7; }
 }
 
 /* NAVIGATION BAR */
 .police-nav-bar {
-  background: #0B132B;
-  border-bottom: 1px solid #1E293B;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
   padding: 0 2rem;
   position: sticky;
   top: 70px;
@@ -138,32 +139,32 @@
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
-  color: #94A3B8;
+  color: #64748B;
   padding: 0.85rem 1.15rem;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .police-nav-tab:hover {
-  color: #F8FAFC;
-  background: rgba(30, 58, 138, 0.15);
+  color: #0F172A;
+  background: #F1F5F9;
 }
 
 .police-nav-tab.active {
-  color: #60A5FA;
-  border-bottom-color: #3B82F6;
-  background: rgba(30, 58, 138, 0.25);
+  color: #1E40AF;
+  border-bottom-color: #2563EB;
+  background: #EFF6FF;
 }
 
 .police-tab-badge {
   background: #DC2626;
-  color: #FFF;
+  color: #FFFFFF;
   font-size: 0.7rem;
   padding: 0.15rem 0.45rem;
   border-radius: 9999px;
@@ -182,31 +183,32 @@
 /* EMERGENCY OVERRIDE STRIP */
 .police-emergency-strip {
   border-radius: 0.75rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1.15rem 1.5rem;
   margin-bottom: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .police-emergency-strip.active {
-  background: linear-gradient(135deg, #450A0A 0%, #1F0707 100%);
-  border: 1px solid #DC2626;
-  box-shadow: 0 0 25px rgba(220, 38, 38, 0.25);
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.1);
 }
 
 .police-emergency-strip.standby {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .pes-headline {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #0F172A;
   margin: 0 0 0.25rem 0;
   display: flex;
   align-items: center;
@@ -214,21 +216,21 @@
 }
 
 .pes-sub {
-  color: #94A3B8;
-  font-size: 0.88rem;
+  color: #64748B;
+  font-size: 0.85rem;
   margin: 0;
 }
 
 .pes-btn-active {
   background: #DC2626;
-  color: #FFF;
+  color: #FFFFFF;
   border: none;
   border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1.25rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .pes-btn-active:hover {
@@ -237,14 +239,14 @@
 
 .pes-btn-lift {
   background: #16A34A;
-  color: #FFF;
+  color: #FFFFFF;
   border: none;
   border-radius: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1.25rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
 
 .pes-btn-lift:hover {
@@ -260,20 +262,22 @@
 }
 
 .police-kpi-card {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.75rem;
   padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s, border-color 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .police-kpi-card:hover {
-  border-color: #3B82F6;
-  transform: translateY(-2px);
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
 
 .police-kpi-card::before {
@@ -283,7 +287,7 @@
   left: 0;
   width: 4px;
   height: 100%;
-  background: #3B82F6;
+  background: #1E40AF;
 }
 
 .police-kpi-card.kpi-danger::before {
@@ -291,26 +295,26 @@
 }
 
 .police-kpi-card.kpi-amber::before {
-  background: #F59E0B;
+  background: #D97706;
 }
 
 .police-kpi-card.kpi-success::before {
-  background: #10B981;
+  background: #16A34A;
 }
 
 .pkc-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  color: #94A3B8;
-  letter-spacing: 0.05em;
+  color: #64748B;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .pkc-val {
-  font-size: 1.85rem;
+  font-size: 1.75rem;
   font-weight: 800;
-  color: #F8FAFC;
-  font-family: monospace;
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   margin: 0.35rem 0;
 }
 
@@ -321,14 +325,15 @@
 
 /* TACTICAL PANELS */
 .police-panel {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.75rem;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .police-panel-header {
@@ -338,23 +343,23 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid #1E293B;
+  border-bottom: 1px solid #E2E8F0;
   padding-bottom: 0.85rem;
 }
 
 .police-panel-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: #F8FAFC;
+  color: #0F172A;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .police-panel-badge {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
   font-size: 0.72rem;
   font-weight: 600;
   padding: 0.2rem 0.5rem;
@@ -363,15 +368,15 @@
 
 /* SIMULATION MODULE STYLES */
 .police-sim-page {
-  background: #0F172A;
-  border: 1px solid #1E3A8A;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.75rem;
   padding: 1.75rem;
 }
 
 .police-sim-banner {
-  background: linear-gradient(90deg, rgba(245, 158, 11, 0.15) 0%, rgba(30, 58, 138, 0.2) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   margin-bottom: 1.5rem;
@@ -394,19 +399,19 @@
 .psb-title {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #FCD34D;
+  color: #92400E;
   margin: 0;
 }
 
 .psb-sub {
   font-size: 0.82rem;
-  color: #CBD5E1;
+  color: #78350F;
   margin: 0.2rem 0 0 0;
 }
 
 .police-sim-form {
-  background: #080E1A;
-  border: 1px solid #1E293B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 0.65rem;
   padding: 1.5rem;
   margin-bottom: 1.75rem;
@@ -428,7 +433,7 @@
 .police-field-label {
   font-size: 0.82rem;
   font-weight: 600;
-  color: #94A3B8;
+  color: #334155;
   display: flex;
   justify-content: space-between;
 }
@@ -440,9 +445,9 @@
 
 .police-input,
 .police-select {
-  background: #0F172A;
-  border: 1px solid #334155;
-  color: #F8FAFC;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
   border-radius: 0.45rem;
   padding: 0.65rem 0.85rem;
   font-size: 0.9rem;
@@ -452,8 +457,8 @@
 
 .police-input:focus,
 .police-select:focus {
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 .police-sim-actions {
@@ -462,42 +467,43 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  border-top: 1px solid #1E293B;
+  border-top: 1px solid #E2E8F0;
   padding-top: 1.25rem;
 }
 
 .police-preset-btn {
-  background: rgba(30, 58, 138, 0.3);
-  border: 1px solid #1E3A8A;
-  color: #93C5FD;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
   padding: 0.55rem 1rem;
   border-radius: 0.45rem;
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s ease;
 }
 
 .police-preset-btn:hover {
-  background: rgba(30, 58, 138, 0.5);
-  color: #FFF;
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
 }
 
 .police-run-sim-btn {
-  background: linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 100%);
-  color: #FFF;
-  border: 1px solid #3B82F6;
+  background: #1E40AF;
+  color: #FFFFFF;
+  border: none;
   padding: 0.75rem 1.75rem;
   border-radius: 0.5rem;
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-  transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(30, 64, 175, 0.2);
+  transition: all 0.15s ease;
 }
 
 .police-run-sim-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  background: #1D4ED8;
   transform: translateY(-1px);
 }
 
@@ -508,15 +514,16 @@
 
 /* Simulation Results Dossier */
 .police-dossier-wrap {
-  background: #080E1A;
-  border: 1px solid #1E3A8A;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.75rem;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .pdw-header {
-  border-bottom: 1px solid #1E293B;
+  border-bottom: 1px solid #E2E8F0;
   padding-bottom: 1rem;
   margin-bottom: 1.25rem;
   display: flex;
@@ -527,14 +534,14 @@
 }
 
 .pdw-title {
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: #60A5FA;
+  color: #1E40AF;
   margin: 0;
 }
 
 .pdw-meta {
-  color: #94A3B8;
+  color: #64748B;
   font-size: 0.85rem;
   display: flex;
   gap: 0.75rem;
@@ -549,8 +556,8 @@
 }
 
 .psm-card {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 0.5rem;
   padding: 0.85rem;
   display: flex;
@@ -567,14 +574,14 @@
 .psm-val {
   font-size: 1.35rem;
   font-weight: 800;
-  color: #F8FAFC;
-  font-family: monospace;
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   margin: 0.25rem 0;
 }
 
 .psm-sub {
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: #64748B;
 }
 
 /* Directive Categories Grid */
@@ -586,8 +593,8 @@
 }
 
 .police-directive-card {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 0.5rem;
   padding: 1.15rem;
 }
@@ -598,12 +605,12 @@
   gap: 0.5rem;
   font-weight: 700;
   font-size: 0.92rem;
-  color: #F8FAFC;
+  color: #0F172A;
   margin-bottom: 0.65rem;
 }
 
 .pdc-body {
-  color: #CBD5E1;
+  color: #475569;
   font-size: 0.85rem;
   line-height: 1.5;
   margin: 0;
@@ -618,10 +625,11 @@
 }
 
 .police-zone-item {
-  background: #0F172A;
-  border: 1px solid #334155;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.5rem;
   padding: 0.85rem 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .pzi-top {
@@ -633,23 +641,23 @@
 
 .pzi-name {
   font-weight: 700;
-  color: #F8FAFC;
+  color: #0F172A;
   font-size: 0.9rem;
 }
 
 .pzi-reason {
-  color: #94A3B8;
+  color: #64748B;
   font-size: 0.82rem;
   margin-bottom: 0.35rem;
 }
 
 .pzi-mitigation {
-  color: #60A5FA;
+  color: #1E40AF;
   font-size: 0.8rem;
-  background: rgba(59, 130, 246, 0.1);
+  background: #EFF6FF;
   padding: 0.35rem 0.65rem;
   border-radius: 4px;
-  border-left: 3px solid #3B82F6;
+  border-left: 3px solid #2563EB;
 }
 
 /* SOS & DISTRESS RESPONSE TABLE */
@@ -660,38 +668,38 @@
 }
 
 .police-table th {
-  background: #080E1A;
-  color: #94A3B8;
+  background: #F8FAFC;
+  color: #64748B;
   font-weight: 700;
   font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #1E293B;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .police-table td {
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid #1E293B;
-  color: #E2E8F0;
+  border-bottom: 1px solid #F1F5F9;
+  color: #0F172A;
   vertical-align: middle;
 }
 
 .police-table tr:hover td {
-  background: rgba(30, 58, 138, 0.15);
+  background: #F8FAFC;
 }
 
 .police-sos-btn {
   background: #DC2626;
-  color: #FFF;
+  color: #FFFFFF;
   border: none;
   border-radius: 0.35rem;
   padding: 0.45rem 0.85rem;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s ease;
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -702,7 +710,8 @@
 }
 
 .police-sos-btn.dispatched {
-  background: #15803D;
+  background: #16A34A;
+  color: #FFFFFF;
   cursor: default;
 }
 
@@ -710,7 +719,7 @@
 .police-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -720,9 +729,9 @@
 }
 
 .police-modal {
-  background: #0F172A;
-  border: 1px solid #3B82F6;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(59, 130, 246, 0.2);
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border-radius: 0.75rem;
   width: 100%;
   max-width: 580px;
@@ -730,18 +739,18 @@
 }
 
 .police-modal-header {
-  background: #080E1A;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #1E293B;
+  background: #F8FAFC;
+  padding: 1.15rem 1.5rem;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .police-modal-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  color: #F8FAFC;
+  color: #0F172A;
   margin: 0;
 }
 
@@ -750,9 +759,9 @@
 }
 
 .police-modal-footer {
-  background: #080E1A;
+  background: #F8FAFC;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #1E293B;
+  border-top: 1px solid #E2E8F0;
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
@@ -766,13 +775,14 @@
 }
 
 .police-chokepoint-card {
-  background: #080E1A;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 0.5rem;
   padding: 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .pcc-header {
@@ -783,7 +793,7 @@
 
 .pcc-name {
   font-weight: 700;
-  color: #F8FAFC;
+  color: #0F172A;
   font-size: 0.95rem;
 }
 
@@ -791,12 +801,12 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.82rem;
-  color: #94A3B8;
+  color: #64748B;
 }
 
 .pcc-metric-val {
-  color: #F8FAFC;
-  font-family: monospace;
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-weight: 600;
 }
 
@@ -810,28 +820,28 @@
 }
 
 .police-badge-status.status-normal {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ADE80;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: #ECFDF5;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
 }
 
 .police-badge-status.status-moderate {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60A5FA;
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: #FFFBEB;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 .police-badge-status.status-high {
-  background: rgba(245, 158, 11, 0.15);
-  color: #FBBF24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
 }
 
 .police-badge-status.status-critical,
 .police-badge-status.status-emergency {
-  background: rgba(220, 38, 38, 0.15);
-  color: #F87171;
-  border: 1px solid rgba(220, 38, 38, 0.3);
+  background: #FEF2F2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
 }
 
 @media (max-width: 768px) {
@@ -843,5 +853,262 @@
   }
   .police-content-wrap {
     padding: 0.5rem 0;
+  }
+}
+
+/* MONITORING LOCATION SELECTION MODULE */
+.monitoring-location-panel {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.monitoring-location-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.monitoring-location-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #0F172A;
+  letter-spacing: 0.02em;
+}
+
+.monitoring-location-badge {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+}
+
+.monitoring-location-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.monitoring-location-select-wrap {
+  flex: 1 1 320px;
+  position: relative;
+  min-width: 260px;
+}
+
+.monitoring-location-select {
+  width: 100%;
+  background: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  color: #0F172A;
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 0.65rem 1rem;
+  border-radius: 0.5rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.monitoring-location-select:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.btn-use-location {
+  background: #F8FAFC;
+  border: 1.5px solid #CBD5E1;
+  color: #1E3A8A;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.65rem 1.15rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-use-location:hover:not(:disabled) {
+  background: #EFF6FF;
+  border-color: #93C5FD;
+  color: #1D4ED8;
+}
+
+.btn-use-location:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.monitoring-location-alert {
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.45rem;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.monitoring-location-alert.error {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.monitoring-location-alert.success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #166534;
+}
+
+.monitoring-location-summary {
+  margin-top: 1rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.65rem;
+  padding: 1.15rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+
+.mls-site-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 220px;
+}
+
+.mls-site-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0F172A;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mls-site-loc {
+  font-size: 0.82rem;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mls-site-id {
+  font-family: ui-monospace, monospace;
+  background: #E2E8F0;
+  color: #1E3A8A;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.mls-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 0.75rem 1.25rem;
+  flex: 1 1 360px;
+}
+
+.mls-metric-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.mls-metric-lbl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.mls-metric-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0F172A;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.mls-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-mls-primary {
+  background: #1E40AF;
+  color: #FFFFFF;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.55rem 0.95rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease;
+}
+
+.btn-mls-primary:hover {
+  background: #1D4ED8;
+}
+
+.btn-mls-secondary {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.45rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-mls-secondary:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+  border-color: #94A3B8;
+}
+
+@media (max-width: 768px) {
+  .monitoring-location-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .btn-use-location {
+    justify-content: center;
+  }
+  .monitoring-location-summary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mls-actions {
+    justify-content: flex-start;
   }
 }

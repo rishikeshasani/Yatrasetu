@@ -7,11 +7,23 @@ from postgrest.exceptions import APIError
 
 from database import supabase, supabase_admin
 from routes.crowd import get_site_density, get_site_meta, latest_observations
-from dependencies import AuthenticatedUser, get_current_user, require_role
+from dependencies import require_role, AuthenticatedUser
+from pathlib import Path
+import math
+import json
 
 router = APIRouter(tags=["hotels"])
 
 LOCAL_HOTEL_BOOKINGS: list[dict] = []
+MASTER_HOTELS_FILE = Path(__file__).resolve().parent.parent / "data" / "hotels_50_master.json"
+
+def _haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0
+    d_lat = math.radians(lat2 - lat1)
+    d_lon = math.radians(lon2 - lon1)
+    a = math.sin(d_lat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(d_lon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r * c
 
 # ============================================================================
 # Pydantic Request & Response Models
@@ -72,6 +84,25 @@ class HotelResponse(BaseModel):
     verified: bool
     created_at: Optional[str] = None
     rooms: Optional[List[RoomResponse]] = None
+    site_id: Optional[str] = None
+    site_name: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    email: Optional[str] = None
+    rating: Optional[float] = None
+    price_per_night: Optional[float] = None
+    distance_km: Optional[float] = None
+
+
+def _normalize_site_id(sid: Optional[str]) -> str:
+    if not sid:
+        return ""
+    s = str(sid).strip().upper()
+    if s.startswith("TS"):
+        num_part = s[2:]
+        if num_part.isdigit():
+            return f"TS{int(num_part):03d}"
+    return s
 
 
 class BookingCreateRequest(BaseModel):
@@ -89,6 +120,8 @@ class BookingCreateRequest(BaseModel):
                 raise ValueError("Check-out date must be after check-in date.")
             if check_in < date.today():
                 raise ValueError("Check-in date cannot be in the past.")
+            if check_in > date.today() + timedelta(days=365):
+                raise ValueError("Check-in date cannot exceed the 365-day advance booking window.")
         return v
 
 
@@ -146,6 +179,9 @@ def validate_uuid(val: str, entity_name: str = "Hotel") -> None:
 def list_hotels(
     search: Optional[str] = Query(None, description="Search by hotel name or location"),
     site_id: Optional[str] = Query(None, description="Filter by shrine site ID, e.g. TS001"),
+    latitude: Optional[float] = Query(None, ge=-90.0, le=90.0, description="Shrine or user latitude"),
+    longitude: Optional[float] = Query(None, ge=-180.0, le=180.0, description="Shrine or user longitude"),
+    radius_km: Optional[float] = Query(35.0, ge=0.0, description="Search radius in kilometers"),
     verified_only: bool = Query(False, description="Filter only verified hotels"),
     min_price: Optional[float] = Query(None, ge=0.0, description="Minimum room price"),
     max_price: Optional[float] = Query(None, ge=0.0, description="Maximum room price")
@@ -153,12 +189,29 @@ def list_hotels(
     """
     Public endpoint: Tourists and pilgrims browse and search verified hotels across the 25 sacred shrines.
     """
+    # Guard Query objects if called directly outside FastAPI dependency injection
+    if not isinstance(search, str):
+        search = None
+    if not isinstance(site_id, str):
+        site_id = None
+    if not isinstance(latitude, (int, float)):
+        latitude = None
+    if not isinstance(longitude, (int, float)):
+        longitude = None
+    if not isinstance(radius_km, (int, float)):
+        radius_km = 35.0
+    if not isinstance(verified_only, bool):
+        verified_only = False
+    if not isinstance(min_price, (int, float)):
+        min_price = None
+    if not isinstance(max_price, (int, float)):
+        max_price = None
+
     # Load 50 master hotels
     master_hotels = []
-    master_file = DATA_DIR / "hotels_50_master.json"
-    if master_file.exists():
+    if MASTER_HOTELS_FILE.exists():
         try:
-            with open(master_file, "r", encoding="utf-8") as f:
+            with open(MASTER_HOTELS_FILE, "r", encoding="utf-8") as f:
                 master_hotels = json.load(f).get("hotels", [])
         except Exception:
             pass
@@ -171,47 +224,97 @@ def list_hotels(
             query = query.eq("verified", True)
         res = query.execute()
         raw_db = res.data or []
-        for h in raw_db:
+        if raw_db:
+            rooms_by_hotel = {}
             try:
-                r_res = supabase_admin.table("hotel_rooms").select("*").eq("hotel_id", h["id"]).execute()
-                r_data = r_res.data or []
+                r_res = supabase_admin.table("hotel_rooms").select("*").execute()
+                for r in (r_res.data or []):
+                    hid = r.get("hotel_id")
+                    if hid not in rooms_by_hotel:
+                        rooms_by_hotel[hid] = []
+                    rooms_by_hotel[hid].append(RoomResponse(**r))
             except Exception:
-                r_data = []
-            h_copy = dict(h)
-            h_copy["rooms"] = [RoomResponse(**r) for r in r_data] if r_data else []
-            db_hotels.append(h_copy)
+                rooms_by_hotel = {}
+
+            for h in raw_db:
+                h_copy = dict(h)
+                h_copy["rooms"] = rooms_by_hotel.get(h["id"], [])
+                db_hotels.append(h_copy)
     except Exception:
         pass
 
-    # Merge master hotels and db_hotels, deduplicating by normalized name
+    # Merge master hotels and db_hotels, deduplicating by normalized name & id
     combined = []
+    seen_ids = set()
     seen_names = set()
 
     for h in master_hotels + db_hotels:
+        hid = str(h.get("id", "")).strip()
         norm_name = str(h.get("name", "")).strip().lower()
-        if norm_name and norm_name not in seen_names:
+        if (hid and hid in seen_ids) or (norm_name and norm_name in seen_names):
+            continue
+        if hid:
+            seen_ids.add(hid)
+        if norm_name:
             seen_names.add(norm_name)
-            # Map rooms
-            rooms = [RoomResponse(**r) if isinstance(r, dict) else r for r in h.get("rooms", [])]
-            h_obj = dict(h)
-            h_obj["rooms"] = rooms
-            combined.append(h_obj)
+
+        # Map rooms
+        rooms = [RoomResponse(**r) if isinstance(r, dict) else r for r in h.get("rooms", [])]
+        h_obj = dict(h)
+        h_obj["rooms"] = rooms
+
+        # Compute distance if query coordinates provided and hotel has coords
+        if latitude is not None and longitude is not None and h_obj.get("latitude") is not None and h_obj.get("longitude") is not None:
+            try:
+                h_lat = float(h_obj["latitude"])
+                h_lon = float(h_obj["longitude"])
+                dist = _haversine_distance_km(latitude, longitude, h_lat, h_lon)
+                h_obj["distance_km"] = round(dist, 2)
+            except Exception:
+                pass
+
+        combined.append(h_obj)
+
+    # Filter verified_only
+    if verified_only:
+        combined = [h for h in combined if h.get("verified") is True]
 
     # Filter by search term
-    if search:
+    if search and isinstance(search, str) and search.strip():
         s = search.lower().strip()
-        combined = [h for h in combined if s in h.get("name", "").lower() or s in h.get("address", "").lower() or s in h.get("city", "").lower() or s in h.get("site_name", "").lower()]
+        combined = [
+            h for h in combined
+            if s in str(h.get("name", "")).lower()
+            or s in str(h.get("address", "")).lower()
+            or s in str(h.get("city", "")).lower()
+            or s in str(h.get("site_name", "")).lower()
+        ]
 
-    # Filter by site_id
-    if site_id:
-        sid = site_id.strip().upper()
-        combined = [h for h in combined if str(h.get("site_id", "")).upper() == sid or sid in str(h.get("id", "")).upper()]
+    # Filter by site_id if provided
+    if site_id and isinstance(site_id, str) and site_id.strip():
+        norm_sid = _normalize_site_id(site_id)
+        raw_sid = site_id.strip().upper()
+        combined = [
+            h for h in combined
+            if _normalize_site_id(h.get("site_id")) == norm_sid
+            or str(h.get("site_id", "")).upper() == raw_sid
+            or (norm_sid and norm_sid in str(h.get("id", "")).upper())
+        ]
+
+    # If coordinates provided but NO site_id, filter by radius_km
+    if latitude is not None and longitude is not None and not (site_id and isinstance(site_id, str) and site_id.strip()):
+        max_r = radius_km if radius_km is not None else 35.0
+        combined = [h for h in combined if h.get("distance_km") is not None and h.get("distance_km") <= max_r]
+
+    # Sort by distance if distance available
+    if latitude is not None and longitude is not None:
+        combined.sort(key=lambda h: h.get("distance_km") if h.get("distance_km") is not None else 999999.0)
 
     # Price filtering
     if min_price is not None:
-        combined = [h for h in combined if h.get("price_per_night", 0) >= min_price or any(r.price_per_night >= min_price for r in h.get("rooms", []))]
+        combined = [h for h in combined if (h.get("price_per_night") is not None and h.get("price_per_night") >= min_price) or any(r.price_per_night >= min_price for r in h.get("rooms", []))]
     if max_price is not None:
-        combined = [h for h in combined if h.get("price_per_night", 0) <= max_price or any(r.price_per_night <= max_price for r in h.get("rooms", []))]
+        combined = [h for h in combined if (h.get("price_per_night") is not None and h.get("price_per_night") <= max_price) or any(r.price_per_night <= max_price for r in h.get("rooms", []))]
 
     return [HotelResponse(**h) for h in combined]
 
@@ -224,10 +327,9 @@ def get_hotel(hotel_id: str):
     validate_uuid(hotel_id, "Hotel")
     
     # Check 50 master hotels first
-    master_file = DATA_DIR / "hotels_50_master.json"
-    if master_file.exists():
+    if MASTER_HOTELS_FILE.exists():
         try:
-            with open(master_file, "r", encoding="utf-8") as f:
+            with open(MASTER_HOTELS_FILE, "r", encoding="utf-8") as f:
                 master_hotels = json.load(f).get("hotels", [])
                 match = next((h for h in master_hotels if h.get("id") == hotel_id or h.get("owner_id") == hotel_id), None)
                 if match:
@@ -782,6 +884,8 @@ def update_booking_status(
 
 @router.get("/hotels/tourist/bookings", response_model=List[BookingResponse])
 def get_tourist_bookings(
+    limit: int = Query(default=100, ge=1, le=500, description="Max bookings to return"),
+    offset: int = Query(default=0, ge=0, description="Offset for pagination"),
     current_user: AuthenticatedUser = Depends(require_role(["tourist", "government"]))
 ):
     """
@@ -791,7 +895,7 @@ def get_tourist_bookings(
         q = supabase_admin.table("hotel_bookings").select("*")
         if not current_user.id.startswith("00000000-"):
             q = q.eq("tourist_id", current_user.id)
-        b_res = q.order("created_at", desc=True).limit(10).execute()
+        b_res = q.order("created_at", desc=True).limit(limit).offset(offset).execute()
         bookings = b_res.data or []
     except Exception:
         bookings = []
@@ -799,23 +903,39 @@ def get_tourist_bookings(
     existing_ids = {b.get("id") for b in bookings}
     for lb in LOCAL_HOTEL_BOOKINGS:
         if lb.get("id") not in existing_ids:
+            if not current_user.id.startswith("00000000-") and lb.get("tourist_id") != current_user.id:
+                continue
             bookings.insert(0, lb)
+
+    # Bulk-fetch hotel names and room details to eliminate N+1 latency
+    hotel_ids = list({b.get("hotel_id") for b in bookings if b.get("hotel_id")})
+    room_ids = list({b.get("room_id") for b in bookings if b.get("room_id")})
+
+    hotels_map = {}
+    rooms_map = {}
+
+    if hotel_ids:
+        try:
+            h_res = supabase_admin.table("hotels").select("id, name").in_("id", hotel_ids).execute()
+            if h_res.data:
+                hotels_map = {h["id"]: h.get("name", "Shrine Pilgrimage Lodge") for h in h_res.data}
+        except Exception:
+            pass
+
+    if room_ids:
+        try:
+            r_res = supabase_admin.table("hotel_rooms").select("id, room_type, price_per_night").in_("id", room_ids).execute()
+            if r_res.data:
+                rooms_map = {r["id"]: (r.get("room_type", "Standard Deluxe"), r.get("price_per_night", 1200.0)) for r in r_res.data}
+        except Exception:
+            pass
 
     results = []
     for b in bookings:
-        hotel_name = "Shrine Pilgrimage Lodge"
-        room_type = "Standard Deluxe"
-        price = 1200.0
-        try:
-            h = supabase_admin.table("hotels").select("name").eq("id", b.get("hotel_id")).execute()
-            if h.data and len(h.data) > 0:
-                hotel_name = h.data[0].get("name", hotel_name)
-            r = supabase_admin.table("hotel_rooms").select("room_type, price_per_night").eq("id", b.get("room_id")).execute()
-            if r.data and len(r.data) > 0:
-                room_type = r.data[0].get("room_type", room_type)
-                price = r.data[0].get("price_per_night", price)
-        except Exception:
-            pass
+        hotel_name = hotels_map.get(b.get("hotel_id"), "Shrine Pilgrimage Lodge")
+        room_meta = rooms_map.get(b.get("room_id"))
+        room_type = room_meta[0] if room_meta else "Standard Deluxe"
+        price = room_meta[1] if room_meta else 1200.0
 
         results.append(BookingResponse(
             id=b["id"],
@@ -1399,6 +1519,13 @@ def create_booking_request(req: BookingRequestCreate):
 
     if dt_in >= dt_out:
         raise HTTPException(status_code=400, detail="Check-in must be before check-out.")
+
+    now_dt = datetime.now()
+    if dt_in < now_dt - timedelta(hours=1):
+        raise HTTPException(status_code=400, detail="Check-in date/time cannot be in the past.")
+
+    if dt_in > now_dt + timedelta(days=365):
+        raise HTTPException(status_code=400, detail="Check-in date cannot exceed the 365-day advance booking window.")
 
     room_num = str(req.room_number).strip() if req.room_number else "101"
 

@@ -19,7 +19,8 @@ import {
   fetchMyHotelBookings,
   fetchUserBookingRequests,
   fetchActiveRerouteAlert,
-  toCanonicalSiteId
+  toCanonicalSiteId,
+  MOCK_DENSITY
 } from '../api/api';
 import { getShrineAccommodations } from '../utils/shrineImages';
 
@@ -72,6 +73,9 @@ export default function TouristDashboard({
   // Hotels State & Room Booking (Teammate feature + Phase 3 integration)
   const [hotels, setHotels] = useState([]);
   const [isLoadingHotels, setIsLoadingHotels] = useState(false);
+  const [nearbyHotels, setNearbyHotels] = useState([]);
+  const [isLoadingNearbyHotels, setIsLoadingNearbyHotels] = useState(false);
+  const [nearbyHotelsError, setNearbyHotelsError] = useState(null);
   const [bookingHotelId, setBookingHotelId] = useState(null);
   const [selectedHotelForBooking, setSelectedHotelForBooking] = useState(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -87,7 +91,7 @@ export default function TouristDashboard({
   // Active Government Reroute state
   const [activeReroute, setActiveReroute] = useState(null);
 
-  // Load Hotels from Backend
+  // Load All Hotels from Backend
   const loadHotels = useCallback(async () => {
     setIsLoadingHotels(true);
     try {
@@ -99,6 +103,36 @@ export default function TouristDashboard({
       console.warn('Error loading hotels:', err.message);
     } finally {
       setIsLoadingHotels(false);
+    }
+  }, []);
+
+  // Dedicated loader for shrine-specific accommodations
+  const loadNearbyHotels = useCallback(async (shrine) => {
+    if (!shrine || !shrine.id) return;
+    setIsLoadingNearbyHotels(true);
+    setNearbyHotelsError(null);
+    try {
+      const params = {
+        site_id: shrine.id,
+        latitude: shrine.latitude != null ? shrine.latitude : undefined,
+        longitude: shrine.longitude != null ? shrine.longitude : undefined,
+        radius_km: 35.0
+      };
+      const results = await fetchHotels(params);
+      const list = Array.isArray(results) ? results : [];
+      if (list.length > 0) {
+        setNearbyHotels(list);
+      } else {
+        const localList = getShrineAccommodations(shrine.id, shrine.name);
+        setNearbyHotels(localList);
+      }
+    } catch (err) {
+      console.warn(`[Hotels] Error loading hotels for ${shrine.id}:`, err.message);
+      setNearbyHotelsError(err.message || 'Unable to load accommodations');
+      const localFallback = getShrineAccommodations(shrine.id, shrine.name);
+      setNearbyHotels(localFallback);
+    } finally {
+      setIsLoadingNearbyHotels(false);
     }
   }, []);
 
@@ -271,19 +305,81 @@ export default function TouristDashboard({
     };
   }, []);
 
-  // Synchronize focus shrine with activeSite
-  useEffect(() => {
-    if (activeSite) {
-      setFocusShrine(activeSite);
-    } else if (sites && sites.length > 0) {
-      setFocusShrine(sites[0]);
-    }
-  }, [activeSite, sites]);
-
   // Filter canonical shrines (TS001 through TS025)
   const canonicalSites = useMemo(() => {
     return (sites || []).filter((s) => s && s.id && /^TS\d{3}$/i.test(s.id));
   }, [sites]);
+
+  // Synchronize focus shrine with selectedSite / selectedSiteId / activeSite
+  useEffect(() => {
+    if (selectedSite) {
+      setFocusShrine(selectedSite);
+    } else if (selectedSiteId) {
+      const match = canonicalSites.find(s => s && s.id === selectedSiteId) || (sites && sites.find(s => s && s.id === selectedSiteId));
+      if (match) setFocusShrine(match);
+    } else if (activeSite) {
+      setFocusShrine(activeSite);
+    } else if (canonicalSites.length > 0) {
+      setFocusShrine(canonicalSites[0]);
+    } else if (sites && sites.length > 0) {
+      setFocusShrine(sites[0]);
+    }
+  }, [selectedSite, selectedSiteId, activeSite, sites, canonicalSites]);
+
+  // Authoritative current selected shrine for all dashboard sections
+  const currentDisplayShrine = useMemo(() => {
+    let shrine = focusShrine || selectedSite || activeSite || null;
+    const sId = (typeof shrine === 'object' && shrine?.id) ? shrine.id : (selectedSiteId || (typeof shrine === 'string' ? shrine : null));
+    if (sId) {
+      const match = canonicalSites.find(s => s && s.id === sId) || (sites && sites.find(s => s && s.id === sId));
+      if (match) return match;
+    }
+    if (typeof shrine === 'object' && shrine) return shrine;
+    return canonicalSites[0] || null;
+  }, [focusShrine, selectedSite, selectedSiteId, activeSite, canonicalSites, sites]);
+
+  // Synchronize & fetch nearby verified accommodations whenever currentDisplayShrine changes
+  useEffect(() => {
+    let isCurrent = true;
+    if (currentDisplayShrine?.id) {
+      setIsLoadingNearbyHotels(true);
+      setNearbyHotelsError(null);
+      const params = {
+        site_id: currentDisplayShrine.id,
+        latitude: currentDisplayShrine.latitude != null ? currentDisplayShrine.latitude : undefined,
+        longitude: currentDisplayShrine.longitude != null ? currentDisplayShrine.longitude : undefined,
+        radius_km: 35.0
+      };
+      fetchHotels(params)
+        .then((res) => {
+          if (isCurrent) {
+            const list = Array.isArray(res) ? res : [];
+            if (list.length > 0) {
+              setNearbyHotels(list);
+            } else {
+              const localList = getShrineAccommodations(currentDisplayShrine.id, currentDisplayShrine.name);
+              setNearbyHotels(localList);
+            }
+          }
+        })
+        .catch((err) => {
+          if (isCurrent) {
+            console.warn(`[Hotels] Fetch failed for ${currentDisplayShrine.id}:`, err.message);
+            setNearbyHotelsError(err.message);
+            const localList = getShrineAccommodations(currentDisplayShrine.id, currentDisplayShrine.name);
+            setNearbyHotels(localList);
+          }
+        })
+        .finally(() => {
+          if (isCurrent) {
+            setIsLoadingNearbyHotels(false);
+          }
+        });
+    }
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentDisplayShrine?.id, currentDisplayShrine?.latitude, currentDisplayShrine?.longitude, currentDisplayShrine?.name]);
 
   const filteredSites = useMemo(() => {
     return canonicalSites.filter((site) => {
@@ -304,15 +400,13 @@ export default function TouristDashboard({
     });
   }, [canonicalSites, searchTerm, selectedTag]);
 
-  // Filter accommodations for the selected shrine using teammate's multi-factor matching
+  // Filter accommodations for the selected shrine strictly matching currentDisplayShrine
   const displayedHotels = useMemo(() => {
-    const targetSite = focusShrine || activeSite || canonicalSites[0];
-    const canonicalLodges = targetSite ? getShrineAccommodations(targetSite.id, targetSite.name) : [];
-    if (!hotels || hotels.length === 0) return canonicalLodges;
-    if (!targetSite) return hotels.slice(0, 6);
+    const targetSite = currentDisplayShrine;
+    if (!targetSite) return [];
 
-    const sId = targetSite.id ? String(targetSite.id).toUpperCase() : '';
-    const sName = targetSite.name ? targetSite.name.toLowerCase() : '';
+    const targetSiteId = String(targetSite.id || '').toUpperCase();
+    const targetSiteName = (targetSite.name || '').toLowerCase();
     const sLat = targetSite.latitude;
     const sLon = targetSite.longitude;
 
@@ -333,54 +427,54 @@ export default function TouristDashboard({
       str ? str.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim() : '';
 
     const stopWords = new Set(['temple', 'mandir', 'shri', 'shree', 'the', 'dham']);
-    const siteTokens = clean(sName)
+    const siteTokens = clean(targetSiteName)
       .split(/\s+/)
       .filter((w) => w.length > 3 && !stopWords.has(w));
 
-    // 1. Exact site_id match
-    const idMatched = hotels.filter(
-      (h) => h.site_id && String(h.site_id).toUpperCase() === sId
-    );
+    // Combine nearbyHotels (shrine-specific results) with hotels pool
+    const pool = [...nearbyHotels, ...hotels];
 
-    // 2. Geographic proximity within 35 km
-    const geoMatched =
-      sLat != null && sLon != null
-        ? hotels.filter((h) => {
-            if (h.latitude != null && h.longitude != null) {
-              return getDistKm(sLat, sLon, h.latitude, h.longitude) <= 35.0;
-            }
-            return false;
-          })
-        : [];
+    // Filter strictly matching this shrine
+    const matched = pool.filter((h) => {
+      if (!h) return false;
+      const hSiteId = String(h.site_id || '').toUpperCase();
+      // 1. Exact or normalized site_id match
+      if (hSiteId && (hSiteId === targetSiteId || hSiteId.replace(/^TS0+/, 'TS') === targetSiteId.replace(/^TS0+/, 'TS') || (h.id && String(h.id).toUpperCase().includes(targetSiteId)))) {
+        return true;
+      }
+      // 2. Proximity within 35 km
+      if (sLat != null && sLon != null && h.latitude != null && h.longitude != null) {
+        const dist = getDistKm(sLat, sLon, h.latitude, h.longitude);
+        if (dist <= 35.0) return true;
+      }
+      // 3. Name token match
+      if (siteTokens.length > 0) {
+        const hText = `${clean(h.name)} ${clean(h.address)} ${clean(h.city)} ${clean(h.site_name)}`;
+        if (siteTokens.some((tok) => hText.includes(tok))) return true;
+      }
+      return false;
+    });
 
-    // 3. Name token match
-    const tokenMatched =
-      siteTokens.length > 0
-        ? hotels.filter((h) => {
-            const hText = `${clean(h.name)} ${clean(h.address)}`;
-            return siteTokens.some((tok) => hText.includes(tok));
-          })
-        : [];
+    const canonicalLodges = getShrineAccommodations(targetSite.id, targetSite.name);
+    const combined = [...matched, ...canonicalLodges];
 
-    const combined = [
-      ...idMatched,
-      ...geoMatched,
-      ...tokenMatched,
-      ...canonicalLodges
-    ];
-
+    const seenIds = new Set();
     const seenNames = new Set();
     const deduplicated = [];
+
     combined.forEach((h) => {
+      const hid = String(h.id || '').trim();
       const norm = clean(h.name);
-      if (!seenNames.has(norm)) {
-        seenNames.add(norm);
-        deduplicated.push(h);
+      if ((hid && seenIds.has(hid)) || (norm && seenNames.has(norm))) {
+        return;
       }
+      if (hid) seenIds.add(hid);
+      if (norm) seenNames.add(norm);
+      deduplicated.push(h);
     });
 
     return deduplicated.slice(0, 2);
-  }, [hotels, activeSite]);
+  }, [nearbyHotels, hotels, currentDisplayShrine]);
 
   // Teammate HotelBookingModal Handlers
   const handleOpenBookingModal = (hotel) => {
@@ -434,14 +528,6 @@ export default function TouristDashboard({
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
-
-  const currentDisplayShrine = useMemo(() => {
-    let shrine = focusShrine || activeSite || canonicalSites[0];
-    if (typeof shrine === 'string') {
-      shrine = canonicalSites.find(s => s && s.id === shrine) || (sites && sites.find(s => s && s.id === shrine)) || canonicalSites[0];
-    }
-    return shrine;
-  }, [focusShrine, activeSite, canonicalSites, sites]);
 
   const effectiveDensity = useMemo(() => {
     const shrineId = currentDisplayShrine?.id;
@@ -763,10 +849,10 @@ export default function TouristDashboard({
           }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
-                {t('hotels.title', 'Verified Yatri Accommodations & Ashrams')}
+                Verified Accommodations & Ashrams near {currentDisplayShrine?.name || 'Selected Shrine'}
               </h3>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
-                {t('hotels.subtitle', 'Official temple ashrams, GMVN rest houses, and verified hospitality partners near')} {currentDisplayShrine?.name || 'shrine'}.
+                Official temple ashrams, GMVN rest houses, and verified hospitality partners near {currentDisplayShrine?.name || 'shrine'}.
               </p>
             </div>
             <span style={{
@@ -829,79 +915,114 @@ export default function TouristDashboard({
             </div>
           )}
 
-          {/* Hotels Cards Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '1rem'
-          }}>
-            {displayedHotels.slice(0, 2).map((h) => {
-              const firstRoom = h.rooms?.[0];
-              const price = firstRoom?.price_per_night || h.price_per_night || 1200;
-              const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
+          {/* Hotels Cards Grid / Loading / Empty State */}
+          {isLoadingNearbyHotels && displayedHotels.length === 0 ? (
+            <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '0.75rem', border: '1px dashed #CBD5E1' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🔄</div>
+              <p style={{ margin: 0, fontWeight: '700', fontSize: '0.95rem', color: '#1E293B' }}>
+                Loading verified accommodations near {currentDisplayShrine?.name || 'selected shrine'}...
+              </p>
+            </div>
+          ) : displayedHotels.length === 0 ? (
+            <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#64748B', background: '#F8FAFC', borderRadius: '0.75rem', border: '1px dashed #CBD5E1' }}>
+              <div style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>🏨</div>
+              <p style={{ margin: '0 0 0.4rem 0', fontWeight: '700', fontSize: '0.95rem', color: '#1E293B' }}>
+                No verified accommodations currently listed within 35 km of {currentDisplayShrine?.name || 'this shrine'}.
+              </p>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.82rem', color: '#64748B' }}>
+                Please check back shortly or consult local temple helpdesks upon arrival.
+              </p>
+              <button
+                type="button"
+                onClick={() => loadNearbyHotels(currentDisplayShrine)}
+                style={{
+                  padding: '0.45rem 1rem',
+                  fontSize: '0.8rem',
+                  fontWeight: '700',
+                  color: '#0284C7',
+                  background: '#F0F9FF',
+                  border: '1px solid #BAE6FD',
+                  borderRadius: '0.5rem',
+                  cursor: 'pointer'
+                }}
+              >
+                🔄 Retry Search
+              </button>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: '1rem'
+            }}>
+              {displayedHotels.slice(0, 2).map((h) => {
+                const firstRoom = h.rooms?.[0];
+                const price = firstRoom?.price_per_night || h.price_per_night || 1200;
+                const availCount = h.rooms?.reduce((acc, r) => acc + (r.available_rooms || 0), 0);
 
-              return (
-                <div
-                  key={h.id}
-                  style={{
-                    border: '1px solid #E2E8F0',
-                    borderRadius: '0.75rem',
-                    padding: '1.1rem',
-                    background: '#F8FAFC',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
-                      <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>
-                        {h.name}
-                      </h4>
-                      <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#D97706', background: '#FEF3C7', padding: '0.12rem 0.45rem', borderRadius: '5px' }}>
-                        ★ {h.rating || '4.8'}
-                      </span>
-                    </div>
-                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.78rem', color: '#64748B' }}>
-                      📍 {h.address || 'Near Sacred Pilgrimage Corridor'}
-                    </p>
-                    {availCount != null && (
-                      <span style={{ fontSize: '0.75rem', color: availCount > 0 ? '#059669' : '#DC2626', fontWeight: '700' }}>
-                        {availCount > 0 ? `✓ ${availCount} vacant rooms` : '⚠️ Limited vacancy'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #E2E8F0' }}>
+                return (
+                  <div
+                    key={h.id}
+                    style={{
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '0.75rem',
+                      padding: '1.1rem',
+                      background: '#F8FAFC',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
                     <div>
-                      <span style={{ fontSize: '1rem', fontWeight: '900', color: '#0F172A' }}>
-                        ₹{price}
-                      </span>
-                      <span style={{ fontSize: '0.72rem', color: '#64748B' }}> / night</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.35rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: '800', color: '#0F172A' }}>
+                          {h.name}
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#D97706', background: '#FEF3C7', padding: '0.12rem 0.45rem', borderRadius: '5px' }}>
+                          ★ {h.rating || '4.8'}
+                        </span>
+                      </div>
+                      <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.78rem', color: '#64748B' }}>
+                        📍 {h.address || (h.city ? `${h.city}, ${h.state || ''}` : 'Near Sacred Pilgrimage Corridor')}
+                      </p>
+                      {availCount != null && (
+                        <span style={{ fontSize: '0.75rem', color: availCount > 0 ? '#059669' : '#DC2626', fontWeight: '700' }}>
+                          {availCount > 0 ? `✓ ${availCount} vacant rooms` : '⚠️ Limited vacancy'}
+                        </span>
+                      )}
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={bookingHotelId === h.id}
-                      onClick={() => handleOpenBookingModal(h)}
-                      style={{
-                        background: '#059669',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        padding: '0.45rem 0.9rem',
-                        borderRadius: '0.55rem',
-                        fontSize: '0.8rem',
-                        fontWeight: '700',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {bookingHotelId === h.id ? t('common.loading', 'Connecting...') : t('hotels.bookRoom', 'Book Room')}
-                    </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid #E2E8F0' }}>
+                      <div>
+                        <span style={{ fontSize: '1rem', fontWeight: '900', color: '#0F172A' }}>
+                          ₹{price}
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: '#64748B' }}> / night</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={bookingHotelId === h.id}
+                        onClick={() => handleOpenBookingModal(h)}
+                        style={{
+                          background: '#059669',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          padding: '0.45rem 0.9rem',
+                          borderRadius: '0.55rem',
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {bookingHotelId === h.id ? t('common.loading', 'Connecting...') : t('hotels.bookRoom', 'Book Room')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* 9. MY YATRA BOOKINGS (CLEAN COMPACT CARDS & LIFECYCLE TRACKER) */}
@@ -923,8 +1044,21 @@ export default function TouristDashboard({
             gap: '0.75rem'
           }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A' }}>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '900', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 {t('bookings.title', 'My Yatra Bookings')}
+                {myBookingsList.length > 0 && (
+                  <span style={{
+                    background: '#FFEDD5',
+                    color: '#C2410C',
+                    fontSize: '0.75rem',
+                    fontWeight: '800',
+                    padding: '0.15rem 0.55rem',
+                    borderRadius: '999px',
+                    border: '1px solid #FDBA74'
+                  }}>
+                    {myBookingsList.length}
+                  </span>
+                )}
               </h3>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: '#64748B' }}>
                 {t('bookings.subtitle', 'Track your accommodation requests and confirmed stays.')}

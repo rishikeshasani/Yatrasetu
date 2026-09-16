@@ -600,6 +600,7 @@ export default function App() {
             onLogout={handleLogout}
             onNavigate={handleNavigate}
             activeGovTab={govTab}
+            selectedSite={selectedSite}
           />
 
           <EmergencyAlertBanner />

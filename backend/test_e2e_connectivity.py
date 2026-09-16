@@ -137,8 +137,10 @@ def test_connectivity():
 
     from datetime import date, timedelta
     import random
-    stay_start = str(date.today() + timedelta(days=random.randint(60, 360)))
-    stay_end = str(date.today() + timedelta(days=random.randint(365, 370)))
+    # Use unique 2-day future window to avoid collision with prior test bookings in live Supabase DB
+    offset = random.randint(600, 3000)
+    stay_start = str(date.today() + timedelta(days=offset))
+    stay_end = str(date.today() + timedelta(days=offset + 2))
 
     # Requirement 4: Books room and verifies booking succeeds
     book_res = client.post(

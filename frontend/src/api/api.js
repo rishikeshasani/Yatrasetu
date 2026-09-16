@@ -1876,11 +1876,11 @@ export const DEMO_CREDENTIALS = {
     email: "govt_command@yatrasetu.org",
     role: "government",
     government_subrole: "government_official",
-    full_name: "Uttarakhand State Pilgrimage Command Center (DM Rudraprayag)",
+    full_name: "National Sacred Corridors Command (Civil Administration)",
     phone: "+91-1352481070",
     department: "Department of Disaster Management & Temple Affairs",
     badge: "CIVIL ADMINISTRATION",
-    jurisdiction: "Uttarakhand & National Sacred Corridors"
+    jurisdiction: "National Sacred Corridors & Shrines (TS001–TS025)"
   },
   hotel: {
     email: "hotel_partner@yatrasetu.org",
@@ -1905,11 +1905,11 @@ export const DEMO_CREDENTIALS = {
     email: "police_command@yatrasetu.org",
     role: "government",
     government_subrole: "police_official",
-    full_name: "Uttarakhand State Police & SDRF Command",
+    full_name: "National Sacred Corridors Command (Police HQ & SDRF)",
     badge: "POLICE & LAW ENFORCEMENT",
     rank: "Superintendent of Police (Law & Order)",
     phone: "+91-1352712112",
-    jurisdiction: "Sacred Pilgrimage Corridors & Shrines (TS001–TS025)",
+    jurisdiction: "National Sacred Corridors & Shrines (TS001–TS025)",
     department: "Law Enforcement & Tactical Crowd Safety Division"
   }
 };
@@ -2270,6 +2270,10 @@ export async function fetchHotels(params = {}) {
   try {
     const query = new URLSearchParams();
     if (params.search) query.append("search", params.search);
+    if (params.site_id) query.append("site_id", params.site_id);
+    if (params.latitude != null) query.append("latitude", params.latitude);
+    if (params.longitude != null) query.append("longitude", params.longitude);
+    if (params.radius_km != null) query.append("radius_km", params.radius_km);
     if (params.min_price != null) query.append("min_price", params.min_price);
     if (params.max_price != null) query.append("max_price", params.max_price);
     if (params.verified_only) query.append("verified_only", "true");
@@ -2281,7 +2285,13 @@ export async function fetchHotels(params = {}) {
     return [];
   } catch (err) {
     console.error("[API Error] fetchHotels failed:", err.message);
-    if (DEMO_MODE) return MOCK_HOTELS;
+    if (DEMO_MODE) {
+      let filtered = [...MOCK_HOTELS];
+      if (params.site_id) {
+        filtered = filtered.filter(h => String(h.site_id).toUpperCase() === String(params.site_id).toUpperCase());
+      }
+      return filtered;
+    }
     throw err;
   }
 }
@@ -2391,9 +2401,9 @@ export async function updateHotelBookingStatus(bookingId, status, declineReason 
   }
 }
 
-export async function fetchMyHotelBookings() {
+export async function fetchMyHotelBookings(limit = 100, offset = 0) {
   try {
-    const data = await apiRequest('/hotels/tourist/bookings', { requiresAuth: true });
+    const data = await apiRequest(`/hotels/tourist/bookings?limit=${limit}&offset=${offset}`, { requiresAuth: true });
     if (Array.isArray(data)) return data;
     return [];
   } catch (err) {

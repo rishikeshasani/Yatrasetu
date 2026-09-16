@@ -34,6 +34,17 @@ function getStructuredRecommendations(sim) {
   return { crowdControl, safety, traffic, altRec };
 }
 
+function formatTelemetrySource(src) {
+  if (!src) return 'Demo Simulation Model';
+  if (src === 'yolo_video' || src === 'yolo') return 'YOLO Video Headcount';
+  if (src === 'gps_crowd' || src === 'gps') return 'Mobile GPS Geofence';
+  if (src === 'fused_yolo_gps' || src === 'fusion') return 'Multi-Source Fusion (YOLO + GPS)';
+  if (src === 'live_telemetry' || src === 'live_sensor') return 'Field Sensor Telemetry';
+  if (src === 'historical_baseline' || src === 'baseline') return 'Historical Diurnal Baseline';
+  if (src === 'demo_simulation') return 'Demo Simulation Model';
+  return src.replace(/_/g, ' ').toUpperCase();
+}
+
 export default function GovernmentDashboard({
   sites = [],
   densityMap = {},
@@ -51,8 +62,22 @@ export default function GovernmentDashboard({
   const isPoliceOfficial = subrole === 'police_official';
   const isCivilOfficial = !isPoliceOfficial;
 
+  // -------------------------------------------------------------------------
+  // OPERATIONAL MONITORING LOCATION STATE
+  // -------------------------------------------------------------------------
+  const [internalMonitoringSiteId, setInternalMonitoringSiteId] = useState(selectedSiteId || 'TS001');
+  const [isLocatingUser, setIsLocatingUser] = useState(false);
+  const [locationNotice, setLocationNotice] = useState({ type: '', message: '' });
+
+  // Sync internal state when prop selectedSiteId changes
+  useEffect(() => {
+    if (selectedSiteId && selectedSiteId !== internalMonitoringSiteId) {
+      setInternalMonitoringSiteId(selectedSiteId);
+    }
+  }, [selectedSiteId]);
+
   // Navigation Tabs:
-  // Police Official: 'overview' | 'live-crowd' | 'surge-alerts' | 'police-simulation' | 'emergency-response' | 'traffic-control' | 'sos-response' | 'safety-zones' | 'reports-analytics'
+  // Police Official: 'overview' | 'live-crowd' | 'surge-alerts' | 'police-simulation' | 'sos-response' | 'safety-zones' | 'reports-analytics'
   // Civil Official: 'overview' | 'live-crowd' | 'alerts-safety' | 'emergency-rerouting' | 'reports-analytics'
   const [activeGovTab, setActiveGovTab] = useState(() => {
     if (propActiveTab) return propActiveTab;
@@ -72,13 +97,14 @@ export default function GovernmentDashboard({
     }
   };
 
-  // Guard activeGovTab: redirect non-police from police-only tabs
+  // Guard activeGovTab: redirect non-police from police-only tabs, and exclude retired tabs
   useEffect(() => {
-    if (!isPoliceOfficial) {
-      const civilTabs = ['overview', 'live-crowd', 'alerts-safety', 'emergency-rerouting', 'reports-analytics'];
-      if (!civilTabs.includes(activeGovTab)) {
-        setActiveGovTab('overview');
-      }
+    const policeAllowedTabs = ['overview', 'live-crowd', 'surge-alerts', 'police-simulation', 'sos-response', 'safety-zones', 'reports-analytics'];
+    const civilAllowedTabs = ['overview', 'live-crowd', 'alerts-safety', 'emergency-rerouting', 'reports-analytics'];
+    const allowed = isPoliceOfficial ? policeAllowedTabs : civilAllowedTabs;
+    if (!allowed.includes(activeGovTab)) {
+      setActiveGovTab('overview');
+      if (onTabChange) onTabChange('overview');
     }
   }, [isPoliceOfficial, activeGovTab]);
 
@@ -550,6 +576,133 @@ export default function GovernmentDashboard({
     setViewingAlert(alert);
   };
 
+  const currentMonitoringSiteId = selectedSiteId || internalMonitoringSiteId || 'TS001';
+  const selectedMonitoringSite = siteTelemetryList.find((s) => s.id === currentMonitoringSiteId) || siteTelemetryList[0];
+
+  const handleSelectMonitoringSite = (siteId) => {
+    if (!siteId) return;
+    setInternalMonitoringSiteId(siteId);
+    setLocationNotice({ type: '', message: '' });
+    if (onSelectSite) {
+      onSelectSite(siteId);
+    }
+    setUpdateSiteId(siteId);
+    setSimSiteId(siteId);
+    const found = sites.find((s) => s.id === siteId);
+    if (found) {
+      const d = densityMap[siteId] || {};
+      setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
+      setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
+    }
+  };
+
+  const handleUseMyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationNotice({
+        type: 'error',
+        message: 'Location permission unavailable. Please select a monitoring location manually.'
+      });
+      return;
+    }
+
+    setIsLocatingUser(true);
+    setLocationNotice({ type: '', message: '' });
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocatingUser(false);
+        const uLat = pos.coords.latitude;
+        const uLon = pos.coords.longitude;
+
+        let closest = null;
+        let minDistanceMeters = Infinity;
+
+        sites.forEach((s) => {
+          if (s.latitude != null && s.longitude != null) {
+            const R = 6371000;
+            const dLat = ((s.latitude - uLat) * Math.PI) / 180;
+            const dLon = ((s.longitude - uLon) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((uLat * Math.PI) / 180) *
+                Math.cos((s.latitude * Math.PI) / 180) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const dist = R * c;
+            if (dist < minDistanceMeters) {
+              minDistanceMeters = dist;
+              closest = s;
+            }
+          }
+        });
+
+        if (closest) {
+          handleSelectMonitoringSite(closest.id);
+          const distKm = (minDistanceMeters / 1000).toFixed(1);
+          setLocationNotice({
+            type: 'success',
+            message: `Located nearest pilgrimage site: ${closest.name} (~${distKm} km away).`
+          });
+          if (showToast) {
+            showToast(`📍 Nearest monitoring site detected: ${closest.name} (~${distKm} km)`);
+          }
+        } else {
+          setLocationNotice({
+            type: 'error',
+            message: 'Could not determine nearest pilgrimage site. Please select manually.'
+          });
+        }
+      },
+      (err) => {
+        setIsLocatingUser(false);
+        console.warn('Geolocation access error:', err);
+        setLocationNotice({
+          type: 'error',
+          message: 'Location permission unavailable. Please select a monitoring location manually.'
+        });
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  };
+
+  const handleViewInGodsEye = (siteId) => {
+    const targetId = siteId || currentMonitoringSiteId;
+    handleSelectMonitoringSite(targetId);
+    setLiveCrowdViewMode('map');
+    handleSwitchGovTab('live-crowd');
+  };
+
+  const handleViewSafety = (siteId) => {
+    const targetId = siteId || currentMonitoringSiteId;
+    handleSelectMonitoringSite(targetId);
+    if (isPoliceOfficial) {
+      handleSwitchGovTab('safety-zones');
+    } else {
+      handleSwitchGovTab('alerts-safety');
+    }
+  };
+
+  const handleViewAlerts = (siteId) => {
+    const targetId = siteId || currentMonitoringSiteId;
+    handleSelectMonitoringSite(targetId);
+    if (isPoliceOfficial) {
+      handleSwitchGovTab('surge-alerts');
+    } else {
+      handleSwitchGovTab('alerts-safety');
+    }
+  };
+
+  const handleMonitorLocation = (siteId) => {
+    const targetId = siteId || currentMonitoringSiteId;
+    handleSelectMonitoringSite(targetId);
+    handleSwitchGovTab('live-crowd');
+    setLiveCrowdViewMode('grid');
+    if (showToast) {
+      showToast(`Now monitoring: ${selectedMonitoringSite?.name || targetId}`);
+    }
+  };
+
   return (
     <div className={`gov-command-root ${isPoliceOfficial ? 'gov-police-mode' : ''}`} id="gov-dashboard">
 
@@ -578,14 +731,42 @@ export default function GovernmentDashboard({
         </div>
 
         <div className="gov-header-right">
-          <div className="gov-classification-badge-wrap" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="gov-classification-badge-wrap" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span
+              className="gov-header-loc-badge"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                background: '#F1F5F9',
+                border: '1px solid #CBD5E1',
+                padding: '0.35rem 0.65rem',
+                borderRadius: '4px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#1E293B'
+              }}
+              title="Active Operational Field Location"
+            >
+              <span>📍</span>
+              <span id="gov-header-location-text">
+                {selectedMonitoringSite
+                  ? (() => {
+                      const c = selectedMonitoringSite.city || '';
+                      const s = selectedMonitoringSite.state || '';
+                      if (c && s && c.includes(s)) return c;
+                      return [c, s].filter(Boolean).join(', ') || selectedMonitoringSite.name;
+                    })()
+                  : 'Select Location'}
+              </span>
+            </span>
             {isPoliceOfficial && (
-              <span className="police-badge-gold" style={{ border: '1px solid #F59E0B', background: 'rgba(245,158,11,0.15)', color: '#FBBF24', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
-                🛡️ POLICE &amp; LAW ENFORCEMENT HQ
+              <span className="police-badge-gold" style={{ border: '1px solid #FCD34D', background: '#FEF3C7', color: '#92400E', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
+                🛡️ POLICE HQ
               </span>
             )}
             {isCivilOfficial && (
-              <span style={{ border: '1px solid #3B82F6', background: 'rgba(59,130,246,0.15)', color: '#60A5FA', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
+              <span style={{ border: '1px solid #BFDBFE', background: '#EFF6FF', color: '#1D4ED8', padding: '0.35rem 0.75rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.78rem', letterSpacing: '0.04em' }}>
                 🏛️ CIVIL ADMINISTRATION
               </span>
             )}
@@ -597,93 +778,16 @@ export default function GovernmentDashboard({
           <div className="gov-header-meta">
             <div className="gov-meta-time">Last updated: <strong>{currentTime}</strong></div>
             <div className="gov-meta-admin">
-              {currentUser?.name || currentUser?.full_name || (isPoliceOfficial ? 'State Special Operations Command' : 'District Administration (Command)')}
+              {selectedMonitoringSite
+                ? `${selectedMonitoringSite.name} • ${isPoliceOfficial ? 'Police Field Command' : 'Civil Administration Command'}`
+                : (isPoliceOfficial ? 'Police Field Command' : 'Civil Administration Command')}
             </div>
           </div>
         </div>
       </header>
 
       {/* ===================================================================== */}
-      {/* 2. PERSISTENT COMMAND OPERATIONAL STATUS STRIP                         */}
-      {/* Unified 4-pillar command strip: Emergency, Crowd, Surge, Diversion    */}
-      {/* ===================================================================== */}
-      <div className={`gov-persistent-command-strip ${isRerouteActive ? 'is-emergency-active' : 'is-emergency-normal'}`}>
-        <div className="gov-strip-pillars-row">
-          {/* Pillar 1: Emergency Protocol */}
-          <div className="gov-strip-pillar">
-            <span className="gov-strip-pillar-label">Emergency Protocol:</span>
-            <div className="gov-strip-pillar-body">
-              <StatusBadge
-                status={isRerouteActive ? 'CRITICAL' : 'NORMAL'}
-                theme={isPoliceOfficial ? 'dark' : 'light'}
-                size="sm"
-                pulse={isRerouteActive}
-                label={isRerouteActive ? 'Emergency Reroute Active' : 'No Active Emergency'}
-              />
-              <button
-                type="button"
-                onClick={isRerouteActive ? handleLiftEmergency : handleActivateEmergency}
-                disabled={isRecalculating}
-                className={`btn-strip-action ${isRerouteActive ? 'lift' : 'activate'}`}
-                style={{ padding: '0.2rem 0.55rem', fontSize: '0.72rem', fontWeight: 700, borderRadius: '4px' }}
-              >
-                {isRecalculating ? 'Processing...' : isRerouteActive ? 'Lift Emergency' : 'Trigger Corridor Reroute'}
-              </button>
-            </div>
-          </div>
-
-          <div className="gov-strip-pillar-divider" />
-
-          {/* Pillar 2: Live Crowd Telemetry */}
-          <div className="gov-strip-pillar">
-            <span className="gov-strip-pillar-label">Crowd Status:</span>
-            <div className="gov-strip-pillar-body">
-              <StatusBadge
-                status={criticalCount > 0 ? 'CRITICAL' : highCount > 0 ? 'HIGH' : moderateCount > 0 ? 'MODERATE' : 'NORMAL'}
-                theme={isPoliceOfficial ? 'dark' : 'light'}
-                size="sm"
-                label={criticalCount > 0 ? `${criticalCount} Critical Sites` : 'Nominal (25 Sites)'}
-              />
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.85 }}>
-                {totalDevotees.toLocaleString()} pilgrims
-              </span>
-            </div>
-          </div>
-
-          <div className="gov-strip-pillar-divider" />
-
-          {/* Pillar 3: Surge Prediction Sensor */}
-          <div className="gov-strip-pillar">
-            <span className="gov-strip-pillar-label">Surge Prediction:</span>
-            <div className="gov-strip-pillar-body">
-              <StatusBadge
-                status={isRerouteActive ? 'HIGH' : 'NORMAL'}
-                theme={isPoliceOfficial ? 'dark' : 'light'}
-                size="sm"
-                label={isRerouteActive ? 'High Risk Zone A (+120m)' : 'Sensor Network Nominal'}
-              />
-            </div>
-          </div>
-
-          <div className="gov-strip-pillar-divider" />
-
-          {/* Pillar 4: Route Diversion Status */}
-          <div className="gov-strip-pillar">
-            <span className="gov-strip-pillar-label">Corridor Reroute:</span>
-            <div className="gov-strip-pillar-body">
-              <StatusBadge
-                status={isRerouteActive ? 'CONFIRMED' : 'NORMAL'}
-                theme={isPoliceOfficial ? 'dark' : 'light'}
-                size="sm"
-                label={isRerouteActive ? '14 Buses Diverted' : 'Standard Traffic Flow'}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ===================================================================== */}
-      {/* 3. GOVERNMENT COMMAND NAVIGATION TABS STRIP                            */}
+      {/* 2. GOVERNMENT COMMAND NAVIGATION TABS STRIP                            */}
       {/* ===================================================================== */}
       <div className="gov-tabs-navigation-wrapper">
         {/* Mobile Viewport Dropdown Navigation */}
@@ -701,8 +805,6 @@ export default function GovernmentDashboard({
                 <option value="live-crowd">👁️ Live Crowd Monitoring ({criticalCount})</option>
                 <option value="surge-alerts">🚨 Crowd Surge Alerts</option>
                 <option value="police-simulation">👮 Police &amp; Crowd Simulation</option>
-                <option value="emergency-response">⚡ Emergency Response</option>
-                <option value="traffic-control">🚦 Traffic &amp; Route Control</option>
                 <option value="sos-response">🆘 SOS / Distress Response ({activeSOSCount})</option>
                 <option value="safety-zones">🛡️ Safety Zones</option>
                 <option value="reports-analytics">📈 Reports / Analytics</option>
@@ -772,27 +874,6 @@ export default function GovernmentDashboard({
             >
               <span className="tab-icon">👮</span>
               <span className="tab-text">Police &amp; Crowd Simulation</span>
-            </button>
-
-            <button
-              type="button"
-              id="gov-tab-btn-emergency-response"
-              className={`gov-nav-tab-btn ${activeGovTab === 'emergency-response' ? 'active' : ''}`}
-              onClick={() => handleSwitchGovTab('emergency-response')}
-            >
-              <span className="tab-icon">⚡</span>
-              <span className="tab-text">Emergency Response</span>
-              {isRerouteActive && <span className="tab-badge-active">ACTIVE</span>}
-            </button>
-
-            <button
-              type="button"
-              id="gov-tab-btn-traffic-control"
-              className={`gov-nav-tab-btn ${activeGovTab === 'traffic-control' ? 'active' : ''}`}
-              onClick={() => handleSwitchGovTab('traffic-control')}
-            >
-              <span className="tab-icon">🚦</span>
-              <span className="tab-text">Traffic &amp; Route Control</span>
             </button>
 
             <button
@@ -900,6 +981,172 @@ export default function GovernmentDashboard({
       {/* ===================================================================== */}
       {activeGovTab === 'overview' && (
         <>
+          {/* ===================================================================== */}
+          {/* OPERATIONAL MONITORING LOCATION SELECTOR & SUMMARY (Overview Desk Only) */}
+          {/* ===================================================================== */}
+          <section className="monitoring-location-panel" aria-label="Operational Monitoring Location" style={{ marginBottom: '1.75rem' }}>
+            <div className="monitoring-location-header">
+              <div className="monitoring-location-title">
+                <span style={{ fontSize: '1.15rem' }}>📍</span>
+                <span>MONITORING LOCATION</span>
+                <span className="monitoring-location-badge">
+                  {isPoliceOfficial ? 'POLICE FIELD SECTOR' : 'CIVIL COMMAND SECTOR'}
+                </span>
+              </div>
+              <span style={{ fontSize: '0.8rem', color: '#64748B', fontWeight: 600 }}>
+                Authoritative Registry: 25 Canonical Shrines (TS001–TS025)
+              </span>
+            </div>
+
+            <div className="monitoring-location-controls">
+              <div className="monitoring-location-select-wrap">
+                <select
+                  id="monitoring-site-selector"
+                  aria-label="Select Monitoring Pilgrimage Site"
+                  value={currentMonitoringSiteId}
+                  onChange={(e) => handleSelectMonitoringSite(e.target.value)}
+                  className="monitoring-location-select"
+                >
+                  {sites.map((s) => {
+                    const locStr = [s.city, s.state].filter(Boolean).join(', ');
+                    return (
+                      <option key={s.id} value={s.id}>
+                        [{s.id}] {s.name}{locStr ? ` — ${locStr}` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                className="btn-use-location"
+                onClick={handleUseMyLocation}
+                disabled={isLocatingUser}
+                title="Locate nearest pilgrimage destination using GPS"
+              >
+                <span>{isLocatingUser ? '⏳' : '📍'}</span>
+                <span>{isLocatingUser ? 'Locating...' : 'Use My Location'}</span>
+              </button>
+            </div>
+
+            {locationNotice.message && (
+              <div className={`monitoring-location-alert ${locationNotice.type}`}>
+                <span>{locationNotice.type === 'error' ? '⚠️' : '✓'}</span>
+                <span>{locationNotice.message}</span>
+              </div>
+            )}
+
+            {selectedMonitoringSite && (
+              <div className="monitoring-location-summary">
+                <div className="mls-site-col">
+                  <div className="mls-site-name">
+                    <span className="mls-site-id">[{selectedMonitoringSite.id}]</span>
+                    <span>{selectedMonitoringSite.name}</span>
+                  </div>
+                  <div className="mls-site-loc">
+                    <span>📍</span>
+                    <span>{[selectedMonitoringSite.city, selectedMonitoringSite.state].filter(Boolean).join(', ') || 'Pilgrimage Circuit Zone'}</span>
+                  </div>
+                  <div style={{ marginTop: '0.35rem' }}>
+                    <span className={`police-badge-status status-${selectedMonitoringSite.status?.toLowerCase() || 'normal'}`} style={{ fontSize: '0.78rem', padding: '0.2rem 0.55rem' }}>
+                      {selectedMonitoringSite.status}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mls-metrics-grid">
+                  <div className="mls-metric-item">
+                    <span className="mls-metric-lbl">Occupancy</span>
+                    <span className="mls-metric-val" style={{ color: selectedMonitoringSite.occupancy_percentage >= 90 ? '#DC2626' : selectedMonitoringSite.occupancy_percentage >= 75 ? '#D97706' : '#16A34A' }}>
+                      {selectedMonitoringSite.occupancy_percentage}%
+                    </span>
+                    <div style={{ background: '#E2E8F0', borderRadius: '9999px', height: '4px', width: '100%', marginTop: '0.25rem', overflow: 'hidden' }}>
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${Math.min(100, selectedMonitoringSite.occupancy_percentage)}%`,
+                          background: selectedMonitoringSite.occupancy_percentage >= 90 ? '#DC2626' : selectedMonitoringSite.occupancy_percentage >= 75 ? '#D97706' : '#16A34A'
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mls-metric-item">
+                    <span className="mls-metric-lbl">Headcount</span>
+                    <span className="mls-metric-val">
+                      {(selectedMonitoringSite.people_count || 0).toLocaleString()}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      / {(selectedMonitoringSite.capacity || 10000).toLocaleString()} cap
+                    </span>
+                  </div>
+
+                  <div className="mls-metric-item">
+                    <span className="mls-metric-lbl">Est. Queue</span>
+                    <span className="mls-metric-val" style={{ color: selectedMonitoringSite.estimated_wait_mins > 60 ? '#DC2626' : '#2563EB' }}>
+                      ~{selectedMonitoringSite.estimated_wait_mins || 25} min
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
+                      Queue wait nominal
+                    </span>
+                  </div>
+
+                  <div className="mls-metric-item">
+                    <span className="mls-metric-lbl">Intelligence Source</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0F172A', marginTop: '0.2rem' }}>
+                      {formatTelemetrySource(selectedMonitoringSite.source)}
+                    </span>
+                    <span style={{ fontSize: '0.7rem', color: '#64748B' }}>
+                      Telemetry verified
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mls-actions">
+                  <button
+                    type="button"
+                    className="btn-mls-primary"
+                    onClick={() => handleViewInGodsEye(selectedMonitoringSite.id)}
+                    title="Open 2D GIS God's-Eye command map focused on this site"
+                  >
+                    <span>🗺️</span>
+                    <span>View God's-Eye</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-mls-secondary"
+                    onClick={() => handleViewSafety(selectedMonitoringSite.id)}
+                    title="Inspect tactical safety zones and chokepoints"
+                  >
+                    <span>🛡️</span>
+                    <span>View Safety</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-mls-secondary"
+                    onClick={() => handleViewAlerts(selectedMonitoringSite.id)}
+                    title="Inspect surge alerts and emergency reroutes"
+                  >
+                    <span>🚨</span>
+                    <span>View Alerts</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-mls-secondary"
+                    onClick={() => handleMonitorLocation(selectedMonitoringSite.id)}
+                    title="Focus telemetry table on this destination"
+                  >
+                    <span>📊</span>
+                    <span>Monitor Location</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
           {isPoliceOfficial ? (
           <div id="gov-overview-police" className="police-content-wrap">
             {/* Tactical KPI Cards */}
@@ -957,9 +1204,9 @@ export default function GovernmentDashboard({
                     type="button"
                     className="police-preset-btn"
                     style={{ padding: '0.75rem', textAlign: 'center' }}
-                    onClick={() => handleSwitchGovTab('traffic-control')}
+                    onClick={() => handleSwitchGovTab('safety-zones')}
                   >
-                    🚦 Manage Satellite Holding Corridors &amp; Toll Bypasses ➔
+                    🛡️ Inspect Tactical Safety &amp; Holding Corridors ➔
                   </button>
                 </div>
               </div>
@@ -984,8 +1231,8 @@ export default function GovernmentDashboard({
                     <div
                       key={a.id}
                       style={{
-                        background: '#080E1A',
-                        border: a.status === 'ACTIVE' ? '1px solid #DC2626' : '1px solid #1E293B',
+                        background: a.status === 'ACTIVE' ? '#FEF2F2' : '#F8FAFC',
+                        border: a.status === 'ACTIVE' ? '1px solid #FCA5A5' : '1px solid #E2E8F0',
                         borderRadius: '0.5rem',
                         padding: '0.75rem 1rem',
                         display: 'flex',
@@ -994,8 +1241,8 @@ export default function GovernmentDashboard({
                       }}
                     >
                       <div>
-                        <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.88rem' }}>
-                          {a.user_name || a.user_id} • <span style={{ color: '#94A3B8' }}>{a.emergency_type}</span>
+                        <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.88rem' }}>
+                          {a.user_name || a.user_id} • <span style={{ color: a.status === 'ACTIVE' ? '#DC2626' : '#64748B' }}>{a.emergency_type}</span>
                         </div>
                         <div style={{ color: '#64748B', fontSize: '0.78rem', marginTop: '0.2rem' }}>
                           📍 {a.site_name} • {a.timestamp}
@@ -1055,30 +1302,51 @@ export default function GovernmentDashboard({
                     </tr>
                   </thead>
                   <tbody>
-                    {siteTelemetryList.slice(0, 6).map((s) => (
-                      <tr key={s.id}>
-                        <td style={{ fontWeight: 600, color: '#F8FAFC' }}>
-                          [{s.id}] {s.name} ({s.city || s.state})
-                        </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                          {s.people_count.toLocaleString()}
-                        </td>
-                        <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
-                          {(s.capacity || 10000).toLocaleString()}
-                        </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                          {s.occupancy_percentage}%
-                        </td>
-                        <td style={{ fontFamily: 'monospace', color: s.estimated_wait_mins > 60 ? '#F87171' : '#60A5FA' }}>
-                          ~{s.estimated_wait_mins} mins
-                        </td>
-                        <td>
-                          <span className={`police-badge-status status-${s.status.toLowerCase()}`}>
-                            {s.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {siteTelemetryList.slice(0, 6).map((s) => {
+                      const isMonitoring = s.id === selectedMonitoringSite?.id;
+                      return (
+                        <tr
+                          key={s.id}
+                          style={{
+                            background: isMonitoring ? '#F0F9FF' : undefined,
+                            borderLeft: isMonitoring ? '4px solid #0284C7' : undefined,
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleSelectMonitoringSite(s.id)}
+                          title="Click to monitor this shrine"
+                        >
+                          <td style={{ fontWeight: 700, color: '#0F172A' }}>
+                            <span style={{ fontFamily: 'monospace', color: '#1E40AF', marginRight: '0.35rem' }}>[{s.id}]</span>
+                            {s.name}
+                            <span style={{ color: '#64748B', fontWeight: 500, fontSize: '0.82rem', marginLeft: '0.35rem' }}>
+                              ({[s.city, s.state].filter(Boolean).join(', ')})
+                            </span>
+                            {isMonitoring && (
+                              <span style={{ marginLeft: '0.5rem', background: '#0284C7', color: '#FFFFFF', fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.45rem', borderRadius: '4px', letterSpacing: '0.04em' }}>
+                                MONITORING
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                            {s.people_count.toLocaleString()}
+                          </td>
+                          <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
+                            {(s.capacity || 10000).toLocaleString()}
+                          </td>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                            {s.occupancy_percentage}%
+                          </td>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 700, color: s.estimated_wait_mins > 60 ? '#DC2626' : '#2563EB' }}>
+                            ~{s.estimated_wait_mins} mins
+                          </td>
+                          <td>
+                            <span className={`police-badge-status status-${s.status.toLowerCase()}`}>
+                              {s.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1177,121 +1445,76 @@ export default function GovernmentDashboard({
             </div>
           </section>
 
-          {/* Overview 2-Column Command Layout */}
-          <div className="gov-two-col-command">
-            {/* Left: Priority Corridors Live Summary */}
-            <div className="gov-col-left">
-              <div className="gov-panel">
-                <div className="gov-panel-header">
-                  <div className="gov-panel-title">
-                    <span>LIVE CROWD MONITORING SNAPSHOT</span>
-                    <span className="gov-panel-badge">Priority Corridors</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchGovTab('live-crowd')}
-                    className="btn-compact-inspect"
-                  >
-                    View All 25 Destinations ➔
-                  </button>
-                </div>
-
-                <div className="gov-table-container">
-                  <table className="gov-compact-table">
-                    <thead>
-                      <tr>
-                        <th>LOCATION</th>
-                        <th>CURRENT CROWD</th>
-                        <th>CAPACITY</th>
-                        <th>OCCUPANCY</th>
-                        <th>STATUS</th>
-                        <th>TREND</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        {
-                          id: 'HAR-01',
-                          name: 'Haridwar Corridor (Zone A)',
-                          crowd: isRerouteActive ? 8700 : 13800,
-                          capacity: 15000,
-                          occ: isRerouteActive ? 58 : 92,
-                          status: isRerouteActive ? 'MODERATE' : 'CRITICAL',
-                          trend: isRerouteActive ? '↓' : '↑'
-                        },
-                        ...siteTelemetryList.slice(0, 4).map((s) => ({
-                          id: s.id,
-                          name: s.name,
-                          crowd: s.people_count,
-                          capacity: s.capacity || 10000,
-                          occ: s.occupancy_percentage,
-                          status: s.status,
-                          trend: s.trend
-                        }))
-                      ].map((item, idx) => (
-                        <tr key={item.id || idx}>
-                          <td className="font-semibold text-navy">{item.name}</td>
-                          <td className="font-mono">{item.crowd.toLocaleString()}</td>
-                          <td className="font-mono text-muted">{item.capacity.toLocaleString()}</td>
-                          <td>
-                            <div className="gov-cell-progress">
-                              <div className="gov-cell-progress-bar">
-                                <div
-                                  className={`gov-cell-progress-fill status-${item.status.toLowerCase()}`}
-                                  style={{ width: `${Math.min(100, item.occ)}%` }}
-                                ></div>
-                              </div>
-                              <span className="font-mono text-xs">{item.occ}%</span>
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`gov-status-badge status-${item.status.toLowerCase()}`}>
-                              {item.status}
-                            </span>
-                          </td>
-                          <td className="font-bold text-center">
-                            <span className={`trend-symbol ${item.trend === '↑' ? 'trend-up' : item.trend === '↓' ? 'trend-down' : 'trend-steady'}`}>
-                              {item.trend}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+          {/* Overview Live Crowd Monitoring Snapshot */}
+          <div className="gov-panel" style={{ marginBottom: '1.75rem' }}>
+            <div className="gov-panel-header">
+              <div className="gov-panel-title">
+                <span>LIVE CROWD MONITORING SNAPSHOT</span>
+                <span className="gov-panel-badge">Priority Corridors</span>
               </div>
+              <button
+                type="button"
+                onClick={() => handleSwitchGovTab('live-crowd')}
+                className="btn-compact-inspect"
+              >
+                View All 25 Destinations ➔
+              </button>
             </div>
 
-            {/* Right: District Administration & Municipal Logistics Card */}
-            <div className="gov-col-right">
-              <div className="gov-panel gov-overview-sim-card">
-                <div className="gov-panel-header">
-                  <div className="gov-panel-title">
-                    <span>🏛️ DISTRICT EMERGENCY OPERATIONS CENTER (DEOC)</span>
-                    <span className="gov-panel-badge">ADMINISTRATION</span>
-                  </div>
-                  <span className="gov-panel-sub">Inter-agency civil administration &amp; public welfare coordination</span>
-                </div>
-                <div className="gov-overview-sim-content">
-                  <p className="sim-overview-desc">
-                    Centralized civil administration console coordinating revenue, sanitation, drinking water corridors, and state disaster management protocols.
-                  </p>
-                  <div className="sim-overview-features">
-                    <div className="sim-of-item">✓ Multi-Agency District Magistrate Emergency Override</div>
-                    <div className="sim-of-item">✓ Real-time Corridor Density &amp; Satellite Parking Buffers</div>
-                    <div className="sim-of-item">✓ Sanitation, Medical Triage &amp; Clean Water Supply Monitoring</div>
-                    <div className="sim-of-item">✓ State Hospitality Capacity &amp; Ashram Occupancy Tracking</div>
-                    <div className="sim-of-item">🔒 Law Enforcement &amp; Field Tactical Command isolated to Police HQ</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchGovTab('emergency-rerouting')}
-                    className="btn-gov-primary sim-overview-launch-btn"
-                  >
-                    View Emergency Rerouting Protocol ➔
-                  </button>
-                </div>
-              </div>
+            <div className="gov-table-container">
+              <table className="gov-compact-table">
+                <thead>
+                  <tr>
+                    <th>LOCATION</th>
+                    <th>CURRENT CROWD</th>
+                    <th>CAPACITY</th>
+                    <th>OCCUPANCY</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    {
+                      id: 'HAR-01',
+                      name: 'Haridwar Corridor (Zone A)',
+                      crowd: isRerouteActive ? 8700 : 13800,
+                      capacity: 15000,
+                      occ: isRerouteActive ? 58 : 92,
+                      status: isRerouteActive ? 'MODERATE' : 'CRITICAL'
+                    },
+                    ...siteTelemetryList.slice(0, 4).map((s) => ({
+                      id: s.id,
+                      name: s.name,
+                      crowd: s.people_count,
+                      capacity: s.capacity || 10000,
+                      occ: s.occupancy_percentage,
+                      status: s.status
+                    }))
+                  ].map((item, idx) => (
+                    <tr key={item.id || idx}>
+                      <td className="font-semibold text-navy">{item.name}</td>
+                      <td className="font-mono">{item.crowd.toLocaleString()}</td>
+                      <td className="font-mono text-muted">{item.capacity.toLocaleString()}</td>
+                      <td>
+                        <div className="gov-cell-progress">
+                          <div className="gov-cell-progress-bar">
+                            <div
+                              className={`gov-cell-progress-fill status-${item.status.toLowerCase()}`}
+                              style={{ width: `${Math.min(100, item.occ)}%` }}
+                            ></div>
+                          </div>
+                          <span className="font-mono text-xs">{item.occ}%</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`gov-status-badge status-${item.status.toLowerCase()}`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -1435,49 +1658,48 @@ export default function GovernmentDashboard({
       {/* ===================================================================== */}
       {activeGovTab === 'live-crowd' && (
         <>
-          {/* View Mode Switcher (Civil Administration Only) */}
+          {/* View Mode Switcher */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>👥</span>
               <span>LIVE CROWD INTELLIGENCE • 25 SACRED SHRINES</span>
             </div>
-            {!isPoliceOfficial && (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className={`police-preset-btn ${liveCrowdViewMode === 'grid' ? 'active' : ''}`}
-                  style={{ background: liveCrowdViewMode === 'grid' ? '#3B82F6' : '#080E1A', color: 'white' }}
-                  onClick={() => setLiveCrowdViewMode('grid')}
-                >
-                  📋 Data Table View
-                </button>
-                <button
-                  type="button"
-                  className={`police-preset-btn ${liveCrowdViewMode === 'map' ? 'active' : ''}`}
-                  style={{ background: liveCrowdViewMode === 'map' ? '#3B82F6' : '#080E1A', color: 'white' }}
-                  onClick={() => setLiveCrowdViewMode('map')}
-                >
-                  🗺️ 2D GIS Command Map
-                </button>
-              </div>
-            )}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                className={`police-preset-btn ${liveCrowdViewMode === 'grid' ? 'active' : ''}`}
+                style={{
+                  background: liveCrowdViewMode === 'grid' ? '#1E40AF' : '#FFFFFF',
+                  color: liveCrowdViewMode === 'grid' ? '#FFFFFF' : '#334155',
+                  border: '1px solid #CBD5E1'
+                }}
+                onClick={() => setLiveCrowdViewMode('grid')}
+              >
+                📋 Data Table View
+              </button>
+              <button
+                type="button"
+                className={`police-preset-btn ${liveCrowdViewMode === 'map' ? 'active' : ''}`}
+                style={{
+                  background: liveCrowdViewMode === 'map' ? '#1E40AF' : '#FFFFFF',
+                  color: liveCrowdViewMode === 'map' ? '#FFFFFF' : '#334155',
+                  border: '1px solid #CBD5E1'
+                }}
+                onClick={() => setLiveCrowdViewMode('map')}
+              >
+                🗺️ 2D GIS Command Map
+              </button>
+            </div>
           </div>
 
-          {!isPoliceOfficial && liveCrowdViewMode === 'map' && (
+          {liveCrowdViewMode === 'map' ? (
             <div style={{ marginBottom: '1.75rem' }}>
               <GodsEyeMap
                 sites={sites}
                 densityMap={densityMap}
-                selectedSiteId={selectedSiteId || updateSiteId}
+                selectedSiteId={selectedMonitoringSite?.id || selectedSiteId || updateSiteId}
                 onSelectSite={(id) => {
-                  if (onSelectSite) onSelectSite(id);
-                  setUpdateSiteId(id);
-                  const found = sites.find(s => s.id === id);
-                  if (found) {
-                    const d = densityMap[id] || {};
-                    setUpdatePeopleCount(d.people_count != null ? d.people_count : Math.round((found.capacity || 10000) * 0.48));
-                    setUpdateWaitTime(d.wait_time_minutes != null ? d.wait_time_minutes : 25);
-                  }
+                  handleSelectMonitoringSite(id);
                 }}
                 activeRerouteAlert={propRerouteAlert}
                 onRefresh={() => {
@@ -1491,9 +1713,7 @@ export default function GovernmentDashboard({
                 }}
               />
             </div>
-          )}
-
-          {isPoliceOfficial ? (
+          ) : isPoliceOfficial ? (
           <div className="police-panel" id="gov-live-crowd-police">
             <div className="police-panel-header">
               <div className="police-panel-title">
@@ -1514,8 +1734,8 @@ export default function GovernmentDashboard({
             </div>
 
             {/* Field Officer Telemetry Update Tool */}
-            <form onSubmit={handleCrowdUpdateSubmit} style={{ background: '#080E1A', padding: '1rem 1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.88rem' }}>
+            <form onSubmit={handleCrowdUpdateSubmit} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem 1.25rem', borderRadius: '0.5rem', marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.88rem' }}>
                 📡 Field Officer Telemetry Report:
               </span>
               <select
@@ -1564,39 +1784,53 @@ export default function GovernmentDashboard({
                     <th>SAFE CAPACITY</th>
                     <th>OCCUPANCY</th>
                     <th>WAIT TIME</th>
-                    <th>FLOW TREND</th>
                     <th>ENFORCEMENT STATUS</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredSites.map((s) => (
-                    <tr key={s.id}>
-                      <td style={{ fontWeight: 600, color: '#F8FAFC' }}>
-                        [{s.id}] {s.name}
-                        <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{s.city || s.state}</div>
-                      </td>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                        {s.people_count.toLocaleString()}
-                      </td>
-                      <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
-                        {(s.capacity || 10000).toLocaleString()}
-                      </td>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>
-                        {s.occupancy_percentage}%
-                      </td>
-                      <td style={{ fontFamily: 'monospace', color: s.estimated_wait_mins > 60 ? '#F87171' : '#60A5FA' }}>
-                        ~{s.estimated_wait_mins} mins
-                      </td>
-                      <td style={{ fontWeight: 700, textAlign: 'center' }}>
-                        {s.trend}
-                      </td>
-                      <td>
-                        <span className={`police-badge-status status-${s.status.toLowerCase()}`}>
-                          {s.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredSites.map((s) => {
+                    const isSelected = s.id === selectedMonitoringSite?.id;
+                    return (
+                      <tr
+                        key={s.id}
+                        style={{
+                          background: isSelected ? '#F0F9FF' : undefined,
+                          borderLeft: isSelected ? '4px solid #0284C7' : undefined,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => handleSelectMonitoringSite(s.id)}
+                        title="Click to select this destination as active monitoring location"
+                      >
+                        <td style={{ fontWeight: 700, color: '#0F172A' }}>
+                          <span style={{ fontFamily: 'monospace', color: '#1E40AF', marginRight: '0.35rem' }}>[{s.id}]</span>
+                          {s.name}
+                          {isSelected && (
+                            <span style={{ marginLeft: '0.45rem', background: '#0284C7', color: '#FFFFFF', fontSize: '0.65rem', fontWeight: 700, padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                              SELECTED
+                            </span>
+                          )}
+                          <div style={{ color: '#64748B', fontSize: '0.75rem' }}>{[s.city, s.state].filter(Boolean).join(', ')}</div>
+                        </td>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                          {s.people_count.toLocaleString()}
+                        </td>
+                        <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
+                          {(s.capacity || 10000).toLocaleString()}
+                        </td>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0F172A' }}>
+                          {s.occupancy_percentage}%
+                        </td>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: s.estimated_wait_mins > 60 ? '#DC2626' : '#2563EB' }}>
+                          ~{s.estimated_wait_mins} mins
+                        </td>
+                        <td>
+                          <span className={`police-badge-status status-${s.status.toLowerCase()}`}>
+                            {s.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1633,7 +1867,6 @@ export default function GovernmentDashboard({
                         <th>CAPACITY</th>
                         <th>OCCUPANCY</th>
                         <th>STATUS</th>
-                        <th>TREND</th>
                         <th>ACTION</th>
                       </tr>
                     </thead>
@@ -1645,8 +1878,7 @@ export default function GovernmentDashboard({
                           crowd: isRerouteActive ? 8700 : 13800,
                           capacity: 15000,
                           occ: isRerouteActive ? 58 : 92,
-                          status: isRerouteActive ? 'MODERATE' : 'CRITICAL',
-                          trend: isRerouteActive ? '↓' : '↑'
+                          status: isRerouteActive ? 'MODERATE' : 'CRITICAL'
                         },
                         ...siteTelemetryList.slice(0, 5).map((s) => ({
                           id: s.id,
@@ -1655,7 +1887,6 @@ export default function GovernmentDashboard({
                           capacity: s.capacity || 10000,
                           occ: s.occupancy_percentage,
                           status: s.status,
-                          trend: s.trend,
                           rawSite: s
                         }))
                       ].map((item, idx) => (
@@ -1677,11 +1908,6 @@ export default function GovernmentDashboard({
                           <td>
                             <span className={`gov-status-badge status-${item.status.toLowerCase()}`}>
                               {item.status}
-                            </span>
-                          </td>
-                          <td className="font-bold text-center">
-                            <span className={`trend-symbol ${item.trend === '↑' ? 'trend-up' : item.trend === '↓' ? 'trend-down' : 'trend-steady'}`}>
-                              {item.trend}
                             </span>
                           </td>
                           <td>
@@ -1972,8 +2198,8 @@ export default function GovernmentDashboard({
               <div
                 key={s.id}
                 style={{
-                  background: '#080E1A',
-                  border: s.occupancy_percentage >= 90 ? '1px solid #DC2626' : '1px solid #F59E0B',
+                  background: s.occupancy_percentage >= 90 ? '#FEF2F2' : '#FFFBEB',
+                  border: s.occupancy_percentage >= 90 ? '1px solid #FCA5A5' : '1px solid #FDE68A',
                   borderRadius: '0.65rem',
                   padding: '1.25rem',
                   display: 'flex',
@@ -1986,11 +2212,11 @@ export default function GovernmentDashboard({
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                     <span style={{ fontSize: '1.25rem' }}>{s.occupancy_percentage >= 90 ? '🔴' : '🟡'}</span>
-                    <h4 style={{ margin: 0, color: '#F8FAFC', fontSize: '1.05rem' }}>
+                    <h4 style={{ margin: 0, color: '#0F172A', fontSize: '1.05rem' }}>
                       [{s.id}] {s.name} • {s.occupancy_percentage}% Capacity ({s.people_count.toLocaleString()} / {(s.capacity || 10000).toLocaleString()})
                     </h4>
                   </div>
-                  <p style={{ margin: '0.4rem 0 0 0', color: '#94A3B8', fontSize: '0.85rem' }}>
+                  <p style={{ margin: '0.4rem 0 0 0', color: '#475569', fontSize: '0.85rem' }}>
                     Queue wait time estimated at ~{s.estimated_wait_mins} minutes. Approaching critical threshold. Deploy holding pens and prepare diversion protocols.
                   </p>
                 </div>
@@ -2204,7 +2430,7 @@ export default function GovernmentDashboard({
           </form>
 
           {simError && (
-            <div style={{ background: '#450A0A', border: '1px solid #DC2626', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', color: '#FCA5A5' }}>
+            <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', color: '#991B1B' }}>
               <strong>Simulation Execution Error:</strong> {simError}
             </div>
           )}
@@ -2246,24 +2472,24 @@ export default function GovernmentDashboard({
                 </div>
                 <div className="psm-card">
                   <span className="psm-lbl">SIMULATED HEADCOUNT</span>
-                  <span className="psm-val" style={{ color: '#60A5FA' }}>{(activeSimulationResult.simulated_people_count || 0).toLocaleString()}</span>
+                  <span className="psm-val" style={{ color: '#1E40AF' }}>{(activeSimulationResult.simulated_people_count || 0).toLocaleString()}</span>
                   <span className="psm-sub">Total simulated volume</span>
                 </div>
                 <div className="psm-card">
                   <span className="psm-lbl">VENUE CAPACITY</span>
-                  <span className="psm-val" style={{ color: '#94A3B8' }}>{(activeSimulationResult.site_capacity || 10000).toLocaleString()}</span>
+                  <span className="psm-val" style={{ color: '#64748B' }}>{(activeSimulationResult.site_capacity || 10000).toLocaleString()}</span>
                   <span className="psm-sub">Official safe limit</span>
                 </div>
                 <div className="psm-card">
                   <span className="psm-lbl">OCCUPANCY %</span>
-                  <span className="psm-val" style={{ color: activeSimulationResult.simulated_occupancy_percentage >= 90 ? '#F87171' : '#FBBF24' }}>
+                  <span className="psm-val" style={{ color: activeSimulationResult.simulated_occupancy_percentage >= 90 ? '#DC2626' : '#D97706' }}>
                     {activeSimulationResult.simulated_occupancy_percentage}%
                   </span>
                   <span className="psm-sub">Capacity utilization</span>
                 </div>
                 <div className="psm-card">
                   <span className="psm-lbl">TRAFFIC IMPACT</span>
-                  <span className="psm-val" style={{ color: activeSimulationResult.traffic_impact === 'SEVERE' ? '#F87171' : '#FBBF24' }}>
+                  <span className="psm-val" style={{ color: activeSimulationResult.traffic_impact === 'SEVERE' ? '#DC2626' : '#D97706' }}>
                     {activeSimulationResult.traffic_impact}
                   </span>
                   <span className="psm-sub">Highway flow grade</span>
@@ -2276,11 +2502,11 @@ export default function GovernmentDashboard({
               </div>
 
               {/* Risk Explanation Note */}
-              <div style={{ background: '#0F172A', borderLeft: '4px solid #F59E0B', padding: '1rem', borderRadius: '0.4rem', marginBottom: '1.5rem' }}>
-                <div style={{ fontWeight: 700, color: '#FCD34D', marginBottom: '0.25rem' }}>
+              <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderLeft: '4px solid #D97706', padding: '1rem', borderRadius: '0.4rem', marginBottom: '1.5rem' }}>
+                <div style={{ fontWeight: 700, color: '#92400E', marginBottom: '0.25rem' }}>
                   AI Predictive Congestion &amp; Bottleneck Assessment:
                 </div>
-                <div style={{ color: '#E2E8F0', fontSize: '0.88rem', lineHeight: '1.5' }}>
+                <div style={{ color: '#78350F', fontSize: '0.88rem', lineHeight: '1.5' }}>
                   {activeSimulationResult.risk_explanation}
                 </div>
               </div>
@@ -2315,7 +2541,7 @@ export default function GovernmentDashboard({
               {/* High-Risk Zones Feed */}
               {activeSimulationResult.high_risk_zones && activeSimulationResult.high_risk_zones.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
-                  <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
                     🔴 High-Risk Chokepoints &amp; Mitigation Plans ({activeSimulationResult.high_risk_zones.length})
                   </div>
                   <div className="police-zones-feed">
@@ -2342,17 +2568,17 @@ export default function GovernmentDashboard({
               {/* Low-Density Alternatives Feed */}
               {activeSimulationResult.low_density_alternatives && activeSimulationResult.low_density_alternatives.length > 0 && (
                 <div>
-                  <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.95rem', marginBottom: '0.5rem' }}>
                     🧭 Surrounding Low-Density Relief Shrines
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
                     {activeSimulationResult.low_density_alternatives.slice(0, 4).map((alt, idx) => (
-                      <div key={idx} style={{ background: '#0F172A', border: '1px solid #1E293B', padding: '0.85rem', borderRadius: '0.5rem' }}>
+                      <div key={idx} style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '0.85rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '0.9rem' }}>{alt.name}</span>
-                          <span style={{ color: '#4ADE80', fontWeight: 700, fontSize: '0.8rem' }}>{alt.crowd_savings}</span>
+                          <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '0.9rem' }}>{alt.name}</span>
+                          <span style={{ color: '#16A34A', fontWeight: 700, fontSize: '0.8rem' }}>{alt.crowd_savings}</span>
                         </div>
-                        <div style={{ color: '#94A3B8', fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                        <div style={{ color: '#64748B', fontSize: '0.78rem', marginTop: '0.25rem' }}>
                           📍 {alt.distance_km} km • ⏱️ ~{alt.travel_time_mins} mins
                         </div>
                       </div>
@@ -2379,20 +2605,20 @@ export default function GovernmentDashboard({
             </div>
 
             {isLoadingHistory && simulationsHistory.length === 0 ? (
-              <div style={{ padding: '2rem', textAlign: 'center', color: '#94A3B8' }}>
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
                 Loading simulation logs from database...
               </div>
             ) : simulationsHistory.length === 0 ? (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>
-                No previous simulation logs found. Configure a scenario above and click "Run Scenario Simulation".
+                No prior crowd simulation scenario logs recorded for this district.
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table className="police-table">
                   <thead>
                     <tr>
-                      <th>SCENARIO &amp; DESTINATION</th>
-                      <th>SCHEDULED DATE</th>
+                      <th>EVENT / SITE</th>
+                      <th>SIMULATION TIME</th>
                       <th>PROJECTED SURGE</th>
                       <th>OCCUPANCY</th>
                       <th>RISK LEVEL</th>
@@ -2404,16 +2630,16 @@ export default function GovernmentDashboard({
                     {simulationsHistory.map((h) => (
                       <tr key={h.id}>
                         <td>
-                          <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{h.event_name || 'Planned Event'}</div>
+                          <div style={{ fontWeight: 600, color: '#0F172A' }}>{h.event_name || 'Planned Event'}</div>
                           <div style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>[{h.site_id}] {h.site_name}</div>
                         </td>
-                        <td style={{ fontFamily: 'monospace', color: '#94A3B8' }}>
+                        <td style={{ fontFamily: 'monospace', color: '#64748B' }}>
                           {h.event_date} {h.event_time}
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#F87171' }}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: '#DC2626' }}>
                           +{Number(h.expected_crowd_increase).toLocaleString()}
                         </td>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0F172A' }}>
                           {h.simulated_occupancy_percentage}% ({h.simulated_crowd_status})
                         </td>
                         <td>
@@ -2440,7 +2666,7 @@ export default function GovernmentDashboard({
                             <button
                               type="button"
                               className="police-preset-btn"
-                              style={{ padding: '0.25rem 0.65rem', borderColor: '#DC2626', color: '#FCA5A5' }}
+                              style={{ padding: '0.25rem 0.65rem', borderColor: '#DC2626', color: '#DC2626' }}
                               onClick={() => handleDeleteSimulation(h.id)}
                             >
                               ✕
@@ -2457,124 +2683,7 @@ export default function GovernmentDashboard({
         </section>
       )}
 
-      {/* ===================================================================== */}
-      {/* POLICE TAB: EMERGENCY RESPONSE OVERRIDE & FLEET DIVERSION             */}
-      {/* ===================================================================== */}
-      {activeGovTab === 'emergency-response' && isPoliceOfficial && (
-        <div className="police-panel" id="gov-emergency-response">
-          <div className="police-panel-header">
-            <div className="police-panel-title">
-              <span>⚡ EMERGENCY CORRIDOR OVERRIDE &amp; REROUTING DISPATCH</span>
-            </div>
-            <span className="police-panel-badge">FIELD COMMAND AUTHORITY</span>
-          </div>
 
-          <div style={{ background: '#080E1A', padding: '1.5rem', borderRadius: '0.65rem', border: '1px solid #1E293B', marginBottom: '1.5rem' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#60A5FA' }}>
-              National &amp; State Pilgrimage Reroute Protocol
-            </h3>
-            <p style={{ color: '#94A3B8', fontSize: '0.9rem', lineHeight: '1.5' }}>
-              When activated by Police HQ, all connected tourist navigation views, hotel logistics portals, and travel operator fleet consoles receive real-time notifications to bypass congested sanctum bottlenecks via designated sister shrine bypass routes and peripheral satellite parking.
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1.25rem' }}>
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>DIVERSION STATUS</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isRerouteActive ? '#4ADE80' : '#94A3B8', marginTop: '0.25rem' }}>
-                  {isRerouteActive ? 'ACTIVE' : 'STANDBY'}
-                </div>
-              </div>
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>PARTNER FLEET BUSES</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.25rem' }}>
-                  14 Buses (420 Seats)
-                </div>
-              </div>
-              <div style={{ background: '#0F172A', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #334155' }}>
-                <div style={{ fontSize: '0.75rem', color: '#94A3B8' }}>SATELLITE CAPACITY</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F8FAFC', marginTop: '0.25rem' }}>
-                  BHEL Hub (800 Vehicles)
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===================================================================== */}
-      {/* POLICE TAB: TRAFFIC & ROUTE CONTROL                                   */}
-      {/* ===================================================================== */}
-      {activeGovTab === 'traffic-control' && isPoliceOfficial && (
-        <div className="police-panel" id="gov-traffic-control">
-          <div className="police-panel-header">
-            <div className="police-panel-title">
-              <span>🚦 ARTERIAL CHOKEPOINTS &amp; HIGHWAY BYPASS CORRIDORS</span>
-            </div>
-            <span className="police-panel-badge">TRAFFIC DIVISION HQ</span>
-          </div>
-
-          <div className="police-chokepoints-grid">
-            <div className="police-chokepoint-card">
-              <div className="pcc-header">
-                <span className="pcc-name">NH-334 Haridwar Highway</span>
-                <span className={`police-badge-status ${isRerouteActive ? 'status-normal' : 'status-critical'}`}>
-                  {isRerouteActive ? 'DIVERTED' : 'HEAVY INFLUX'}
-                </span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Current Speed Grade</span>
-                <span className="pcc-metric-val">{isRerouteActive ? '45 km/h (Smooth)' : '12 km/h (Choked)'}</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Holding Staging Hub</span>
-                <span className="pcc-metric-val">Raiwala Staging Area</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Emergency Priority</span>
-                <span className="pcc-metric-val" style={{ color: '#4ADE80' }}>FASTag Lane 1 Active</span>
-              </div>
-            </div>
-
-            <div className="police-chokepoint-card">
-              <div className="pcc-header">
-                <span className="pcc-name">Rishikesh Bypass Corridor</span>
-                <span className="police-badge-status status-moderate">OPTIMAL</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Current Transit Time</span>
-                <span className="pcc-metric-val">38 Minutes (Zone C)</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Buses En Route</span>
-                <span className="pcc-metric-val">14 Partner Shuttles</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Time Saved / Yatri</span>
-                <span className="pcc-metric-val" style={{ color: '#4ADE80' }}>107 Minutes</span>
-              </div>
-            </div>
-
-            <div className="police-chokepoint-card">
-              <div className="pcc-header">
-                <span className="pcc-name">BHEL Satellite Transit Hub</span>
-                <span className="police-badge-status status-normal">OPERATIONAL</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Parking Lot Capacity</span>
-                <span className="pcc-metric-val">800 Vehicles / 450 Buses</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Occupancy Margin</span>
-                <span className="pcc-metric-val">42% (Ample Buffer)</span>
-              </div>
-              <div className="pcc-metric-row">
-                <span>Feeder Shuttles</span>
-                <span className="pcc-metric-val">Every 10 Minutes</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ===================================================================== */}
       {/* POLICE TAB: SOS / DISTRESS RESPONSE                                   */}
@@ -2614,20 +2723,20 @@ export default function GovernmentDashboard({
                 {sosAlerts.map((a) => (
                   <tr key={a.id}>
                     <td>
-                      <div style={{ fontWeight: 700, color: '#F8FAFC' }}>{a.user_name || a.user_id}</div>
-                      <div style={{ color: '#94A3B8', fontSize: '0.78rem' }}>{a.phone || 'N/A'}</div>
+                      <div style={{ fontWeight: 700, color: '#0F172A' }}>{a.user_name || a.user_id}</div>
+                      <div style={{ color: '#64748B', fontSize: '0.78rem' }}>{a.phone || 'N/A'}</div>
                     </td>
-                    <td style={{ color: '#FCA5A5', fontWeight: 600 }}>
+                    <td style={{ color: '#DC2626', fontWeight: 600 }}>
                       {a.emergency_type}
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600, color: '#F8FAFC' }}>{a.site_name || 'Sacred Sector'}</div>
+                      <div style={{ fontWeight: 600, color: '#0F172A' }}>{a.site_name || 'Sacred Sector'}</div>
                       <div style={{ color: '#64748B', fontSize: '0.75rem', fontFamily: 'monospace' }}>[{a.site_id || 'GPS'}]</div>
                     </td>
-                    <td style={{ fontFamily: 'monospace', color: '#94A3B8', fontSize: '0.78rem' }}>
+                    <td style={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.78rem' }}>
                       {a.latitude?.toFixed(4)}, {a.longitude?.toFixed(4)}
                     </td>
-                    <td style={{ color: '#94A3B8', fontSize: '0.8rem' }}>
+                    <td style={{ color: '#64748B', fontSize: '0.8rem' }}>
                       {a.timestamp || 'Just now'}
                     </td>
                     <td>
@@ -2647,7 +2756,7 @@ export default function GovernmentDashboard({
                           Dispatch Police Unit
                         </button>
                       ) : (
-                        <div style={{ color: '#4ADE80', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <div style={{ color: '#16A34A', fontSize: '0.8rem', fontWeight: 600 }}>
                           ✓ Unit En Route
                         </div>
                       )}
@@ -2673,32 +2782,32 @@ export default function GovernmentDashboard({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
-            <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem', color: '#F87171' }}>🔴 Har Ki Pauri Sanctum (Zone A)</h4>
-              <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h4 style={{ margin: '0 0 0.5rem', color: '#DC2626' }}>🔴 Har Ki Pauri Sanctum (Zone A)</h4>
+              <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                 Narrow river bank stairs and bridge approach. Barricaded holding pens at Upper Road to prevent surge crush.
               </div>
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                 <strong>Police Post:</strong> Ghat Kotwali Sector 1 • 14 Officers on Duty
               </div>
             </div>
 
-            <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem', color: '#FBBF24' }}>🟡 Ram Jhula Suspension Bridge (Zone B)</h4>
-              <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h4 style={{ margin: '0 0 0.5rem', color: '#D97706' }}>🟡 Ram Jhula Suspension Bridge (Zone B)</h4>
+              <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                 Suspension bridge pedestrian bottleneck. Alternating one-way crossing enforcement active during peak evening aarti.
               </div>
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                 <strong>Police Post:</strong> Muni Ki Reti Outpost • 8 Marshals Deployed
               </div>
             </div>
 
-            <div style={{ background: '#080E1A', border: '1px solid #1E293B', padding: '1.25rem', borderRadius: '0.5rem' }}>
-              <h4 style={{ margin: '0 0 0.5rem', color: '#4ADE80' }}>🟢 BHEL Transit Evacuation Corridor (Zone C)</h4>
-              <div style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '1.25rem', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h4 style={{ margin: '0 0 0.5rem', color: '#16A34A' }}>🟢 BHEL Transit Evacuation Corridor (Zone C)</h4>
+              <div style={{ color: '#475569', fontSize: '0.85rem', lineHeight: '1.5' }}>
                 Primary high-capacity relief staging ground with 5 active oxygen medical tents and 18 mobile stretchers.
               </div>
-              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#60A5FA' }}>
+              <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: '#1E40AF' }}>
                 <strong>Police Post:</strong> SDRF Camp Commander • 22 Tactical Personnel
               </div>
             </div>
@@ -3681,12 +3790,12 @@ export default function GovernmentDashboard({
               </button>
             </div>
             <div className="police-modal-body">
-              <div style={{ background: '#080E1A', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ color: '#94A3B8', fontSize: '0.8rem' }}>INCIDENT DETAILS</div>
-                <div style={{ fontWeight: 700, color: '#F8FAFC', fontSize: '1rem', marginTop: '0.25rem' }}>
-                  {dispatchModalAlert.user_name || dispatchModalAlert.user_id} • <span style={{ color: '#FCA5A5' }}>{dispatchModalAlert.emergency_type}</span>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.25rem' }}>
+                <div style={{ color: '#64748B', fontSize: '0.8rem', fontWeight: 700 }}>INCIDENT DETAILS</div>
+                <div style={{ fontWeight: 700, color: '#0F172A', fontSize: '1rem', marginTop: '0.25rem' }}>
+                  {dispatchModalAlert.user_name || dispatchModalAlert.user_id} • <span style={{ color: '#DC2626' }}>{dispatchModalAlert.emergency_type}</span>
                 </div>
-                <div style={{ color: '#CBD5E1', fontSize: '0.85rem', marginTop: '0.25rem' }}>📍 {dispatchModalAlert.site_name}</div>
+                <div style={{ color: '#475569', fontSize: '0.85rem', marginTop: '0.25rem' }}>📍 {dispatchModalAlert.site_name}</div>
               </div>
               <div className="police-field-group" style={{ marginBottom: '1rem' }}>
                 <label className="police-field-label">Assigned Tactical Unit</label>

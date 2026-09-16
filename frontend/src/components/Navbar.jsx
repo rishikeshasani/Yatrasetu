@@ -17,7 +17,8 @@ export default function Navbar({
   onNavigateSection,
   onLogout,
   onNavigate,
-  activeGovTab
+  activeGovTab,
+  selectedSite
 }) {
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -280,10 +281,16 @@ export default function Navbar({
                   fontSize: '0.78rem',
                   cursor: 'pointer'
                 }}
-                title={`Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role, currentUser.government_subrole)})`}
+                title={
+                  (currentUser?.role === 'government' || currentUser?.role === 'police')
+                    ? `Operational Sector: ${selectedSite ? (selectedSite.city || selectedSite.name) : 'Select Location'} (${roleStyle.badgeText})`
+                    : `Authenticated as ${currentUser.full_name} (${getRoleDisplayName(currentUser.role, currentUser.government_subrole)})`
+                }
               >
                 <span className="user-short-name">
-                  {currentUser.full_name?.split(' ')[0] || 'User'}
+                  {(currentUser?.role === 'government' || currentUser?.role === 'police')
+                    ? (selectedSite ? (selectedSite.city?.split(',')[0].trim() || selectedSite.name) : 'Select Location')
+                    : (currentUser.full_name?.split(' ')[0] || 'User')}
                 </span>
                 <span
                   style={{

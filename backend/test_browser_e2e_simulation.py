@@ -138,6 +138,14 @@ def run_tests():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, channel="msedge")
         
+        def click_eval_chip(page, chip_text):
+            page.wait_for_selector(".role-selection-wrapper", timeout=10000)
+            drawer_btn = page.locator("button", has_text="SIH Hackathon Evaluation")
+            if drawer_btn.count() > 0 and page.locator("button.quick-eval-chip").count() == 0:
+                drawer_btn.click()
+                page.wait_for_selector("button.quick-eval-chip", timeout=5000)
+            page.locator("button.quick-eval-chip", has_text=chip_text).first.click()
+
         # ---------------------------------------------------------------------
         # TEST 1: Real Backend Supabase Contract Verification (Error Banner)
         # ---------------------------------------------------------------------
@@ -148,7 +156,7 @@ def run_tests():
         page1.wait_for_selector(".role-selection-wrapper", timeout=10000)
         
         # Login as Government
-        page1.locator("button.quick-eval-chip", has_text="Demo Govt").first.click()
+        click_eval_chip(page1, "Demo Govt")
         page1.wait_for_selector("#nav-tab-police-simulation", timeout=15000).click()
         page1.wait_for_selector("#gov-police-simulation", timeout=15000)
         print("✓ Logged into Government Dashboard and opened Police & Crowd Simulation tab")
@@ -219,8 +227,7 @@ def run_tests():
         page2.route("**/government/crowd-simulations*", handle_sim_routes)
         
         page2.goto(FRONTEND_URL)
-        page2.wait_for_selector(".role-selection-wrapper", timeout=10000)
-        page2.locator("button.quick-eval-chip", has_text="Demo Govt").first.click()
+        click_eval_chip(page2, "Demo Govt")
         page2.wait_for_selector("#nav-tab-police-simulation", timeout=15000).click()
         page2.wait_for_selector("#gov-police-simulation", timeout=15000)
         
@@ -309,8 +316,7 @@ def run_tests():
         mob_page.route("**/government/crowd-simulations*", handle_sim_routes)
         
         mob_page.goto(FRONTEND_URL)
-        mob_page.wait_for_selector(".role-selection-wrapper", timeout=10000)
-        mob_page.locator("button.quick-eval-chip", has_text="Demo Govt").first.click()
+        click_eval_chip(mob_page, "Demo Govt")
         mob_page.wait_for_selector("#nav-tab-police-simulation", timeout=15000).click()
         mob_page.wait_for_selector("#gov-police-simulation", timeout=15000)
         
@@ -337,8 +343,7 @@ def run_tests():
         tourist_page = tourist_context.new_page()
         
         tourist_page.goto(FRONTEND_URL)
-        tourist_page.wait_for_selector(".role-selection-wrapper", timeout=10000)
-        tourist_page.locator("button.quick-eval-chip", has_text="Demo Tourist").first.click()
+        click_eval_chip(tourist_page, "Demo Tourist")
         
         # Wait for tourist content
         tourist_page.wait_for_selector(".tourist-dashboard, .main-content", timeout=15000)
@@ -370,8 +375,7 @@ def run_tests():
         hotel_page = hotel_context.new_page()
         
         hotel_page.goto(FRONTEND_URL)
-        hotel_page.wait_for_selector(".role-selection-wrapper", timeout=10000)
-        hotel_page.locator("button.quick-eval-chip", has_text="Demo Hotel").first.click()
+        click_eval_chip(hotel_page, "Demo Hotel")
         
         hotel_page.wait_for_selector(".hotel-dashboard-container, .hotel-dashboard, .main-content", timeout=15000)
         time.sleep(2)

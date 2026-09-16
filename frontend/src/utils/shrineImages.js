@@ -431,11 +431,20 @@ export function getShrineAccommodations(siteId, siteName = '') {
   const cleanId = (siteId || '').toLowerCase().trim();
   const cleanName = (siteName || '').toLowerCase().trim();
 
-  // Primary match: exact site_id (e.g. TS001, ts001)
+  // Normalize TS001 / TS01 / TS1 -> number
+  const getIdNum = (idStr) => {
+    const m = (idStr || '').match(/ts0*(\d+)/i);
+    return m ? parseInt(m[1], 10) : null;
+  };
+  const targetNum = getIdNum(cleanId);
+
+  // Primary match: exact site_id or numeric site_id match
   let matches = (HOTELS_50_DATA?.hotels || []).filter((h) => {
     const hSid = (h.site_id || '').toLowerCase().trim();
     if (!cleanId) return false;
-    return hSid === cleanId || hSid.replace('ts0', 'ts') === cleanId.replace('ts0', 'ts') || h.id.includes(cleanId);
+    if (hSid === cleanId) return true;
+    if (targetNum !== null && getIdNum(hSid) === targetNum) return true;
+    return Boolean(h.id && h.id.toLowerCase().includes(cleanId));
   });
 
   // Secondary match: shrine token / name match
@@ -456,7 +465,15 @@ export function getShrineAccommodations(siteId, siteName = '') {
     return matches.slice(0, 2);
   }
 
-  // Fallback: Default to Kedarnath 2 hotels
-  return (HOTELS_50_DATA?.hotels || []).slice(0, 2);
+  // Strictly return empty array if no accommodations match the shrine
+  return [];
 }
+
+/**
+ * Returns verified destination image if available, or null (never defaults to Kedarnath).
+ */
+export function getVerifiedDestinationImage(siteOrAltId, name = '') {
+  return getShrineImage(siteOrAltId, null) || (name ? getShrineImage(name, null) : null);
+}
+
 

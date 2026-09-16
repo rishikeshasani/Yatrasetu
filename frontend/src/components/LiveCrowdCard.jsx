@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchSiteScheduleInsights, fetchSite24hForecast } from '../api/api';
 import { getShrineImage } from '../utils/shrineImages';
 import StatusBadge from './common/StatusBadge';
@@ -8,6 +8,15 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
 
   const [scheduleInsights, setScheduleInsights] = useState(null);
   const [internal24hForecast, setInternal24hForecast] = useState(null);
+  const [forecastViewMode, setForecastViewMode] = useState('24h');
+  const forecastTrackRef = useRef(null);
+
+  const handleScrollTrack = (direction) => {
+    if (forecastTrackRef.current) {
+      const scrollAmount = direction === 'left' ? -320 : 320;
+      forecastTrackRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -18,7 +27,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
 
       if (!current24hForecast) {
         fetchSite24hForecast(site.id).then((res) => {
-          if (isMounted && res?.forecasts) setInternal24hForecast(res.forecasts);
+          if (isMounted && res) setInternal24hForecast(res);
         }).catch(() => {});
       }
     }
@@ -27,7 +36,10 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
     };
   }, [site?.id, current24hForecast]);
 
-  const activeForecasts = current24hForecast?.forecasts || internal24hForecast || [];
+  const activeForecastObj = current24hForecast || internal24hForecast;
+  const activeForecasts = Array.isArray(activeForecastObj)
+    ? activeForecastObj
+    : (activeForecastObj?.forecasts || []);
 
   const peopleCount = density?.people_count ?? 0;
   const capacity = density?.capacity || site?.capacity || 2500;
@@ -119,6 +131,9 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
     gps_crowd: { label: 'Mobile GPS Crowd Signal', icon: '📡', badgeClass: 'source-gps' },
     gps_crowd_demo: { label: 'Mobile GPS Crowd Signal (Demo)', icon: '📡', badgeClass: 'source-demo' },
     live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
+    ml_projection_live: { label: 'Live ML Forecast (Anchored)', icon: '⚡', badgeClass: 'source-live' },
+    ml_projection_historical: { label: 'Historical ML Baseline', icon: '📈', badgeClass: 'source-hist' },
+    ml_projection_demo: { label: 'ML Projection Baseline', icon: '📊', badgeClass: 'source-demo' },
     demo_simulation: { label: 'Demo Simulation — no live source currently available', icon: '📊', badgeClass: 'source-demo' },
     historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
     historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
@@ -533,26 +548,127 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
 
       {/* 7. AI-POWERED 24-HOUR CROWD MONITORING */}
       <div className="ml-forecast-card">
-        <div className="ml-forecast-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
-          <div className="ml-forecast-title-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+        <div className="ml-forecast-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
+          <div className="ml-forecast-title-row" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '1.4rem' }}>📈</span>
             <div>
               <h3 className="ml-forecast-title" style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>
-                AI-Powered Crowd Intelligence
+                {site.name} — 24-Hour Crowd Monitoring
               </h3>
               <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
-                Combines crowd observations, historical crowd patterns and forecasting logic to estimate future congestion.
+                Hourly capacity projections scaled to official venue capacity ({capacity?.toLocaleString() || 'N/A'}) and anchored to telemetry.
               </p>
             </div>
           </div>
-          <span className="ml-badge-tag" style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', padding: '0.25rem 0.65rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700 }}>
-            📊 24-Hour Crowd Monitoring
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span
+              className={`source-badge-pill ${
+                SOURCE_CONFIG[activeForecastObj?.provenance?.source]
+                  ? SOURCE_CONFIG[activeForecastObj.provenance.source].badgeClass
+                  : sourceInfo.badgeClass
+              }`}
+              style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}
+            >
+              {SOURCE_CONFIG[activeForecastObj?.provenance?.source]?.icon || sourceInfo.icon}{' '}
+              {SOURCE_CONFIG[activeForecastObj?.provenance?.source]?.label || sourceInfo.label}
+            </span>
+            <span className="live-poll-badge" style={{ fontSize: '0.74rem', padding: '0.2rem 0.65rem' }}>
+              🕒 Freshness:{' '}
+              {activeForecastObj?.provenance?.generated_at
+                ? new Date(activeForecastObj.provenance.generated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : lastUpdated}
+            </span>
+            {/* 12h / 24h Toggle */}
+            <div style={{ display: 'inline-flex', background: '#F1F5F9', borderRadius: '8px', padding: '2px', border: '1px solid #CBD5E1' }}>
+              <button
+                type="button"
+                onClick={() => setForecastViewMode('12h')}
+                style={{
+                  border: 'none',
+                  background: forecastViewMode === '12h' ? '#1E293B' : 'transparent',
+                  color: forecastViewMode === '12h' ? '#FFFFFF' : '#475569',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                12h
+              </button>
+              <button
+                type="button"
+                onClick={() => setForecastViewMode('24h')}
+                style={{
+                  border: 'none',
+                  background: forecastViewMode === '24h' ? '#1E293B' : 'transparent',
+                  color: forecastViewMode === '24h' ? '#FFFFFF' : '#475569',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                24h
+              </button>
+            </div>
+            {/* Scroll Navigation */}
+            <div style={{ display: 'inline-flex', gap: '0.25rem' }}>
+              <button
+                type="button"
+                onClick={() => handleScrollTrack('left')}
+                title="Scroll timeline left"
+                aria-label="Scroll left"
+                style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '6px',
+                  width: '28px',
+                  height: '28px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  color: '#334155'
+                }}
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScrollTrack('right')}
+                title="Scroll timeline right"
+                aria-label="Scroll right"
+                style={{
+                  background: '#FFFFFF',
+                  border: '1px solid #CBD5E1',
+                  borderRadius: '6px',
+                  width: '28px',
+                  height: '28px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  color: '#334155'
+                }}
+              >
+                ▶
+              </button>
+            </div>
+          </div>
         </div>
 
         {activeForecasts && activeForecasts.length > 0 ? (
-          <div className="ml-forecast-track">
-            {activeForecasts.slice(0, 12).map((item, idx) => {
+          <div className="ml-forecast-track" ref={forecastTrackRef}>
+            {(forecastViewMode === '12h' ? activeForecasts.slice(0, 12) : activeForecasts.slice(0, 24)).map((item, idx) => {
+              const isCurrent = item.is_current || idx === 0;
               const itemColor =
                 item.status === 'CRITICAL'
                   ? '#DC2626'
@@ -571,21 +687,40 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                   : '#ECFDF5';
               return (
                 <div
-                  key={idx}
-                  className="ml-forecast-item"
+                  key={item.hour ?? idx}
+                  className={`ml-forecast-item ${isCurrent ? 'is-current-hour' : ''}`}
                   style={{
                     backgroundColor: itemBg,
-                    border: `1px solid ${itemColor}33`
+                    border: isCurrent ? `2px solid ${itemColor}` : `1px solid ${itemColor}33`,
+                    position: 'relative'
                   }}
                 >
-                  <span className="ml-time-label">
+                  {isCurrent && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        background: itemColor,
+                        color: '#FFFFFF',
+                        fontSize: '0.58rem',
+                        fontWeight: 900,
+                        padding: '1px 6px',
+                        borderRadius: '999px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      NOW
+                    </span>
+                  )}
+                  <span className="ml-time-label" style={{ fontWeight: isCurrent ? 800 : 700 }}>
                     {item.time_label}
                   </span>
                   <div className="ml-bar-track">
                     <div
                       className="ml-bar-fill"
                       style={{
-                        height: `${Math.min(100, item.occupancy_percentage)}%`,
+                        height: `${Math.min(100, Math.max(6, item.occupancy_percentage))}%`,
                         backgroundColor: itemColor
                       }}
                     ></div>
@@ -593,8 +728,8 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                   <strong className="ml-pct-label" style={{ color: itemColor, fontSize: '0.75rem', fontWeight: 800 }}>
                     {item.status === 'CRITICAL' ? 'Very High' : item.status === 'HIGH' ? 'High' : item.status === 'MODERATE' ? 'Medium' : 'Low'}
                   </strong>
-                  <span className="ml-count-label" style={{ fontWeight: 600, color: '#64748B', fontSize: '0.68rem' }}>
-                    {item.occupancy_percentage}% Influx
+                  <span className="ml-count-label" style={{ fontWeight: 700, color: '#475569', fontSize: '0.68rem' }}>
+                    {item.occupancy_percentage}% Capacity
                   </span>
                 </div>
               );

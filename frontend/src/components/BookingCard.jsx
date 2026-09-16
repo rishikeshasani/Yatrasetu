@@ -34,6 +34,42 @@ function formatBookingDate(dateStr) {
 }
 
 /**
+ * Calculate duration in nights between check-in and check-out
+ */
+function calculateNights(checkInStr, checkOutStr) {
+  if (!checkInStr || !checkOutStr) return null;
+  try {
+    const d1 = new Date(checkInStr);
+    const d2 = new Date(checkOutStr);
+    if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return null;
+    const diffTime = d2.getTime() - d1.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 1;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Detect future advance bookings (e.g., 2032 or next year)
+ */
+function getAdvanceBookingBadge(checkInStr) {
+  if (!checkInStr) return null;
+  try {
+    const d = new Date(checkInStr);
+    if (isNaN(d.getTime())) return null;
+    const year = d.getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (year > currentYear) {
+      return `Advance Booking (${year})`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Resolve status badge styles and supporting text
  */
 function getStatusConfig(rawStatus, t) {
@@ -122,8 +158,12 @@ export default function BookingCard({ booking, onViewDetails }) {
   }
 
   // Check-in and check-out dates
-  const checkInFormatted = formatBookingDate(booking.check_in_datetime || booking.check_in);
-  const checkOutFormatted = formatBookingDate(booking.check_out_datetime || booking.check_out);
+  const checkInRaw = booking.check_in_datetime || booking.check_in;
+  const checkOutRaw = booking.check_out_datetime || booking.check_out;
+  const checkInFormatted = formatBookingDate(checkInRaw);
+  const checkOutFormatted = formatBookingDate(checkOutRaw);
+  const nights = calculateNights(checkInRaw, checkOutRaw);
+  const advanceBadge = getAdvanceBookingBadge(checkInRaw);
 
   // Amount in Indian format
   const rawAmount = booking.total_price !== undefined && booking.total_price !== null
@@ -221,13 +261,39 @@ export default function BookingCard({ booking, onViewDetails }) {
             color: '#64748B',
             display: 'flex',
             alignItems: 'center',
-            gap: '0.35rem',
+            gap: '0.4rem',
             flexWrap: 'wrap'
           }}>
             <span>📅</span>
-            <span>{checkInFormatted}</span>
+            <span style={{ fontWeight: 600, color: '#334155' }}>{checkInFormatted}</span>
             <span style={{ color: '#94A3B8' }}>→</span>
-            <span>{checkOutFormatted}</span>
+            <span style={{ fontWeight: 600, color: '#334155' }}>{checkOutFormatted}</span>
+            {nights != null && (
+              <span style={{
+                background: '#F1F5F9',
+                color: '#475569',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '0.1rem 0.45rem',
+                borderRadius: '4px',
+                border: '1px solid #E2E8F0'
+              }}>
+                {nights} {nights === 1 ? 'Night' : 'Nights'}
+              </span>
+            )}
+            {advanceBadge && (
+              <span style={{
+                background: '#FEF3C7',
+                color: '#92400E',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '0.1rem 0.45rem',
+                borderRadius: '4px',
+                border: '1px solid #FDE68A'
+              }}>
+                🗓️ {advanceBadge}
+              </span>
+            )}
           </div>
           <div style={{
             fontSize: '0.8rem',
@@ -410,11 +476,25 @@ export default function BookingCard({ booking, onViewDetails }) {
                 </div>
                 <div style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}>
                   <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '600' }}>{t('bookings.checkIn', 'Check-In')}</div>
-                  <div style={{ fontWeight: '800', color: '#0F172A', marginTop: '0.2rem' }}>{checkInFormatted}</div>
+                  <div style={{ fontWeight: '800', color: '#0F172A', marginTop: '0.2rem' }}>
+                    {checkInFormatted}
+                    {advanceBadge && (
+                      <span style={{ marginLeft: '0.4rem', fontSize: '0.68rem', fontWeight: 700, color: '#92400E', background: '#FEF3C7', padding: '1px 5px', borderRadius: '4px' }}>
+                        {advanceBadge}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}>
                   <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '600' }}>{t('bookings.checkOut', 'Check-Out')}</div>
-                  <div style={{ fontWeight: '800', color: '#0F172A', marginTop: '0.2rem' }}>{checkOutFormatted}</div>
+                  <div style={{ fontWeight: '800', color: '#0F172A', marginTop: '0.2rem' }}>
+                    {checkOutFormatted}
+                    {nights != null && (
+                      <span style={{ marginLeft: '0.4rem', fontSize: '0.68rem', fontWeight: 700, color: '#475569', background: '#E2E8F0', padding: '1px 5px', borderRadius: '4px' }}>
+                        {nights} {nights === 1 ? 'Night' : 'Nights'}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div style={{ background: '#F8FAFC', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #E2E8F0' }}>
                   <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: '600' }}>{t('bookings.guests', 'Guests Count')}</div>

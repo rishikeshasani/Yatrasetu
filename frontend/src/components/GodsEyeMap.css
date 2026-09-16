@@ -1,24 +1,25 @@
 /* ==========================================================================
    YATRASETU GOD'S-EYE CROWD COMMAND MAP STYLES
-   Operational 2D GIS Command Center Theme
+   Theme: YatraSetu Enterprise Light GIS Operational Theme
+   Consistent with main YatraSetu design language
    ========================================================================== */
 
 .godseye-root {
-  background: #0B132B;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-  color: #F8FAFC;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  color: #0F172A;
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* 1. Header & Title */
 .godseye-header {
-  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #334155;
+  background: #FFFFFF;
+  padding: 1.15rem 1.5rem;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -33,85 +34,84 @@
 }
 
 .godseye-emblem {
-  font-size: 2rem;
+  font-size: 1.85rem;
   line-height: 1;
 }
 
 .godseye-title {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #F8FAFC;
+  letter-spacing: -0.01em;
+  color: #0F172A;
   display: flex;
   align-items: center;
   gap: 0.6rem;
 }
 
 .godseye-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 4px;
-  background: rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
-  border: 1px solid #3B82F6;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .godseye-subtitle {
   margin: 0.2rem 0 0 0;
-  font-size: 0.85rem;
-  color: #94A3B8;
+  font-size: 0.82rem;
+  color: #64748B;
 }
 
 .godseye-live-pill {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(16, 185, 129, 0.15);
-  border: 1px solid #10B981;
-  color: #34D399;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  color: #065F46;
   padding: 0.35rem 0.85rem;
   border-radius: 20px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 .godseye-pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10B981;
-  box-shadow: 0 0 8px #10B981;
+  background: #16A34A;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.2);
 }
 
 .godseye-sim-pill {
-  background: rgba(148, 163, 184, 0.12);
-  border: 1px solid #475569;
-  color: #94A3B8;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: #475569;
 }
 
 .godseye-status-unavailable {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(239, 68, 68, 0.15);
-  border: 1px solid #EF4444;
-  color: #F87171;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
   padding: 0.35rem 0.85rem;
   border-radius: 20px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
 }
 
 .godseye-unavailable-banner {
-  background: rgba(239, 68, 68, 0.12);
-  border-bottom: 1px solid rgba(239, 68, 68, 0.3);
-  color: #FCA5A5;
+  background: #FEF2F2;
+  border-bottom: 1px solid #FECACA;
+  color: #991B1B;
   padding: 0.75rem 1.5rem;
   display: flex;
   align-items: center;
@@ -125,56 +125,58 @@
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: #080E1A;
-  border-bottom: 1px solid #1E293B;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .godseye-metric-card {
-  background: #0F172A;
-  border: 1px solid #1E293B;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   padding: 0.75rem 1rem;
   display: flex;
   flex-direction: column;
-  transition: transform 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .godseye-metric-card:hover {
-  transform: translateY(-2px);
-  border-color: #3B82F6;
+  transform: translateY(-1px);
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .gem-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
-  color: #94A3B8;
+  color: #64748B;
   letter-spacing: 0.04em;
   margin-bottom: 0.3rem;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .gem-val {
   font-size: 1.45rem;
   font-weight: 800;
-  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
-  color: #F8FAFC;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0F172A;
   line-height: 1.1;
 }
 
-.gem-val.text-critical { color: #EF4444; }
-.gem-val.text-high { color: #F97316; }
-.gem-val.text-moderate { color: #F59E0B; }
-.gem-val.text-normal { color: #10B981; }
-.gem-val.text-accent { color: #60A5FA; }
+.gem-val.text-critical { color: #DC2626; }
+.gem-val.text-high { color: #EA580C; }
+.gem-val.text-moderate { color: #D97706; }
+.gem-val.text-normal { color: #16A34A; }
+.gem-val.text-accent { color: #2563EB; }
 
 /* 3. Active Emergency Reroute Banner */
 .godseye-reroute-banner {
-  background: linear-gradient(90deg, rgba(220, 38, 38, 0.25) 0%, rgba(185, 28, 28, 0.15) 100%);
+  background: #FEF2F2;
   border-left: 4px solid #DC2626;
-  border-bottom: 1px solid #7F1D1D;
+  border-bottom: 1px solid #FECACA;
   padding: 0.85rem 1.5rem;
   display: flex;
   justify-content: space-between;
@@ -196,22 +198,22 @@
 .reroute-banner-title {
   font-weight: 800;
   font-size: 0.88rem;
-  letter-spacing: 0.05em;
-  color: #F87171;
+  letter-spacing: 0.04em;
+  color: #991B1B;
   text-transform: uppercase;
 }
 
 .reroute-banner-desc {
   font-size: 0.82rem;
-  color: #E2E8F0;
+  color: #7F1D1D;
   margin-top: 0.15rem;
 }
 
 .reroute-banner-btn {
   background: #DC2626;
-  color: white;
+  color: #FFFFFF;
   border: none;
-  padding: 0.4rem 0.85rem;
+  padding: 0.45rem 0.95rem;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 700;
@@ -226,8 +228,8 @@
 /* 4. Controls & Filters Toolbar */
 .godseye-toolbar {
   padding: 0.85rem 1.5rem;
-  background: #0D162B;
-  border-bottom: 1px solid #1E293B;
+  background: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -237,26 +239,31 @@
 
 .godseye-search-wrap {
   flex: 1;
-  min-width: 260px;
-  max-width: 400px;
+  min-width: 240px;
+  max-width: 380px;
   position: relative;
 }
 
 .godseye-search-input {
   width: 100%;
-  background: #080E1A;
-  border: 1px solid #334155;
+  box-sizing: border-box;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
   border-radius: 6px;
-  padding: 0.55rem 0.85rem 0.55rem 2.2rem;
-  color: #F8FAFC;
+  padding: 0.5rem 0.85rem 0.5rem 2.2rem;
+  color: #0F172A;
   font-size: 0.85rem;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.godseye-search-input::placeholder {
+  color: #94A3B8;
 }
 
 .godseye-search-input:focus {
-  border-color: #3B82F6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: #2563EB;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .godseye-search-icon {
@@ -264,7 +271,7 @@
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #64748B;
+  color: #94A3B8;
   pointer-events: none;
 }
 
@@ -276,56 +283,61 @@
 }
 
 .godseye-pill-btn {
-  background: #080E1A;
-  border: 1px solid #334155;
-  color: #94A3B8;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #475569;
   padding: 0.35rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   transition: all 0.15s ease;
 }
 
 .godseye-pill-btn:hover {
-  background: #1E293B;
-  color: #F8FAFC;
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
 }
 
 .godseye-pill-btn.active {
-  background: #3B82F6;
-  color: white;
-  border-color: #3B82F6;
+  background: #1E40AF;
+  color: #FFFFFF;
+  border-color: #1E40AF;
 }
 
 .godseye-pill-btn.pill-critical.active {
-  background: #EF4444;
-  border-color: #EF4444;
+  background: #DC2626;
+  border-color: #DC2626;
+  color: #FFFFFF;
 }
 
 .godseye-pill-btn.pill-high.active {
-  background: #F97316;
-  border-color: #F97316;
+  background: #EA580C;
+  border-color: #EA580C;
+  color: #FFFFFF;
 }
 
 .godseye-pill-btn.pill-moderate.active {
-  background: #F59E0B;
-  border-color: #F59E0B;
+  background: #D97706;
+  border-color: #D97706;
+  color: #FFFFFF;
 }
 
 .godseye-pill-btn.pill-normal.active {
-  background: #10B981;
-  border-color: #10B981;
+  background: #16A34A;
+  border-color: #16A34A;
+  color: #FFFFFF;
 }
 
 .godseye-source-select {
-  background: #080E1A;
-  border: 1px solid #334155;
-  color: #F8FAFC;
-  padding: 0.35rem 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  padding: 0.4rem 0.75rem;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
@@ -333,10 +345,14 @@
   cursor: pointer;
 }
 
+.godseye-source-select:focus {
+  border-color: #2563EB;
+}
+
 .godseye-action-btn {
-  background: #1E293B;
-  border: 1px solid #334155;
-  color: #E2E8F0;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  color: #334155;
   padding: 0.4rem 0.85rem;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -345,11 +361,13 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  transition: background 0.15s;
+  transition: all 0.15s ease;
 }
 
 .godseye-action-btn:hover {
-  background: #334155;
+  background: #F8FAFC;
+  color: #0F172A;
+  border-color: #94A3B8;
 }
 
 /* 5. Main Map & Intelligence Layout */
@@ -357,7 +375,7 @@
   display: grid;
   grid-template-columns: 1fr 380px;
   min-height: 580px;
-  background: #080E1A;
+  background: #F8FAFC;
 }
 
 @media (max-width: 1100px) {
@@ -371,11 +389,13 @@
   width: 100%;
   position: relative;
   z-index: 1;
+  border-right: 1px solid #E2E8F0;
 }
 
 @media (max-width: 768px) {
   .godseye-map-container {
     height: 440px;
+    border-right: none;
   }
 }
 
@@ -383,7 +403,7 @@
 .godseye-map-container .leaflet-container {
   height: 100%;
   width: 100%;
-  background: #050A14;
+  background: #F1F5F9;
   font-family: inherit;
 }
 
@@ -397,16 +417,16 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 2px solid #FFFFFF;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   cursor: pointer;
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
-  color: white;
-  font-family: 'JetBrains Mono', monospace;
+  color: #FFFFFF;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-weight: 800;
   font-size: 10px;
   line-height: 1;
@@ -416,32 +436,29 @@
 .gem-marker-pin.selected {
   transform: scale(1.25);
   z-index: 1000 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .gem-marker-pin.status-normal {
-  background: #10B981;
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+  background: #16A34A;
 }
 
 .gem-marker-pin.status-moderate {
-  background: #F59E0B;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  background: #D97706;
 }
 
 .gem-marker-pin.status-high {
-  background: #F97316;
-  box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+  background: #EA580C;
 }
 
 .gem-marker-pin.status-critical {
-  background: #EF4444;
-  box-shadow: 0 0 14px rgba(239, 68, 68, 0.8);
-  border-color: #FEE2E2;
+  background: #DC2626;
+  border-color: #FEF2F2;
 }
 
 .gem-marker-pin.has-reroute {
   border: 3px solid #DC2626;
-  box-shadow: 0 0 16px #DC2626;
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.5);
 }
 
 .gem-marker-label {
@@ -452,11 +469,11 @@
 
 /* Custom Popup Styling */
 .gem-popup .leaflet-popup-content-wrapper {
-  background: #0F172A;
-  border: 1px solid #334155;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
   border-radius: 8px;
-  color: #F8FAFC;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6);
+  color: #0F172A;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
   padding: 0;
   overflow: hidden;
 }
@@ -468,22 +485,22 @@
 }
 
 .gem-popup .leaflet-popup-tip {
-  background: #0F172A;
+  background: #FFFFFF;
 }
 
 .popup-header {
   padding: 0.65rem 0.85rem;
-  border-bottom: 1px solid #1E293B;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #080E1A;
+  background: #F8FAFC;
 }
 
 .popup-title {
   font-weight: 700;
   font-size: 0.88rem;
-  color: #F8FAFC;
+  color: #0F172A;
 }
 
 .popup-body {
@@ -501,19 +518,20 @@
 }
 
 .popup-label {
-  color: #94A3B8;
+  color: #64748B;
 }
 
 .popup-val {
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0F172A;
 }
 
 .popup-inspect-btn {
   width: 100%;
   margin-top: 0.4rem;
-  background: #3B82F6;
-  color: white;
+  background: #2563EB;
+  color: #FFFFFF;
   border: none;
   padding: 0.45rem;
   border-radius: 4px;
@@ -524,13 +542,13 @@
 }
 
 .popup-inspect-btn:hover {
-  background: #2563EB;
+  background: #1D4ED8;
 }
 
 /* 6. Selected Shrine Operational Intelligence Side Panel */
 .godseye-side-panel {
-  background: #0B132B;
-  border-left: 1px solid #1E293B;
+  background: #FFFFFF;
+  border-left: 1px solid #E2E8F0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -540,15 +558,15 @@
 @media (max-width: 1100px) {
   .godseye-side-panel {
     border-left: none;
-    border-top: 1px solid #1E293B;
+    border-top: 1px solid #E2E8F0;
     max-height: none;
   }
 }
 
 .intel-panel-header {
   padding: 1rem 1.25rem;
-  background: #0F172A;
-  border-bottom: 1px solid #1E293B;
+  background: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -556,9 +574,9 @@
 
 .intel-panel-title {
   font-weight: 800;
-  font-size: 0.9rem;
-  letter-spacing: 0.04em;
-  color: #F8FAFC;
+  font-size: 0.88rem;
+  letter-spacing: 0.02em;
+  color: #0F172A;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -569,8 +587,9 @@
   font-weight: 700;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  background: rgba(59, 130, 246, 0.2);
-  color: #60A5FA;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
 }
 
 .intel-panel-content {
@@ -591,19 +610,19 @@
 }
 
 .intel-shrine-header {
-  border-bottom: 1px solid #1E293B;
+  border-bottom: 1px solid #E2E8F0;
   padding-bottom: 0.85rem;
 }
 
 .intel-shrine-name {
   font-size: 1.15rem;
   font-weight: 800;
-  color: #F8FAFC;
+  color: #0F172A;
 }
 
 .intel-shrine-meta {
   font-size: 0.8rem;
-  color: #94A3B8;
+  color: #64748B;
   margin-top: 0.25rem;
   display: flex;
   gap: 0.5rem;
@@ -620,7 +639,7 @@
 .intel-occupancy-bar-bg {
   width: 100%;
   height: 8px;
-  background: #1E293B;
+  background: #E2E8F0;
   border-radius: 4px;
   overflow: hidden;
 }
@@ -631,10 +650,10 @@
   transition: width 0.4s ease;
 }
 
-.intel-occupancy-bar-fill.status-normal { background: #10B981; }
-.intel-occupancy-bar-fill.status-moderate { background: #F59E0B; }
-.intel-occupancy-bar-fill.status-high { background: #F97316; }
-.intel-occupancy-bar-fill.status-critical { background: #EF4444; }
+.intel-occupancy-bar-fill.status-normal { background: #16A34A; }
+.intel-occupancy-bar-fill.status-moderate { background: #D97706; }
+.intel-occupancy-bar-fill.status-high { background: #EA580C; }
+.intel-occupancy-bar-fill.status-critical { background: #DC2626; }
 
 /* Operational Metrics Grid */
 .intel-stats-grid {
@@ -644,8 +663,8 @@
 }
 
 .intel-stat-box {
-  background: #080E1A;
-  border: 1px solid #1E293B;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 6px;
   padding: 0.65rem 0.85rem;
   display: flex;
@@ -654,23 +673,23 @@
 
 .isb-label {
   font-size: 0.7rem;
-  color: #94A3B8;
+  color: #64748B;
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .isb-val {
   font-size: 1.1rem;
   font-weight: 800;
-  font-family: 'JetBrains Mono', monospace;
-  color: #F8FAFC;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0F172A;
   margin-top: 0.15rem;
 }
 
 /* Multi-Source Fusion Intelligence Card */
 .intel-fusion-card {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid #334155;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   padding: 0.85rem 1rem;
   display: flex;
@@ -682,7 +701,7 @@
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #60A5FA;
+  color: #1D4ED8;
   text-transform: uppercase;
   display: flex;
   align-items: center;
@@ -697,37 +716,38 @@
 }
 
 .ifc-label {
-  color: #94A3B8;
+  color: #64748B;
 }
 
 .ifc-val {
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
-  color: #F8FAFC;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0F172A;
 }
 
 .ifc-formula {
-  background: #080E1A;
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
   border-radius: 4px;
   padding: 0.4rem 0.6rem;
   font-size: 0.72rem;
-  color: #38BDF8;
-  font-family: 'JetBrains Mono', monospace;
+  color: #0284C7;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   text-align: center;
   margin-top: 0.25rem;
 }
 
 /* Relative Surge Alert Box */
 .intel-surge-alert {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid #EF4444;
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
   border-radius: 6px;
   padding: 0.65rem 0.85rem;
   display: flex;
   gap: 0.6rem;
   align-items: flex-start;
   font-size: 0.78rem;
-  color: #FCA5A5;
+  color: #991B1B;
 }
 
 /* Action Buttons */
@@ -739,8 +759,8 @@
 }
 
 .intel-primary-btn {
-  background: #3B82F6;
-  color: white;
+  background: #2563EB;
+  color: #FFFFFF;
   border: none;
   padding: 0.65rem 1rem;
   border-radius: 6px;
@@ -752,14 +772,14 @@
 }
 
 .intel-primary-btn:hover {
-  background: #2563EB;
+  background: #1D4ED8;
 }
 
 /* 7. Footer, Legend & Disclaimer */
 .godseye-footer {
   padding: 0.85rem 1.5rem;
-  background: #080E1A;
-  border-top: 1px solid #1E293B;
+  background: #F8FAFC;
+  border-top: 1px solid #E2E8F0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -779,7 +799,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: #94A3B8;
+  color: #64748B;
   font-weight: 600;
 }
 
@@ -789,10 +809,10 @@
   border-radius: 50%;
 }
 
-.legend-dot.dot-normal { background: #10B981; }
-.legend-dot.dot-moderate { background: #F59E0B; }
-.legend-dot.dot-high { background: #F97316; }
-.legend-dot.dot-critical { background: #EF4444; }
+.legend-dot.dot-normal { background: #16A34A; }
+.legend-dot.dot-moderate { background: #D97706; }
+.legend-dot.dot-high { background: #EA580C; }
+.legend-dot.dot-critical { background: #DC2626; }
 
 .godseye-disclaimer {
   color: #64748B;

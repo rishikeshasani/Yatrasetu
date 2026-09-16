@@ -70,8 +70,14 @@ def update_crowd(
 
 @router.get("/sites/{site_id}/forecast")
 def get_site_prediction_forecast(site_id: str):
-    canonical_id, _, capacity = get_site_meta(site_id)
-    return crowd_ml_service.predict_24h_forecast(site_id=site_id, capacity=capacity)
+    canonical_id, site_name, capacity = get_site_meta(site_id)
+    crowd_state = resolve_site_crowd_state(site_id)
+    return crowd_ml_service.predict_24h_forecast(
+        site_id=canonical_id,
+        capacity=capacity,
+        site_name=site_name,
+        current_state=crowd_state
+    )
 
 
 @router.get("/sites/{site_id}/schedule-insights")

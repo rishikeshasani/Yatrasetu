@@ -152,10 +152,12 @@ def run_browser_verification():
 
         def on_res(res):
             if "/check-safety" in res.url:
+                if res.request.method == "OPTIONS":
+                    return
                 try:
                     captured_responses.append(json.loads(res.text()))
                 except Exception as ex:
-                    print("on_res error:", ex)
+                    print(f"on_res error ({res.status}):", ex)
 
         page_pipeline.on("request", on_req)
         page_pipeline.on("response", on_res)
