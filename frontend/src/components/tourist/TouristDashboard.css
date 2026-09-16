@@ -946,58 +946,51 @@
 }
 
 .card-actions-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  padding: 0.85rem 1.15rem;
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem 0.9rem;
   border-top: 1px solid #F1F5F9;
   background: #FAFAFA;
 }
 
-.btn-card-details {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  background: #FFFFFF;
-  border: 1px solid #CBD5E1;
-  color: #334155;
-  padding: 0.5rem 0.65rem;
-  border-radius: 0.55rem;
-  font-size: 0.78rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.btn-card-details:hover {
-  background: #F1F5F9;
-  color: #0F172A;
-}
-
 .btn-card-monitor {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  background: #F97316;
+  gap: 0.45rem;
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
   border: 1px solid #EA580C;
   color: #FFFFFF;
-  padding: 0.5rem 0.65rem;
+  padding: 0.65rem 1rem;
   border-radius: 0.55rem;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 5px rgba(234, 88, 12, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-card-monitor:hover {
-  background: #EA580C;
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3);
+}
+
+.btn-card-monitor:active {
+  transform: translateY(0);
 }
 
 .btn-card-monitor.is-active-monitored {
-  background: #059669;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   border-color: #047857;
+  box-shadow: 0 2px 5px rgba(5, 150, 105, 0.2);
+}
+
+.btn-card-monitor.is-active-monitored:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.3);
 }
 
 /* ----------------------------------------------------------------------------

@@ -22,10 +22,26 @@ export default function DestinationCard({
     else status = 'NORMAL';
   }
 
+  // Calculate qualitative crowd level: Low, Medium, High, Very High
+  let levelLabel = 'Low';
+  let levelColor = '#059669';
+
+  if (occupancy >= 85 || status === 'CRITICAL') {
+    levelLabel = 'Very High';
+    levelColor = '#DC2626';
+  } else if (occupancy >= 70 || status === 'HIGH') {
+    levelLabel = 'High';
+    levelColor = '#EA580C';
+  } else if (occupancy >= 40 || status === 'MODERATE') {
+    levelLabel = 'Medium';
+    levelColor = '#D97706';
+  } else {
+    levelLabel = 'Low';
+    levelColor = '#059669';
+  }
+
   const statusClass = `status-${status.toLowerCase()}`;
   const waitMins = density?.wait_time_minutes != null ? density.wait_time_minutes : Math.max(15, Math.round((occupancy / 100) * 120));
-  const capacity = site.capacity || density?.capacity || 10000;
-  const peopleCount = density?.people_count != null ? density.people_count : Math.round(capacity * (occupancy / 100));
 
   const SOURCE_CONFIG = {
     fused_yolo_gps: { label: 'Multi-Source Fusion — YOLO + GPS', icon: '⚡', badgeClass: 'source-fused' },
@@ -33,7 +49,7 @@ export default function DestinationCard({
     gps_crowd: { label: 'Mobile GPS Crowd Signal', icon: '📡', badgeClass: 'source-gps' },
     gps_crowd_demo: { label: 'Mobile GPS Crowd Signal (Demo)', icon: '📡', badgeClass: 'source-demo' },
     live_telemetry: { label: 'Live Telemetry', icon: '⚡', badgeClass: 'source-live' },
-    demo_simulation: { label: 'Demo Simulation — no live source currently available', icon: '📊', badgeClass: 'source-demo' },
+    demo_simulation: { label: 'Demo Simulation', icon: '📊', badgeClass: 'source-demo' },
     historical_baseline: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
     historical: { label: 'Historical Baseline', icon: '📈', badgeClass: 'source-hist' },
   };
@@ -66,7 +82,7 @@ export default function DestinationCard({
         <span className="card-category-badge">{category}</span>
         <span className={`card-status-badge ${statusClass}`}>
           <span className="badge-bullet"></span>
-          {t(`crowdSummary.${status.toLowerCase()}`, status)}
+          {levelLabel.toUpperCase()}
         </span>
 
         {/* Bottom Overlay Info */}
@@ -75,7 +91,7 @@ export default function DestinationCard({
             ⏱️ ~{waitMins} min
           </span>
           <span className="card-occupancy-pill">
-            {occupancy}% {t('grid.full')}
+            {levelLabel} Crowd
           </span>
         </div>
       </div>
@@ -97,19 +113,24 @@ export default function DestinationCard({
 
         <h3
           className="card-shrine-title"
-          onClick={() => onViewDetails(site)}
+          onClick={(e) => {
+            if (onViewDetails) {
+              e.stopPropagation();
+              onViewDetails(site);
+            }
+          }}
           title={site.name}
         >
           {site.name}
         </h3>
 
-        {/* Headcount & Capacity / Status */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.35rem 0 0.25rem', fontSize: '0.8rem' }}>
-          <span style={{ color: '#334155', fontWeight: 700 }}>
-            👥 {peopleCount.toLocaleString()} / {capacity.toLocaleString()} people
+        {/* Qualitative Crowd Level (No numerical counts/capacity revealed) */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0.35rem 0 0.25rem', fontSize: '0.82rem' }}>
+          <span style={{ color: '#334155', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            👥 Crowd Level:
           </span>
-          <span style={{ fontWeight: 800, color: status === 'CRITICAL' ? '#DC2626' : status === 'HIGH' ? '#EA580C' : status === 'MODERATE' ? '#D97706' : '#059669' }}>
-            {occupancy}% {status}
+          <span style={{ fontWeight: 800, color: levelColor, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            {levelLabel}
           </span>
         </div>
 
@@ -135,35 +156,29 @@ export default function DestinationCard({
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.35rem', fontSize: '0.78rem' }}>
-          <span style={{ fontWeight: 600, color: status === 'CRITICAL' ? '#DC2626' : status === 'HIGH' ? '#EA580C' : status === 'MODERATE' ? '#D97706' : '#059669' }}>
-            {status === 'NORMAL' ? '✨ Peaceful' : status === 'MODERATE' ? '⚡ Steady Flow' : status === 'HIGH' ? '⚠️ High Rush' : '🚨 Heavy Congestion'}
+          <span style={{ fontWeight: 600, color: levelColor }}>
+            {levelLabel === 'Low' ? '✨ Peaceful' : levelLabel === 'Medium' ? '⚡ Steady Flow' : levelLabel === 'High' ? '⚠️ High Rush' : '🚨 Heavy Congestion'}
           </span>
-          <span style={{ fontSize: '0.74rem', color: '#64748B' }}>
-            Cap: {capacity.toLocaleString()}
+          <span style={{ fontSize: '0.74rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
+            Live Monitored
           </span>
         </div>
       </div>
 
-      {/* Card Actions */}
+      {/* Card Actions - Full-width rectangular Monitor Live button */}
       <div className="card-actions-row">
         <button
           type="button"
-          className="btn-card-details"
-          onClick={() => onViewDetails(site)}
-          title="View Telemetry & Safety Profile"
-        >
-          <span>🔍</span>
-          <span>{t('grid.viewDetails')}</span>
-        </button>
-
-        <button
-          type="button"
           className={`btn-card-monitor ${isSelected ? 'is-active-monitored' : ''}`}
-          onClick={() => onSelect(site.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect(site.id);
+          }}
           title="Set as Active Monitoring Shrine"
         >
-          <span>{isSelected ? '✓' : '⚡'}</span>
-          <span>{isSelected ? t('crowdSummary.monitoring', 'Monitoring') : t('grid.monitorLive', 'Monitor Live')}</span>
+          <span style={{ fontSize: '1rem' }}>{isSelected ? '✓' : '⚡'}</span>
+          <span>{isSelected ? t('crowdSummary.monitoring', 'Currently Monitoring') : t('grid.monitorLive', 'Monitor Live')}</span>
         </button>
       </div>
     </div>
