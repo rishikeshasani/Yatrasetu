@@ -867,126 +867,81 @@ def calculate_dynamic_hourly_price(
     multiplier_override: Optional[float] = None
 ) -> dict:
     """
-    Computes dynamic hourly room price based on exact stay duration, room type,
-    demand surge percentage, and date/time multipliers.
-    Room base rates: Standard = 500/hr, Deluxe = 750/hr, Suite/Family = 1000/hr.
-    Formula:
-      final_hourly_rate = base_hourly_rate * demand_multiplier * datetime_multiplier
-      total_amount = duration_hours * final_hourly_rate
+    Authoritative Dynamic Hourly Pricing Engine (Prompt 10)
+    - Base hourly: Standard=₹500, Deluxe=₹750, Suite/Family=₹1,000
+    - Demand Multiplier: <=0%: 1.00x, 1-20%: 1.10x, 21-40%: 1.20x, 41-60%: 1.35x, 61-80%: 1.45x, >80%: 1.50x max
+    - Hourly Limits: Standard max ₹700, Deluxe max ₹1,050, Suite max ₹1,200
+    - Hard Maximum Total Booking Cap: ₹12,000 with 'AI Surge Cap Applied'
     """
-    from datetime import timedelta
-
-    # 1. Room base rate per configurable rules
-    r_low = (room_type or "").lower()
-    if "standard" in r_low:
+    # 1. Base Rates and Realistic Maximums
+    r_type = (room_type or "Deluxe").strip().title()
+    if r_type == "Standard":
         base_rate = 500.0
-    elif "suite" in r_low or "family" in r_low:
+        max_hourly_rate = 700.0
+    elif r_type in ["Suite", "Family"]:
         base_rate = 1000.0
-    else:
-        base_rate = 750.0  # Deluxe / Default
+        max_hourly_rate = 1200.0
+    else: # Deluxe
+        base_rate = 750.0
+        max_hourly_rate = 1050.0
 
     # 2. Duration in hours
-    diff_seconds = max(0.0, (check_out_dt - check_in_dt).total_seconds())
-    raw_hours = round(diff_seconds / 3600.0, 2)
-    duration_hours = max(1.0, raw_hours)
-    if duration_hours.is_integer():
-        duration_hours = int(duration_hours)
+    duration_seconds = max((check_out_dt - check_in_dt).total_seconds(), 3600.0)
+    duration_hours = round(duration_seconds / 3600.0, 1)
 
-    # 3. Resolve associated pilgrimage site
-    h_low = str(hotel_id).lower()
-    if "kedarnath" in h_low:
-        site_id = "TS001"
-    elif "badrinath" in h_low:
-        site_id = "TS002"
-    elif "ayodhya" in h_low:
-        site_id = "TS004"
-    elif "haridwar" in h_low:
-        site_id = "TS020"
-    else:
-        site_id = "TS003"  # Kashi Vishwanath for H001
+    # 3. Location context: Kedarnath Dham
+    site_id = "TS001"
+    site_name = "Kedarnath Dham"
+    occupancy_pct = 85.0
 
-    # Ensure TS003 observation exists matching Kashi Corridor
-    if "TS003" not in latest_observations:
-        latest_observations["TS003"] = {
-            "site_id": "TS003",
-            "site_name": "Kashi Vishwanath Temple & Dashashwamedh Ghat",
-            "people_count": 104400,
-            "occupancy_percentage": 87.0,
-            "status": "HIGH",
-            "relative_surge_alert": {
-                "site_id": "TS003",
-                "is_relative_surge": True,
-                "severity": "HIGH",
-                "current_count": 104400,
-                "expected_mean": 80000.0,
-                "z_score": 2.5,
-                "surge_percentage": "+50%",
-                "message": "High pilgrim density in sanctum sanctorum & Godowlia perimeter."
-            },
-            "last_updated": "Just now (Live YOLO CCTV Feed)"
-        }
-
-    # 4. Fetch live crowd density
     try:
         density_data = get_site_density(site_id)
-        site_name = density_data.get("site_name", "Kashi Vishwanath")
-        if "Kashi Vishwanath" in site_name:
-            site_name = "Kashi Vishwanath"
-        occupancy_pct = float(density_data.get("occupancy_percentage", 87.0))
+        if density_data and density_data.get("occupancy_percentage"):
+            occupancy_pct = float(density_data.get("occupancy_percentage"))
     except Exception:
-        site_name = "Kashi Vishwanath"
-        occupancy_pct = 87.0
+        pass
 
     crowd_density = round(occupancy_pct / 100.0, 2)
 
-    # 5. Demand multiplier based on surge percentage
-    # Rules:
-    # <= 0%       -> 1.00x
-    # +1% to +20% -> 1.10x
-    # +21% to +40%-> 1.25x
-    # +41% to +60%-> 1.50x
-    # +61% to +80%-> 1.75x
-    # > +80%      -> 2.00x
+    # 4. Deterministic Demand Multipliers (Hard cap: 1.50x)
     if multiplier_override is not None and multiplier_override > 0:
-        demand_mult = float(multiplier_override)
-        if demand_mult >= 2.0:
+        demand_mult = min(float(multiplier_override), 1.50)
+        if demand_mult >= 1.50:
             crowd_level = "CRITICAL_SURGE"
-            demand_pct_label = "+85%"
-        elif demand_mult >= 1.75:
+            demand_pct_label = "+80%"
+        elif demand_mult >= 1.45:
             crowd_level = "CRITICAL_SURGE"
             demand_pct_label = "+70%"
-        elif demand_mult >= 1.5:
+        elif demand_mult >= 1.35:
             crowd_level = "HIGH_SURGE"
             demand_pct_label = "+50%"
-        elif demand_mult >= 1.25:
+        elif demand_mult >= 1.20:
             crowd_level = "MODERATE_SURGE"
             demand_pct_label = "+30%"
-        elif demand_mult >= 1.1:
+        elif demand_mult >= 1.10:
             crowd_level = "LOW_SURGE"
             demand_pct_label = "+20%"
         else:
             crowd_level = "NORMAL"
             demand_pct_label = "0%"
     else:
-        # Map occupancy percentage to surge percentage
-        # e.g., baseline occupancy is ~50%. If occupancy >= 85%, surge is +50%
-        if occupancy_pct >= 95.0:
-            demand_mult = 2.00
-            crowd_level = "CRITICAL_SURGE"
-            demand_pct_label = "+90%"
-        elif occupancy_pct >= 90.0:
-            demand_mult = 1.75
-            crowd_level = "CRITICAL_SURGE"
-            demand_pct_label = "+75%"
-        elif occupancy_pct >= 75.0:
+        if occupancy_pct >= 90.0:
             demand_mult = 1.50
+            crowd_level = "CRITICAL_SURGE"
+            demand_pct_label = "+85%"
+        elif occupancy_pct >= 80.0:
+            demand_mult = 1.45
+            crowd_level = "CRITICAL_SURGE"
+            demand_pct_label = "+70%"
+        elif occupancy_pct >= 65.0:
+            demand_mult = 1.35
             crowd_level = "HIGH_SURGE"
             demand_pct_label = "+50%"
-        elif occupancy_pct >= 60.0:
-            demand_mult = 1.25
+        elif occupancy_pct >= 55.0:
+            demand_mult = 1.20
             crowd_level = "MODERATE_SURGE"
             demand_pct_label = "+30%"
-        elif occupancy_pct >= 50.0:
+        elif occupancy_pct >= 45.0:
             demand_mult = 1.10
             crowd_level = "LOW_SURGE"
             demand_pct_label = "+20%"
@@ -995,56 +950,44 @@ def calculate_dynamic_hourly_price(
             crowd_level = "NORMAL"
             demand_pct_label = "0%"
 
-    # 6. Date/Time multiplier
-    # Peak hours: Morning 6:00-10:00, Evening 17:00-22:00 -> 1.20x
-    # Weekend: Friday 17:00 through Sunday 23:59 -> 1.15x
-    # Normal: 1.00x
-    has_peak = False
-    cur = check_in_dt
-    # Check each hour in interval (capped to avoid huge loops)
-    step_count = min(int(duration_hours) + 1, 168)
-    for _ in range(step_count):
-        h = cur.hour
-        if (6 <= h <= 10) or (17 <= h <= 22):
-            has_peak = True
-            break
-        cur += timedelta(hours=1)
+    # 5. Raw Hourly Rate & Hourly Limit
+    raw_hourly = round(base_rate * demand_mult, 2)
+    final_hourly_rate = min(raw_hourly, max_hourly_rate)
 
-    if has_peak:
-        datetime_mult = 1.20
-    else:
-        # Weekend check
-        weekday = check_in_dt.weekday() # 4=Fri, 5=Sat, 6=Sun
-        if weekday in (5, 6) or (weekday == 4 and check_in_dt.hour >= 17):
-            datetime_mult = 1.15
-        else:
-            datetime_mult = 1.00
+    # 6. Total Booking Calculation & Hard Maximum Cap of ₹12,000
+    MAX_TOTAL_CAP = 12000.0
+    calculated_total = round(duration_hours * final_hourly_rate, 2)
+    is_capped = calculated_total > MAX_TOTAL_CAP
+    total_amount = min(calculated_total, MAX_TOTAL_CAP)
+    cap_notice = "AI Surge Cap Applied" if is_capped else None
 
-    final_hourly_rate = round(base_rate * demand_mult * datetime_mult, 2)
-    total_amount = round(duration_hours * final_hourly_rate, 2)
-    adj_pct = f"+{int(round((demand_mult * datetime_mult - 1.0) * 100))}%" if (demand_mult * datetime_mult) >= 1.0 else f"{int(round((demand_mult * datetime_mult - 1.0) * 100))}%"
+    adj_pct = f"+{int(round((demand_mult - 1.0) * 100))}%" if demand_mult >= 1.0 else f"{int(round((demand_mult - 1.0) * 100))}%"
 
     return {
         "hotel_id": hotel_id,
         "site_id": site_id,
         "site_name": site_name,
-        "room_type": room_type,
+        "room_type": r_type,
         "check_in": check_in_dt.isoformat(),
         "check_out": check_out_dt.isoformat(),
         "duration_hours": duration_hours,
         "base_hourly_rate": base_rate,
+        "max_hourly_rate": max_hourly_rate,
         "crowd_density": crowd_density,
         "crowd_percentage": occupancy_pct,
         "crowd_level": crowd_level,
         "demand_percentage": demand_pct_label,
-        "pricing_multiplier": round(demand_mult * datetime_mult, 2),
+        "pricing_multiplier": demand_mult,
         "demand_multiplier": demand_mult,
-        "datetime_multiplier": datetime_mult,
         "crowd_multiplier": demand_mult,
+        "raw_hourly_rate": raw_hourly,
         "dynamic_hourly_rate": final_hourly_rate,
         "final_hourly_rate": final_hourly_rate,
+        "calculated_total": calculated_total,
         "total_amount": total_amount,
         "total_price": total_amount,
+        "is_capped": is_capped,
+        "cap_notice": cap_notice,
         "price_adjustment_pct": adj_pct
     }
 
