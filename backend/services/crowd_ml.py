@@ -45,6 +45,8 @@ class CrowdPredictorService:
         base_dir = Path(__file__).parent.parent.parent
         possible_paths = [
             data_path,
+            base_dir / "historical_crowd_data.csv",
+            base_dir / "backend" / "data" / "historical_crowd_data.csv",
             base_dir / "data" / "historical_crowd_data.csv",
             base_dir / "ai_pipeline" / "historical_crowd_data.csv",
         ]
@@ -85,7 +87,7 @@ class CrowdPredictorService:
 
         X = self._extract_features(df)
         y = df["person_count"]
-        if self.model:
+        if self.model is not None:
             self.model.fit(X, y)
         self.is_trained = True
         print("[+] CrowdPredictorService successfully trained.")
@@ -131,7 +133,7 @@ class CrowdPredictorService:
                 "is_weekend": 1 if future_dt.weekday() >= 5 else 0
             }])
             X = self._extract_features(row)
-            if self.model:
+            if self.model is not None:
                 pred_count = max(0, int(round(self.model.predict(X)[0])))
             else:
                 stat = self.baseline_stats.get((future_dt.weekday(), future_dt.hour), {"mean": 50})
