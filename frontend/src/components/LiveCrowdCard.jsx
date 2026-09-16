@@ -522,31 +522,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
         </button>
       </div>
 
-      {/* 6. TEMPLE RITUAL & SEASONAL GUIDELINES */}
-      {seasonalContext && (
-        <div className="seasonal-context-box">
-          <div className="seasonal-header">
-            <span className="temple-bell">🔔</span>
-            <h4 className="seasonal-title">Temple Ritual & Seasonal Guidelines</h4>
-          </div>
-          <div className="seasonal-grid">
-            <div className="seasonal-col">
-              <span className="col-label">📅 Peak Months & Festivals:</span>
-              <p className="col-val">{seasonalContext.peak_seasons} • {seasonalContext.upcoming_peak_festivals}</p>
-            </div>
-            <div className="seasonal-col">
-              <span className="col-label">⚡ Surge Triggers:</span>
-              <p className="col-val">{seasonalContext.surge_triggers}</p>
-            </div>
-            <div className="seasonal-col">
-              <span className="col-label">⛅ Weather & Safety:</span>
-              <p className="col-val">{seasonalContext.weather_warnings}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 7. AI-POWERED 24-HOUR CROWD MONITORING */}
+      {/* 6. AI-POWERED 24-HOUR CROWD MONITORING */}
       <div className="ml-forecast-card">
         <div className="ml-forecast-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
           <div className="ml-forecast-title-row" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -556,7 +532,7 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                 {site.name} — 24-Hour Crowd Monitoring
               </h3>
               <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
-                Hourly capacity projections scaled to official venue capacity ({capacity?.toLocaleString() || 'N/A'}) and anchored to telemetry.
+                Hourly crowd density projections anchored to real-time telemetry.
               </p>
             </div>
           </div>
@@ -669,22 +645,28 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
           <div className="ml-forecast-track" ref={forecastTrackRef}>
             {(forecastViewMode === '12h' ? activeForecasts.slice(0, 12) : activeForecasts.slice(0, 24)).map((item, idx) => {
               const isCurrent = item.is_current || idx === 0;
-              const itemColor =
-                item.status === 'CRITICAL'
-                  ? '#DC2626'
-                  : item.status === 'HIGH'
-                  ? '#EA580C'
-                  : item.status === 'MODERATE'
-                  ? '#D97706'
-                  : '#059669';
-              const itemBg =
-                item.status === 'CRITICAL'
-                  ? '#FEF2F2'
-                  : item.status === 'HIGH'
-                  ? '#FFF7ED'
-                  : item.status === 'MODERATE'
-                  ? '#FFFBEB'
-                  : '#ECFDF5';
+              const isVeryHigh = item.status === 'CRITICAL' || item.occupancy_percentage >= 85;
+              const isHigh = !isVeryHigh && (item.status === 'HIGH' || item.occupancy_percentage >= 70);
+              const isMed = !isVeryHigh && !isHigh && (item.status === 'MODERATE' || item.occupancy_percentage >= 40);
+
+              const itemLabel = isVeryHigh ? 'Very High' : isHigh ? 'High' : isMed ? 'Medium' : 'Low';
+
+              const itemColor = isVeryHigh
+                ? '#DC2626'
+                : isHigh
+                ? '#EA580C'
+                : isMed
+                ? '#D97706'
+                : '#059669';
+
+              const itemBg = isVeryHigh
+                ? '#FEF2F2'
+                : isHigh
+                ? '#FFF7ED'
+                : isMed
+                ? '#FFFBEB'
+                : '#ECFDF5';
+
               return (
                 <div
                   key={item.hour ?? idx}
@@ -725,12 +707,9 @@ export default function LiveCrowdCard({ site, density, forecast, prediction, cur
                       }}
                     ></div>
                   </div>
-                  <strong className="ml-pct-label" style={{ color: itemColor, fontSize: '0.75rem', fontWeight: 800 }}>
-                    {item.status === 'CRITICAL' ? 'Very High' : item.status === 'HIGH' ? 'High' : item.status === 'MODERATE' ? 'Medium' : 'Low'}
+                  <strong className="ml-pct-label" style={{ color: itemColor, fontSize: '0.8rem', fontWeight: 800, marginTop: '0.25rem' }}>
+                    {itemLabel}
                   </strong>
-                  <span className="ml-count-label" style={{ fontWeight: 700, color: '#475569', fontSize: '0.68rem' }}>
-                    {item.occupancy_percentage}% Capacity
-                  </span>
                 </div>
               );
             })}
