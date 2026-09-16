@@ -2,15 +2,24 @@ import os
 from dotenv import load_dotenv
 from supabase import create_client
 
-# Load from backend/.env and current working directory
-_backend_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+# Load from backend/.env, backend/.env.example, and current working directory
+_backend_dir = os.path.dirname(os.path.abspath(__file__))
+_backend_env = os.path.join(_backend_dir, ".env")
+_backend_example = os.path.join(_backend_dir, ".env.example")
+
 if os.path.exists(_backend_env):
     load_dotenv(_backend_env)
+elif os.path.exists(_backend_example):
+    load_dotenv(_backend_example)
 load_dotenv()
 
-supabase_url = os.environ.get("SUPABASE_URL")
-supabase_key = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
-supabase_service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+# Fallbacks to canonical project configuration if not present in env
+DEFAULT_SUPABASE_URL = "https://pexmnvicqyturozigmge.supabase.co"
+DEFAULT_SUPABASE_KEY = "sb_publishable_P5mhf2mfTfngmq7FSeMLQg_l_4Z1w7N"
+
+supabase_url = os.environ.get("SUPABASE_URL") or DEFAULT_SUPABASE_URL
+supabase_key = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_ANON_KEY") or DEFAULT_SUPABASE_KEY
+supabase_service_role_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or ""
 if supabase_key and not os.environ.get("SUPABASE_ANON_KEY"):
     os.environ["SUPABASE_ANON_KEY"] = supabase_key
 

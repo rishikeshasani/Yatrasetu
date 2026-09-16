@@ -8,7 +8,15 @@ echo.
 
 cd /d "%~dp0"
 
-:: 1. Activate Python Virtual Environment if present
+:: 1. Auto-configure .env from .env.example if missing
+if not exist ".env" (
+    if exist ".env.example" (
+        echo [*] Initializing backend\.env from template...
+        copy /y ".env.example" ".env" >nul
+    )
+)
+
+:: 2. Activate Python Virtual Environment if present
 if exist ".venv\Scripts\activate.bat" (
     echo [*] Activating local virtual environment
     call .venv\Scripts\activate.bat
