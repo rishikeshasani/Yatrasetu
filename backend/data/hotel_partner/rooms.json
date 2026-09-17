@@ -160,9 +160,9 @@
     "room_type": "Deluxe",
     "floor": 1,
     "capacity": 3,
-    "status": "occupied",
-    "current_booking_id": "YC-48111",
-    "next_available_time": "2026-09-05T11:00:00"
+    "status": "available",
+    "current_booking_id": null,
+    "next_available_time": null
   },
   {
     "room_id": "R116",
@@ -260,8 +260,8 @@
     "floor": 2,
     "capacity": 3,
     "status": "available",
-    "current_booking_id": "YC-48203",
-    "next_available_time": "2026-09-11T11:00:00"
+    "current_booking_id": "YC-48205",
+    "next_available_time": "2026-09-16T11:00:00"
   },
   {
     "room_id": "R205",

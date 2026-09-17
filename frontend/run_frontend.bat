@@ -18,5 +18,5 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo Frontend server starting...
-npm run dev
+call npm run dev
 pause

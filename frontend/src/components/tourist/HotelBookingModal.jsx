@@ -84,7 +84,7 @@ export default function HotelBookingModal({
       setSpecialRequest('');
       setErrorMsg('');
 
-      const rooms = hotel.rooms || [];
+      const rooms = (hotel.rooms || []).filter(r => r.status !== 'maintenance' && r.status !== 'unavailable');
       const firstAvail = rooms.find((r) => r.available_rooms > 0) || rooms[0];
       setSelectedRoomId(firstAvail?.id || 'default');
     }
@@ -92,7 +92,7 @@ export default function HotelBookingModal({
 
   if (!isOpen || !hotel) return null;
 
-  const rooms = hotel.rooms || [];
+  const rooms = (hotel.rooms || []).filter(r => r.status !== 'maintenance' && r.status !== 'unavailable');
   const selectedRoom = rooms.find((r) => r.id === selectedRoomId) || rooms[0] || {
     id: 'default',
     room_number: 101,

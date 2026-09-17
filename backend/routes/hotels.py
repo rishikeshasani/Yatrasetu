@@ -1183,7 +1183,8 @@ def _check_room_conflict(room_number: str, req_in: datetime, req_out: datetime, 
     """
     _init_hotel_data()
     for b in _BOOKINGS_DATA:
-        if b.get("booking_status") in ["cancelled", "declined"]:
+        status_val = str(b.get("booking_status") or b.get("status") or "").lower()
+        if status_val in ["cancelled", "declined", "checked-out", "checked_out"]:
             continue
         if str(b.get("room_number")) != str(room_number):
             continue
@@ -1299,6 +1300,10 @@ def check_hotel_rooms_available(
         if cap < guests:
             continue
 
+        # Skip rooms marked as maintenance or unavailable
+        if r.get("status") in ["maintenance", "unavailable"]:
+            continue
+
         # Strict Overlap rule: requested_check_in < existing_check_out AND requested_check_out > existing_check_in
         has_conflict = _check_room_conflict(r_num, dt_in, dt_out)
         if not has_conflict:
@@ -1380,6 +1385,12 @@ def create_booking_request(req: BookingRequestCreate):
     matched_room = next((r for r in _ROOMS_DATA if str(r.get("room_number")) == room_num), None)
     if not matched_room:
         raise HTTPException(status_code=404, detail=f"Room #{room_num} not found in hotel inventory.")
+
+    if matched_room.get("status") in ["maintenance", "unavailable"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Room #{room_num} is currently under maintenance / unavailable and cannot be booked."
+        )
 
     # Strict Overlap Validation against confirmed bookings
     if _check_room_conflict(room_num, dt_in, dt_out):
@@ -1521,6 +1532,13 @@ def accept_booking_request(request_id: str):
     dt_in = _parse_dt(target["check_in"])
     dt_out = _parse_dt(target["check_out"])
     room_num = str(target["room_number"])
+
+    matched_room = next((r for r in _ROOMS_DATA if str(r.get("room_number")) == room_num), None)
+    if matched_room and matched_room.get("status") in ["maintenance", "unavailable"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Room #{room_num} cannot be accepted because it is currently under maintenance."
+        )
 
     if _check_room_conflict(room_num, dt_in, dt_out, exclude_booking_id=target["booking_id"]):
         raise HTTPException(
@@ -1684,3 +1702,128 @@ def get_hotel_room_slots(
     if room_number:
         results = [rs for rs in results if str(rs.get("room_number")) == str(room_number)]
     return results
+
+
+# ----------------------------------------------------------------------------
+# 11. PATCH /hotels/{hotel_id}/rooms/{room_id}/status
+# Hotel Owner marks room as Available or Maintenance/Unavailable
+# ----------------------------------------------------------------------------
+class RoomStatusUpdateRequest(BaseModel):
+    status: str = Field(..., description="available | maintenance | unavailable")
+
+
+@router.patch("/hotels/{hotel_id}/rooms/{room_id}/status")
+def update_hotel_room_status(hotel_id: str, room_id: str, data: RoomStatusUpdateRequest):
+    _init_hotel_data()
+    r_target = None
+    for r in _ROOMS_DATA:
+        if str(r.get("room_id")) == str(room_id) or str(r.get("room_number")) == str(room_id):
+            r_target = r
+            break
+
+    if not r_target:
+        raise HTTPException(status_code=404, detail=f"Room '{room_id}' not found in hotel inventory.")
+
+    new_status = data.status.strip().lower()
+    if new_status not in ["available", "maintenance", "unavailable"]:
+        raise HTTPException(status_code=400, detail="Status must be 'available' or 'maintenance'.")
+
+    room_num = str(r_target.get("room_number"))
+    now_dt = datetime.now()
+
+    # If attempting to set to available, ensure no active confirmed booking is currently occupying it
+    if new_status == "available":
+        for b in _BOOKINGS_DATA:
+            if b.get("booking_status") in ["cancelled", "declined", "completed", "checked-out"]:
+                continue
+            if str(b.get("room_number")) == room_num:
+                b_in = _parse_dt(b.get("check_in_datetime") or b.get("check_in"))
+                b_out = _parse_dt(b.get("check_out_datetime") or b.get("check_out"))
+                if b_in and b_out and b_in <= now_dt <= b_out:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Room #{room_num} is currently occupied with an active booking and cannot be marked available before checkout."
+                    )
+
+    r_target["status"] = new_status
+    _save_hotel_data()
+
+    return {
+        "status": "success",
+        "room_id": r_target.get("room_id"),
+        "room_number": room_num,
+        "new_status": new_status,
+        "message": f"Room #{room_num} status updated to {new_status}."
+    }
+
+
+# ----------------------------------------------------------------------------
+# 12. POST /hotels/checkout (and /hotels/bookings/checkout)
+# QR Guest Checkout with strict time-lock enforcement until slot completion
+# ----------------------------------------------------------------------------
+class CheckoutRequest(BaseModel):
+    booking_id: str = Field(..., description="ID or Booking ID of the reservation")
+    override: bool = Field(default=False, description="Emergency staff override to permit early checkout")
+
+
+@router.post("/hotels/checkout")
+@router.post("/hotels/bookings/checkout")
+def checkout_guest_booking(data: CheckoutRequest):
+    _init_hotel_data()
+    target_booking = None
+    for b in _BOOKINGS_DATA:
+        if b.get("booking_id") == data.booking_id or b.get("id") == data.booking_id:
+            target_booking = b
+            break
+
+    if not target_booking:
+        for r in _REQUESTS_DATA:
+            if r.get("booking_id") == data.booking_id or r.get("id") == data.booking_id:
+                target_booking = r
+                break
+
+    if not target_booking:
+        raise HTTPException(status_code=404, detail=f"Booking with ID '{data.booking_id}' not found.")
+
+    out_raw = target_booking.get("check_out_datetime") or target_booking.get("check_out")
+    dt_out = _parse_dt(out_raw) if out_raw else None
+    now_dt = datetime.now()
+
+    # CHECKOUT TIME LOCK: Guest CANNOT check out before booked check-out time
+    if dt_out and now_dt < dt_out and not data.override:
+        formatted_out = dt_out.strftime("%d %b %Y, %I:%M %p")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Checkout locked until {formatted_out}. Guest cannot check out before the booked slot completion time."
+        )
+
+    # Mark booking completed / checked-out
+    target_booking["booking_status"] = "checked-out"
+    target_booking["status"] = "checked-out"
+    target_booking["checked_out_at"] = now_dt.isoformat()
+
+    # Release room in inventory
+    room_num = str(target_booking.get("room_number"))
+    for rm in _ROOMS_DATA:
+        if str(rm.get("room_number")) == room_num:
+            rm["status"] = "available"
+            rm["current_booking_id"] = None
+            rm["next_available_time"] = None
+
+    # Free hourly slots from booking
+    _update_slots_for_booking(target_booking, is_booking=False)
+    _save_hotel_data()
+
+    try:
+        supabase_admin.table("hotel_bookings").update({"status": "checked-out"}).eq("booking_id", target_booking.get("booking_id")).execute()
+    except Exception:
+        pass
+
+    return {
+        "status": "success",
+        "booking_id": data.booking_id,
+        "room_number": room_num,
+        "guest_name": target_booking.get("guest_name"),
+        "message": f"Checkout complete for Room #{room_num}. Room released and available for new bookings."
+    }
+

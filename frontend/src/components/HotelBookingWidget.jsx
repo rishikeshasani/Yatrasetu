@@ -78,9 +78,10 @@ export default function HotelBookingWidget({ currentUser, onShowToast }) {
       try {
         const rooms = await fetchHotelRooms(hotelId);
         if (isMounted && Array.isArray(rooms) && rooms.length > 0) {
-          setAllRooms(rooms);
+          const activeRooms = rooms.filter(r => r.status !== 'maintenance' && r.status !== 'unavailable');
+          setAllRooms(activeRooms.length > 0 ? activeRooms : rooms);
           if (!selectedRoomNumber) {
-            setSelectedRoomNumber(String(rooms[0].room_number));
+            setSelectedRoomNumber(String((activeRooms[0] || rooms[0]).room_number));
           }
         }
       } catch (e) {

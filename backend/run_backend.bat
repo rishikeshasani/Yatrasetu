@@ -8,21 +8,50 @@ echo.
 
 cd /d "%~dp0"
 
-:: 1. Activate Python Virtual Environment if present
-if exist ".venv\Scripts\activate.bat" (
-    echo [*] Activating local virtual environment
-    call .venv\Scripts\activate.bat
-)
-if exist "..\.venv\Scripts\activate.bat" (
-    echo [*] Activating parent virtual environment
-    call ..\.venv\Scripts\activate.bat
-)
-if exist "%USERPROFILE%\.venv\Scripts\activate.bat" (
-    echo [*] Activating user virtual environment
-    call "%USERPROFILE%\.venv\Scripts\activate.bat"
+:: 1. Auto-configure .env from .env.example if missing
+if not exist ".env" (
+    if exist ".env.example" (
+        echo [*] Initializing backend\.env from template...
+        copy /y ".env.example" ".env" >nul
+    )
 )
 
-:: 2. Ensure Port 8000 is clean and available
+:: 2. Activate Python Virtual Environment if present
+set "PY_CMD=python"
+if exist "%USERPROFILE%\.venv\Scripts\python.exe" (
+    echo [*] Found user virtual environment (%USERPROFILE%\.venv)
+    set "PY_CMD=%USERPROFILE%\.venv\Scripts\python.exe"
+    call "%USERPROFILE%\.venv\Scripts\activate.bat"
+)
+if exist "..\.venv\Scripts\python.exe" (
+    echo [*] Found parent virtual environment (..\.venv)
+    set "PY_CMD=..\.venv\Scripts\python.exe"
+    call ..\.venv\Scripts\activate.bat
+)
+if exist ".venv\Scripts\python.exe" (
+    echo [*] Found local virtual environment (.venv)
+    set "PY_CMD=.venv\Scripts\python.exe"
+    call .venv\Scripts\activate.bat
+)
+
+:: 3. Check for python in PATH
+where python >nul 2>nul
+if %ERRORLEVEL% neq 0 (
+    if not exist "%PY_CMD%" (
+        echo [!] Python is not found in PATH or virtual environments. Please install Python 3.10+ from python.org
+        pause
+        exit /b 1
+    )
+)
+
+:: 4. Verify required packages (fastapi, uvicorn, python-multipart)
+%PY_CMD% -c "import fastapi, uvicorn, multipart" >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo [*] Installing or updating missing backend packages...
+    %PY_CMD% -m pip install -r requirements.txt
+)
+
+:: 5. Ensure Port 8000 is clean and available
 echo [*] Checking port 8000 availability...
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr /c:":8000" ^| findstr "LISTENING"') do (
     echo [!] Found existing process PID %%a on port 8000. Terminating old instance...
@@ -49,7 +78,7 @@ echo [*] Starting Uvicorn server with Hot Reload on 0.0.0.0:8000...
 echo [*] (Press Ctrl+C to stop the server)
 echo.
 
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+%PY_CMD% -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 echo.
 echo [!] Backend server stopped.
