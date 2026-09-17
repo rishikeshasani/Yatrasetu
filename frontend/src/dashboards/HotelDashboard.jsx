@@ -617,6 +617,59 @@ export default function HotelDashboard({ showToast }) {
   const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('101');
   const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
 
+  // Formatted date string for date navigator display (e.g. "15 SEPTEMBER 2026")
+  const formattedDateDisplay = useMemo(() => {
+    if (!selectedSlotDate) return '';
+    try {
+      const parts = selectedSlotDate.split('-');
+      if (parts.length !== 3) return selectedSlotDate;
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const dateObj = new Date(year, month, day);
+      if (isNaN(dateObj.getTime())) return selectedSlotDate;
+      return dateObj.toLocaleDateString('en-US', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }).toUpperCase();
+    } catch {
+      return selectedSlotDate;
+    }
+  }, [selectedSlotDate]);
+
+  // Handle previous day button click in slot timeline
+  const handlePrevDay = () => {
+    if (!selectedSlotDate) return;
+    const parts = selectedSlotDate.split('-');
+    if (parts.length !== 3) return;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const dateObj = new Date(year, month, day);
+    dateObj.setDate(dateObj.getDate() - 1);
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    setSelectedSlotDate(`${yyyy}-${mm}-${dd}`);
+  };
+
+  // Handle next day button click in slot timeline
+  const handleNextDay = () => {
+    if (!selectedSlotDate) return;
+    const parts = selectedSlotDate.split('-');
+    if (parts.length !== 3) return;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    const dateObj = new Date(year, month, day);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    setSelectedSlotDate(`${yyyy}-${mm}-${dd}`);
+  };
+
   // Target room for slots
   const targetRoomForSlots = useMemo(() => {
     return (

@@ -49,7 +49,7 @@
       "room_type": "Standard",
       "floor": 1,
       "capacity": 2,
-      "status": "occupied",
+      "status": "available",
       "current_booking_id": "YC-48105",
       "next_available_time": "2026-09-05T11:00:00"
     },
@@ -71,7 +71,7 @@
       "room_type": "Standard",
       "floor": 1,
       "capacity": 2,
-      "status": "available",
+      "status": "maintenance",
       "current_booking_id": null,
       "next_available_time": "2026-09-04T10:00:00"
     },
