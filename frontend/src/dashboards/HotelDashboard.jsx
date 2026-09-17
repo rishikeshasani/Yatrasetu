@@ -7,6 +7,7 @@ import {
   acceptBookingRequest,
   declineBookingRequest,
   fetchHotelRoomSlots,
+  fetchActiveRerouteAlert,
   subscribeToHotelUpdates,
   checkRoomConflictLocal,
   updateRoomStatus,
@@ -49,14 +50,14 @@ function ScannableQRCode({ payload }) {
       <rect width={size} height={size} fill="#ffffff" />
       {qrMatrix.map((row, r) =>
         row.map((cell, c) =>
-          cell === 1 ? (
+          cell ? (
             <rect
               key={`${r}-${c}`}
               x={c * cellSize}
               y={r * cellSize}
               width={cellSize}
               height={cellSize}
-              fill="#1e3a8a"
+              fill="#0f172a"
             />
           ) : null
         )
@@ -69,8 +70,6 @@ function ScannableQRCode({ payload }) {
 // CONFIGURABLE PRICING ENGINE CONSTANTS & RULES (AI GOVERNED - STRICTLY VIEW ONLY)
 // ---------------------------------------------------------------------------
 export const ROOM_CONFIG = {
-  standard: { base: 500, maxHourly: 700, label: 'Standard Room' },
-  deluxe: { base: 750, maxHourly: 1050, label: 'Deluxe Room' },
   suite: { base: 1000, maxHourly: 1200, label: 'Suite' },
   family: { base: 1000, maxHourly: 1200, label: 'Family Room' },
 };
@@ -188,12 +187,33 @@ const INITIAL_ROOMS = [
   }),
 ];
 
-export default function HotelDashboard({ showToast }) {
+export default function HotelDashboard({
+  currentUser,
+  showToast,
+  activeRerouteAlert: propRerouteAlert,
+  densityMap,
+  onBackToLanding
+}) {
   // ---------------------------------------------------------------------------
   // 1. DEMAND & TELEMETRY STATE (STRICTLY VIEW ONLY FOR HOTEL OWNER)
   // ---------------------------------------------------------------------------
   const [demandPct, setDemandPct] = useState(50);
+  const [internalRerouteAlert, setInternalRerouteAlert] = useState(null);
+  const activeRerouteAlert = propRerouteAlert || internalRerouteAlert;
   const [showGovSimulatorModal, setShowGovSimulatorModal] = useState(false);
+
+  // Sync initial and ongoing active reroute alert
+  useEffect(() => {
+    fetchActiveRerouteAlert()
+      .then((res) => {
+        if (res?.is_active && res?.alert) {
+          setInternalRerouteAlert(res.alert);
+          setDemandPct(85);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Listen for Government Authority updates & Emergency Reroute / Surge Storyline events
   useEffect(() => {
     const handleGovUpdate = (e) => {
@@ -206,9 +226,13 @@ export default function HotelDashboard({ showToast }) {
       const detail = e.detail;
       if (detail && detail.is_active) {
         setDemandPct(85);
+        setInternalRerouteAlert(detail.alert || detail);
         if (showToast) {
           showToast(`🏨 Peripheral Hotel Alert: Diverted pilgrim stream inbound (+120 pilgrims). High surge dynamic pricing active.`);
         }
+      } else if (detail && detail.is_active === false) {
+        setInternalRerouteAlert(null);
+        setDemandPct(50);
       }
     };
 
