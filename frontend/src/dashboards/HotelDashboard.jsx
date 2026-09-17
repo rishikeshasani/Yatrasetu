@@ -614,14 +614,118 @@ export default function HotelDashboard({ showToast }) {
   // 5. MOVIE-SHOWTIME-STYLE HOURLY ROOM SLOT TIMELINE
   // ---------------------------------------------------------------------------
   const [selectedSlotDate, setSelectedSlotDate] = useState('2026-09-15');
-  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('101');
+  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('ALL');
   const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
 
-  // Target room for slots
+  const formattedDateDisplay = useMemo(() => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      return dateObj.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }).toUpperCase();
+    } catch {
+      return selectedSlotDate;
+    }
+  }, [selectedSlotDate]);
+
+  const handlePrevDay = () => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      dateObj.setDate(dateObj.getDate() - 1);
+      const newY = dateObj.getFullYear();
+      const newM = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const newD = String(dateObj.getDate()).padStart(2, '0');
+      setSelectedSlotDate(`${newY}-${newM}-${newD}`);
+    } catch {}
+  };
+
+  const handleNextDay = () => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      dateObj.setDate(dateObj.getDate() + 1);
+      const newY = dateObj.getFullYear();
+      const newM = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const newD = String(dateObj.getDate()).padStart(2, '0');
+      setSelectedSlotDate(`${newY}-${newM}-${newD}`);
+    } catch {}
+  };
+
+  const generateHourlySlotsForRoom = (room, dateStr) => {
+    if (!room) return [];
+    const isMaint = room.status === 'maintenance' || room.status === 'unavailable';
+    const rKey = (room.room_type || 'Deluxe').toLowerCase();
+    const cfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
+    const calcHourlyRate = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
+    const slots = [];
+
+    for (let h = 0; h < 24; h++) {
+      const startH = String(h).padStart(2, '0');
+      const endH = String(h + 1).padStart(2, '0');
+      const slotStartISO = `${dateStr}T${startH}:00:00`;
+      const slotEndISO = `${dateStr}T${endH}:00:00`;
+      const timeLabel = `${startH}:00–${endH}:00`;
+
+      if (isMaint) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'maintenance',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'MAINTENANCE',
+        });
+        continue;
+      }
+
+      const sStart = new Date(slotStartISO).getTime();
+      const sEnd = new Date(slotEndISO).getTime();
+
+      const booking = bookingRequests.find((b) => {
+        if (String(b.room_number) !== String(room.room_number)) return false;
+        if (b.status === 'declined' || b.status === 'cancelled' || b.status === 'checked-out') return false;
+        const bIn = new Date(b.check_in).getTime();
+        const bOut = new Date(b.check_out).getTime();
+        return sStart < bOut && sEnd > bIn;
+      });
+
+      if (booking) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'booked',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'BOOKED',
+          booking,
+          guestName: booking.guest_name,
+          bookingId: booking.booking_id,
+        });
+      } else {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'available',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'AVAILABLE',
+          hourlyRate: calcHourlyRate,
+        });
+      }
+    }
+    return slots;
+  };
+
+  // Target room for slots (null if 'ALL')
   const targetRoomForSlots = useMemo(() => {
+    if (selectedRoomForSlots === 'ALL') return null;
     return (
       roomsInventory.find((r) => String(r.room_number) === String(selectedRoomForSlots)) ||
-      roomsInventory[0]
+      null
     );
   }, [roomsInventory, selectedRoomForSlots]);
 
