@@ -1820,71 +1820,468 @@
   font-weight: 500;
 }
 
-/* External Govt Simulator Dialog */
-.hd-modal-dialog.gov-sim {
-  max-width: 520px;
+/* Available Room Management Card & Table */
+.hd-room-mgmt-card {
+  display: flex;
+  flex-direction: column;
 }
 
-.hd-gov-badge-icon {
-  font-size: 36px;
-  margin-bottom: 8px;
+.hd-mgmt-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
-.hd-sim-presets-group {
-  margin: 16px 0;
-  background: #f8fafc;
+.hd-mgmt-search-box {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px 10px;
+  gap: 6px;
+  flex: 1;
+  max-width: 280px;
+}
+
+.hd-search-icon {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.hd-mgmt-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 12.5px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.hd-mgmt-table-wrap {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.hd-btn-toggle-status {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.hd-btn-toggle-status.set-maint {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.hd-btn-toggle-status.set-maint:hover {
+  background-color: #fde68a;
+}
+
+.hd-btn-toggle-status.set-avail {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.hd-btn-toggle-status.set-avail:hover {
+  background-color: #bbf7d0;
+}
+
+.hd-btn-toggle-status.locked {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  cursor: not-allowed;
+}
+
+.hd-status-badge.maintenance {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+/* Category Grid in Dynamic Pricing */
+.hd-pricing-category-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.hd-pricing-cat-card {
+  background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.hd-sim-lbl {
+.hd-pcat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hd-pcat-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hd-pcat-base {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.hd-pcat-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.hd-pcat-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2563eb;
+}
+
+.hd-pcat-denom {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.hd-pcat-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #475569;
+  margin-top: 2px;
+}
+
+.hd-hourly-cap-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+  background-color: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 2px 6px;
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.hd-pricing-cap-summary-box {
+  background: linear-gradient(135deg, #eff6ff, #f0fdf4);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.hd-cap-icon-box {
+  font-size: 20px;
+}
+
+.hd-cap-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 2px;
+}
+
+.hd-cap-desc {
+  font-size: 11.5px;
+  color: #334155;
+  line-height: 1.35;
+}
+
+/* Movie-Show-Style Hourly Slot Timeline */
+.hd-movie-slots-section {
+  margin-top: 24px;
+}
+
+.hd-movie-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hd-movie-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hd-movie-lbl {
   font-size: 12px;
   font-weight: 700;
   color: #475569;
-  margin-bottom: 10px;
 }
 
-.hd-sim-buttons-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.hd-sim-btn {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  color: #1e293b;
-  padding: 8px 10px;
-  border-radius: 7px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.15s ease;
-}
-
-.hd-sim-btn:hover {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  color: #1d4ed8;
-}
-
-.hd-sim-custom-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-}
-
-.hd-sim-input {
-  width: 80px;
+.hd-movie-date-input,
+.hd-movie-room-select {
   padding: 6px 10px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+.hd-movie-legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.hd-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hd-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.hd-legend-dot.available {
+  background-color: #10b981;
+}
+
+.hd-legend-dot.booked {
+  background-color: #ef4444;
+}
+
+.hd-legend-dot.maintenance {
+  background-color: #f59e0b;
+}
+
+.hd-movie-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 1280px) {
+  .hd-movie-chips-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .hd-movie-chips-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .hd-movie-chips-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.hd-slot-chip {
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.hd-slot-chip.available {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #065f46;
+}
+
+.hd-slot-chip.available:hover {
+  background-color: #dcfce7;
+  border-color: #86efac;
+}
+
+.hd-slot-chip.booked {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.hd-slot-chip.booked.clickable {
+  cursor: pointer;
+}
+
+.hd-slot-chip.booked:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+}
+
+.hd-slot-chip.maintenance {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+  opacity: 0.85;
+}
+
+.hd-chip-time {
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.hd-chip-badge {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.hd-badge-txt.avail {
+  color: #059669;
+}
+
+.hd-badge-txt.booked {
+  color: #dc2626;
+}
+
+.hd-badge-txt.maint {
+  color: #d97706;
+}
+
+.hd-chip-guest-name {
+  font-size: 10px;
+  color: #7f1d1d;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hd-chip-rate {
+  font-size: 10.5px;
+  color: #047857;
+  font-weight: 700;
+}
+
+.hd-slot-detail-popover {
+  margin-top: 14px;
+  background: #ffffff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+  animation: fadeIn 0.2s ease;
+}
+
+.hd-slot-detail-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: #1e3a8a;
+}
+
+.hd-btn-close-mini {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.hd-slot-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  font-size: 12.5px;
+  color: #334155;
+}
+
+@media (max-width: 768px) {
+  .hd-slot-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Locked QR Checkout Terminal */
+.hd-guest-slot-time {
+  font-size: 12px;
+  color: #475569;
+  margin-top: 4px;
+}
+
+.hd-lock-notice-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0 6px;
+  font-size: 12px;
+  color: #9a3412;
+}
+
+.hd-lock-icon {
+  font-size: 18px;
+}
+
+.hd-override-box {
+  margin-bottom: 12px;
+}
+
+.hd-override-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.hd-override-checkbox-label input {
+  cursor: pointer;
+}
+
+.hd-btn-terminal-checkout.locked {
+  background-color: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
 }

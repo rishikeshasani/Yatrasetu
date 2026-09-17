@@ -9,7 +9,8 @@ import {
   fetchHotelRoomSlots,
   subscribeToHotelUpdates,
   checkRoomConflictLocal,
-  fetchActiveRerouteAlert
+  updateRoomStatus,
+  checkoutHotelBooking
 } from '../api/api';
 import './HotelDashboard.css';
 
@@ -64,7 +65,7 @@ function ScannableQRCode({ payload }) {
 }
 
 // ---------------------------------------------------------------------------
-// CONFIGURABLE PRICING ENGINE CONSTANTS & RULES (AI GOVERNED)
+// CONFIGURABLE PRICING ENGINE CONSTANTS & RULES (AI GOVERNED - STRICTLY VIEW ONLY)
 // ---------------------------------------------------------------------------
 export const ROOM_CONFIG = {
   standard: { base: 500, maxHourly: 700, label: 'Standard Room' },
@@ -113,40 +114,6 @@ export const calculateDurationInHours = (checkInStr, checkOutStr) => {
   return Math.round(rawHours * 10) / 10;
 };
 
-export const calculateSlotDynamicPricing = ({
-  roomType = 'deluxe',
-  checkIn,
-  checkOut,
-  demandPct = 50,
-}) => {
-  const rKey = (roomType || 'deluxe').toLowerCase();
-  const roomCfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
-  const baseHourly = roomCfg.base;
-  const demandMult = getDemandMultiplier(demandPct);
-
-  // Raw hourly calculation governed by AI multiplier and realistic ceiling
-  const rawHourly = baseHourly * demandMult;
-  const finalHourlyPrice = Math.min(rawHourly, roomCfg.maxHourly);
-
-  // Flexible duration
-  const durationHours = calculateDurationInHours(checkIn, checkOut);
-  const calculatedTotal = finalHourlyPrice * durationHours;
-
-  // Hard cap of ₹12,000
-  const isCapped = calculatedTotal > MAX_TOTAL_BOOKING_CAP;
-  const totalBookingPrice = Math.min(calculatedTotal, MAX_TOTAL_BOOKING_CAP);
-
-  return {
-    baseHourlyPrice: baseHourly,
-    demandMultiplier: demandMult,
-    finalHourlyPrice,
-    durationHours,
-    calculatedTotal,
-    totalBookingPrice,
-    isCapped,
-  };
-};
-
 // ---------------------------------------------------------------------------
 // 50 REALISTIC ROOMS INVENTORY (KEDARNATH LODGE)
 // ---------------------------------------------------------------------------
@@ -154,13 +121,17 @@ const INITIAL_ROOMS = [
   ...Array.from({ length: 30 }, (_, i) => {
     const num = 101 + i;
     const isBooked = [102, 106, 110, 114, 118, 122, 126].includes(num);
+    const isMaintenance = [108].includes(num);
+    let status = 'available';
+    if (isBooked) status = 'booked';
+    else if (isMaintenance) status = 'maintenance';
     return {
       room_id: `R${num}`,
       room_number: `${num}`,
       room_type: 'Standard',
       floor: 1 + Math.floor(i / 15),
       capacity: 2,
-      status: isBooked ? 'booked' : 'available',
+      status,
       booking_slot: isBooked ? '15 Sep, 2:00 PM → 16 Sep, 11:00 AM' : '—',
       available_after: isBooked ? '16 Sep, 11:00 AM' : '—',
     };
@@ -168,13 +139,17 @@ const INITIAL_ROOMS = [
   ...Array.from({ length: 15 }, (_, i) => {
     const num = 201 + i;
     const isBooked = [202, 204, 207, 210, 212].includes(num);
+    const isMaintenance = [209].includes(num);
+    let status = 'available';
+    if (isBooked) status = 'booked';
+    else if (isMaintenance) status = 'maintenance';
     return {
       room_id: `R${num}`,
       room_number: `${num}`,
       room_type: 'Deluxe',
       floor: 3 + Math.floor(i / 8),
       capacity: 3,
-      status: isBooked ? 'booked' : 'available',
+      status,
       booking_slot: isBooked ? '15 Sep, 2:00 PM → 16 Sep, 11:00 AM' : '—',
       available_after: isBooked ? '16 Sep, 11:00 AM' : '—',
     };
@@ -201,10 +176,8 @@ export default function HotelDashboard({ showToast }) {
   // ---------------------------------------------------------------------------
   // The Government & AI Crowd system controls this value. Hotel owner CANNOT modify it.
   const [demandPct, setDemandPct] = useState(50);
-  const [showGovSimulatorModal, setShowGovSimulatorModal] = useState(false);
-  const [simGovInput, setSimGovInput] = useState('50');
 
-  // Listen for Government Authority updates
+  // Passive listener for Government Authority updates
   useEffect(() => {
     const handleGovUpdate = (e) => {
       if (e.detail && typeof e.detail.demandPct === 'number') {
@@ -220,94 +193,141 @@ export default function HotelDashboard({ showToast }) {
     };
   }, []);
 
-  // ---------------------------------------------------------------------------
-  // 2. SLOT BOOKING FORM STATE
-  // ---------------------------------------------------------------------------
-  const [slotRoomType, setSlotRoomType] = useState('deluxe');
-  const [checkInDate, setCheckInDate] = useState('2026-09-15');
-  const [checkInTime, setCheckInTime] = useState('14:00');
-  const [checkOutDate, setCheckOutDate] = useState('2026-09-16');
-  const [checkOutTime, setCheckOutTime] = useState('11:00');
-  const [guestsCount, setGuestsCount] = useState(2);
-  const [availabilityResult, setAvailabilityResult] = useState(null);
-
-  // ISO string helpers
-  const checkInISO = useMemo(() => `${checkInDate}T${checkInTime}:00`, [checkInDate, checkInTime]);
-  const checkOutISO = useMemo(() => `${checkOutDate}T${checkOutTime}:00`, [checkOutDate, checkOutTime]);
+  const demandMultiplier = useMemo(() => getDemandMultiplier(demandPct), [demandPct]);
 
   // ---------------------------------------------------------------------------
-  // 3. LIVE AUTO-UPDATING DYNAMIC PRICING ENGINE
-  // ---------------------------------------------------------------------------
-  const {
-    baseHourlyPrice,
-    demandMultiplier,
-    finalHourlyPrice,
-    durationHours: slotDurationHours,
-    calculatedTotal,
-    totalBookingPrice,
-    isCapped,
-  } = useMemo(() => {
-    return calculateSlotDynamicPricing({
-      roomType: slotRoomType,
-      checkIn: checkInISO,
-      checkOut: checkOutISO,
-      demandPct,
-    });
-  }, [slotRoomType, checkInISO, checkOutISO, demandPct]);
-
-  // ---------------------------------------------------------------------------
-  // 4. ROOMS INVENTORY STATE & TABLE FILTER
+  // 2. ROOMS INVENTORY & AVAILABLE ROOM MANAGEMENT
   // ---------------------------------------------------------------------------
   const [roomsInventory, setRoomsInventory] = useState(INITIAL_ROOMS);
-  const [tableTypeFilter, setTableTypeFilter] = useState('ALL');
+  const [roomFilterType, setRoomFilterType] = useState('ALL');
+  const [roomSearchQuery, setRoomSearchQuery] = useState('');
 
-  // Filtered rooms for the availability table
+  // Filtered rooms for Available Room Management table
   const displayedRooms = useMemo(() => {
-    if (tableTypeFilter === 'ALL') return roomsInventory;
-    return roomsInventory.filter(
-      (r) => r.room_type.toLowerCase() === tableTypeFilter.toLowerCase()
-    );
-  }, [roomsInventory, tableTypeFilter]);
-
-  // Check Availability for the selected slot interval
-  const handleCheckAvailability = () => {
-    const dIn = new Date(checkInISO);
-    const dOut = new Date(checkOutISO);
-
-    if (isNaN(dIn.getTime()) || isNaN(dOut.getTime())) {
-      setAvailabilityResult({ success: false, message: 'Invalid check-in or check-out date/time format.' });
-      return;
-    }
-    if (dIn >= dOut) {
-      setAvailabilityResult({ success: false, message: 'Check-out time must be strictly after Check-in time.' });
-      return;
-    }
-
-    const availableRoomsForType = roomsInventory.filter((r) => {
-      if (r.room_type.toLowerCase() !== slotRoomType.toLowerCase()) return false;
-      const hasConflict = checkRoomConflictLocal(r.room_number, checkInISO, checkOutISO);
-      return !hasConflict;
+    return roomsInventory.filter((r) => {
+      const matchesType =
+        roomFilterType === 'ALL' ||
+        r.room_type.toLowerCase() === roomFilterType.toLowerCase() ||
+        (roomFilterType === 'SUITE' && (r.room_type.toLowerCase() === 'suite' || r.room_type.toLowerCase() === 'family'));
+      const q = roomSearchQuery.trim().toLowerCase();
+      const matchesSearch = !q || r.room_number.toLowerCase().includes(q) || r.room_type.toLowerCase().includes(q);
+      return matchesType && matchesSearch;
     });
+  }, [roomsInventory, roomFilterType, roomSearchQuery]);
 
-    if (availableRoomsForType.length > 0) {
-      const selected = availableRoomsForType[0];
-      setAvailabilityResult({
-        success: true,
-        allocatedRoom: selected.room_number,
-        message: `Available! Room #${selected.room_number} (${slotRoomType.toUpperCase()}) is free for the entire requested interval.`,
-        finalPrice: totalBookingPrice,
-        isCapped,
-      });
-    } else {
-      setAvailabilityResult({
-        success: false,
-        message: `No ${slotRoomType.toUpperCase()} rooms are free for the entire requested duration (${slotDurationHours} hrs). An overlapping booking is present.`,
-      });
+  // Toggle Room Maintenance / Available handler
+  const handleToggleRoomStatus = async (room) => {
+    const isCurrentlyMaint = room.status === 'maintenance' || room.status === 'unavailable';
+    const isCurrentlyOccupied = room.status === 'booked' || room.status === 'occupied';
+
+    // Disallow toggling occupied rooms with active bookings
+    if (isCurrentlyOccupied) {
+      alert(`⚠️ Room #${room.room_number} is currently occupied by an active booking. It cannot be set to Available or Maintenance until the guest completes checkout.`);
+      return;
+    }
+
+    const newStatus = isCurrentlyMaint ? 'available' : 'maintenance';
+
+    try {
+      await updateRoomStatus('H001', room.room_id || `R${room.room_number}`, newStatus);
+    } catch (err) {
+      console.warn('Backend update room status note:', err.message);
+    }
+
+    setRoomsInventory((prev) =>
+      prev.map((r) => (String(r.room_number) === String(room.room_number) ? { ...r, status: newStatus } : r))
+    );
+
+    if (showToast) {
+      showToast(
+        newStatus === 'maintenance'
+          ? `🔧 Room #${room.room_number} marked as Maintenance (Hidden from Tourist Portal).`
+          : `✅ Room #${room.room_number} is now Available for tourist bookings.`
+      );
     }
   };
 
   // ---------------------------------------------------------------------------
-  // 5. BOOKING REQUESTS STATE & CONFIRMATION
+  // 3. MOVIE-SHOW-STYLE HOURLY ROOM SLOT TIMELINE
+  // ---------------------------------------------------------------------------
+  const [selectedSlotDate, setSelectedSlotDate] = useState('2026-09-15');
+  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('204');
+  const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
+
+  // Generate 24 hourly chips for the selected room and date
+  const hourlySlotsForSelectedRoom = useMemo(() => {
+    const targetRoom =
+      roomsInventory.find((r) => String(r.room_number) === String(selectedRoomForSlots)) ||
+      roomsInventory[0];
+    if (!targetRoom) return [];
+
+    const isRoomMaintenance = targetRoom.status === 'maintenance' || targetRoom.status === 'unavailable';
+
+    const slots = [];
+    for (let h = 0; h < 24; h++) {
+      const startH = String(h).padStart(2, '0');
+      const endH = String(h + 1).padStart(2, '0');
+      const slotStartISO = `${selectedSlotDate}T${startH}:00:00`;
+      const slotEndISO = `${selectedSlotDate}T${endH}:00:00`;
+      const timeLabel = `${startH}:00 - ${endH}:00`;
+
+      if (isRoomMaintenance) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'maintenance',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'MAINTENANCE',
+        });
+        continue;
+      }
+
+      // Check if any confirmed/pending booking overlaps this hour
+      // Overlap: slotStart < bookingEnd && slotEnd > bookingStart
+      const sStart = new Date(slotStartISO).getTime();
+      const sEnd = new Date(slotEndISO).getTime();
+
+      const booking = bookingRequests.find((b) => {
+        if (String(b.room_number) !== String(targetRoom.room_number)) return false;
+        if (b.status === 'declined' || b.status === 'cancelled') return false;
+        const bIn = new Date(b.check_in).getTime();
+        const bOut = new Date(b.check_out).getTime();
+        return sStart < bOut && sEnd > bIn;
+      });
+
+      if (booking) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'booked',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'BOOKED',
+          booking,
+          guestName: booking.guest_name,
+          bookingId: booking.booking_id,
+        });
+      } else {
+        const rKey = (targetRoom.room_type || 'Deluxe').toLowerCase();
+        const cfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
+        const slotHourlyRate = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'available',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'AVAILABLE',
+          hourlyRate: slotHourlyRate,
+        });
+      }
+    }
+    return slots;
+  }, [roomsInventory, selectedRoomForSlots, selectedSlotDate, bookingRequests, demandMultiplier]);
+
+  // ---------------------------------------------------------------------------
+  // 4. BOOKING REQUESTS STATE & CONFIRMATION
   // ---------------------------------------------------------------------------
   const [bookingRequests, setBookingRequests] = useState([
     {
@@ -327,7 +347,7 @@ export default function HotelDashboard({ showToast }) {
       site_name: 'Kedarnath Dham',
       crowd_percentage: 85,
       crowd_level: 'HIGH_SURGE',
-      status: 'pending',
+      status: 'confirmed',
       decline_reason: null,
       is_capped: false,
     },
@@ -383,6 +403,13 @@ export default function HotelDashboard({ showToast }) {
 
   // Accept Booking Request
   const handleAcceptRequest = async (req) => {
+    // Check if room is in maintenance
+    const targetRoom = roomsInventory.find((r) => String(r.room_number) === String(req.room_number));
+    if (targetRoom && (targetRoom.status === 'maintenance' || targetRoom.status === 'unavailable')) {
+      alert(`⚠️ Cannot Accept: Room #${req.room_number} is currently marked as Maintenance. Please set it to Available first.`);
+      return;
+    }
+
     const hasConflict = checkRoomConflictLocal(req.room_number, req.check_in, req.check_out, req.booking_id);
     if (hasConflict) {
       alert(`⚠️ Cannot Accept: Room #${req.room_number} has an overlapping confirmed booking.`);
@@ -419,6 +446,9 @@ export default function HotelDashboard({ showToast }) {
         guestName: req.guest_name,
         partySize: req.guest_count,
         roomAssigned: `#${req.room_number} ${req.room_type}`,
+        roomNumber: req.room_number,
+        check_in: req.check_in,
+        check_out: req.check_out,
         guestStatus: 'PENDING',
       });
 
@@ -468,64 +498,81 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // ---------------------------------------------------------------------------
-  // 6. QR CHECK-IN TERMINAL & DEMO RESET
+  // 5. QR CHECK-IN TERMINAL & STRICT CHECKOUT TIME LOCK
   // ---------------------------------------------------------------------------
   const [terminalState, setTerminalState] = useState({
     bookingRef: 'YC-48217',
     guestName: 'Rahul Sharma',
     partySize: 2,
     roomAssigned: '#204 Deluxe',
-    guestStatus: 'PENDING',
+    roomNumber: '204',
+    check_in: '2026-09-15T14:00:00',
+    check_out: '2026-09-15T17:00:00',
+    guestStatus: 'CHECKED_IN',
   });
+  const [emergencyOverride, setEmergencyOverride] = useState(false);
   const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+
+  // Time Lock Calculation: Checkout is disabled if current time < booked check_out
+  const isTimeElapsed = useMemo(() => {
+    if (!terminalState.check_out) return true;
+    return new Date() >= new Date(terminalState.check_out);
+  }, [terminalState.check_out]);
+
+  const isCheckoutLocked = !emergencyOverride && !isTimeElapsed;
 
   const simulateGuestCheckIn = () => {
     setTerminalState((prev) => ({ ...prev, guestStatus: 'CHECKED_IN' }));
     if (showToast) showToast(`🪪 QR Verified! Welcome ${terminalState.guestName}. Key card issued.`);
   };
 
-  const simulateGuestCheckOut = () => {
-    setTerminalState((prev) => ({ ...prev, guestStatus: 'CHECKED_OUT' }));
-    const match = terminalState.roomAssigned.match(/#(\d+)/);
-    if (match) {
-      const rNum = match[1];
-      setRoomsInventory((prev) =>
-        prev.map((r) =>
-          r.room_number === rNum
-            ? { ...r, status: 'available', booking_slot: '—', available_after: '—' }
-            : r
-        )
-      );
+  const handleGuestCheckOut = async () => {
+    if (isCheckoutLocked) {
+      alert(`🔒 Checkout locked until ${formatDateTimeDisplay(terminalState.check_out)}. Guest cannot check out before the booked slot completion.`);
+      return;
     }
+
+    try {
+      await checkoutHotelBooking(terminalState.bookingRef, emergencyOverride);
+    } catch (err) {
+      console.warn('Backend checkout call note:', err.message);
+    }
+
+    setTerminalState((prev) => ({ ...prev, guestStatus: 'CHECKED_OUT' }));
+    setRoomsInventory((prev) =>
+      prev.map((r) =>
+        String(r.room_number) === String(terminalState.roomNumber)
+          ? { ...r, status: 'available', booking_slot: '—', available_after: '—' }
+          : r
+      )
+    );
     setShowSuccessBanner(true);
-    if (showToast) showToast(`✨ Checkout complete! ${terminalState.roomAssigned} released for housekeeping.`);
+    if (showToast) showToast(`✨ Checkout complete! Room #${terminalState.roomNumber} released for housekeeping.`);
   };
 
   const resetFullDemoState = () => {
     setDemandPct(50);
-    setSlotRoomType('deluxe');
-    setCheckInDate('2026-09-15');
-    setCheckInTime('14:00');
-    setCheckOutDate('2026-09-16');
-    setCheckOutTime('11:00');
-    setGuestsCount(2);
-    setAvailabilityResult(null);
     setRoomsInventory(INITIAL_ROOMS);
     setTerminalState({
       bookingRef: 'YC-48217',
       guestName: 'Rahul Sharma',
       partySize: 2,
       roomAssigned: '#204 Deluxe',
-      guestStatus: 'PENDING',
+      roomNumber: '204',
+      check_in: '2026-09-15T14:00:00',
+      check_out: '2026-09-15T17:00:00',
+      guestStatus: 'CHECKED_IN',
     });
+    setEmergencyOverride(false);
     setShowSuccessBanner(false);
     setConfirmedResultModal(null);
     setDeclineDialogReqId(null);
+    setSelectedSlotDetail(null);
     if (showToast) showToast('🔄 Demo states reset to baseline.');
   };
 
   // ---------------------------------------------------------------------------
-  // 7. BACKEND DATA LOAD & LIVE CROWD TELEMETRY SYNC
+  // 6. BACKEND DATA LOAD & LIVE CROWD TELEMETRY SYNC
   // ---------------------------------------------------------------------------
   const [backendHotel, setBackendHotel] = useState(null);
 
@@ -552,11 +599,24 @@ export default function HotelDashboard({ showToast }) {
     initData();
 
     const unsubscribe = subscribeToHotelUpdates((event) => {
-      if (event.type === 'REQUEST_CREATED' && showToast) {
-        showToast(`🔔 New Pilgrim Booking Request from ${event.request?.guest_name || 'Pilgrim'}!`);
+      if (event.type === 'REQUEST_CREATED') {
+        if (showToast) showToast(`🔔 New Pilgrim Booking Request from ${event.request?.guest_name || 'Pilgrim'}!`);
+        setBookingRequests((prev) => {
+          if (prev.some((r) => r.id === event.request?.id || r.booking_id === event.request?.booking_id)) return prev;
+          return [event.request, ...prev];
+        });
       }
       if (event.type === 'CROWD_TELEMETRY' && typeof event.surgePct === 'number') {
         setDemandPct(event.surgePct);
+      }
+      if (event.type === 'ROOM_STATUS_CHANGED') {
+        setRoomsInventory((prev) =>
+          prev.map((r) =>
+            String(r.room_id) === String(event.roomId) || String(r.room_number) === String(event.roomId)
+              ? { ...r, status: event.status }
+              : r
+          )
+        );
       }
     });
 
@@ -582,10 +642,11 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // KPI Metrics
-  const totalRoomsCount = 50;
-  const bookedRoomsCount = roomsInventory.filter((r) => r.status === 'booked').length;
-  const availableRoomsCount = totalRoomsCount - bookedRoomsCount;
-  const occupancyRate = Math.round((bookedRoomsCount / totalRoomsCount) * 100);
+  const totalRoomsCount = roomsInventory.length;
+  const bookedRoomsCount = roomsInventory.filter((r) => r.status === 'booked' || r.status === 'occupied').length;
+  const maintenanceRoomsCount = roomsInventory.filter((r) => r.status === 'maintenance' || r.status === 'unavailable').length;
+  const availableRoomsCount = totalRoomsCount - bookedRoomsCount - maintenanceRoomsCount;
+  const occupancyRate = totalRoomsCount > 0 ? Math.round((bookedRoomsCount / totalRoomsCount) * 100) : 0;
   const pendingRequestsCount = bookingRequests.filter((r) => r.status === 'pending').length;
 
   return (
@@ -606,9 +667,13 @@ export default function HotelDashboard({ showToast }) {
             <span className="hd-nav-icon">📊</span>
             <span>Dashboard</span>
           </a>
-          <a href="#room-slots" className="hd-nav-item">
+          <a href="#room-management" className="hd-nav-item">
             <span className="hd-nav-icon">🛏️</span>
             <span>Room Management</span>
+          </a>
+          <a href="#room-slots" className="hd-nav-item">
+            <span className="hd-nav-icon">🎬</span>
+            <span>Hourly Slot Timeline</span>
           </a>
           <a href="#booking-requests" className="hd-nav-item">
             <span className="hd-nav-icon">📩</span>
@@ -623,11 +688,7 @@ export default function HotelDashboard({ showToast }) {
           </a>
           <a href="#dynamic-pricing" className="hd-nav-item">
             <span className="hd-nav-icon">⚡</span>
-            <span>Analytics &amp; Pricing</span>
-          </a>
-          <a href="#overview" className="hd-nav-item">
-            <span className="hd-nav-icon">👤</span>
-            <span>Profile</span>
+            <span>AI Dynamic Pricing</span>
           </a>
         </nav>
 
@@ -642,7 +703,7 @@ export default function HotelDashboard({ showToast }) {
 
       {/* 2. MAIN CONTENT AREA */}
       <div className="hd-saas-main-pane">
-        {/* TOP HEADER BAR */}
+        {/* TOP HEADER BAR (STRICTLY NO SIMULATOR BUTTONS) */}
         <header className="hd-top-header-bar">
           <div className="hd-header-left">
             <div className="hd-header-title-row">
@@ -658,15 +719,6 @@ export default function HotelDashboard({ showToast }) {
           </div>
 
           <div className="hd-header-actions">
-            {/* External Government/AI Simulation Launcher for Test 1 & Test 2 */}
-            <button
-              type="button"
-              onClick={() => setShowGovSimulatorModal(true)}
-              className="hd-btn-gov-sim"
-              title="Open District Administration Telemetry Dispatcher to simulate live crowd updates"
-            >
-              🏛️ Govt Telemetry Simulator
-            </button>
             <button
               type="button"
               onClick={resetFullDemoState}
@@ -700,7 +752,7 @@ export default function HotelDashboard({ showToast }) {
               </div>
 
               <div className="hd-demand-caption">
-                Pilgrim density telemetry is automatically broadcast by the Uttarakhand District Administration Command Center and AI Prediction Engine. Hotel partners have read-only access.
+                Pilgrim density telemetry is automatically broadcast by the Uttarakhand District Administration Command Center and AI Prediction Engine. Hotel partners have strictly read-only access.
               </div>
             </div>
 
@@ -751,20 +803,24 @@ export default function HotelDashboard({ showToast }) {
                 <span className="hd-metric-title">Available Rooms</span>
               </div>
               <div className="hd-metric-value">
-                <span className="hd-metric-main">{availableRoomsCount}</span>
+                <span className="hd-metric-main text-green">{availableRoomsCount}</span>
                 <span className="hd-metric-denom"> / {totalRoomsCount} Total</span>
               </div>
-              <div className="hd-metric-footer">Available for immediate check-in</div>
+              <div className="hd-metric-footer">
+                {maintenanceRoomsCount > 0 && <span className="text-amber">({maintenanceRoomsCount} in Maintenance)</span>}
+              </div>
             </div>
 
-            {/* METRIC 4: LIVE AI ROOM RATE */}
+            {/* METRIC 4: LIVE AI DELUXE RATE */}
             <div className="hd-metric-card">
               <div className="hd-metric-header">
                 <span className="hd-metric-icon">⚡</span>
-                <span className="hd-metric-title">Live AI Room Rate</span>
+                <span className="hd-metric-title">Live AI Deluxe Rate</span>
               </div>
               <div className="hd-metric-value">
-                <span className="hd-metric-main highlight-blue">₹{finalHourlyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="hd-metric-main highlight-blue">
+                  ₹{Math.min(ROOM_CONFIG.deluxe.base * demandMultiplier, ROOM_CONFIG.deluxe.maxHourly).toFixed(2)}
+                </span>
                 <span className="hd-metric-denom">/hour</span>
               </div>
               <div className="hd-metric-footer">
@@ -773,268 +829,290 @@ export default function HotelDashboard({ showToast }) {
             </div>
           </section>
 
-          {/* 5. TWO-COLUMN WORKFLOW: SLOT BOOKING + DYNAMIC PRICING ENGINE */}
+          {/* 5. TWO-COLUMN OPERATIONAL GRID: AVAILABLE ROOM MANAGEMENT + VIEW-ONLY DYNAMIC PRICING */}
           <div className="hd-two-column-grid">
-            {/* LEFT COLUMN: BOOK A ROOM (SLOT BOOKING) */}
-            <section className="hd-card hd-slot-booking-card" id="slot-booking">
+            {/* LEFT COLUMN: AVAILABLE ROOM MANAGEMENT (REPLACES MANUAL BOOKING FORM) */}
+            <section className="hd-card hd-room-mgmt-card" id="room-management">
               <div className="hd-card-head">
                 <div>
-                  <h2 className="hd-card-title">🗓️ Book a Room (Slot Booking)</h2>
+                  <h2 className="hd-card-title">🛏️ Available Room Management</h2>
                   <p className="hd-card-sub">
-                    Select check-in and check-out schedule to verify slot-wide room availability and calculate guaranteed dynamic price.
+                    Manage operational status across all 50 rooms. Mark rooms as Available or Maintenance. Occupied rooms with active bookings are locked until checkout.
                   </p>
                 </div>
               </div>
 
-              <div className="hd-slot-form-grid">
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Check-in Date</label>
+              {/* Filters & Search Row */}
+              <div className="hd-mgmt-controls-row">
+                <div className="hd-mgmt-search-box">
+                  <span className="hd-search-icon">🔍</span>
                   <input
-                    type="date"
-                    value={checkInDate}
-                    onChange={(e) => setCheckInDate(e.target.value)}
-                    className="hd-form-input"
+                    type="text"
+                    placeholder="Search Room # (e.g. 101, 204)..."
+                    value={roomSearchQuery}
+                    onChange={(e) => setRoomSearchQuery(e.target.value)}
+                    className="hd-mgmt-search-input"
                   />
                 </div>
 
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Check-in Time</label>
-                  <input
-                    type="time"
-                    value={checkInTime}
-                    onChange={(e) => setCheckInTime(e.target.value)}
-                    className="hd-form-input"
-                  />
-                </div>
-
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Check-out Date</label>
-                  <input
-                    type="date"
-                    value={checkOutDate}
-                    onChange={(e) => setCheckOutDate(e.target.value)}
-                    className="hd-form-input"
-                  />
-                </div>
-
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Check-out Time</label>
-                  <input
-                    type="time"
-                    value={checkOutTime}
-                    onChange={(e) => setCheckOutTime(e.target.value)}
-                    className="hd-form-input"
-                  />
-                </div>
-
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Number of Guests</label>
-                  <select
-                    value={guestsCount}
-                    onChange={(e) => setGuestsCount(Number(e.target.value))}
-                    className="hd-form-select"
-                  >
-                    <option value={1}>1 Guest</option>
-                    <option value={2}>2 Guests</option>
-                    <option value={3}>3 Guests</option>
-                    <option value={4}>4 Guests</option>
-                    <option value={5}>5 Guests</option>
-                    <option value={6}>6 Guests (Family)</option>
-                  </select>
-                </div>
-
-                <div className="hd-form-group">
-                  <label className="hd-form-label">Room Type</label>
-                  <select
-                    value={slotRoomType}
-                    onChange={(e) => setSlotRoomType(e.target.value)}
-                    className="hd-form-select"
-                  >
-                    <option value="standard">Standard Room (Base: ₹500/hr, Max: ₹700/hr)</option>
-                    <option value="deluxe">Deluxe Room (Base: ₹750/hr, Max: ₹1,050/hr)</option>
-                    <option value="suite">Suite / Family (Base: ₹1,000/hr, Max: ₹1,200/hr)</option>
-                  </select>
+                <div className="hd-table-filters">
+                  {['ALL', 'STANDARD', 'DELUXE', 'FAMILY'].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setRoomFilterType(cat)}
+                      className={`hd-filter-pill ${roomFilterType === cat ? 'active' : ''}`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Slot Duration Notice */}
-              <div className="hd-selected-duration-box">
-                <span className="hd-duration-label">Selected Slot Duration:</span>
-                <strong className="hd-duration-val">{slotDurationHours} hours</strong>
-                <span className="hd-duration-calc">({formatDateTimeDisplay(checkInISO)} → {formatDateTimeDisplay(checkOutISO)})</span>
+              {/* Room Inventory Table */}
+              <div className="hd-table-responsive hd-mgmt-table-wrap">
+                <table className="hd-saas-table hd-mgmt-table">
+                  <thead>
+                    <tr>
+                      <th>Room No.</th>
+                      <th>Type</th>
+                      <th>Capacity</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayedRooms.slice(0, 10).map((room) => {
+                      const isOccupied = room.status === 'booked' || room.status === 'occupied';
+                      const isMaintenance = room.status === 'maintenance' || room.status === 'unavailable';
+                      const isAvailable = room.status === 'available';
+
+                      return (
+                        <tr key={room.room_id} className={`row-${room.status}`}>
+                          <td className="cell-room-no">
+                            <span className="hd-room-chip">#{room.room_number}</span>
+                          </td>
+                          <td className="cell-type">{room.room_type}</td>
+                          <td className="cell-cap">Floor {room.floor} • {room.capacity} Guests</td>
+                          <td className="cell-status">
+                            {isAvailable && <span className="hd-status-badge available">Available</span>}
+                            {isOccupied && <span className="hd-status-badge booked">Occupied</span>}
+                            {isMaintenance && <span className="hd-status-badge maintenance">Maintenance</span>}
+                          </td>
+                          <td className="cell-action">
+                            {isOccupied ? (
+                              <button
+                                type="button"
+                                disabled
+                                className="hd-btn-toggle-status locked"
+                                title="Room is currently occupied with an active booking. Checkout required to release."
+                              >
+                                🔒 Occupied (Active)
+                              </button>
+                            ) : isMaintenance ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRoomStatus(room)}
+                                className="hd-btn-toggle-status set-avail"
+                                title="Mark this room as Available for tourist bookings"
+                              >
+                                ✅ Set Available
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRoomStatus(room)}
+                                className="hd-btn-toggle-status set-maint"
+                                title="Take this room out of inventory for maintenance"
+                              >
+                                🔧 Set Maintenance
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="hd-slot-actions-row">
-                <button
-                  type="button"
-                  onClick={handleCheckAvailability}
-                  className="hd-btn-primary"
-                >
-                  🔍 Check Availability &amp; Price
-                </button>
+              <div className="hd-table-footer">
+                Showing {Math.min(10, displayedRooms.length)} of {displayedRooms.length} rooms ({totalRoomsCount} Total inventory)
               </div>
-
-              {/* Slot Availability Feedback Banner */}
-              {availabilityResult && (
-                <div className={`hd-availability-result-box ${availabilityResult.success ? 'success' : 'error'}`}>
-                  <div className="hd-avail-icon">{availabilityResult.success ? '✓' : '✕'}</div>
-                  <div className="hd-avail-details">
-                    <strong>{availabilityResult.message}</strong>
-                    {availabilityResult.success && (
-                      <div className="hd-avail-meta">
-                        Slot: {slotDurationHours} hours • Rate: ₹{finalHourlyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}/hr • Total: <strong>₹{totalBookingPrice.toLocaleString('en-IN')}</strong>
-                        {availabilityResult.isCapped && (
-                          <span className="hd-surge-cap-pill">AI Surge Cap Applied</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </section>
 
-            {/* RIGHT COLUMN: DYNAMIC PRICING (LIVE) AUTO-UPDATING CARD */}
+            {/* RIGHT COLUMN: DYNAMIC PRICING (LIVE) VIEW-ONLY CARD */}
             <section className="hd-card hd-dynamic-pricing-card" id="dynamic-pricing">
               <div className="hd-card-head">
                 <div className="hd-head-title-row">
                   <h2 className="hd-card-title">⚡ Dynamic Pricing (Live)</h2>
                   <div className="hd-badge-group">
                     <span className="hd-badge-ai">AI Controlled</span>
-                    <span className="hd-badge-auto-updating">
-                      <span className="hd-ping-dot"></span> Auto-updating
-                    </span>
+                    <span className="hd-view-only-pill">STRICTLY VIEW ONLY</span>
                   </div>
                 </div>
                 <p className="hd-card-sub">
-                  Authoritative live hourly tariff computed deterministically from Government/AI demand telemetry and room limits.
+                  Authoritative live hourly tariff computed deterministically from Government/AI demand telemetry. Hotel owner has zero controls over tariffs.
                 </p>
               </div>
 
-              {/* Dynamic Pricing Metrics Grid */}
-              <div className="hd-pricing-breakdown-box">
-                <div className="hd-pricing-row">
-                  <span className="hd-pricing-label">Base Price:</span>
-                  <strong className="hd-pricing-val">₹{baseHourlyPrice.toLocaleString('en-IN')}/hour</strong>
-                </div>
+              {/* Dynamic Rates Table across Room Categories */}
+              <div className="hd-pricing-category-grid">
+                {[
+                  { key: 'standard', name: 'Standard Room', cfg: ROOM_CONFIG.standard },
+                  { key: 'deluxe', name: 'Deluxe Room', cfg: ROOM_CONFIG.deluxe },
+                  { key: 'suite', name: 'Suite / Family', cfg: ROOM_CONFIG.suite },
+                ].map((item) => {
+                  const rawHourly = item.cfg.base * demandMultiplier;
+                  const finalHourly = Math.min(rawHourly, item.cfg.maxHourly);
+                  const isHourlyCapped = rawHourly > item.cfg.maxHourly;
 
-                <div className="hd-pricing-row">
-                  <span className="hd-pricing-label">Government/AI Demand:</span>
-                  <span className="hd-pricing-val">
-                    <strong className="hd-mult-tag">{demandPct > 0 ? `+${demandPct}%` : `${demandPct}%`}</strong>{' '}
-                    <span className="hd-demand-text-label">({getDemandLabel(demandPct)})</span>
-                  </span>
-                </div>
+                  return (
+                    <div key={item.key} className="hd-pricing-cat-card">
+                      <div className="hd-pcat-header">
+                        <span className="hd-pcat-title">{item.name}</span>
+                        <span className="hd-pcat-base">Base: ₹{item.cfg.base}/hr</span>
+                      </div>
+                      <div className="hd-pcat-price-row">
+                        <span className="hd-pcat-price">₹{finalHourly.toFixed(2)}</span>
+                        <span className="hd-pcat-denom">/hour</span>
+                      </div>
+                      <div className="hd-pcat-meta">
+                        <span>Mult: <strong>{demandMultiplier.toFixed(2)}x</strong></span>
+                        <span>Ceiling: <strong>₹{item.cfg.maxHourly}/hr</strong></span>
+                      </div>
+                      {isHourlyCapped && (
+                        <div className="hd-hourly-cap-tag">Hourly Ceiling Applied</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
 
-                <div className="hd-pricing-row">
-                  <span className="hd-pricing-label">AI Demand Multiplier:</span>
-                  <strong className="hd-pricing-val hd-mult-tag">{demandMultiplier.toFixed(2)}x</strong>
-                </div>
-
-                <div className="hd-pricing-row highlight-rate">
-                  <span className="hd-pricing-label">Final AI Price:</span>
-                  <strong className="hd-pricing-val text-blue">
-                    ₹{finalHourlyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/hour
-                  </strong>
-                </div>
-
-                <div className="hd-pricing-divider"></div>
-
-                <div className="hd-pricing-row">
-                  <span className="hd-pricing-label">Selected Slot Duration:</span>
-                  <strong className="hd-pricing-val">{slotDurationHours} hours</strong>
-                </div>
-
-                <div className="hd-pricing-row highlight-total">
-                  <span className="hd-pricing-label">Total Price:</span>
-                  <div className="hd-total-col">
-                    <strong className="hd-pricing-val text-total">₹{totalBookingPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                    {isCapped && (
-                      <span className="hd-surge-cap-pill">AI Surge Cap Applied</span>
-                    )}
+              {/* Safety Maximum Cap Notice */}
+              <div className="hd-pricing-cap-summary-box">
+                <div className="hd-cap-icon-box">🛡️</div>
+                <div className="hd-cap-content">
+                  <div className="hd-cap-title">Hard Total Cap: ₹{MAX_TOTAL_BOOKING_CAP.toLocaleString('en-IN')} Per Booking</div>
+                  <div className="hd-cap-desc">
+                    State Government consumer protection rule: no single pilgrim reservation may exceed ₹12,000 regardless of hours or surge level. When reached, <strong>AI Surge Cap Applied</strong> is displayed.
                   </div>
-                </div>
-
-                <div className="hd-pricing-row sub-cap-row">
-                  <span className="hd-pricing-label">Maximum Booking Price:</span>
-                  <span className="hd-pricing-val text-cap">₹{MAX_TOTAL_BOOKING_CAP.toLocaleString('en-IN')} (Safety Maximum)</span>
                 </div>
               </div>
 
               <div className="hd-pricing-footer-note">
-                ℹ️ <em>Price updates automatically when you change date, time, room type, or incoming government surge telemetry.</em>
+                ℹ️ <em>Tariff auto-updates with live incoming crowd telemetry from the Kedarnath District Command Center.</em>
               </div>
             </section>
           </div>
 
-          {/* 6. ROOM SLOT AVAILABILITY TABLE */}
-          <section className="hd-card hd-availability-section" id="room-slots">
-            <div className="hd-card-head table-head">
+          {/* 6. MOVIE-SHOW-STYLE HOURLY ROOM SLOT TIMELINE SECTION */}
+          <section className="hd-card hd-movie-slots-section" id="room-slots">
+            <div className="hd-card-head">
               <div>
-                <h2 className="hd-card-title">🛏️ Room Slot Availability</h2>
+                <h2 className="hd-card-title">🎬 Hourly Room Slot Timeline (Show-Style Schedule)</h2>
                 <p className="hd-card-sub">
-                  Full 50-room inventory with real-time occupancy interval tracking and dynamic AI-governed price per hour.
+                  Intuitive show-style timing chips displaying 24-hour occupancy at a glance. Select any room to inspect free hours and booking details.
                 </p>
               </div>
 
-              <div className="hd-table-filters">
-                {['ALL', 'STANDARD', 'DELUXE', 'FAMILY'].map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setTableTypeFilter(cat)}
-                    className={`hd-filter-pill ${tableTypeFilter === cat ? 'active' : ''}`}
+              {/* Slot Schedule Controls */}
+              <div className="hd-movie-controls-bar">
+                <div className="hd-movie-control-group">
+                  <label className="hd-movie-lbl">Date:</label>
+                  <input
+                    type="date"
+                    value={selectedSlotDate}
+                    onChange={(e) => setSelectedSlotDate(e.target.value)}
+                    className="hd-movie-date-input"
+                  />
+                </div>
+
+                <div className="hd-movie-control-group">
+                  <label className="hd-movie-lbl">Select Room:</label>
+                  <select
+                    value={selectedRoomForSlots}
+                    onChange={(e) => setSelectedRoomForSlots(e.target.value)}
+                    className="hd-movie-room-select"
                   >
-                    {cat}
-                  </button>
-                ))}
+                    {roomsInventory.map((r) => (
+                      <option key={r.room_id} value={r.room_number}>
+                        Room #{r.room_number} ({r.room_type}) {r.status === 'maintenance' ? '• [Maintenance]' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="hd-table-responsive">
-              <table className="hd-saas-table">
-                <thead>
-                  <tr>
-                    <th>Room No.</th>
-                    <th>Room Type</th>
-                    <th>Status</th>
-                    <th>Current Booking Slot</th>
-                    <th>Available After</th>
-                    <th>AI Price/Hour</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedRooms.slice(0, 15).map((room) => {
-                    const rTypeKey = room.room_type.toLowerCase();
-                    const cfg = ROOM_CONFIG[rTypeKey] || ROOM_CONFIG.deluxe;
-                    const liveRoomHourly = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
-                    const isAvailable = room.status === 'available';
+            {/* Legend Bar */}
+            <div className="hd-movie-legend-bar">
+              <div className="hd-legend-item">
+                <span className="hd-legend-dot available"></span>
+                <span>Available (Ready for Booking)</span>
+              </div>
+              <div className="hd-legend-item">
+                <span className="hd-legend-dot booked"></span>
+                <span>Booked / Occupied (Click for Details)</span>
+              </div>
+              <div className="hd-legend-item">
+                <span className="hd-legend-dot maintenance"></span>
+                <span>Maintenance / Blocked</span>
+              </div>
+            </div>
 
-                    return (
-                      <tr key={room.room_id} className={isAvailable ? 'row-available' : 'row-booked'}>
-                        <td className="cell-room-no">
-                          <span className="hd-room-chip">#{room.room_number}</span>
-                        </td>
-                        <td className="cell-type">{room.room_type}</td>
-                        <td className="cell-status">
-                          <span className={`hd-status-badge ${isAvailable ? 'available' : 'booked'}`}>
-                            {isAvailable ? 'Available' : 'Booked'}
-                          </span>
-                        </td>
-                        <td className="cell-slot">{room.booking_slot}</td>
-                        <td className="cell-available-after">{room.available_after}</td>
-                        <td className="cell-price">
-                          <strong>₹{liveRoomHourly.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</strong>
-                          <span className="hd-cell-sub">/hr</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* Movie-Style Hourly Chips Grid */}
+            <div className="hd-movie-chips-grid">
+              {hourlySlotsForSelectedRoom.map((slot) => {
+                const isBooked = slot.status === 'booked';
+                const isMaint = slot.status === 'maintenance';
+                const isAvail = slot.status === 'available';
+
+                return (
+                  <div
+                    key={slot.hour}
+                    onClick={() => {
+                      if (isBooked && slot.booking) {
+                        setSelectedSlotDetail(slot.booking);
+                      }
+                    }}
+                    className={`hd-slot-chip ${slot.status} ${isBooked ? 'clickable' : ''}`}
+                    title={isBooked ? `Booked by ${slot.guestName}. Click to inspect reservation.` : (isMaint ? 'Room under maintenance' : `Available at ₹${slot.hourlyRate?.toFixed(2)}/hr`)}
+                  >
+                    <div className="hd-chip-time">{slot.timeLabel}</div>
+                    <div className="hd-chip-badge">
+                      {isAvail && <span className="hd-badge-txt avail">AVAILABLE</span>}
+                      {isBooked && <span className="hd-badge-txt booked">BOOKED</span>}
+                      {isMaint && <span className="hd-badge-txt maint">MAINTENANCE</span>}
+                    </div>
+                    {isBooked && slot.guestName && (
+                      <div className="hd-chip-guest-name">👤 {slot.guestName}</div>
+                    )}
+                    {isAvail && slot.hourlyRate && (
+                      <div className="hd-chip-rate">₹{slot.hourlyRate.toFixed(0)}/hr</div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            <div className="hd-table-footer">
-              Showing {Math.min(15, displayedRooms.length)} of {displayedRooms.length} rooms ({totalRoomsCount} Total certified rooms)
-            </div>
+
+            {/* Quick Detail Banner if Selected */}
+            {selectedSlotDetail && (
+              <div className="hd-slot-detail-popover">
+                <div className="hd-slot-detail-head">
+                  <strong>📋 Reservation Details: {selectedSlotDetail.booking_id}</strong>
+                  <button type="button" onClick={() => setSelectedSlotDetail(null)} className="hd-btn-close-mini">✕</button>
+                </div>
+                <div className="hd-slot-detail-grid">
+                  <div>Guest: <strong>{selectedSlotDetail.guest_name}</strong> ({selectedSlotDetail.guest_count} Guests)</div>
+                  <div>Room: <strong>Room #{selectedSlotDetail.room_number} ({selectedSlotDetail.room_type})</strong></div>
+                  <div>Interval: <strong>{formatDateTimeDisplay(selectedSlotDetail.check_in)} → {formatDateTimeDisplay(selectedSlotDetail.check_out)}</strong></div>
+                  <div>Rate: <strong>₹{selectedSlotDetail.final_hourly_rate || selectedSlotDetail.dynamic_hourly_rate}/hr</strong></div>
+                  <div>Total Amount: <strong className="text-total">₹{Number(selectedSlotDetail.total_amount || selectedSlotDetail.price).toLocaleString('en-IN')}</strong></div>
+                  <div>Status: <span className={`hd-req-status-pill ${selectedSlotDetail.status}`}>{selectedSlotDetail.status.toUpperCase()}</span></div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* 7. RECENT BOOKING REQUESTS (WITH DURATION, HOURLY & CAPPED TOTAL) */}
@@ -1043,7 +1121,7 @@ export default function HotelDashboard({ showToast }) {
               <div>
                 <h2 className="hd-card-title">📩 Recent Booking Requests</h2>
                 <p className="hd-card-sub">
-                  Incoming pilgrim reservation requests calculated via YatraSetu AI dynamic tariff engine.
+                  Incoming pilgrim reservation requests submitted from the Tourist Portal, priced authoritatively by YatraSetu AI engine.
                 </p>
               </div>
 
@@ -1165,13 +1243,13 @@ export default function HotelDashboard({ showToast }) {
             </div>
           </section>
 
-          {/* 8. EXPRESS QR VERIFICATION & GUEST TERMINAL */}
+          {/* 8. EXPRESS QR VERIFICATION & GUEST TERMINAL WITH CHECKOUT TIME LOCK */}
           <section className="hd-card hd-terminal-section" id="terminal">
             <div className="hd-card-head">
               <div>
-                <h2 className="hd-card-title">🪪 Express QR Verification &amp; Guest Check-In Terminal</h2>
+                <h2 className="hd-card-title">🪪 Express QR Verification &amp; Guest Terminal</h2>
                 <p className="hd-card-sub">
-                  Digital guest pass verification and automated room occupancy state release upon checkout.
+                  Digital guest pass verification with enforced time-lock protection until booked slot completion.
                 </p>
               </div>
               <span className="hd-station-badge">STATION: DESK-01</span>
@@ -1199,28 +1277,68 @@ export default function HotelDashboard({ showToast }) {
                       <div className="hd-guest-room-sub">
                         Allocated: <strong>{terminalState.roomAssigned}</strong> • Party: {terminalState.partySize} Guests
                       </div>
+                      <div className="hd-guest-slot-time">
+                        Booked Slot: <strong>{formatDateTimeDisplay(terminalState.check_in)} → {formatDateTimeDisplay(terminalState.check_out)}</strong>
+                      </div>
                     </div>
                     <span className={`hd-status-chip ${terminalState.guestStatus.toLowerCase()}`}>
                       {terminalState.guestStatus === 'PENDING' ? 'Awaiting Check-in' : (terminalState.guestStatus === 'CHECKED_IN' ? 'Checked-In ✔' : 'Checked-Out ✔')}
                     </span>
                   </div>
 
+                  {/* Checkout Lock Callout Banner */}
+                  {terminalState.guestStatus === 'CHECKED_IN' && isCheckoutLocked && (
+                    <div className="hd-lock-notice-box">
+                      <span className="hd-lock-icon">🔒</span>
+                      <div className="hd-lock-text">
+                        <strong>Checkout Locked:</strong> Slot in progress until {formatDateTimeDisplay(terminalState.check_out)}. Guest cannot check out before the booked duration ends.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Staff Emergency Override Toggle */}
+                  {terminalState.guestStatus === 'CHECKED_IN' && isCheckoutLocked && (
+                    <div className="hd-override-box">
+                      <label className="hd-override-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={emergencyOverride}
+                          onChange={(e) => setEmergencyOverride(e.target.checked)}
+                        />
+                        <span>Staff Emergency Override (Authorizes early checkout)</span>
+                      </label>
+                    </div>
+                  )}
+
                   <div className="hd-guest-actions-grid">
                     <button
                       type="button"
                       onClick={simulateGuestCheckIn}
+                      disabled={terminalState.guestStatus === 'CHECKED_IN' || terminalState.guestStatus === 'CHECKED_OUT'}
                       className="hd-btn-terminal-checkin"
                     >
                       📱 Simulate QR Check-In
                     </button>
-                    <button
-                      type="button"
-                      onClick={simulateGuestCheckOut}
-                      disabled={terminalState.guestStatus !== 'CHECKED_IN'}
-                      className={`hd-btn-terminal-checkout ${terminalState.guestStatus === 'CHECKED_IN' ? 'active' : ''}`}
-                    >
-                      ✨ Simulate Check-Out &amp; Release Room
-                    </button>
+
+                    {isCheckoutLocked ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="hd-btn-terminal-checkout locked"
+                        title={`Checkout locked until ${formatDateTimeDisplay(terminalState.check_out)}`}
+                      >
+                        🔒 Checkout locked until {formatDateTimeDisplay(terminalState.check_out)}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleGuestCheckOut}
+                        disabled={terminalState.guestStatus !== 'CHECKED_IN'}
+                        className={`hd-btn-terminal-checkout ${terminalState.guestStatus === 'CHECKED_IN' ? 'active' : ''}`}
+                      >
+                        ✨ Complete Check-Out &amp; Release Room
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1228,87 +1346,6 @@ export default function HotelDashboard({ showToast }) {
           </section>
         </div>
       </div>
-
-      {/* EXTERNAL GOVERNMENT / AI TELEMETRY SIMULATOR MODAL (FOR VERIFICATION / TESTS 1 & 2) */}
-      {showGovSimulatorModal && (
-        <div className="hd-modal-overlay" onClick={() => setShowGovSimulatorModal(false)}>
-          <div className="hd-modal-dialog gov-sim" onClick={(e) => e.stopPropagation()}>
-            <div className="hd-gov-badge-icon">🏛️</div>
-            <h3 className="hd-modal-title">District Administration Telemetry Console</h3>
-            <p className="hd-modal-sub">
-              <strong>External System Simulation:</strong> This console represents the Government Command Center and AI Crowd Predictor. Use this to dispatch real-time crowd surge updates to verify hotel pricing behavior.
-            </p>
-
-            <div className="hd-sim-presets-group">
-              <div className="hd-sim-lbl">Automated Verification Scenarios (Section 24):</div>
-              <div className="hd-sim-buttons-grid">
-                <button
-                  type="button"
-                  onClick={() => { setDemandPct(20); setSimGovInput('20'); setShowGovSimulatorModal(false); if (showToast) showToast('🏛️ Government Telemetry set to +20% Low Surge (Test 1)'); }}
-                  className="hd-sim-btn"
-                >
-                  📡 Dispatch 20% Demand (Test 1 &amp; 2)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setDemandPct(60); setSimGovInput('60'); setShowGovSimulatorModal(false); if (showToast) showToast('🏛️ Government Telemetry set to +60% High Surge (Test 2)'); }}
-                  className="hd-sim-btn"
-                >
-                  ⚡ Dispatch 60% Demand (Test 2)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setDemandPct(50); setSimGovInput('50'); setShowGovSimulatorModal(false); if (showToast) showToast('🏛️ Government Telemetry set to +50% Kedarnath Surge'); }}
-                  className="hd-sim-btn"
-                >
-                  🏔️ Dispatch +50% Kedarnath Surge
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setDemandPct(0); setSimGovInput('0'); setShowGovSimulatorModal(false); if (showToast) showToast('🏛️ Government Telemetry set to 0% Normal'); }}
-                  className="hd-sim-btn"
-                >
-                  🟢 Dispatch 0% Normal Demand
-                </button>
-              </div>
-            </div>
-
-            <div className="hd-sim-custom-row">
-              <span>Custom Telemetry Surge %:</span>
-              <input
-                type="number"
-                value={simGovInput}
-                onChange={(e) => setSimGovInput(e.target.value)}
-                className="hd-sim-input"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  const val = parseInt(simGovInput, 10);
-                  if (!isNaN(val)) {
-                    setDemandPct(val);
-                    setShowGovSimulatorModal(false);
-                    if (showToast) showToast(`🏛️ Broadcasted custom surge telemetry: ${val}%`);
-                  }
-                }}
-                className="hd-btn-primary small"
-              >
-                Broadcast
-              </button>
-            </div>
-
-            <div className="hd-modal-actions">
-              <button
-                type="button"
-                onClick={() => setShowGovSimulatorModal(false)}
-                className="hd-btn-modal-cancel"
-              >
-                Close Console
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* DECLINE DIALOG MODAL */}
       {declineDialogReqId && (

@@ -2602,9 +2602,16 @@ export function checkRoomConflictLocal(roomNumber, reqInStr, reqOutStr, excludeB
   const reqOut = new Date(reqOutStr).getTime();
   if (isNaN(reqIn) || isNaN(reqOut) || reqIn >= reqOut) return true;
 
+  // Check if room is marked maintenance or unavailable
+  const rooms = getLocalRooms();
+  const rm = rooms.find(r => String(r.room_number) === String(roomNumber));
+  if (rm && (rm.status === 'maintenance' || rm.status === 'unavailable')) {
+    return true;
+  }
+
   const bookings = getLocalBookings();
   for (const b of bookings) {
-    if (b.booking_status === 'cancelled' || b.booking_status === 'declined') continue;
+    if (b.booking_status === 'cancelled' || b.booking_status === 'declined' || b.booking_status === 'checked-out' || b.booking_status === 'completed') continue;
     if (String(b.room_number) !== String(roomNumber)) continue;
     if (excludeBookingId && b.booking_id === excludeBookingId) continue;
 
@@ -2656,6 +2663,9 @@ export async function checkHotelRoomAvailability({ hotelId = 'H001', checkIn, ch
     const rNum = String(r.room_number);
     const rType = r.room_type;
     const cap = r.capacity;
+
+    // Filter out rooms under maintenance
+    if (r.status === 'maintenance' || r.status === 'unavailable') continue;
 
     if (roomNumber && String(roomNumber).trim() !== rNum) continue;
     if (roomType && roomType.toLowerCase() !== 'all' && rType.toLowerCase() !== roomType.toLowerCase()) {
@@ -3057,6 +3067,81 @@ export async function fetchHotelRoomSlots(hotelId = 'H001', date = null, roomNum
     results = results.filter(rs => String(rs.room_number) === String(roomNumber));
   }
   return results;
+}
+
+// 10. Update Room Status (Available / Maintenance / Unavailable)
+export async function updateRoomStatus(hotelId = 'H001', roomId, status) {
+  try {
+    const updated = await apiRequest(`/hotels/${encodeURIComponent(hotelId)}/rooms/${encodeURIComponent(roomId)}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status })
+    });
+    const rooms = getLocalRooms().map(r => (String(r.room_id) === String(roomId) || String(r.room_number) === String(roomId)) ? { ...r, status } : r);
+    saveLocalRooms(rooms);
+    broadcastHotelEvent({ type: 'ROOM_STATUS_CHANGED', hotelId, roomId, status });
+    return updated;
+  } catch (err) {
+    console.warn("updateRoomStatus backend fallback:", err.message);
+    if (!DEMO_MODE) throw err;
+  }
+
+  const rooms = getLocalRooms();
+  const target = rooms.find(r => String(r.room_id) === String(roomId) || String(r.room_number) === String(roomId));
+  if (!target) throw new Error(`Room ${roomId} not found in inventory.`);
+  target.status = status;
+  saveLocalRooms(rooms);
+  broadcastHotelEvent({ type: 'ROOM_STATUS_CHANGED', hotelId, roomId, status });
+  return { status: 'success', room_id: target.room_id, room_number: target.room_number, new_status: status };
+}
+
+// 11. Checkout Hotel Booking (With Slot Completion Time Lock)
+export async function checkoutHotelBooking(bookingId, override = false) {
+  try {
+    const res = await apiRequest('/hotels/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ booking_id: bookingId, override })
+    });
+    
+    const bookings = getLocalBookings().map(b => (b.booking_id === bookingId || b.id === bookingId) ? { ...b, booking_status: 'checked-out', status: 'checked-out' } : b);
+    saveLocalBookings(bookings);
+    
+    const target = bookings.find(b => b.booking_id === bookingId || b.id === bookingId);
+    if (target && target.room_number) {
+      const rooms = getLocalRooms().map(r => String(r.room_number) === String(target.room_number) ? { ...r, status: 'available', current_booking_id: null, next_available_time: null } : r);
+      saveLocalRooms(rooms);
+    }
+    
+    broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId });
+    return res;
+  } catch (err) {
+    if (err.status === 400 || (err.message && err.message.includes('Checkout locked'))) {
+      throw err;
+    }
+    console.warn("checkoutHotelBooking backend fallback:", err.message);
+    if (!DEMO_MODE) throw err;
+  }
+
+  const bookings = getLocalBookings();
+  const target = bookings.find(b => b.booking_id === bookingId || b.id === bookingId);
+  if (!target) throw new Error(`Booking ${bookingId} not found.`);
+
+  const dtOut = new Date(target.check_out || target.check_out_datetime).getTime();
+  if (dtOut && Date.now() < dtOut && !override) {
+    const formatted = new Date(dtOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    throw new Error(`Checkout locked until ${formatted}. Guest cannot check out before booked slot completion.`);
+  }
+
+  target.booking_status = 'checked-out';
+  target.status = 'checked-out';
+  saveLocalBookings(bookings);
+
+  if (target.room_number) {
+    const rooms = getLocalRooms().map(r => String(r.room_number) === String(target.room_number) ? { ...r, status: 'available', current_booking_id: null, next_available_time: null } : r);
+    saveLocalRooms(rooms);
+  }
+
+  broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId });
+  return { status: 'success', booking_id: bookingId, message: 'Checkout completed successfully.' };
 }
 
 // 9. Get Hotel Live Calculated Metrics
