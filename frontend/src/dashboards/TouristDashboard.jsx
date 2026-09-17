@@ -273,12 +273,23 @@ export default function TouristDashboard({
     loadHotels();
     loadTouristBookings();
 
-    // 5-second automatic polling for live booking status changes
+    const handleBookingEvent = () => {
+      loadTouristBookings();
+    };
+
+    window.addEventListener('yatrasetu:hotel_booking_update', handleBookingEvent);
+    window.addEventListener('yatrasetu:hotel_request_update', handleBookingEvent);
+
+    // 12-second gentle polling fallback for live booking status changes
     const pollTimer = setInterval(() => {
       loadTouristBookings();
-    }, 5000);
+    }, 12000);
 
-    return () => clearInterval(pollTimer);
+    return () => {
+      clearInterval(pollTimer);
+      window.removeEventListener('yatrasetu:hotel_booking_update', handleBookingEvent);
+      window.removeEventListener('yatrasetu:hotel_request_update', handleBookingEvent);
+    };
   }, [loadHotels, loadTouristBookings]);
 
   // Authoritative Government Reroute synchronization
@@ -299,10 +310,25 @@ export default function TouristDashboard({
       }
     };
     checkReroute();
-    const timer = setInterval(checkReroute, 4000);
+
+    const handleRerouteEvt = (e) => {
+      if (!isMounted) return;
+      const data = e.detail;
+      if (data?.is_active && data?.alert) {
+        setActiveReroute(data.alert);
+      } else if (data?.is_active === false) {
+        setActiveReroute(null);
+      } else {
+        checkReroute();
+      }
+    };
+
+    window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvt);
+    const timer = setInterval(checkReroute, 10000);
     return () => {
       isMounted = false;
       clearInterval(timer);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleRerouteEvt);
     };
   }, []);
 

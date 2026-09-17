@@ -2109,12 +2109,16 @@ export async function fetchMe() {
   if (!token) {
     return null;
   }
+  const cachedUser = loadUserSession();
+  if (token.startsWith('demo-') || token === 'demo-jwt-offline-token') {
+    return cachedUser || null;
+  }
   try {
     const data = await apiRequest('/auth/me', { requiresAuth: true });
     const rawRole = data.role || data.profile?.role;
     if (!rawRole) {
       console.warn("fetchMe: user profile has no assigned role.");
-      return null;
+      return cachedUser || null;
     }
 
     let resolvedRole = rawRole;
@@ -2140,12 +2144,12 @@ export async function fetchMe() {
     localStorage.setItem("yatrasetu_user", JSON.stringify(updatedUser));
     return updatedUser;
   } catch (err) {
-    if (err.status === 401) {
+    if (err.status === 401 || err.status === 403) {
       logoutUser();
       return null;
     }
-    console.warn("fetchMe network error:", err.message);
-    return null;
+    console.warn("fetchMe network fallback:", err.message);
+    return cachedUser || null;
   }
 }
 

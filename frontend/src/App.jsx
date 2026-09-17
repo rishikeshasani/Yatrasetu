@@ -108,11 +108,6 @@ export default function App() {
           } else {
             setActiveRole(null);
           }
-        } else if (freshUser === null && getAuthToken()) {
-          // Token expired or invalid
-          logoutUser();
-          setCurrentUser(null);
-          showToast("Your session expired. Please log in again.");
         }
       }).catch(() => {});
     }
@@ -187,7 +182,7 @@ export default function App() {
     };
 
     window.addEventListener('yatrasetu:emergency_reroute', handleRerouteEvent);
-    const pollInterval = setInterval(syncRerouteState, 4000);
+    const pollInterval = setInterval(syncRerouteState, 8000);
 
     return () => {
       isMounted = false;
@@ -260,8 +255,8 @@ export default function App() {
           fetchSitePrediction(selectedSiteId)
         ];
 
-        // Every 4th tick (~12s), also refresh full site density map across all 25 shrines
-        const shouldSyncAll = pollTickRef.current % 4 === 0;
+        // Every 3rd tick (~30s), also refresh full site density map across all 25 shrines
+        const shouldSyncAll = pollTickRef.current % 3 === 0;
         if (shouldSyncAll && sites.length > 0) {
           promises.push(fetchAllSiteDensities(sites));
         }
@@ -284,7 +279,7 @@ export default function App() {
         if (mlForecast) setCurrent24hForecast(mlForecast);
         if (prediction) setCurrentPrediction(prediction);
       } catch (err) {
-        console.error(`Error polling telemetry for ${selectedSiteId}:`, err);
+        console.warn(`Telemetry polling skipped for ${selectedSiteId}:`, err.message);
       } finally {
         isPollingRef.current = false;
       }
@@ -292,14 +287,14 @@ export default function App() {
 
     pollTelemetry();
 
-    const pollInterval = setInterval(pollTelemetry, 3000);
+    const pollInterval = setInterval(pollTelemetry, 10000);
 
     return () => {
       isMounted = false;
       clearInterval(pollInterval);
       isPollingRef.current = false;
     };
-  }, [selectedSiteId, sites]);
+  }, [selectedSiteId, sites?.length]);
 
   const handleSelectSite = (siteOrId) => {
     const sId = typeof siteOrId === 'object' && siteOrId ? siteOrId.id : siteOrId;
