@@ -70,8 +70,12 @@ function ScannableQRCode({ payload }) {
 // CONFIGURABLE PRICING ENGINE CONSTANTS & RULES (AI GOVERNED - STRICTLY VIEW ONLY)
 // ---------------------------------------------------------------------------
 export const ROOM_CONFIG = {
-  suite: { base: 1000, maxHourly: 1200, label: 'Suite' },
-  family: { base: 1000, maxHourly: 1200, label: 'Family Room' },
+  standard: { base: 500, maxHourly: 700, minHourly: 250, label: 'Standard Room', slotsCap: 10 },
+  deluxe: { base: 750, maxHourly: 1050, minHourly: 350, label: 'Deluxe Room', slotsCap: 10 },
+  suite: { base: 1000, maxHourly: 1200, minHourly: 450, label: 'Suite', slotsCap: 6 },
+  family: { base: 1000, maxHourly: 1200, minHourly: 450, label: 'Family Room', slotsCap: 6 },
+  dorm: { base: 300, maxHourly: 450, minHourly: 150, label: 'Dormitory Bunk', slotsCap: 20 },
+  tent: { base: 400, maxHourly: 600, minHourly: 200, label: 'Alpine Tent', slotsCap: 12 }
 };
 
 export const DEMAND_MULTIPLIER_RULES = [
