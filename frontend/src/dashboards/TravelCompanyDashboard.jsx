@@ -4,7 +4,6 @@ import {
   fetchTransitNode,
   simulateTransitNode,
   dispatchLocalTransitBus,
-  uploadTransitVideo,
   saveFleetSchedules,
   fetchFleetSchedules,
   fetchActiveRerouteAlert,
@@ -54,8 +53,6 @@ export default function TravelCompanyDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null);
   const [activeReroute, setActiveReroute] = useState(null);
 
   // Transit Nodes & Active Selected Node State
@@ -334,65 +331,6 @@ export default function TravelCompanyDashboard({
     }
   };
 
-  // Video Upload Ingestion Handler (Dynamic YOLO pipeline)
-  const handleVideoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-      setUploadProgress('Uploading video to YOLO neural engine...');
-      const nodeTitle = activeNodeData?.name || activeNodeData?.node_name || selectedNodeId;
-      notify(`🎥 Processing video feed for ${nodeTitle}...`);
-
-      const res = await uploadTransitVideo(selectedNodeId, file, { sampleInterval: 15 });
-
-      if (res && res.flow_analysis) {
-        const detConf = res.flow_analysis.confidence ? (res.flow_analysis.confidence * 100).toFixed(1) : 95.8;
-        const newInflow = res.flow_analysis.inflow_rate || Math.round((activeNodeData?.inflow_per_min || 35) * 1.3);
-        const newOutflow = res.flow_analysis.outflow_rate || Math.round((activeNodeData?.outflow_per_min || 30) * 0.9);
-        const newLoad = Math.min(98, Math.max(30, Math.round((newInflow / (newInflow + newOutflow)) * 115)));
-        const newShortage = newInflow > newOutflow ? 2 : 0;
-
-        setUploadProgress('YOLO inference complete. Updating fleet demand & reroutes...');
-        notify(`✅ Video processed! Detected ${detConf}% confidence. Staging load updated to ${newLoad}%.`);
-
-        setNodes(prev => prev.map(n => {
-          if ((n.id || n.node_id) === selectedNodeId) {
-            return {
-              ...n,
-              confidence: Number(detConf),
-              inflow_per_min: newInflow,
-              outflow_per_min: newOutflow,
-              crowd_load_pct: newLoad,
-              shortage_buses: newShortage,
-              fleet: { net_shortage: newShortage, recommended_buses: newShortage + 1 }
-            };
-          }
-          return n;
-        }));
-
-        setActiveNodeData(prev => ({
-          ...prev,
-          confidence: Number(detConf),
-          inflow_per_min: newInflow,
-          outflow_per_min: newOutflow,
-          crowd_load_pct: newLoad,
-          shortage_buses: newShortage,
-          fleet: { net_shortage: newShortage, recommended_buses: newShortage + 1 }
-        }));
-      } else {
-        notify('✅ Video uploaded and processed successfully.');
-      }
-    } catch (err) {
-      console.error('Video upload failed:', err);
-      notify(`❌ Video analysis error: ${err.message || 'Check video format and backend connectivity.'}`);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(null);
-      e.target.value = '';
-    }
-  };
 
   // Safe Normalized Active Node Data
   const currNode = activeNodeData || {};
@@ -1135,29 +1073,6 @@ export default function TravelCompanyDashboard({
             </div>
           </div>
 
-          <label style={{
-            backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
-            color: '#FFFFFF',
-            borderRadius: '0.45rem',
-            padding: '0.45rem 0.9rem',
-            fontSize: '0.82rem',
-            fontWeight: '800',
-            cursor: isUploading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            boxShadow: '0 2px 6px rgba(2,132,199,0.2)'
-          }}>
-            <span>{isUploading ? '⏳' : '📹'}</span>
-            <span>{isUploading ? 'Processing...' : 'Upload Video to YOLO'}</span>
-            <input
-              type="file"
-              accept="video/*"
-              style={{ display: 'none' }}
-              disabled={isUploading}
-              onChange={handleVideoUpload}
-            />
-          </label>
         </div>
       </div>
 

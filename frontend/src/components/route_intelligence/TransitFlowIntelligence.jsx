@@ -3,8 +3,7 @@ import {
   fetchTransitNodes,
   fetchTransitNode,
   simulateTransitNode,
-  dispatchLocalTransitBus,
-  uploadTransitVideo
+  dispatchLocalTransitBus
 } from '../../api/api';
 import StatusBadge from '../common/StatusBadge';
 
@@ -13,8 +12,6 @@ export default function TransitFlowIntelligence({ showToast }) {
   const [selectedNodeId, setSelectedNodeId] = useState('NODE_DELHI_NDLS');
   const [activeNodeData, setActiveNodeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null);
   const [isDispatching, setIsDispatching] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [showSimModal, setShowSimModal] = useState(false);
@@ -79,36 +76,6 @@ export default function TransitFlowIntelligence({ showToast }) {
     }
   };
 
-  // Video Upload Ingestion Handler
-  const handleVideoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setIsUploading(true);
-      setUploadProgress('Uploading video to YOLO pipeline...');
-      const nodeTitle = activeNodeData?.name || activeNodeData?.node_name || selectedNodeId;
-      notify(`🎥 Processing video feed for ${nodeTitle}...`);
-
-      const res = await uploadTransitVideo(selectedNodeId, file, { sampleInterval: 15 });
-
-      if (res && res.flow_analysis) {
-        setUploadProgress('YOLO inference complete. Updating fleet demand & reroutes...');
-        notify(`✅ Video analyzed! YOLO detected ${(res.flow_analysis.confidence * 100).toFixed(1)}% model confidence with updated flow metrics.`);
-        await loadNodes(selectedNodeId);
-      } else {
-        notify('✅ Video uploaded and processed successfully.');
-        await loadNodes(selectedNodeId);
-      }
-    } catch (err) {
-      console.error('Video upload failed:', err);
-      notify(`❌ Video analysis error: ${err.message || 'Check video format and backend connectivity.'}`);
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(null);
-      e.target.value = '';
-    }
-  };
 
   // Dispatch Bus Action (strictly uses integer for physical buses deployed)
   const handleDispatchBus = async (busesToDeploy = 1) => {
@@ -304,32 +271,6 @@ export default function TransitFlowIntelligence({ showToast }) {
 
         {/* Top Control Buttons */}
         <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {/* Video Upload Button */}
-          <label style={{
-            backgroundColor: isUploading ? '#94A3B8' : '#0284C7',
-            color: '#FFFFFF',
-            borderRadius: '0.5rem',
-            padding: '0.6rem 1.15rem',
-            fontSize: '0.86rem',
-            fontWeight: '700',
-            cursor: isUploading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.45rem',
-            boxShadow: '0 2px 5px rgba(2,132,199,0.25)',
-            transition: 'all 0.15s ease'
-          }}>
-            <span>{isUploading ? '⏳' : '📹'}</span>
-            {isUploading ? 'Analyzing Video...' : 'Upload Video to Node Feed'}
-            <input
-              type="file"
-              accept="video/*"
-              style={{ display: 'none' }}
-              disabled={isUploading}
-              onChange={handleVideoUpload}
-            />
-          </label>
-
           {/* Simulate Flow Spike Button */}
           <button
             type="button"
@@ -353,26 +294,6 @@ export default function TransitFlowIntelligence({ showToast }) {
           </button>
         </div>
       </div>
-
-      {/* Upload Progress Overlay Notice */}
-      {isUploading && uploadProgress && (
-        <div style={{
-          backgroundColor: '#E0F2FE',
-          border: '1px solid #7DD3FC',
-          borderRadius: '0.5rem',
-          padding: '0.85rem 1.25rem',
-          marginBottom: '1.25rem',
-          color: '#0369A1',
-          fontSize: '0.88rem',
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.6rem'
-        }}>
-          <span style={{ animation: 'spin 1s infinite' }}>🔄</span>
-          <span>{uploadProgress}</span>
-        </div>
-      )}
 
       {/* 2. White Visible Transit Node Selector Cards (Percentage Sizing) */}
       <div style={{
