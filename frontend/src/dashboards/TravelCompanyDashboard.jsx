@@ -195,6 +195,49 @@ export default function TravelCompanyDashboard({
     }
   };
 
+  // Dedicated Corridor Surge Bus Deployment (+1 or +2 buses)
+  const handleDeploySurgeBuses = (busCount) => {
+    const routeId = 'SR-CHOPTA-01';
+    const capacityPerBus = 42;
+    const addedSeats = busCount * capacityPerBus;
+
+    setFleetRoutes(prev => {
+      const existingIdx = prev.findIndex(r => r.id === routeId || r.to.includes('Chopta') || r.to.includes('Tungnath'));
+      if (existingIdx >= 0) {
+        return prev.map((r, i) => {
+          if (i !== existingIdx) return r;
+          const newBuses = (r.buses || 0) + busCount;
+          return {
+            ...r,
+            buses: newBuses,
+            baseDemand: (r.baseDemand || 80) + addedSeats,
+            forwardOccupancy: 96,
+            returnOccupancy: 45,
+            status: 'ACTIVE SURGE SUPPORT'
+          };
+        });
+      } else {
+        const newRoute = {
+          id: routeId,
+          from: 'Guptkashi / Sonprayag Transit Hub',
+          to: 'Chopta - Tungnath Alternate Corridor',
+          date: 'Live Today',
+          buses: busCount,
+          capacity: capacityPerBus,
+          baseDemand: addedSeats,
+          forwardOccupancy: 96,
+          returnOccupancy: 40,
+          type: '2x2 Hill Coach A/C',
+          status: 'ACTIVE SURGE SUPPORT'
+        };
+        return [newRoute, ...prev];
+      }
+    });
+
+    setDeployedBuses(prev => prev + busCount);
+    notify(`🚌 Successfully deployed +${busCount} Extra Bus${busCount > 1 ? 'es' : ''} (${addedSeats} seats) to the Chopta Corridor to absorb diverted pilgrim flow!`);
+  };
+
   // Synchronize route-specific corridor stops across all 25 shrines
   useEffect(() => {
     const routeNodes = getCorridorNodesForRoute(routeInfo, eventContext, deployedBuses);
@@ -586,6 +629,120 @@ export default function TravelCompanyDashboard({
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 1.5 ACTIVE REGIONAL PILGRIM REROUTE SURGE ALERT (LIVE HIGHWAY BALANCING)   */}
+      {/* ========================================================================= */}
+      {activeReroute && activeReroute.is_active && (
+        <div style={{
+          backgroundColor: '#FFFBEB',
+          border: '1.5px solid #F59E0B',
+          borderRadius: '0.75rem',
+          padding: '1rem 1.25rem',
+          marginBottom: '1rem',
+          boxShadow: '0 4px 12px rgba(245, 158, 11, 0.12)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: '280px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '0.5rem',
+              backgroundColor: '#FEF3C7',
+              border: '1px solid #FDE68A',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.5rem',
+              flexShrink: 0
+            }}>
+              🚨
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', fontWeight: '900', color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  REGIONAL PILGRIM REROUTE ALERT
+                </span>
+                <span style={{ fontSize: '0.65rem', backgroundColor: '#DC2626', color: '#FFFFFF', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: '900' }}>
+                  +120 PILGRIMS INBOUND
+                </span>
+                <span style={{ fontSize: '0.65rem', backgroundColor: '#EFF6FF', color: '#1E40AF', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: '800', border: '1px solid #BFDBFE' }}>
+                  Corridor: {activeReroute.suggested_route?.name || 'Chopta / Tungnath Circuit'}
+                </span>
+              </div>
+              <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#92400E', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                {activeReroute.message || 'Kedarnath Sanctum saturation (92%) triggered dynamic corridor rerouting to Chopta / Tungnath circuit. Extra fleet capacity needed to accommodate diverted pilgrims.'}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleDeploySurgeBuses(1)}
+              style={{
+                backgroundColor: '#D97706',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.55rem 0.95rem',
+                fontSize: '0.82rem',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                boxShadow: '0 2px 6px rgba(217, 119, 6, 0.25)'
+              }}
+            >
+              <span>🚌</span> Deploy +1 Bus (42 Seats)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleDeploySurgeBuses(2)}
+              style={{
+                backgroundColor: '#16A34A',
+                color: '#FFFFFF',
+                border: 'none',
+                borderRadius: '0.5rem',
+                padding: '0.55rem 1rem',
+                fontSize: '0.82rem',
+                fontWeight: '900',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)'
+              }}
+            >
+              <span>🚌🚌</span> Deploy +2 Buses (84 Seats)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveReroute(null)}
+              style={{
+                backgroundColor: 'transparent',
+                color: '#94A3B8',
+                border: '1px solid #CBD5E1',
+                borderRadius: '0.5rem',
+                padding: '0.55rem 0.65rem',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+              title="Dismiss Alert"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. IMMEDIATE ACTION REQUIRED DEPLOYMENT CARD (HOTSPOT DEMAND RESOLUTION)  */}

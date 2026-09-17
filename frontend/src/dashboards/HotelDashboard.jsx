@@ -614,9 +614,10 @@ export default function HotelDashboard({ showToast }) {
   // 5. MOVIE-SHOWTIME-STYLE HOURLY ROOM SLOT TIMELINE
   // ---------------------------------------------------------------------------
   const [selectedSlotDate, setSelectedSlotDate] = useState('2026-09-15');
-  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('101');
+  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('ALL');
   const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
 
+<<<<<<< HEAD
   // Formatted date string for date navigator display (e.g. "15 SEPTEMBER 2026")
   const formattedDateDisplay = useMemo(() => {
     if (!selectedSlotDate) return '';
@@ -632,12 +633,23 @@ export default function HotelDashboard({ showToast }) {
         day: '2-digit',
         month: 'long',
         year: 'numeric',
+=======
+  const formattedDateDisplay = useMemo(() => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      return dateObj.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+>>>>>>> 4714c240cfa0c7639547e6429af16d8fe47e613c
       }).toUpperCase();
     } catch {
       return selectedSlotDate;
     }
   }, [selectedSlotDate]);
 
+<<<<<<< HEAD
   // Handle previous day button click in slot timeline
   const handlePrevDay = () => {
     if (!selectedSlotDate) return;
@@ -671,10 +683,103 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // Target room for slots
+=======
+  const handlePrevDay = () => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      dateObj.setDate(dateObj.getDate() - 1);
+      const newY = dateObj.getFullYear();
+      const newM = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const newD = String(dateObj.getDate()).padStart(2, '0');
+      setSelectedSlotDate(`${newY}-${newM}-${newD}`);
+    } catch {}
+  };
+
+  const handleNextDay = () => {
+    try {
+      const [y, m, d] = selectedSlotDate.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      dateObj.setDate(dateObj.getDate() + 1);
+      const newY = dateObj.getFullYear();
+      const newM = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const newD = String(dateObj.getDate()).padStart(2, '0');
+      setSelectedSlotDate(`${newY}-${newM}-${newD}`);
+    } catch {}
+  };
+
+  const generateHourlySlotsForRoom = (room, dateStr) => {
+    if (!room) return [];
+    const isMaint = room.status === 'maintenance' || room.status === 'unavailable';
+    const rKey = (room.room_type || 'Deluxe').toLowerCase();
+    const cfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
+    const calcHourlyRate = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
+    const slots = [];
+
+    for (let h = 0; h < 24; h++) {
+      const startH = String(h).padStart(2, '0');
+      const endH = String(h + 1).padStart(2, '0');
+      const slotStartISO = `${dateStr}T${startH}:00:00`;
+      const slotEndISO = `${dateStr}T${endH}:00:00`;
+      const timeLabel = `${startH}:00–${endH}:00`;
+
+      if (isMaint) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'maintenance',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'MAINTENANCE',
+        });
+        continue;
+      }
+
+      const sStart = new Date(slotStartISO).getTime();
+      const sEnd = new Date(slotEndISO).getTime();
+
+      const booking = bookingRequests.find((b) => {
+        if (String(b.room_number) !== String(room.room_number)) return false;
+        if (b.status === 'declined' || b.status === 'cancelled' || b.status === 'checked-out') return false;
+        const bIn = new Date(b.check_in).getTime();
+        const bOut = new Date(b.check_out).getTime();
+        return sStart < bOut && sEnd > bIn;
+      });
+
+      if (booking) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'booked',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'BOOKED',
+          booking,
+          guestName: booking.guest_name,
+          bookingId: booking.booking_id,
+        });
+      } else {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'available',
+          roomNumber: room.room_number,
+          roomType: room.room_type,
+          label: 'AVAILABLE',
+          hourlyRate: calcHourlyRate,
+        });
+      }
+    }
+    return slots;
+  };
+
+  // Target room for slots (null if 'ALL')
+>>>>>>> 4714c240cfa0c7639547e6429af16d8fe47e613c
   const targetRoomForSlots = useMemo(() => {
+    if (selectedRoomForSlots === 'ALL') return null;
     return (
       roomsInventory.find((r) => String(r.room_number) === String(selectedRoomForSlots)) ||
-      roomsInventory[0]
+      null
     );
   }, [roomsInventory, selectedRoomForSlots]);
 
@@ -921,11 +1026,53 @@ export default function HotelDashboard({ showToast }) {
           </div>
         </header>
 
-        {/* TOAST / BANNER */}
-        {showSuccessBanner && (
-          <div className="hd-alert-banner success">
-            <span>🎉 <strong>Stay Completed &amp; Verified!</strong> Guest checked out. Room released and now Available.</span>
-            <button type="button" onClick={() => setShowSuccessBanner(false)}>✕</button>
+        {/* CORRIDOR REROUTE SURGE ALERT SIGNAL */}
+        {(activeRerouteAlert || demandPct >= 60) && (
+          <div style={{
+            backgroundColor: '#FFFBEB',
+            border: '1.5px solid #F59E0B',
+            borderRadius: '0.75rem',
+            padding: '1rem 1.25rem',
+            margin: '0.75rem 1.5rem 0',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.12)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{
+                fontSize: '1.6rem',
+                backgroundColor: '#FEF3C7',
+                borderRadius: '0.5rem',
+                width: '42px',
+                height: '42px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                🚨
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    CORRIDOR DIVERSION SURGE SIGNAL
+                  </span>
+                  <span style={{ fontSize: '0.68rem', backgroundColor: '#DC2626', color: '#FFF', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: 900 }}>
+                    HIGH SURGE DEMAND (+120 PILGRIMS)
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#92400E', marginTop: '0.2rem' }}>
+                  {activeRerouteAlert?.message || 'Pilgrims are being rerouted to your peripheral corridor. Dynamic rates & emergency flex-stay slots activated.'}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E3A8A', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.4rem 0.75rem', borderRadius: '0.5rem' }}>
+                ⚡ Rate: ₹1,300/hr · 4 Flex-Stay Slots Ready
+              </span>
+            </div>
           </div>
         )}
 
