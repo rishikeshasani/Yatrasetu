@@ -20,7 +20,7 @@ except Exception:
 
 class CrowdPredictorService:
     def __init__(self, data_path=None):
-        self.model = RandomForestRegressor(n_estimators=100, random_state=42) if RandomForestRegressor else None
+        self.model = RandomForestRegressor(n_estimators=25, random_state=42) if RandomForestRegressor else None
         self.baseline_stats = {}
         self.is_trained = False
         self.default_capacity = 200
