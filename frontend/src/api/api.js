@@ -2002,6 +2002,32 @@ export async function loginUser(email, password) {
   } catch (err) {
     console.error("Backend login request failed (checking demo fallback):", err);
     const normalizedEmail = (email || "").trim().toLowerCase();
+
+    // Check specific 50 hotel accounts
+    const matchedHotelAcc = (HOTEL_OWNER_ACCOUNTS || []).find(
+      (a) => a.email && a.email.toLowerCase() === normalizedEmail
+    );
+    if (matchedHotelAcc) {
+      const userObj = {
+        id: matchedHotelAcc.owner_id || `owner-${matchedHotelAcc.hotel_id}`,
+        user_id: matchedHotelAcc.owner_id || `owner-${matchedHotelAcc.hotel_id}`,
+        owner_id: matchedHotelAcc.owner_id,
+        hotel_id: matchedHotelAcc.hotel_id,
+        shrine_id: matchedHotelAcc.site_id,
+        shrine_name: matchedHotelAcc.shrine_name,
+        email: matchedHotelAcc.email,
+        full_name: matchedHotelAcc.hotel_name,
+        business_name: matchedHotelAcc.hotel_name,
+        role: "hotel",
+        phone: matchedHotelAcc.phone,
+        badge: matchedHotelAcc.badge || "VERIFIED SHRINE LODGE",
+        token: `demo-jwt-token-for-${matchedHotelAcc.hotel_id}`
+      };
+      localStorage.setItem("yatrasetu_user", JSON.stringify(userObj));
+      localStorage.setItem("yatrasetu_token", `demo-jwt-token-for-${matchedHotelAcc.hotel_id}`);
+      return { status: "success", user: userObj, token: `demo-jwt-token-for-${matchedHotelAcc.hotel_id}`, offline: true };
+    }
+
     const matchedDemo = Object.values(DEMO_CREDENTIALS).find(
       (d) => d.email.toLowerCase() === normalizedEmail
     );
@@ -2014,6 +2040,7 @@ export async function loginUser(email, password) {
         id: matchedDemo?.id || `DEMO-${Date.now()}`,
         user_id: matchedDemo?.id || `DEMO-${Date.now()}`,
         owner_id: `DEMO-OWNER`,
+        hotel_id: matchedDemo?.hotel_id || (fallbackRole === "hotel" ? "hotel-kedarnath-1" : undefined),
         email: matchedDemo?.email || email,
         full_name: matchedDemo?.full_name || email.split("@")[0],
         business_name: matchedDemo?.business_name || matchedDemo?.full_name,
