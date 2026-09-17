@@ -853,9 +853,14 @@ def _parse_dt(val: Optional[str]) -> Optional[datetime]:
     if not val:
         return None
     s = val.strip().replace(" ", "T")
+    if s.endswith("Z"):
+        s = s[:-1]
     if len(s) == 16:  # YYYY-MM-DDTHH:mm
         s += ":00"
-    return datetime.fromisoformat(s)
+    dt = datetime.fromisoformat(s)
+    if dt.tzinfo is not None:
+        dt = dt.replace(tzinfo=None)
+    return dt
 
 
 
@@ -1363,6 +1368,7 @@ def get_hotel_dynamic_price(
 # Tourist sends booking request for exact room and datetime range (Status: "pending")
 # ----------------------------------------------------------------------------
 @router.post("/booking-requests", response_model=BookingRequestResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/hotels/requests", response_model=BookingRequestResponse, status_code=status.HTTP_201_CREATED)
 def create_booking_request(req: BookingRequestCreate):
     _init_hotel_data()
     raw_in = req.check_in_datetime or req.check_in
@@ -1758,12 +1764,75 @@ def update_hotel_room_status(hotel_id: str, room_id: str, data: RoomStatusUpdate
 
 
 # ----------------------------------------------------------------------------
+# 11.5 POST /hotels/checkin (and /hotels/bookings/checkin)
+# QR Guest Check-in: marks booking checked-in and room occupied
+# ----------------------------------------------------------------------------
+class CheckinRequest(BaseModel):
+    booking_id: str = Field(..., description="ID or Booking ID of the reservation")
+
+
+@router.post("/hotels/checkin")
+@router.post("/hotels/bookings/checkin")
+def checkin_guest_booking(data: CheckinRequest):
+    _init_hotel_data()
+    target_booking = None
+    for b in _BOOKINGS_DATA:
+        if b.get("booking_id") == data.booking_id or b.get("id") == data.booking_id:
+            target_booking = b
+            break
+
+    if not target_booking:
+        for r in _REQUESTS_DATA:
+            if r.get("booking_id") == data.booking_id or r.get("id") == data.booking_id:
+                target_booking = r
+                break
+
+    if not target_booking:
+        raise HTTPException(status_code=404, detail=f"Booking with ID '{data.booking_id}' not found.")
+
+    now_dt = datetime.now()
+    target_booking["booking_status"] = "checked-in"
+    target_booking["status"] = "checked-in"
+    target_booking["checked_in_at"] = now_dt.isoformat()
+    if not target_booking.get("check_in_datetime"):
+        target_booking["check_in_datetime"] = target_booking.get("check_in") or now_dt.isoformat()
+    if not target_booking.get("check_out_datetime"):
+        target_booking["check_out_datetime"] = target_booking.get("check_out")
+
+    # Mark room occupied
+    room_num = str(target_booking.get("room_number"))
+    for rm in _ROOMS_DATA:
+        if str(rm.get("room_number")) == room_num:
+            rm["status"] = "occupied"
+            rm["current_booking_id"] = data.booking_id
+
+    _save_hotel_data()
+
+    try:
+        supabase_admin.table("hotel_bookings").update({"status": "checked-in"}).eq("booking_id", target_booking.get("booking_id")).execute()
+    except Exception:
+        pass
+
+    return {
+        "status": "success",
+        "booking_id": data.booking_id,
+        "room_number": room_num,
+        "guest_name": target_booking.get("guest_name"),
+        "guest_status": "CHECKED_IN",
+        "check_in_datetime": target_booking["check_in_datetime"],
+        "check_out_datetime": target_booking["check_out_datetime"],
+        "message": f"Check-in verified. Room #{room_num} occupied by {target_booking.get('guest_name')}."
+    }
+
+
+# ----------------------------------------------------------------------------
 # 12. POST /hotels/checkout (and /hotels/bookings/checkout)
 # QR Guest Checkout with strict time-lock enforcement until slot completion
 # ----------------------------------------------------------------------------
 class CheckoutRequest(BaseModel):
     booking_id: str = Field(..., description="ID or Booking ID of the reservation")
     override: bool = Field(default=False, description="Emergency staff override to permit early checkout")
+    check_out_datetime: Optional[str] = Field(default=None, description="Optional scheduled checkout timestamp to validate")
 
 
 @router.post("/hotels/checkout")
@@ -1785,7 +1854,7 @@ def checkout_guest_booking(data: CheckoutRequest):
     if not target_booking:
         raise HTTPException(status_code=404, detail=f"Booking with ID '{data.booking_id}' not found.")
 
-    out_raw = target_booking.get("check_out_datetime") or target_booking.get("check_out")
+    out_raw = data.check_out_datetime or target_booking.get("check_out_datetime") or target_booking.get("check_out")
     dt_out = _parse_dt(out_raw) if out_raw else None
     now_dt = datetime.now()
 
