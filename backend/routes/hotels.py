@@ -1183,7 +1183,8 @@ def _check_room_conflict(room_number: str, req_in: datetime, req_out: datetime, 
     """
     _init_hotel_data()
     for b in _BOOKINGS_DATA:
-        if b.get("booking_status") in ["cancelled", "declined"]:
+        status_val = str(b.get("booking_status") or b.get("status") or "").lower()
+        if status_val in ["cancelled", "declined", "checked-out", "checked_out"]:
             continue
         if str(b.get("room_number")) != str(room_number):
             continue

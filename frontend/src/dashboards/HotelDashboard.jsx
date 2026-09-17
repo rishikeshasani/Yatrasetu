@@ -114,6 +114,23 @@ export const calculateDurationInHours = (checkInStr, checkOutStr) => {
   return Math.round(rawHours * 10) / 10;
 };
 
+export const formatDateTimeDisplay = (isoStr) => {
+  if (!isoStr) return '—';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    return d.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  } catch {
+    return isoStr;
+  }
+};
+
 // ---------------------------------------------------------------------------
 // 50 REALISTIC ROOMS INVENTORY (KEDARNATH LODGE)
 // ---------------------------------------------------------------------------
@@ -248,86 +265,7 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // ---------------------------------------------------------------------------
-  // 3. MOVIE-SHOW-STYLE HOURLY ROOM SLOT TIMELINE
-  // ---------------------------------------------------------------------------
-  const [selectedSlotDate, setSelectedSlotDate] = useState('2026-09-15');
-  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('204');
-  const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
-
-  // Generate 24 hourly chips for the selected room and date
-  const hourlySlotsForSelectedRoom = useMemo(() => {
-    const targetRoom =
-      roomsInventory.find((r) => String(r.room_number) === String(selectedRoomForSlots)) ||
-      roomsInventory[0];
-    if (!targetRoom) return [];
-
-    const isRoomMaintenance = targetRoom.status === 'maintenance' || targetRoom.status === 'unavailable';
-
-    const slots = [];
-    for (let h = 0; h < 24; h++) {
-      const startH = String(h).padStart(2, '0');
-      const endH = String(h + 1).padStart(2, '0');
-      const slotStartISO = `${selectedSlotDate}T${startH}:00:00`;
-      const slotEndISO = `${selectedSlotDate}T${endH}:00:00`;
-      const timeLabel = `${startH}:00 - ${endH}:00`;
-
-      if (isRoomMaintenance) {
-        slots.push({
-          hour: h,
-          timeLabel,
-          status: 'maintenance',
-          roomNumber: targetRoom.room_number,
-          roomType: targetRoom.room_type,
-          label: 'MAINTENANCE',
-        });
-        continue;
-      }
-
-      // Check if any confirmed/pending booking overlaps this hour
-      // Overlap: slotStart < bookingEnd && slotEnd > bookingStart
-      const sStart = new Date(slotStartISO).getTime();
-      const sEnd = new Date(slotEndISO).getTime();
-
-      const booking = bookingRequests.find((b) => {
-        if (String(b.room_number) !== String(targetRoom.room_number)) return false;
-        if (b.status === 'declined' || b.status === 'cancelled') return false;
-        const bIn = new Date(b.check_in).getTime();
-        const bOut = new Date(b.check_out).getTime();
-        return sStart < bOut && sEnd > bIn;
-      });
-
-      if (booking) {
-        slots.push({
-          hour: h,
-          timeLabel,
-          status: 'booked',
-          roomNumber: targetRoom.room_number,
-          roomType: targetRoom.room_type,
-          label: 'BOOKED',
-          booking,
-          guestName: booking.guest_name,
-          bookingId: booking.booking_id,
-        });
-      } else {
-        const rKey = (targetRoom.room_type || 'Deluxe').toLowerCase();
-        const cfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
-        const slotHourlyRate = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
-        slots.push({
-          hour: h,
-          timeLabel,
-          status: 'available',
-          roomNumber: targetRoom.room_number,
-          roomType: targetRoom.room_type,
-          label: 'AVAILABLE',
-          hourlyRate: slotHourlyRate,
-        });
-      }
-    }
-    return slots;
-  }, [roomsInventory, selectedRoomForSlots, selectedSlotDate, bookingRequests, demandMultiplier]);
-
-  // ---------------------------------------------------------------------------
-  // 4. BOOKING REQUESTS STATE & CONFIRMATION
+  // 3. BOOKING REQUESTS STATE & CONFIRMATION
   // ---------------------------------------------------------------------------
   const [bookingRequests, setBookingRequests] = useState([
     {
@@ -400,6 +338,23 @@ export default function HotelDashboard({ showToast }) {
   const [declineDialogReqId, setDeclineDialogReqId] = useState(null);
   const [declineReason, setDeclineReason] = useState('Room unavailable for requested time window');
   const [confirmedResultModal, setConfirmedResultModal] = useState(null);
+  const [backendHotel, setBackendHotel] = useState(null);
+
+  // ---------------------------------------------------------------------------
+  // 4. QR CHECK-IN TERMINAL & STRICT CHECKOUT TIME LOCK
+  // ---------------------------------------------------------------------------
+  const [terminalState, setTerminalState] = useState({
+    bookingRef: 'YC-48217',
+    guestName: 'Rahul Sharma',
+    partySize: 2,
+    roomAssigned: '#204 Deluxe',
+    roomNumber: '204',
+    check_in: '2026-09-15T14:00:00',
+    check_out: '2026-09-15T17:00:00',
+    guestStatus: 'CHECKED_IN',
+  });
+  const [emergencyOverride, setEmergencyOverride] = useState(false);
+  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
 
   // Accept Booking Request
   const handleAcceptRequest = async (req) => {
@@ -498,20 +453,83 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // ---------------------------------------------------------------------------
-  // 5. QR CHECK-IN TERMINAL & STRICT CHECKOUT TIME LOCK
+  // 5. MOVIE-SHOW-STYLE HOURLY ROOM SLOT TIMELINE
   // ---------------------------------------------------------------------------
-  const [terminalState, setTerminalState] = useState({
-    bookingRef: 'YC-48217',
-    guestName: 'Rahul Sharma',
-    partySize: 2,
-    roomAssigned: '#204 Deluxe',
-    roomNumber: '204',
-    check_in: '2026-09-15T14:00:00',
-    check_out: '2026-09-15T17:00:00',
-    guestStatus: 'CHECKED_IN',
-  });
-  const [emergencyOverride, setEmergencyOverride] = useState(false);
-  const [showSuccessBanner, setShowSuccessBanner] = useState(false);
+  const [selectedSlotDate, setSelectedSlotDate] = useState('2026-09-15');
+  const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('204');
+  const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
+
+  // Generate 24 hourly chips for the selected room and date
+  const hourlySlotsForSelectedRoom = useMemo(() => {
+    const targetRoom =
+      roomsInventory.find((r) => String(r.room_number) === String(selectedRoomForSlots)) ||
+      roomsInventory[0];
+    if (!targetRoom) return [];
+
+    const isRoomMaintenance = targetRoom.status === 'maintenance' || targetRoom.status === 'unavailable';
+
+    const slots = [];
+    for (let h = 0; h < 24; h++) {
+      const startH = String(h).padStart(2, '0');
+      const endH = String(h + 1).padStart(2, '0');
+      const slotStartISO = `${selectedSlotDate}T${startH}:00:00`;
+      const slotEndISO = `${selectedSlotDate}T${endH}:00:00`;
+      const timeLabel = `${startH}:00 - ${endH}:00`;
+
+      if (isRoomMaintenance) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'maintenance',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'MAINTENANCE',
+        });
+        continue;
+      }
+
+      // Check if any confirmed/pending booking overlaps this hour
+      // Overlap: slotStart < bookingEnd && slotEnd > bookingStart
+      const sStart = new Date(slotStartISO).getTime();
+      const sEnd = new Date(slotEndISO).getTime();
+
+      const booking = bookingRequests.find((b) => {
+        if (String(b.room_number) !== String(targetRoom.room_number)) return false;
+        if (b.status === 'declined' || b.status === 'cancelled') return false;
+        const bIn = new Date(b.check_in).getTime();
+        const bOut = new Date(b.check_out).getTime();
+        return sStart < bOut && sEnd > bIn;
+      });
+
+      if (booking) {
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'booked',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'BOOKED',
+          booking,
+          guestName: booking.guest_name,
+          bookingId: booking.booking_id,
+        });
+      } else {
+        const rKey = (targetRoom.room_type || 'Deluxe').toLowerCase();
+        const cfg = ROOM_CONFIG[rKey] || ROOM_CONFIG.deluxe;
+        const slotHourlyRate = Math.min(cfg.base * demandMultiplier, cfg.maxHourly);
+        slots.push({
+          hour: h,
+          timeLabel,
+          status: 'available',
+          roomNumber: targetRoom.room_number,
+          roomType: targetRoom.room_type,
+          label: 'AVAILABLE',
+          hourlyRate: slotHourlyRate,
+        });
+      }
+    }
+    return slots;
+  }, [roomsInventory, selectedRoomForSlots, selectedSlotDate, bookingRequests, demandMultiplier]);
 
   // Time Lock Calculation: Checkout is disabled if current time < booked check_out
   const isTimeElapsed = useMemo(() => {
@@ -574,8 +592,6 @@ export default function HotelDashboard({ showToast }) {
   // ---------------------------------------------------------------------------
   // 6. BACKEND DATA LOAD & LIVE CROWD TELEMETRY SYNC
   // ---------------------------------------------------------------------------
-  const [backendHotel, setBackendHotel] = useState(null);
-
   useEffect(() => {
     async function initData() {
       try {
@@ -622,24 +638,6 @@ export default function HotelDashboard({ showToast }) {
 
     return () => unsubscribe();
   }, []);
-
-  // Format Helper
-  const formatDateTimeDisplay = (isoStr) => {
-    if (!isoStr) return '—';
-    try {
-      const d = new Date(isoStr);
-      if (isNaN(d.getTime())) return isoStr;
-      return d.toLocaleString('en-IN', {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-    } catch {
-      return isoStr;
-    }
-  };
 
   // KPI Metrics
   const totalRoomsCount = roomsInventory.length;
