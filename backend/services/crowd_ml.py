@@ -8,6 +8,7 @@ Provides:
 """
 
 import math
+from typing import Optional, Dict, Any, List
 from pathlib import Path
 from datetime import datetime, timedelta
 import numpy as np
@@ -120,7 +121,15 @@ class CrowdPredictorService:
             })
         return pd.DataFrame(records)
 
-    def predict_24h_forecast(self, site_id: str, capacity: int = 200, start_time: datetime = None):
+    def predict_24h_forecast(
+        self,
+        site_id: str,
+        capacity: int = 200,
+        start_time: datetime = None,
+        site_name: Optional[str] = None,
+        current_state: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         if start_time is None:
             start_time = datetime.now().replace(minute=0, second=0, microsecond=0)
 
@@ -138,7 +147,7 @@ class CrowdPredictorService:
             else:
                 stat = self.baseline_stats.get((future_dt.weekday(), future_dt.hour), {"mean": 50})
                 pred_count = max(0, int(round(stat.get("mean", 50))))
-            pred_occ = round((pred_count / capacity) * 100, 1)
+            pred_occ = round((pred_count / capacity) * 100, 1) if capacity > 0 else 0.0
 
             if pred_occ < 50:
                 status = "NORMAL"
@@ -164,6 +173,7 @@ class CrowdPredictorService:
 
         return {
             "site_id": site_id,
+            "site_name": site_name or site_id,
             "capacity": capacity,
             "forecast_period": "24h",
             "forecasts": hours_forecast
