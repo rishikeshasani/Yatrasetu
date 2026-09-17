@@ -972,11 +972,53 @@ export default function HotelDashboard({ showToast }) {
           </div>
         </header>
 
-        {/* TOAST / BANNER */}
-        {showSuccessBanner && (
-          <div className="hd-alert-banner success">
-            <span>🎉 <strong>Stay Completed &amp; Verified!</strong> Guest checked out. Room released and now Available.</span>
-            <button type="button" onClick={() => setShowSuccessBanner(false)}>✕</button>
+        {/* CORRIDOR REROUTE SURGE ALERT SIGNAL */}
+        {(activeRerouteAlert || demandPct >= 60) && (
+          <div style={{
+            backgroundColor: '#FFFBEB',
+            border: '1.5px solid #F59E0B',
+            borderRadius: '0.75rem',
+            padding: '1rem 1.25rem',
+            margin: '0.75rem 1.5rem 0',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.12)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '1rem'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div style={{
+                fontSize: '1.6rem',
+                backgroundColor: '#FEF3C7',
+                borderRadius: '0.5rem',
+                width: '42px',
+                height: '42px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                🚨
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#B45309', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    CORRIDOR DIVERSION SURGE SIGNAL
+                  </span>
+                  <span style={{ fontSize: '0.68rem', backgroundColor: '#DC2626', color: '#FFF', padding: '0.1rem 0.45rem', borderRadius: '0.25rem', fontWeight: 900 }}>
+                    HIGH SURGE DEMAND (+120 PILGRIMS)
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#92400E', marginTop: '0.2rem' }}>
+                  {activeRerouteAlert?.message || 'Pilgrims are being rerouted to your peripheral corridor. Dynamic rates & emergency flex-stay slots activated.'}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1E3A8A', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', padding: '0.4rem 0.75rem', borderRadius: '0.5rem' }}>
+                ⚡ Rate: ₹1,300/hr · 4 Flex-Stay Slots Ready
+              </span>
+            </div>
           </div>
         )}
 
