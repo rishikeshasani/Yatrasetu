@@ -617,23 +617,7 @@ export default function HotelDashboard({ showToast }) {
   const [selectedRoomForSlots, setSelectedRoomForSlots] = useState('ALL');
   const [selectedSlotDetail, setSelectedSlotDetail] = useState(null);
 
-<<<<<<< HEAD
   // Formatted date string for date navigator display (e.g. "15 SEPTEMBER 2026")
-  const formattedDateDisplay = useMemo(() => {
-    if (!selectedSlotDate) return '';
-    try {
-      const parts = selectedSlotDate.split('-');
-      if (parts.length !== 3) return selectedSlotDate;
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const day = parseInt(parts[2], 10);
-      const dateObj = new Date(year, month, day);
-      if (isNaN(dateObj.getTime())) return selectedSlotDate;
-      return dateObj.toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-=======
   const formattedDateDisplay = useMemo(() => {
     try {
       const [y, m, d] = selectedSlotDate.split('-').map(Number);
@@ -642,48 +626,13 @@ export default function HotelDashboard({ showToast }) {
         day: 'numeric',
         month: 'long',
         year: 'numeric'
->>>>>>> 4714c240cfa0c7639547e6429af16d8fe47e613c
       }).toUpperCase();
     } catch {
       return selectedSlotDate;
     }
   }, [selectedSlotDate]);
 
-<<<<<<< HEAD
   // Handle previous day button click in slot timeline
-  const handlePrevDay = () => {
-    if (!selectedSlotDate) return;
-    const parts = selectedSlotDate.split('-');
-    if (parts.length !== 3) return;
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const dateObj = new Date(year, month, day);
-    dateObj.setDate(dateObj.getDate() - 1);
-    const yyyy = dateObj.getFullYear();
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    setSelectedSlotDate(`${yyyy}-${mm}-${dd}`);
-  };
-
-  // Handle next day button click in slot timeline
-  const handleNextDay = () => {
-    if (!selectedSlotDate) return;
-    const parts = selectedSlotDate.split('-');
-    if (parts.length !== 3) return;
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const day = parseInt(parts[2], 10);
-    const dateObj = new Date(year, month, day);
-    dateObj.setDate(dateObj.getDate() + 1);
-    const yyyy = dateObj.getFullYear();
-    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-    const dd = String(dateObj.getDate()).padStart(2, '0');
-    setSelectedSlotDate(`${yyyy}-${mm}-${dd}`);
-  };
-
-  // Target room for slots
-=======
   const handlePrevDay = () => {
     try {
       const [y, m, d] = selectedSlotDate.split('-').map(Number);
@@ -696,6 +645,7 @@ export default function HotelDashboard({ showToast }) {
     } catch {}
   };
 
+  // Handle next day button click in slot timeline
   const handleNextDay = () => {
     try {
       const [y, m, d] = selectedSlotDate.split('-').map(Number);
@@ -774,7 +724,6 @@ export default function HotelDashboard({ showToast }) {
   };
 
   // Target room for slots (null if 'ALL')
->>>>>>> 4714c240cfa0c7639547e6429af16d8fe47e613c
   const targetRoomForSlots = useMemo(() => {
     if (selectedRoomForSlots === 'ALL') return null;
     return (
