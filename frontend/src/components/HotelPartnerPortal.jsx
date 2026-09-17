@@ -127,12 +127,41 @@ export default function HotelPartnerPortal({ currentUser, showToast, onBackToLan
           setBackendBookings(ownerBookings);
         }
       } catch (err) {
-        // Fallback gracefully to demo state
-      }
-    }
     loadData();
     return () => { isMounted = false; };
   }, []);
+
+  // Listen to Global Emergency Reroute Events to guarantee instant walk-in surge alerts
+  useEffect(() => {
+    const handleReroute = (e) => {
+      const data = e.detail;
+      if (data?.is_active) {
+        setState((prev) => ({
+          ...prev,
+          isRerouteSpikeActive: true,
+          demandLevel: 'HIGH_SURGE',
+          incomingTourists: 180,
+          suggestedRate: 1300
+        }));
+        if (showToast) {
+          showToast('🚨 Live Corridor Alert: YatraSetu AI redirected incoming pilgrims to your lodge!');
+        }
+      } else if (data?.is_active === false) {
+        setState((prev) => ({
+          ...prev,
+          isRerouteSpikeActive: false,
+          demandLevel: 'NORMAL',
+          incomingTourists: 42,
+          suggestedRate: 850
+        }));
+      }
+    };
+
+    window.addEventListener('yatrasetu:emergency_reroute', handleReroute);
+    return () => {
+      window.removeEventListener('yatrasetu:emergency_reroute', handleReroute);
+    };
+  }, [showToast]);
 
   // Smooth Counter Animation on Incoming Demand Change
   useEffect(() => {

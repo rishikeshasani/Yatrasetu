@@ -193,21 +193,61 @@ export default function HotelDashboard({ showToast }) {
   // 1. DEMAND & TELEMETRY STATE (STRICTLY VIEW ONLY FOR HOTEL OWNER)
   // ---------------------------------------------------------------------------
   const [demandPct, setDemandPct] = useState(50);
-
+  const [showGovSimulatorModal, setShowGovSimulatorModal] = useState(false);
+  // Listen for Government Authority updates & Emergency Reroute / Surge Storyline events
   useEffect(() => {
     const handleGovUpdate = (e) => {
       if (e.detail && typeof e.detail.demandPct === 'number') {
         setDemandPct(e.detail.demandPct);
       }
     };
+
+    const handleEmergencyReroute = (e) => {
+      const detail = e.detail;
+      if (detail && detail.is_active) {
+        setDemandPct(85);
+        if (showToast) {
+          showToast(`🏨 Peripheral Hotel Alert: Diverted pilgrim stream inbound (+120 pilgrims). High surge dynamic pricing active.`);
+        }
+      }
+    };
+
+    const handleHotelSurge = (e) => {
+      const detail = e.detail;
+      if (detail && detail.is_active) {
+        setDemandPct(85);
+        if (detail.confirmed_booking) {
+          setTerminalState((prev) => ({
+            ...prev,
+            bookingRef: detail.confirmed_booking.booking_id || 'YS-SURGE-101',
+            guestName: detail.confirmed_booking.guest_name || 'Saatvik Sharma & Family',
+            roomAssigned: detail.confirmed_booking.room_assigned || 'Room 206 (Himalayan Deluxe)',
+            partySize: 4,
+            guestStatus: 'PENDING'
+          }));
+          setRoomsInventory((prev) =>
+            prev.map((r) =>
+              r.room_number === '206'
+                ? { ...r, status: 'booked', booking_slot: 'Live Dynamic Reroute Slot', available_after: 'Tomorrow 11:00 AM' }
+                : r
+            )
+          );
+        }
+      }
+    };
+
     window.addEventListener('yatrasetu:government_demand_update', handleGovUpdate);
+    window.addEventListener('yatrasetu:emergency_reroute', handleEmergencyReroute);
+    window.addEventListener('yatrasetu:hotel_surge', handleHotelSurge);
     window.setGovernmentDemand = (pct) => setDemandPct(Number(pct) || 0);
 
     return () => {
       window.removeEventListener('yatrasetu:government_demand_update', handleGovUpdate);
+      window.removeEventListener('yatrasetu:emergency_reroute', handleEmergencyReroute);
+      window.removeEventListener('yatrasetu:hotel_surge', handleHotelSurge);
       delete window.setGovernmentDemand;
     };
-  }, []);
+  }, [showToast]);
 
   const demandMultiplier = useMemo(() => getDemandMultiplier(demandPct), [demandPct]);
 

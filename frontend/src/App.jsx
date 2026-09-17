@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar';
 import EmergencyAlertBanner from './components/EmergencyAlertBanner';
 import RoleSelectionScreen from './components/RoleSelectionScreen';
+import EvaluationStorylineController, { STORY_STEPS } from './components/EvaluationStorylineController';
 import TouristDashboard from './dashboards/TouristDashboard';
 import GovernmentDashboard from './dashboards/GovernmentDashboard';
 import HotelDashboard from './dashboards/HotelDashboard';
@@ -69,6 +70,9 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSOSModalOpen, setIsSOSModalOpen] = useState(false);
+
+  // 8-Step Grand Evaluation Storyline State
+  const [currentStoryStep, setCurrentStoryStep] = useState(1);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -566,6 +570,143 @@ export default function App() {
     showToast(`🎁 Redeemed "${voucher.title}" for ${voucher.cost} Points!`);
   };
 
+  // ---------------------------------------------------------------------------
+  // 8-STEP GRAND STORYLINE CONTROLLER HANDLERS
+  // ---------------------------------------------------------------------------
+  const handleStorySetStep = (stepNum) => {
+    setCurrentStoryStep(stepNum);
+  };
+
+  const handleStorySwitchRole = (targetRole) => {
+    setActiveRole(targetRole);
+    const demoUsers = {
+      tourist: { full_name: 'Saatvik Sharma', role: 'tourist', yatri_id: 'YS-DEL-8921-2026' },
+      government: { full_name: 'Superintendent Rajesh Verma (IPS)', role: 'government', government_subrole: 'police_official', department: 'Uttarakhand State Police & District Disaster HQ' },
+      hotel: { full_name: 'Chopta Himalayan Ashrams & Lodges', role: 'hotel', property_name: 'Chopta Himalayan Ashrams & Lodges' },
+      travel_company: { full_name: 'Garhwal Mandal Vikas Tour Logistics', role: 'travel_company' }
+    };
+    const newUser = demoUsers[targetRole] || { full_name: 'Demo Evaluator', role: targetRole };
+    setCurrentUser(newUser);
+  };
+
+  const handleStoryTriggerSurge = (isActive) => {
+    if (isActive) {
+      const surgeKedarnath = {
+        site_id: 'TS001',
+        site_name: 'Kedarnath Temple',
+        people_count: 16560,
+        capacity: 18000,
+        occupancy_percentage: 92,
+        status: 'Critical',
+        wait_time_minutes: 180,
+        level: 'Critical',
+        last_updated: 'Just now (AI Telemetry Surge)'
+      };
+      setDensityMap((prev) => ({
+        ...prev,
+        TS001: surgeKedarnath
+      }));
+      if (selectedSiteId === 'TS001') {
+        setCurrentDensity(surgeKedarnath);
+        setCurrentForecast((prev) => ({
+          ...(prev || {}),
+          live_status: {
+            people_count: 16560,
+            occupancy_percentage: 92,
+            status: 'Critical',
+            last_updated: 'Just now (AI Telemetry Surge)'
+          },
+          queue_forecast: {
+            ...(prev?.queue_forecast || {}),
+            estimated_current_wait_mins: 180
+          }
+        }));
+        setCurrentAlternatives((prev) => ({
+          ...(prev || {}),
+          current_occupancy_percentage: 92,
+          current_status: 'Critical',
+          redistribution_needed: true
+        }));
+      }
+    }
+  };
+
+  const handleStoryTriggerReroute = (isActive) => {
+    if (isActive) {
+      const rerouteAlert = {
+        is_active: true,
+        site_id: 'TS001',
+        site_name: 'Kedarnath Temple',
+        severity: 'CRITICAL',
+        action_type: 'CORRIDOR_DIVERSION',
+        message: '🚨 CRITICAL SATURATION ALERT: Kedarnath Sanctum queue has reached 92% occupancy (180 min delay). YatraSetu Smart Balancing activated: Directing pilgrim traffic to Tungnath - Chopta Spiritual Circuit (+25 Punya Points & expedited darshan).',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        suggested_route: {
+          name: 'Tungnath - Chopta Spiritual Circuit',
+          route_id: 'REROUTE-CHOPTA-01',
+          distance: '38 km',
+          travel_time: '1h 15m',
+          crowd_level: 'Low',
+          incentive_points: 25
+        }
+      };
+      setActiveRerouteAlert(rerouteAlert);
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', {
+        detail: rerouteAlert
+      }));
+    } else {
+      setActiveRerouteAlert(null);
+      window.dispatchEvent(new CustomEvent('yatrasetu:emergency_reroute', {
+        detail: { is_active: false }
+      }));
+    }
+  };
+
+  const handleStoryTriggerHotelSurge = (isActive) => {
+    window.dispatchEvent(new CustomEvent('yatrasetu:hotel_surge', {
+      detail: {
+        is_active: isActive,
+        surge_price: 1300,
+        incoming_pilgrims: 120,
+        flex_rooms: 4,
+        confirmed_booking: {
+          booking_id: 'YS-SURGE-101',
+          guest_name: 'Saatvik Sharma & Family (4 Pax)',
+          room_assigned: 'Room 206 (Himalayan Deluxe)',
+          status: 'CONFIRMED',
+          qr_terminal: 'ACTIVE'
+        }
+      }
+    }));
+    window.dispatchEvent(new CustomEvent('yatrasetu:government_demand_update', {
+      detail: { demandPct: 85 }
+    }));
+  };
+
+  const handleResetStory = () => {
+    handleStoryTriggerReroute(false);
+    handleStoryTriggerHotelSurge(false);
+    const normalKedarnath = {
+      site_id: 'TS001',
+      site_name: 'Kedarnath Temple',
+      people_count: 5400,
+      capacity: 18000,
+      occupancy_percentage: 30,
+      status: 'Low',
+      wait_time_minutes: 25,
+      level: 'Low',
+      last_updated: 'Just now'
+    };
+    setDensityMap((prev) => ({
+      ...prev,
+      TS001: normalKedarnath
+    }));
+    if (selectedSiteId === 'TS001') {
+      setCurrentDensity(normalKedarnath);
+    }
+    showToast('🔄 Storyline narrative reset to baseline.');
+  };
+
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || sites[0];
   const effectiveRole = currentUser?.role === 'police' ? 'government' : currentUser?.role;
   const isValidRole = currentUser ? ['tourist', 'government', 'hotel', 'travel_company', 'vendor'].includes(effectiveRole) : true;
@@ -580,6 +721,20 @@ export default function App() {
           <button className="toast-close" onClick={() => setToastMessage(null)}>✕</button>
         </div>
       )}
+
+      {/* 8-Step Grand Storyline Evaluation Controller (Universal Interactive Bar for Evaluators & Judges) */}
+      <EvaluationStorylineController
+        activeRole={activeRole || currentUser?.role || 'tourist'}
+        onSwitchRole={handleStorySwitchRole}
+        selectedSiteId={selectedSiteId}
+        onSelectSite={handleSelectSite}
+        currentStoryStep={currentStoryStep}
+        onSetStoryStep={handleStorySetStep}
+        onTriggerSurge={handleStoryTriggerSurge}
+        onTriggerReroute={handleStoryTriggerReroute}
+        onTriggerHotelSurge={handleStoryTriggerHotelSurge}
+        onResetStory={handleResetStory}
+      />
 
       {/* Unauthenticated Role Selection Screen vs Authenticated Protected Experience */}
       {!currentUser ? (
