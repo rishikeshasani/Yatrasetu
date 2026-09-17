@@ -30,13 +30,19 @@ import {
   fetchMe,
   getAuthToken,
   fetchActiveRerouteAlert,
-  toCanonicalSiteId
+  toCanonicalSiteId,
+  MOCK_SITES,
+  getShrineImage
 } from './api/api';
 import './App.css';
 
+const INITIAL_CANONICAL_SITES = MOCK_SITES
+  .filter(s => s && s.id && /^TS\d{3}$/i.test(s.id))
+  .map(s => ({ ...s, image: s.image || getShrineImage(s.id) }));
+
 export default function App() {
-  const [sites, setSites] = useState([]);
-  const [selectedSiteId, setSelectedSiteId] = useState('');
+  const [sites, setSites] = useState(INITIAL_CANONICAL_SITES);
+  const [selectedSiteId, setSelectedSiteId] = useState('TS001');
   const [densityMap, setDensityMap] = useState({});
   const [currentDensity, setCurrentDensity] = useState(null);
   const [currentForecast, setCurrentForecast] = useState(null);

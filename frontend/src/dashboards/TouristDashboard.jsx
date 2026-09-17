@@ -20,9 +20,10 @@ import {
   fetchUserBookingRequests,
   fetchActiveRerouteAlert,
   toCanonicalSiteId,
-  MOCK_DENSITY
+  MOCK_DENSITY,
+  MOCK_SITES
 } from '../api/api';
-import { getShrineAccommodations } from '../utils/shrineImages';
+import { getShrineAccommodations, getShrineImage } from '../utils/shrineImages';
 
 export default function TouristDashboard({
   sites = [],
@@ -307,7 +308,11 @@ export default function TouristDashboard({
 
   // Filter canonical shrines (TS001 through TS025)
   const canonicalSites = useMemo(() => {
-    return (sites || []).filter((s) => s && s.id && /^TS\d{3}$/i.test(s.id));
+    const list = (Array.isArray(sites) && sites.length > 0) ? sites : MOCK_SITES;
+    return list.filter((s) => s && s.id && /^TS\d{3}$/i.test(s.id)).map(s => ({
+      ...s,
+      image: s.image || getShrineImage(s.id)
+    }));
   }, [sites]);
 
   // Synchronize focus shrine with selectedSite / selectedSiteId / activeSite
