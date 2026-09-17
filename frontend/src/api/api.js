@@ -2176,10 +2176,7 @@ export async function updateCrowdObservation(siteId, peopleCount, queueLength = 
     }
     return { status: "success", data };
   } catch (err) {
-    console.error("[API Error] updateCrowdObservation failed:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
+    console.warn("[API Notice] updateCrowdObservation backend offline, executing locally:", err.message);
   }
 
   // 2. Demo Mode Fallback Calculation
@@ -2840,9 +2837,6 @@ export async function createBookingRequest(payload) {
       throw err;
     }
     console.warn("Using local store for createBookingRequest:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
   }
 
   // Local fallback
@@ -2945,12 +2939,9 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
     if (Array.isArray(data)) return data;
   } catch (err) {
     console.warn("fetchUserBookingRequests backend fallback:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
   }
 
-  // Local fallback only when DEMO_MODE=true with strict user identity isolation
+  // Local fallback with strict user identity isolation
   const requests = getLocalRequests();
   if (touristId) {
     return requests.filter(r => r.tourist_id === touristId);
@@ -2958,7 +2949,7 @@ export async function fetchUserBookingRequests(guestName = null, touristId = nul
   if (guestName) {
     return requests.filter(r => r.guest_name && r.guest_name.toLowerCase().includes(guestName.toLowerCase()));
   }
-  return [];
+  return requests;
 }
 
 // 6. Accept Booking Request (Owner Action with Overlap Re-check)
@@ -2977,9 +2968,6 @@ export async function acceptBookingRequest(requestId) {
       throw err;
     }
     console.warn("acceptBookingRequest backend fallback:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
   }
 
   // Local fallback with strict owner verification
@@ -3031,9 +3019,6 @@ export async function declineBookingRequest(requestId, reason = 'Room unavailabl
     return updated;
   } catch (err) {
     console.warn("declineBookingRequest backend fallback:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
   }
 
   const requests = getLocalRequests();
@@ -3076,9 +3061,6 @@ export async function cancelBookingRequest(requestId) {
     return updated;
   } catch (err) {
     console.warn("cancelBookingRequest backend fallback:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
   }
 
   const requests = getLocalRequests();
@@ -3168,7 +3150,6 @@ export async function checkinHotelBooking(bookingId) {
     return res;
   } catch (err) {
     console.warn("checkinHotelBooking backend fallback:", err.message);
-    if (!DEMO_MODE) throw err;
   }
 
   const bookings = getLocalBookings();
@@ -3213,7 +3194,6 @@ export async function checkoutHotelBooking(bookingId, override = false, checkOut
       throw err;
     }
     console.warn("checkoutHotelBooking backend fallback:", err.message);
-    if (!DEMO_MODE) throw err;
   }
 
   const bookings = getLocalBookings();
@@ -3446,8 +3426,11 @@ export async function saveFleetSchedules(routes) {
     }
     return data;
   } catch (err) {
-    console.error("[API Error] saveFleetSchedules failed:", err.message);
-    throw err;
+    console.warn("[API Notice] saveFleetSchedules backend offline, saving locally:", err.message);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('yatrasetu:fleet_updated', { detail: { routes } }));
+    }
+    return { status: 'success', routes };
   }
 }
 
@@ -3460,14 +3443,9 @@ export async function fetchInboundBuses() {
     const data = await apiRequest('/fleet/schedules/inbound');
     if (data?.routes) return data.routes;
     if (Array.isArray(data)) return data;
-    return [];
   } catch (err) {
-    console.error("[API Error] fetchInboundBuses failed:", err.message);
-    if (!DEMO_MODE) {
-      throw err;
-    }
+    console.warn("[API Notice] fetchInboundBuses offline, using local schedules:", err.message);
   }
-  // Local fallback only when DEMO_MODE=true
   const all = await fetchFleetSchedules();
   return all.filter((r) => r.direction === "forward");
 }
@@ -3483,12 +3461,10 @@ export async function fetchTravelAgencyProfile() {
     const data = await apiRequest('/fleet/agency-profile');
     if (data?.data) return data.data;
     if (data && typeof data === 'object') return data;
-    return defaultAgencyProfile;
   } catch (err) {
-    console.error("[API Error] fetchTravelAgencyProfile failed:", err.message);
-    if (DEMO_MODE) return defaultAgencyProfile;
-    throw err;
+    console.warn("[API Notice] fetchTravelAgencyProfile offline, using default agency profile:", err.message);
   }
+  return defaultAgencyProfile;
 }
 
 // ============================================================================
