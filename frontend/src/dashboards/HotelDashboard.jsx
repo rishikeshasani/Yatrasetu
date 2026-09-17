@@ -14,6 +14,7 @@ import {
   checkinHotelBooking,
   checkoutHotelBooking
 } from '../api/api';
+import { HOTELS_50_DATA } from '../data/hotels50';
 import './HotelDashboard.css';
 
 // SVG QR Code generator component (clean enterprise styling)
@@ -426,7 +427,28 @@ export default function HotelDashboard({
   const [declineDialogReqId, setDeclineDialogReqId] = useState(null);
   const [declineReason, setDeclineReason] = useState('Room unavailable for requested time window');
   const [confirmedResultModal, setConfirmedResultModal] = useState(null);
-  const [backendHotel, setBackendHotel] = useState(null);
+
+  const resolveCurrentHotel = (user) => {
+    if (!user) return HOTELS_50_DATA?.hotels?.[0] || null;
+    const userEmail = (user.email || '').toLowerCase();
+    const userId = user.id || user.user_id;
+    return (
+      HOTELS_50_DATA?.hotels?.find((h) => user.hotel_id && h.id === user.hotel_id) ||
+      HOTELS_50_DATA?.hotels?.find((h) => userId && (h.owner_id === userId || h.id === userId)) ||
+      HOTELS_50_DATA?.hotels?.find((h) => userEmail && h.email?.toLowerCase() === userEmail) ||
+      HOTELS_50_DATA?.hotels?.find((h) => user.business_name && h.name?.toLowerCase().includes(user.business_name.toLowerCase())) ||
+      HOTELS_50_DATA?.hotels?.find((h) => user.full_name && h.name?.toLowerCase().includes(user.full_name.toLowerCase())) ||
+      HOTELS_50_DATA?.hotels?.[0] ||
+      null
+    );
+  };
+
+  const [backendHotel, setBackendHotel] = useState(() => resolveCurrentHotel(currentUser));
+
+  useEffect(() => {
+    const h = resolveCurrentHotel(currentUser);
+    if (h) setBackendHotel(h);
+  }, [currentUser]);
 
   // ---------------------------------------------------------------------------
   // 4. QR CHECK-IN TERMINAL & ENFORCED CHECKOUT TIME LOCK + 1-SEC COUNTDOWN
@@ -858,16 +880,25 @@ export default function HotelDashboard({
   // ---------------------------------------------------------------------------
   useEffect(() => {
     async function initData() {
+      const activeHotel = resolveCurrentHotel(currentUser);
+      const activeHotelId = activeHotel?.id || currentUser?.hotel_id || 'hotel-kedarnath-1';
       try {
         const [hotels, requests] = await Promise.all([
           fetchHotels().catch(() => []),
-          fetchHotelBookingRequests('H001').catch(() => []),
+          fetchHotelBookingRequests(activeHotelId).catch(() => []),
         ]);
         if (hotels && hotels.length > 0) {
+          const userEmail = (currentUser?.email || '').toLowerCase();
+          const userId = currentUser?.id || currentUser?.user_id;
           const matched =
-            hotels.find((h) => h.id === 'H001' || h.name.toLowerCase().includes('kedarnath') || h.name.toLowerCase().includes('ganga')) ||
+            hotels.find((h) => currentUser?.hotel_id && h.id === currentUser.hotel_id) ||
+            hotels.find((h) => userId && (h.owner_id === userId || h.id === userId)) ||
+            hotels.find((h) => userEmail && h.email?.toLowerCase() === userEmail) ||
+            hotels.find((h) => currentUser?.business_name && h.name.toLowerCase().includes(currentUser.business_name.toLowerCase())) ||
+            hotels.find((h) => h.id === activeHotelId) ||
+            activeHotel ||
             hotels[0];
-          setBackendHotel(matched);
+          if (matched) setBackendHotel(matched);
         }
         if (requests && requests.length > 0) {
           setBookingRequests(requests);
@@ -877,6 +908,12 @@ export default function HotelDashboard({
       }
     }
     initData();
+
+    const handleReqUpdate = () => {
+      initData();
+    };
+    window.addEventListener('yatrasetu:hotel_request_update', handleReqUpdate);
+    window.addEventListener('yatrasetu:hotel_booking_update', handleReqUpdate);
 
     const unsubscribe = subscribeToHotelUpdates((event) => {
       if (event.type === 'REQUEST_CREATED') {
@@ -911,8 +948,12 @@ export default function HotelDashboard({
       }
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => {
+      unsubscribe();
+      window.removeEventListener('yatrasetu:hotel_request_update', handleReqUpdate);
+      window.removeEventListener('yatrasetu:hotel_booking_update', handleReqUpdate);
+    };
+  }, [currentUser]);
 
   // Summary Metrics
   const totalRoomsCount = roomsInventory.length;
@@ -970,7 +1011,7 @@ export default function HotelDashboard({
             <span className="hd-live-pulse-dot"></span>
             <span className="hd-footer-status-text">AI Gov Engine Active</span>
           </div>
-          <div className="hd-footer-sub-text">Kedarnath Dham Certified Node</div>
+          <div className="hd-footer-sub-text">{backendHotel?.site_name ? `${backendHotel.site_name} Certified Node` : 'Kedarnath Dham Certified Node'}</div>
         </div>
       </aside>
 
@@ -982,11 +1023,11 @@ export default function HotelDashboard({
             <div className="hd-header-title-row">
               <span className="hd-header-portal-label">YatraSetu</span>
               <span className="hd-header-sep">/</span>
-              <h1 className="hd-property-heading">Kedarnath Himalayan Lodge</h1>
+              <h1 className="hd-property-heading">{backendHotel?.name || 'Kedarnath Himalayan Lodge'}</h1>
               <span className="hd-brand-badge-partner">HOTEL PARTNER</span>
             </div>
             <div className="hd-header-subtitle-row">
-              <span className="hd-zone-tag">📍 Kedarnath Dham • Base Camp Zone (Uttarakhand)</span>
+              <span className="hd-zone-tag">📍 {backendHotel?.site_name || 'Kedarnath Dham'} • {backendHotel?.address ? backendHotel.address.split(',')[0] : 'Base Camp Zone (Uttarakhand)'}</span>
               <span className="hd-verified-pill">✓ Verified Partner</span>
             </div>
           </div>

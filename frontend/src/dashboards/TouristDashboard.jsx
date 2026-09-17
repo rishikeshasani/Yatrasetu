@@ -487,7 +487,7 @@ export default function TouristDashboard({
     });
 
     const canonicalLodges = getShrineAccommodations(targetSite.id, targetSite.name);
-    const combined = [...matched, ...canonicalLodges];
+    const combined = [...canonicalLodges, ...matched];
 
     const seenIds = new Set();
     const seenNames = new Set();

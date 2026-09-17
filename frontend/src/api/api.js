@@ -1910,8 +1910,9 @@ export const DEMO_CREDENTIALS = {
   hotel: {
     email: "hotel_partner@yatrasetu.org",
     role: "hotel",
-    full_name: "Kedarnath Himalayan Hospitality Guild",
-    business_name: "Kedarnath Himalayan Inn & Ashrams",
+    full_name: "Kedarnath Himalayan Lodge",
+    business_name: "Kedarnath Himalayan Lodge",
+    hotel_id: "hotel-kedarnath-1",
     phone: "+91-9876543210",
     badge: "SHRINE HOSPITALITY",
     verified: true
@@ -2282,7 +2283,7 @@ export const MOCK_OWNER_BOOKINGS = [
   {
     id: "BOOK-84920",
     hotel_id: "hotel-kedarnath-1",
-    hotel_name: "Kedarnath Himalayan Inn & Ashrams",
+    hotel_name: "Kedarnath Himalayan Lodge",
     room_type: "Deluxe Mountain View",
     tourist_id: "YATRI-SAATVIK-8912",
     check_in: "2026-09-08",
@@ -2295,7 +2296,7 @@ export const MOCK_OWNER_BOOKINGS = [
   {
     id: "BOOK-84921",
     hotel_id: "hotel-kedarnath-1",
-    hotel_name: "Kedarnath Himalayan Inn & Ashrams",
+    hotel_name: "Kedarnath Himalayan Lodge",
     room_type: "Standard Pilgrim Room",
     tourist_id: "YATRI-PRIYA-3419",
     check_in: "2026-09-09",
@@ -2308,7 +2309,7 @@ export const MOCK_OWNER_BOOKINGS = [
   {
     id: "BOOK-84922",
     hotel_id: "hotel-kedarnath-1",
-    hotel_name: "Kedarnath Himalayan Inn & Ashrams",
+    hotel_name: "Kedarnath Himalayan Lodge",
     room_type: "Community Dormitory Hall",
     tourist_id: "YATRI-DAL-GROUP-42",
     check_in: "2026-09-07",

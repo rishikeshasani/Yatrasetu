@@ -477,7 +477,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }) {
                   <span style={{ fontSize: '1.4rem' }}>🏨</span>
                   <span style={{ fontWeight: '800', fontSize: '0.95rem', color: '#92400E' }}>Shrine Hospitality</span>
                 </div>
-                <span style={{ fontSize: '0.78rem', color: '#B45309', fontWeight: '600' }}>Kedarnath Himalayan Inn</span>
+                <span style={{ fontSize: '0.78rem', color: '#B45309', fontWeight: '600' }}>Kedarnath Himalayan Lodge</span>
                 <span style={{ fontSize: '0.7rem', color: '#FDE68A', marginTop: '0.25rem', backgroundColor: '#78350F', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>
                   ROOM TIERS &amp; BOOKINGS
                 </span>
