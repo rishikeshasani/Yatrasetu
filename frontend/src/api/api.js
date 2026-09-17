@@ -3094,12 +3094,54 @@ export async function updateRoomStatus(hotelId = 'H001', roomId, status) {
   return { status: 'success', room_id: target.room_id, room_number: target.room_number, new_status: status };
 }
 
+// 10.5 Check-in Hotel Booking
+export async function checkinHotelBooking(bookingId) {
+  try {
+    const res = await apiRequest('/hotels/checkin', {
+      method: 'POST',
+      body: JSON.stringify({ booking_id: bookingId })
+    });
+
+    const bookings = getLocalBookings().map(b => (b.booking_id === bookingId || b.id === bookingId) ? { ...b, booking_status: 'checked-in', status: 'checked-in' } : b);
+    saveLocalBookings(bookings);
+
+    const target = bookings.find(b => b.booking_id === bookingId || b.id === bookingId);
+    if (target && target.room_number) {
+      const rooms = getLocalRooms().map(r => String(r.room_number) === String(target.room_number) ? { ...r, status: 'occupied', current_booking_id: bookingId } : r);
+      saveLocalRooms(rooms);
+    }
+
+    broadcastHotelEvent({ type: 'BOOKING_CHECKED_IN', bookingId, roomNumber: target?.room_number });
+    return res;
+  } catch (err) {
+    console.warn("checkinHotelBooking backend fallback:", err.message);
+    if (!DEMO_MODE) throw err;
+  }
+
+  const bookings = getLocalBookings();
+  const target = bookings.find(b => b.booking_id === bookingId || b.id === bookingId);
+  if (!target) throw new Error(`Booking ${bookingId} not found.`);
+
+  target.booking_status = 'checked-in';
+  target.status = 'checked-in';
+  target.checked_in_at = new Date().toISOString();
+  saveLocalBookings(bookings);
+
+  if (target.room_number) {
+    const rooms = getLocalRooms().map(r => String(r.room_number) === String(target.room_number) ? { ...r, status: 'occupied', current_booking_id: bookingId } : r);
+    saveLocalRooms(rooms);
+  }
+
+  broadcastHotelEvent({ type: 'BOOKING_CHECKED_IN', bookingId, roomNumber: target.room_number });
+  return { status: 'success', booking_id: bookingId, message: 'Check-in completed successfully.' };
+}
+
 // 11. Checkout Hotel Booking (With Slot Completion Time Lock)
-export async function checkoutHotelBooking(bookingId, override = false) {
+export async function checkoutHotelBooking(bookingId, override = false, checkOutDatetime = null) {
   try {
     const res = await apiRequest('/hotels/checkout', {
       method: 'POST',
-      body: JSON.stringify({ booking_id: bookingId, override })
+      body: JSON.stringify({ booking_id: bookingId, override, check_out_datetime: checkOutDatetime })
     });
     
     const bookings = getLocalBookings().map(b => (b.booking_id === bookingId || b.id === bookingId) ? { ...b, booking_status: 'checked-out', status: 'checked-out' } : b);
@@ -3111,7 +3153,7 @@ export async function checkoutHotelBooking(bookingId, override = false) {
       saveLocalRooms(rooms);
     }
     
-    broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId });
+    broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId, roomNumber: target?.room_number });
     return res;
   } catch (err) {
     if (err.status === 400 || (err.message && err.message.includes('Checkout locked'))) {
@@ -3125,7 +3167,8 @@ export async function checkoutHotelBooking(bookingId, override = false) {
   const target = bookings.find(b => b.booking_id === bookingId || b.id === bookingId);
   if (!target) throw new Error(`Booking ${bookingId} not found.`);
 
-  const dtOut = new Date(target.check_out || target.check_out_datetime).getTime();
+  const rawOut = checkOutDatetime || target.check_out || target.check_out_datetime;
+  const dtOut = rawOut ? new Date(rawOut).getTime() : null;
   if (dtOut && Date.now() < dtOut && !override) {
     const formatted = new Date(dtOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     throw new Error(`Checkout locked until ${formatted}. Guest cannot check out before booked slot completion.`);
@@ -3140,7 +3183,7 @@ export async function checkoutHotelBooking(bookingId, override = false) {
     saveLocalRooms(rooms);
   }
 
-  broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId });
+  broadcastHotelEvent({ type: 'BOOKING_CHECKED_OUT', bookingId, roomNumber: target.room_number });
   return { status: 'success', booking_id: bookingId, message: 'Checkout completed successfully.' };
 }
 
