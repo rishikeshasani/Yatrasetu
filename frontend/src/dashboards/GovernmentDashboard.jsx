@@ -1637,6 +1637,59 @@ export default function GovernmentDashboard({
                     </span>
                   </div>
                 </div>
+
+                {/* 1-Click Reroute / Surge Trigger Button on Overview Card */}
+                <div style={{ marginTop: '0.85rem' }}>
+                  {!isRerouteActive ? (
+                    <button
+                      type="button"
+                      onClick={handleActivateEmergency}
+                      disabled={isRecalculating}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.9rem',
+                        backgroundColor: '#DC2626',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontWeight: '800',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      {isRecalculating ? 'BROADCASTING SURGE...' : '🚨 TRIGGER CORRIDOR REROUTE & SURGE ALERT'}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleLiftEmergency}
+                      disabled={isRecalculating}
+                      style={{
+                        width: '100%',
+                        padding: '0.6rem 0.9rem',
+                        backgroundColor: '#16A34A',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontWeight: '800',
+                        fontSize: '0.8rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem'
+                      }}
+                    >
+                      {isRecalculating ? 'RESTORING...' : '✅ LIFT REROUTE (RESTORE NORMAL FLOW)'}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* ZONE B */}
