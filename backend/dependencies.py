@@ -2,7 +2,15 @@ from typing import Callable, List, Optional, Set, Union
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from supabase_auth.errors import AuthApiError, AuthError
+try:
+    from supabase_auth.errors import AuthApiError, AuthError
+except ImportError:
+    class AuthApiError(Exception):
+        def __init__(self, message="Auth API error", status=400):
+            self.message = message
+            self.status = status
+    class AuthError(Exception):
+        pass
 
 from database import supabase, supabase_admin
 

@@ -621,14 +621,9 @@ def get_owner_bookings(
         my_hotels = []
 
     if not my_hotels:
-        try:
-            all_h = supabase_admin.table("hotels").select("id, name").execute()
-            my_hotels = all_h.data or []
-        except Exception:
-            my_hotels = []
-
-    if not my_hotels:
         return []
+
+
 
     my_hotel_map = {h["id"]: h["name"] for h in my_hotels}
     my_hotel_ids = list(my_hotel_map.keys())

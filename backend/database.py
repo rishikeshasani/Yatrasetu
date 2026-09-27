@@ -1,6 +1,9 @@
 import os
 from dotenv import load_dotenv
-from supabase import create_client
+try:
+    from supabase import create_client
+except ImportError:
+    create_client = None  # type: ignore
 
 # Load from backend/.env, backend/.env.example, and current working directory
 _backend_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,8 +31,22 @@ class DummyTable:
         self.name = name
     def select(self, *args, **kwargs):
         return self
-    def insert(self, *args, **kwargs):
-        return self
+    def insert(self, records, *args, **kwargs):
+        # Simulate insertion and return the inserted records.
+        # 'records' is expected to be a list of dicts.
+        # Ensure each record has an 'id' field.
+        inserted = []
+        for rec in records:
+            if isinstance(rec, dict):
+                rec = rec.copy()
+                if 'id' not in rec:
+                    # generate a simple UUID-like string
+                    import uuid
+                    rec['id'] = str(uuid.uuid4())
+                inserted.append(rec)
+        class DummyData:
+            data = inserted
+        return DummyData()
     def eq(self, *args, **kwargs):
         return self
     def in_(self, *args, **kwargs):

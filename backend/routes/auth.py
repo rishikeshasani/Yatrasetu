@@ -6,7 +6,15 @@ from typing import Any, Dict, Optional
 from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, field_validator
-from supabase_auth.errors import AuthApiError, AuthError
+try:
+    from supabase_auth.errors import AuthApiError, AuthError
+except ImportError:
+    class AuthApiError(Exception):
+        def __init__(self, message="Auth API error", status=400):
+            self.message = message
+            self.status = status
+    class AuthError(Exception):
+        pass
 
 from database import supabase, supabase_admin
 from dependencies import (
